@@ -1,10 +1,14 @@
 package com.databricks.sql.client.jdbc;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.DriverPropertyInfo;
 import java.util.Properties;
 
 /**
- * Databricks JDBC driver. This accepts URLs in format: jdbc:databricks://host:port.
+ * Databricks JDBC driver.
+ * TODO: Add implementation to accept Urls in format: jdbc:databricks://host:port.
  */
 public class DatabricksDriver implements Driver {
     private static final DatabricksDriver INSTANCE;
@@ -23,7 +27,7 @@ public class DatabricksDriver implements Driver {
 
     @Override
     public boolean acceptsURL(String url) {
-        return true;
+        return false;
     }
 
     @Override
