@@ -25,14 +25,27 @@
     <maven.compiler.target>11</maven.compiler.target>
   </properties>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.databricks</groupId>
+        <artifactId>databricks-sdk-java</artifactId>
+        <version>0.1.1</version>
+        <systemPath>${project.basedir}/src/main/resources/databricks-sdk-java-0.1.1.jar</systemPath>
+        <scope>system</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.databricks</groupId>
+      <artifactId>databricks-sdk-java</artifactId>
+    </dependency>
+  </dependencies>
+
   <build>
       <finalName>${project.artifactId}</finalName>
-      <resources>
-        <resource>
-          <filtering>true</filtering>
-          <directory>src/main/resources</directory>
-        </resource>
-      </resources>
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>

@@ -54,4 +54,18 @@ public class DatabricksConnectionContext {
     this.port = port;
     this.parameters = parameters;
   }
+
+  public String getHostUrl() {
+    StringBuilder hostUrlBuilder = new StringBuilder().append(DatabricksJdbcConstants.HTTPS_SCHEMA)
+        .append(this.host);
+    if (port != null) {
+      hostUrlBuilder.append(PORT_DELIMITER)
+          .append(port);
+    }
+    return hostUrlBuilder.toString();
+  }
+
+  public String getParameter(String key) {
+    return this.parameters.getOrDefault(key, "");
+  }
 }

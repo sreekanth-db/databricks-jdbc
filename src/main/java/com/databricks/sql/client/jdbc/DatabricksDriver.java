@@ -1,5 +1,7 @@
 package com.databricks.sql.client.jdbc;
 
+import com.databricks.sql.client.core.DatabricksConnection;
+
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -33,7 +35,8 @@ public class DatabricksDriver implements Driver {
 
     @Override
     public Connection connect(String url, Properties info) {
-        throw new UnsupportedOperationException("Not implemented");
+        DatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(url, info);
+        return new DatabricksConnection(connectionContext);
     }
 
     @Override

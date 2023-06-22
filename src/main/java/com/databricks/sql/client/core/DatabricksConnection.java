@@ -1,11 +1,19 @@
 package com.databricks.sql.client.core;
 
+import com.databricks.sql.client.jdbc.DatabricksConnectionContext;
+
 import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
 public class DatabricksConnection implements IDatabricksConnection, Connection {
+
+  private final IDatabricksSession session;
+
+  public DatabricksConnection(DatabricksConnectionContext connectionContext) {
+    this.session = new DatabricksSession(connectionContext);
+  }
   @Override
   public IDatabricksSession getSession() {
     return null;
