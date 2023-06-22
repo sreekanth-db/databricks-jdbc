@@ -3,12 +3,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.databricks</groupId>
-    <artifactId>databricks-sql-java</artifactId>
+    <artifactId>databricks-jdbc-oss</artifactId>
     <version>0.0.1</version>
     <packaging>jar</packaging>
     <name>Databricks JDBC Driver</name>
     <description>Databricks JDBC Driver.</description>
-    <url>https://github.com/databricks/databricks-sql-java</url>
+    <url>https://github.com/databricks/databricks-jdbc</url>
     <developers>
         <developer>
             <name>Gopal Lal</name>
@@ -16,9 +16,9 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:https://github.com/databricks/databricks-sql-java.git</connection>
-        <developerConnection>scm:git:https://github.com/databricks/databricks-sql-java.git</developerConnection>
-        <url>https://github.com/databricks/databricks-sql-java</url>
+        <connection>scm:git:https://github.com/databricks/databricks-jdbc.git</connection>
+        <developerConnection>scm:git:https://github.com/databricks/databricks-jdbc.git</developerConnection>
+        <url>https://github.com/databricks/databricks-jdbc</url>
     </scm>
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
