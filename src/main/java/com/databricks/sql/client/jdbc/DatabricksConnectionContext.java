@@ -5,6 +5,8 @@ import static com.databricks.sql.client.jdbc.DatabricksJdbcConstants.PAIR_DELIMI
 import static com.databricks.sql.client.jdbc.DatabricksJdbcConstants.PORT_DELIMITER;
 import static com.databricks.sql.client.jdbc.DatabricksJdbcConstants.URL_DELIMITER;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -12,8 +14,8 @@ import java.util.Properties;
 public class DatabricksConnectionContext {
 
   private final String host;
-  private final Integer port;
-  private final Map<String, String> parameters;
+  private final int port;
+  private final ImmutableMap<String, String> parameters;
   public static DatabricksConnectionContext parse(String url, Properties properties) {
     // TODO: handle exceptions properly
     if (!url.startsWith(JDBC_SCHEMA)) {
@@ -29,27 +31,27 @@ public class DatabricksConnectionContext {
     if (parsedHost.length > 2) {
       handleInvalidUrl(url);
     }
-    String _host = parsedHost[0];
-    Integer _port = parsedHost.length == 2 ? Integer.valueOf(parsedHost[1]) : null;
-    Map<String, String> _parameters = new HashMap<>();
+    String hostValue = parsedHost[0];
+    int portValue = parsedHost.length == 2 ? Integer.valueOf(parsedHost[1]) : 0;
+    ImmutableMap.Builder<String, String> parametersBuilder = ImmutableMap.builder();
     for (String keyValuePair : url.substring(hostEndingIndex + 1).split(URL_DELIMITER)) {
       String[] pair = keyValuePair.split(PAIR_DELIMITER);
       if (pair.length != 2) {
         handleInvalidUrl(url);
       }
-      _parameters.put(pair[0], pair[1]);
+      parametersBuilder.put(pair[0], pair[1]);
     }
     for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-      _parameters.put(entry.getKey().toString(), entry.getValue().toString());
+      parametersBuilder.put(entry.getKey().toString(), entry.getValue().toString());
     }
-    return new DatabricksConnectionContext(_host, _port, _parameters);
+    return new DatabricksConnectionContext(hostValue, portValue, parametersBuilder.build());
   }
 
   private static void handleInvalidUrl(String url) {
     throw new IllegalArgumentException("Invalid url " + url);
   }
 
-  private DatabricksConnectionContext(String host, Integer port, Map<String, String> parameters) {
+  private DatabricksConnectionContext(String host, int port, ImmutableMap<String, String> parameters) {
     this.host = host;
     this.port = port;
     this.parameters = parameters;
@@ -58,7 +60,7 @@ public class DatabricksConnectionContext {
   public String getHostUrl() {
     StringBuilder hostUrlBuilder = new StringBuilder().append(DatabricksJdbcConstants.HTTPS_SCHEMA)
         .append(this.host);
-    if (port != null) {
+    if (port != 0) {
       hostUrlBuilder.append(PORT_DELIMITER)
           .append(port);
     }

@@ -64,6 +64,7 @@ public class DatabricksSession implements IDatabricksSession {
   public void close() {
     // TODO: check for any pending query executions
     if (isSessionOpen) {
+      // TODO: handle closed connections by server
       workspaceClient.statementExecution().deleteSession(this.session.getSessionId());
       this.session = null;
       this.isSessionOpen = false;
