@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.databricks</groupId>
+    <artifactId>databricks-jdbc-oss</artifactId>
+    <version>0.0.1</version>
+    <packaging>jar</packaging>
+    <name>Databricks JDBC Driver</name>
+    <description>Databricks JDBC Driver.</description>
+    <url>https://github.com/databricks/databricks-jdbc</url>
+    <developers>
+        <developer>
+            <name>Gopal Lal</name>
+            <email>gopal.lal@databricks.com</email>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/databricks/databricks-jdbc.git</connection>
+        <developerConnection>scm:git:https://github.com/databricks/databricks-jdbc.git</developerConnection>
+        <url>https://github.com/databricks/databricks-jdbc</url>
+    </scm>
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+  </properties>
+
+  <build>
+      <finalName>${project.artifactId}</finalName>
+      <resources>
+        <resource>
+          <filtering>true</filtering>
+          <directory>src/main/resources</directory>
+        </resource>
+      </resources>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <configuration>
+            <archive>
+              <manifest>
+                <mainClass>com.databricks.sql.client.jdbc.DatabricksDriver</mainClass>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>test-jar</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </build>
+</project>
