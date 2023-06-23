@@ -5,30 +5,31 @@ import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.CreateSessionRequest;
 import com.databricks.sdk.service.sql.Session;
 import com.databricks.sql.client.jdbc.DatabricksConnectionContext;
-import com.databricks.sql.client.jdbc.DatabricksJdbcConstants;
 
+import javax.annotation.Nullable;
+
+/**
+ * Implementation for Session interface, which maintains an underlying session in SQL Gateway.
+ */
 public class DatabricksSession implements IDatabricksSession {
 
   private final DatabricksConnectionContext connectionContext;
 
   private boolean isSessionOpen;
-  private DatabricksConfig databricksConfig;
-  private String warehouseId;
-  private WorkspaceClient workspaceClient;
+  private final DatabricksConfig databricksConfig;
+  private final String warehouseId;
+  private final WorkspaceClient workspaceClient;
   private Session session;
 
   public DatabricksSession(DatabricksConnectionContext connectionContext) {
     this.connectionContext = connectionContext;
     this.isSessionOpen = false;
     this.session = null;
-  }
-
-  private void initSessionConfigs() {
     this.databricksConfig = new DatabricksConfig();
     databricksConfig.setHost(connectionContext.getHostUrl());
-    databricksConfig.setToken(connectionContext.getParameter(DatabricksJdbcConstants.TOKEN));
+    databricksConfig.setToken(connectionContext.getToken());
 
-    this.warehouseId = parseWarehouse(connectionContext.getParameter(DatabricksJdbcConstants.HTTP_PATH));
+    this.warehouseId = parseWarehouse(connectionContext.getHttpPath());
     this.workspaceClient = new WorkspaceClient(databricksConfig);
   }
 
@@ -37,6 +38,7 @@ public class DatabricksSession implements IDatabricksSession {
   }
 
   @Override
+  @Nullable
   public String getSessionId() {
     return isSessionOpen ? session.getSessionId() : null;
   }

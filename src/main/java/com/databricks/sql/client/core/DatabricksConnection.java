@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+/**
+ * Implementation for Databricks specific connection.
+ */
 public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   private final IDatabricksSession session;
@@ -16,52 +19,52 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   }
   @Override
   public IDatabricksSession getSession() {
-    return null;
+    return session;
   }
 
   @Override
   public Statement createStatement() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public CallableStatement prepareCall(String sql) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public String nativeSQL(String sql) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void setAutoCommit(boolean autoCommit) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public boolean getAutoCommit() throws SQLException {
-    return false;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void commit() throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void rollback() throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void close() throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -71,12 +74,12 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public DatabaseMetaData getMetaData() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void setReadOnly(boolean readOnly) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -91,132 +94,132 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public String getCatalog() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void setTransactionIsolation(int level) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public int getTransactionIsolation() throws SQLException {
-    return 0;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public SQLWarning getWarnings() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void clearWarnings() throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Map<String, Class<?>> getTypeMap() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void setHoldability(int holdability) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public int getHoldability() throws SQLException {
-    return 0;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Savepoint setSavepoint() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Savepoint setSavepoint(String name) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void rollback(Savepoint savepoint) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Clob createClob() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Blob createBlob() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public NClob createNClob() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public SQLXML createSQLXML() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -236,22 +239,22 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public String getClientInfo(String name) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Properties getClientInfo() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -261,7 +264,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public String getSchema() throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -281,11 +284,11 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    return null;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    return false;
+    throw new UnsupportedOperationException("Not implemented");
   }
 }

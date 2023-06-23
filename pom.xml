@@ -34,6 +34,11 @@
         <systemPath>${project.basedir}/src/main/resources/databricks-sdk-java-0.1.1.jar</systemPath>
         <scope>system</scope>
       </dependency>
+      <dependency>
+        <groupId>com.google.code.findbugs</groupId>
+        <artifactId>annotations</artifactId>
+        <version>3.0.1</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -41,6 +46,10 @@
     <dependency>
       <groupId>com.databricks</groupId>
       <artifactId>databricks-sdk-java</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>annotations</artifactId>
     </dependency>
   </dependencies>
 

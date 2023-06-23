@@ -65,7 +65,15 @@ public class DatabricksConnectionContext {
     return hostUrlBuilder.toString();
   }
 
-  public String getParameter(String key) {
-    return this.parameters.getOrDefault(key, "");
+  public String getHttpPath() {
+    return getParameter(DatabricksJdbcConstants.HTTP_PATH);
+  }
+
+  public String getToken() {
+    return getParameter(DatabricksJdbcConstants.TOKEN);
+  }
+
+  private String getParameter(String key) {
+    return this.parameters.getOrDefault(key, null);
   }
 }
