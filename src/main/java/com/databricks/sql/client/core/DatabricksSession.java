@@ -4,7 +4,9 @@ import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.CreateSessionRequest;
 import com.databricks.sdk.service.sql.Session;
+import com.databricks.sdk.service.sql.StatementExecutionService;
 import com.databricks.sql.client.jdbc.DatabricksConnectionContext;
+import com.google.common.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
 
@@ -18,6 +20,7 @@ public class DatabricksSession implements IDatabricksSession {
   private boolean isSessionOpen;
   private final DatabricksConfig databricksConfig;
   private final String warehouseId;
+
   private final WorkspaceClient workspaceClient;
   private Session session;
 
@@ -31,6 +34,16 @@ public class DatabricksSession implements IDatabricksSession {
 
     this.warehouseId = parseWarehouse(connectionContext.getHttpPath());
     this.workspaceClient = new WorkspaceClient(databricksConfig);
+  }
+
+  @VisibleForTesting
+  DatabricksSession(DatabricksConnectionContext connectionContext, StatementExecutionService statementExecutionService) {
+    this.connectionContext = connectionContext;
+    this.isSessionOpen = false;
+    this.session = null;
+    this.databricksConfig = new DatabricksConfig();
+    this.warehouseId = parseWarehouse(connectionContext.getHttpPath());
+    this.workspaceClient = new WorkspaceClient(true).withStatementExecutionImpl(statementExecutionService);
   }
 
   private String parseWarehouse(String httpPath) {

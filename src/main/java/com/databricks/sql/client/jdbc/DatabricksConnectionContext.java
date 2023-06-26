@@ -1,60 +1,67 @@
 package com.databricks.sql.client.jdbc;
 
-import static com.databricks.sql.client.jdbc.DatabricksJdbcConstants.JDBC_SCHEMA;
-import static com.databricks.sql.client.jdbc.DatabricksJdbcConstants.PAIR_DELIMITER;
-import static com.databricks.sql.client.jdbc.DatabricksJdbcConstants.PORT_DELIMITER;
-import static com.databricks.sql.client.jdbc.DatabricksJdbcConstants.URL_DELIMITER;
+import static com.databricks.sql.client.jdbc.DatabricksJdbcConstants.*;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
 
 public class DatabricksConnectionContext {
 
   private final String host;
   private final int port;
-  private final ImmutableMap<String, String> parameters;
+  @VisibleForTesting
+  final ImmutableMap<String, String> parameters;
   public static DatabricksConnectionContext parse(String url, Properties properties) {
-    // TODO: handle exceptions properly
-    if (!url.startsWith(JDBC_SCHEMA)) {
+    if (!isValid(url)) {
+      // TODO: handle exceptions properly
       throw new IllegalArgumentException("Invalid url " + url);
     }
-    int hostEndingIndex = url.indexOf(URL_DELIMITER);
-    if (hostEndingIndex < 0) {
-      throw new IllegalArgumentException("Invalid url " + url);
-    }
-    // TODO: can we parse using URI.parse?
-    String hostUrl = url.substring(JDBC_SCHEMA.length(), hostEndingIndex);
-    String[] parsedHost = hostUrl.substring(0, hostUrl.indexOf("/")).split(PORT_DELIMITER);
-    if (parsedHost.length > 2) {
-      handleInvalidUrl(url);
-    }
-    String hostValue = parsedHost[0];
-    int portValue = parsedHost.length == 2 ? Integer.valueOf(parsedHost[1]) : 0;
-    ImmutableMap.Builder<String, String> parametersBuilder = ImmutableMap.builder();
-    for (String keyValuePair : url.substring(hostEndingIndex + 1).split(URL_DELIMITER)) {
-      String[] pair = keyValuePair.split(PAIR_DELIMITER);
-      if (pair.length != 2) {
-        handleInvalidUrl(url);
+    Matcher urlMatcher = JDBC_URL_PATTERN.matcher(url);
+
+    if (urlMatcher.find()) {
+      String hostUrlVal = urlMatcher.group(1);
+      String urlMinusHost = urlMatcher.group(2);
+
+      String[] hostAndPort = hostUrlVal.split(PORT_DELIMITER);
+      String hostValue = hostAndPort[0];
+      int portValue = hostAndPort.length == 2 ? Integer.valueOf(hostAndPort[1]) : DEFAULT_PORT;
+
+      ImmutableMap.Builder<String, String> parametersBuilder = ImmutableMap.builder();
+      String[] urlParts = urlMinusHost.split(URL_DELIMITER);
+      for (int urlPartIndex = 1; urlPartIndex < urlParts.length; urlPartIndex++) {
+        String[] pair = urlParts[urlPartIndex].split(PAIR_DELIMITER);
+        if (pair.length != 2) {
+          handleInvalidUrl(url);
+        }
+        parametersBuilder.put(pair[0], pair[1]);
       }
-      parametersBuilder.put(pair[0], pair[1]);
+      for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+        parametersBuilder.put(entry.getKey().toString(), entry.getValue().toString());
+      }
+      return new DatabricksConnectionContext(hostValue, portValue, parametersBuilder.build());
+    } else {
+      // Should never reach here, since we have already checked for url validity
+      throw new IllegalArgumentException("Invalid url " + "incorrect");
     }
-    for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-      parametersBuilder.put(entry.getKey().toString(), entry.getValue().toString());
-    }
-    return new DatabricksConnectionContext(hostValue, portValue, parametersBuilder.build());
   }
 
   private static void handleInvalidUrl(String url) {
-    throw new IllegalArgumentException("Invalid url " + url);
+
   }
 
   private DatabricksConnectionContext(String host, int port, ImmutableMap<String, String> parameters) {
     this.host = host;
     this.port = port;
     this.parameters = parameters;
+  }
+
+  public static boolean isValid(String url) {
+    return JDBC_URL_PATTERN.matcher(url).matches();
   }
 
   public String getHostUrl() {

@@ -69,7 +69,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public boolean isClosed() throws SQLException {
-    return false;
+    return session == null || !session.isOpen();
   }
 
   @Override

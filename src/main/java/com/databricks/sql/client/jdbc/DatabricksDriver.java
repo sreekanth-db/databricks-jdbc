@@ -30,7 +30,7 @@ public class DatabricksDriver implements Driver {
 
     @Override
     public boolean acceptsURL(String url) {
-        return false;
+        return DatabricksConnectionContext.isValid(url);
     }
 
     @Override
