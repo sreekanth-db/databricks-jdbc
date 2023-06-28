@@ -106,7 +106,7 @@
           <configuration>
             <archive>
               <manifest>
-                <mainClass>com.databricks.sql.client.jdbc.DatabricksDriver</mainClass>
+                <mainClass>com.databricks.jdbc.driver.DatabricksDriver</mainClass>
                 <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
               </manifest>
             </archive>

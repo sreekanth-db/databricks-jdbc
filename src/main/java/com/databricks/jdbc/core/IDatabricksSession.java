@@ -1,4 +1,4 @@
-package com.databricks.sql.client.core;
+package com.databricks.jdbc.core;
 
 /**
  * Session interface to represent an open connection to Databricks server.

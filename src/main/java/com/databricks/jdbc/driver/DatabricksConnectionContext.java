@@ -1,11 +1,8 @@
-package com.databricks.sql.client.jdbc;
-
-import static com.databricks.sql.client.jdbc.DatabricksJdbcConstants.*;
+package com.databricks.jdbc.driver;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -21,20 +18,20 @@ public class DatabricksConnectionContext {
       // TODO: handle exceptions properly
       throw new IllegalArgumentException("Invalid url " + url);
     }
-    Matcher urlMatcher = JDBC_URL_PATTERN.matcher(url);
+    Matcher urlMatcher = DatabricksJdbcConstants.JDBC_URL_PATTERN.matcher(url);
 
     if (urlMatcher.find()) {
       String hostUrlVal = urlMatcher.group(1);
       String urlMinusHost = urlMatcher.group(2);
 
-      String[] hostAndPort = hostUrlVal.split(PORT_DELIMITER);
+      String[] hostAndPort = hostUrlVal.split(DatabricksJdbcConstants.PORT_DELIMITER);
       String hostValue = hostAndPort[0];
-      int portValue = hostAndPort.length == 2 ? Integer.valueOf(hostAndPort[1]) : DEFAULT_PORT;
+      int portValue = hostAndPort.length == 2 ? Integer.valueOf(hostAndPort[1]) : DatabricksJdbcConstants.DEFAULT_PORT;
 
       ImmutableMap.Builder<String, String> parametersBuilder = ImmutableMap.builder();
-      String[] urlParts = urlMinusHost.split(URL_DELIMITER);
+      String[] urlParts = urlMinusHost.split(DatabricksJdbcConstants.URL_DELIMITER);
       for (int urlPartIndex = 1; urlPartIndex < urlParts.length; urlPartIndex++) {
-        String[] pair = urlParts[urlPartIndex].split(PAIR_DELIMITER);
+        String[] pair = urlParts[urlPartIndex].split(DatabricksJdbcConstants.PAIR_DELIMITER);
         if (pair.length != 2) {
           handleInvalidUrl(url);
         }
@@ -61,14 +58,14 @@ public class DatabricksConnectionContext {
   }
 
   public static boolean isValid(String url) {
-    return JDBC_URL_PATTERN.matcher(url).matches();
+    return DatabricksJdbcConstants.JDBC_URL_PATTERN.matcher(url).matches();
   }
 
   public String getHostUrl() {
     StringBuilder hostUrlBuilder = new StringBuilder().append(DatabricksJdbcConstants.HTTPS_SCHEMA)
         .append(this.host);
     if (port != 0) {
-      hostUrlBuilder.append(PORT_DELIMITER)
+      hostUrlBuilder.append(DatabricksJdbcConstants.PORT_DELIMITER)
           .append(port);
     }
     return hostUrlBuilder.toString();

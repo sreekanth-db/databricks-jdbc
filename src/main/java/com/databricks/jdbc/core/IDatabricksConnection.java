@@ -1,4 +1,4 @@
-package com.databricks.sql.client.core;
+package com.databricks.jdbc.core;
 
 /**
  * Interface providing Databricks specific Connection APIs.

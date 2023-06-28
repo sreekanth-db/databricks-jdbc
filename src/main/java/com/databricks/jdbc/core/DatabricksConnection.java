@@ -1,6 +1,6 @@
-package com.databricks.sql.client.core;
+package com.databricks.jdbc.core;
 
-import com.databricks.sql.client.jdbc.DatabricksConnectionContext;
+import com.databricks.jdbc.driver.DatabricksConnectionContext;
 
 import java.sql.*;
 import java.util.Map;

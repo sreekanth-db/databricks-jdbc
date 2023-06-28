@@ -1,11 +1,10 @@
-package com.databricks.sql.client.core;
+package com.databricks.jdbc.core;
 
-import com.databricks.sdk.WorkspaceClient;
-import com.databricks.sdk.core.DatabricksConfig;
+import com.databricks.jdbc.client.DatabricksClient;
+import com.databricks.jdbc.client.DatabricksSdkClient;
+import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.sdk.service.sql.CreateSessionRequest;
 import com.databricks.sdk.service.sql.Session;
-import com.databricks.sdk.service.sql.StatementExecutionService;
-import com.databricks.sql.client.jdbc.DatabricksConnectionContext;
 import com.google.common.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
@@ -15,35 +14,25 @@ import javax.annotation.Nullable;
  */
 public class DatabricksSession implements IDatabricksSession {
 
-  private final DatabricksConnectionContext connectionContext;
-
-  private boolean isSessionOpen;
-  private final DatabricksConfig databricksConfig;
+  private final DatabricksClient databricksClient;
   private final String warehouseId;
 
-  private final WorkspaceClient workspaceClient;
+  private boolean isSessionOpen;
   private Session session;
 
   public DatabricksSession(DatabricksConnectionContext connectionContext) {
-    this.connectionContext = connectionContext;
+    this.databricksClient = new DatabricksSdkClient(connectionContext);
     this.isSessionOpen = false;
     this.session = null;
-    this.databricksConfig = new DatabricksConfig();
-    databricksConfig.setHost(connectionContext.getHostUrl());
-    databricksConfig.setToken(connectionContext.getToken());
-
     this.warehouseId = parseWarehouse(connectionContext.getHttpPath());
-    this.workspaceClient = new WorkspaceClient(databricksConfig);
   }
 
   @VisibleForTesting
-  DatabricksSession(DatabricksConnectionContext connectionContext, StatementExecutionService statementExecutionService) {
-    this.connectionContext = connectionContext;
+  DatabricksSession(DatabricksConnectionContext connectionContext, DatabricksClient databricksClient) {
+    this.databricksClient = databricksClient;
     this.isSessionOpen = false;
     this.session = null;
-    this.databricksConfig = new DatabricksConfig();
     this.warehouseId = parseWarehouse(connectionContext.getHttpPath());
-    this.workspaceClient = new WorkspaceClient(true).withStatementExecutionImpl(statementExecutionService);
   }
 
   private String parseWarehouse(String httpPath) {
@@ -68,7 +57,7 @@ public class DatabricksSession implements IDatabricksSession {
       CreateSessionRequest createSessionRequest = new CreateSessionRequest()
           .setSession(new Session().setWarehouseId(this.warehouseId));
       // TODO: handle errors
-      this.session = workspaceClient.statementExecution().createSession(createSessionRequest);
+      this.session = databricksClient.createSession(this.warehouseId);
       this.isSessionOpen = true;
     }
   }
@@ -78,7 +67,7 @@ public class DatabricksSession implements IDatabricksSession {
     // TODO: check for any pending query executions
     if (isSessionOpen) {
       // TODO: handle closed connections by server
-      workspaceClient.statementExecution().deleteSession(this.session.getSessionId());
+      databricksClient.deleteSession(this.session.getSessionId());
       this.session = null;
       this.isSessionOpen = false;
     }
