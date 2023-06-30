@@ -24,6 +24,10 @@ public class DatabricksSession implements IDatabricksSession {
   private final WorkspaceClient workspaceClient;
   private Session session;
 
+  /**
+   * Creates an instance of Databricks session for given connection context
+   * @param connectionContext underlying connection context
+   */
   public DatabricksSession(DatabricksConnectionContext connectionContext) {
     this.connectionContext = connectionContext;
     this.isSessionOpen = false;

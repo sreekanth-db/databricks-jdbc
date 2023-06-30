@@ -16,6 +16,13 @@ public class DatabricksConnectionContext {
   private final int port;
   @VisibleForTesting
   final ImmutableMap<String, String> parameters;
+
+  /**
+   * Parses connection Url and properties into a Databricks specific connection context
+   * @param url Databricks server connection Url
+   * @param properties connection properties
+   * @return a connection context
+   */
   public static DatabricksConnectionContext parse(String url, Properties properties) {
     if (!isValid(url)) {
       // TODO: handle exceptions properly
@@ -51,7 +58,7 @@ public class DatabricksConnectionContext {
   }
 
   private static void handleInvalidUrl(String url) {
-
+    throw new IllegalArgumentException("Invalid url " + "incorrect");
   }
 
   private DatabricksConnectionContext(String host, int port, ImmutableMap<String, String> parameters) {

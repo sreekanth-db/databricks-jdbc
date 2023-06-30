@@ -14,6 +14,10 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   private final IDatabricksSession session;
 
+  /**
+   * Creates an instance of Databricks connection for given connection context.
+   * @param connectionContext underlying connection context
+   */
   public DatabricksConnection(DatabricksConnectionContext connectionContext) {
     this.session = new DatabricksSession(connectionContext);
   }
