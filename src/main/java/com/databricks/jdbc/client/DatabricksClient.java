@@ -1,5 +1,7 @@
 package com.databricks.jdbc.client;
 
+import com.databricks.jdbc.core.DatabricksResultSet;
+import com.databricks.jdbc.core.IDatabricksResultSet;
 import com.databricks.sdk.service.sql.ExecuteStatementRequest;
 import com.databricks.sdk.service.sql.ExecuteStatementResponse;
 import com.databricks.sdk.service.sql.Session;
@@ -24,9 +26,17 @@ public interface DatabricksClient {
 
   /**
    * Executes a statement in Databricks server
-   * TODO: Use POJOs for request and response and remove dependency on SDK classes
-   * @param request execute statement request
+   * @param statement SQL statement that needs to be executed
+   * @param sessionId underlying session-Id
+   * @param warehouseId warehouse-Id which should be used for statement execution
    * @return response for statement execution
    */
-  ExecuteStatementResponse executeStatement(ExecuteStatementRequest request);
+  DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId);
+
+  /**
+   * Closes a statement in Databricks server
+   * @param statementId statement which should be closed
+   * @return response for statement execution
+   */
+  void closeStatement(String statementId);
 }

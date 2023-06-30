@@ -5,6 +5,8 @@ import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 /**
@@ -13,6 +15,7 @@ import java.util.concurrent.Executor;
 public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   private final IDatabricksSession session;
+  private final Set<IDatabricksStatement> statementSet = ConcurrentHashMap.newKeySet();
 
   public DatabricksConnection(DatabricksConnectionContext connectionContext) {
     this.session = new DatabricksSession(connectionContext);
@@ -24,7 +27,9 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public Statement createStatement() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    DatabricksStatement statement = new DatabricksStatement(this);
+    statementSet.add(statement);
+    return statement;
   }
 
   @Override
@@ -64,7 +69,12 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public void close() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    for (IDatabricksStatement statement : statementSet) {
+      statement.close(false);
+      statementSet.remove(statement);
+    }
+
+    this.session.close();
   }
 
   @Override
@@ -290,5 +300,10 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
     throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public void closeStatement(IDatabricksStatement statement) {
+    this.statementSet.remove(statement);
   }
 }

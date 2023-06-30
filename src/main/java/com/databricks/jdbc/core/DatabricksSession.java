@@ -46,6 +46,11 @@ public class DatabricksSession implements IDatabricksSession {
   }
 
   @Override
+  public String getWarehouseId() {
+    return warehouseId;
+  }
+
+  @Override
   public boolean isOpen() {
     return isSessionOpen;
   }
@@ -71,5 +76,10 @@ public class DatabricksSession implements IDatabricksSession {
       this.session = null;
       this.isSessionOpen = false;
     }
+  }
+
+  @Override
+  public DatabricksClient getDatabricksClient() {
+    return databricksClient;
   }
 }

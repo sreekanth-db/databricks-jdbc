@@ -1,5 +1,7 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.DatabricksClient;
+
 /**
  * Session interface to represent an open connection to Databricks server.
  */
@@ -10,6 +12,12 @@ public interface IDatabricksSession {
    * @return session-Id
    */
   String getSessionId();
+
+  /**
+   * Get the warehouse associated with the session.
+   * @return warehouse-Id
+   */
+  String getWarehouseId();
 
   /**
    * Checks if session is open and valid.
@@ -26,4 +34,10 @@ public interface IDatabricksSession {
    * Closes the session.
    */
   void close();
+
+  /**
+   * Returns the client for connecting to Databricks server
+   * @return
+   */
+  DatabricksClient getDatabricksClient();
 }
