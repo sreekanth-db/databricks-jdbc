@@ -14,6 +14,7 @@ public class DatabricksConnectionContext {
 
   private final String host;
   private final int port;
+
   @VisibleForTesting
   final ImmutableMap<String, String> parameters;
 
@@ -81,8 +82,21 @@ public class DatabricksConnectionContext {
     return hostUrlBuilder.toString();
   }
 
-  public String getHttpPath() {
+  String getHttpPath() {
     return getParameter(DatabricksJdbcConstants.HTTP_PATH);
+  }
+
+  public String getWarehouse() {
+    String httpPath = getHttpPath();
+    Matcher urlMatcher = HTTP_PATH_PATTERN.matcher(httpPath);
+
+    String warehouseId = null;
+    if (urlMatcher.find()) {
+      warehouseId = urlMatcher.group(1);
+    } else {
+      throw new IllegalArgumentException("Invalid httpPath " + httpPath);
+    }
+    return warehouseId;
   }
 
   public String getToken() {

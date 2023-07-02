@@ -36,22 +36,21 @@ public class DatabricksSession implements IDatabricksSession {
     databricksConfig.setHost(connectionContext.getHostUrl());
     databricksConfig.setToken(connectionContext.getToken());
 
-    this.warehouseId = parseWarehouse(connectionContext.getHttpPath());
+    this.warehouseId = connectionContext.getWarehouse();
     this.workspaceClient = new WorkspaceClient(databricksConfig);
   }
 
+  /**
+   * Construct method to be used for mocking in a test case.
+   */
   @VisibleForTesting
   DatabricksSession(DatabricksConnectionContext connectionContext, StatementExecutionService statementExecutionService) {
     this.connectionContext = connectionContext;
     this.isSessionOpen = false;
     this.session = null;
     this.databricksConfig = new DatabricksConfig();
-    this.warehouseId = parseWarehouse(connectionContext.getHttpPath());
+    this.warehouseId = connectionContext.getWarehouse();
     this.workspaceClient = new WorkspaceClient(true).withStatementExecutionImpl(statementExecutionService);
-  }
-
-  private String parseWarehouse(String httpPath) {
-    return httpPath.substring(httpPath.lastIndexOf('/') +1);
   }
 
   @Override
