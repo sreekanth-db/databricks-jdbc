@@ -20,7 +20,10 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   private final ResultManifest resultManifest;
   private final DatabricksResultSetMetaData resultSetMetaData;
 
-  public DatabricksResultSet(StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest) {
+  private int currentRow = -1;
+
+  public DatabricksResultSet(
+      StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest) {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
     this.resultData = resultData;
@@ -35,7 +38,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public void close() throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -45,12 +48,43 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public String getString(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    Object obj = getObjectInternal(columnIndex);
+    return obj != null ? String.valueOf(obj) : null;
   }
 
   @Override
   public boolean getBoolean(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return false;
+    }
+    if (obj instanceof Boolean) {
+      return (Boolean) obj;
+    }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    // Convert to boolean types from other types
+    if (columnType == Types.BOOLEAN
+        || columnType == Types.VARCHAR) {
+      String type = obj.toString();
+      if (Boolean.TRUE.toString().equalsIgnoreCase(type) || Boolean.FALSE.toString().equalsIgnoreCase(type)) {
+        return Boolean.valueOf(type.toLowerCase());
+      }
+    }
+    if (columnType == Types.INTEGER
+        || columnType == Types.SMALLINT
+        || columnType == Types.TINYINT
+        || columnType == Types.BIGINT
+        || columnType == Types.BIT
+        || columnType == Types.CHAR) {
+      String type = obj.toString();
+      if ("1".equals(type)) {
+        return true;
+      }
+      if ("0".equals(type)) {
+        return false;
+      }
+    }
+    throw new DatabricksSQLException("Invalid boolean type");
   }
 
   @Override
@@ -210,7 +244,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public void clearWarnings() throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -220,12 +254,12 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public ResultSetMetaData getMetaData() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return resultSetMetaData;
   }
 
   @Override
   public Object getObject(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getObjectInternal(columnIndex);
   }
 
   @Override
@@ -991,5 +1025,10 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   @Override
   public StatementStatus getStatementStatus() {
     return statementStatus;
+  }
+
+  private Object getObjectInternal(int columnIndex) {
+    // Handle null and other errors
+    throw new UnsupportedOperationException("Not implemented");
   }
 }

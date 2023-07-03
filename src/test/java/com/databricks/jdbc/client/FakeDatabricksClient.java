@@ -1,6 +1,6 @@
 package com.databricks.jdbc.client;
 
-import com.databricks.jdbc.core.IDatabricksResultSet;
+import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.sdk.service.sql.*;
 
 public class FakeDatabricksClient implements DatabricksClient {
@@ -23,7 +23,12 @@ public class FakeDatabricksClient implements DatabricksClient {
   }
 
   @Override
-  public IDatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId) {
+  public DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId) {
     return null;
+  }
+
+  @Override
+  public void closeStatement(String statementId) {
+    statementExecutionService.closeStatement(new CloseStatementRequest().setStatementId(statementId));
   }
 }

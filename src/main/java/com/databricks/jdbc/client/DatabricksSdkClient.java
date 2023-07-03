@@ -52,7 +52,6 @@ public class DatabricksSdkClient implements DatabricksClient {
         .setSessionId(sessionId);
     ExecuteStatementResponse response = workspaceClient.statementExecution().executeStatement(request);
 
-    workspaceClient.statementExecution().
     return new DatabricksResultSet(response.getStatus(), response.getStatementId(), response.getResult(),
         response.getManifest());
   }

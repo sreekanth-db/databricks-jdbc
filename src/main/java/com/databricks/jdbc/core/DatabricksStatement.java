@@ -22,7 +22,8 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
-    connection.getSession().getDatabricksClient().executeStatement(sql, getSessionId(), connection.getSession().getWarehouseId());
+    return connection.getSession().getDatabricksClient().executeStatement(
+        sql, getSessionId(), connection.getSession().getWarehouseId());
   }
 
   @Override

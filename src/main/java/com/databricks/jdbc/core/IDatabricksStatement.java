@@ -1,5 +1,7 @@
 package com.databricks.jdbc.core;
 
+import java.sql.SQLException;
+
 /**
  * Interface for Databricks specific statement.
  */
@@ -10,5 +12,5 @@ public interface IDatabricksStatement {
    */
   String getSessionId();
 
-  void close(boolean removeFromSession);
+  void close(boolean removeFromSession) throws SQLException;
 }
