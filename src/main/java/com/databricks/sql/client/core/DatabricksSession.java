@@ -5,7 +5,7 @@ import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.CreateSessionRequest;
 import com.databricks.sdk.service.sql.Session;
 import com.databricks.sdk.service.sql.StatementExecutionService;
-import com.databricks.sql.client.jdbc.DatabricksConnectionContext;
+import com.databricks.sql.client.jdbc.IDatabricksConnectionContext;
 import com.google.common.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
  */
 public class DatabricksSession implements IDatabricksSession {
 
-  private final DatabricksConnectionContext connectionContext;
+  private final IDatabricksConnectionContext connectionContext;
 
   private boolean isSessionOpen;
   private final DatabricksConfig databricksConfig;
@@ -28,7 +28,7 @@ public class DatabricksSession implements IDatabricksSession {
    * Creates an instance of Databricks session for given connection context
    * @param connectionContext underlying connection context
    */
-  public DatabricksSession(DatabricksConnectionContext connectionContext) {
+  public DatabricksSession(IDatabricksConnectionContext connectionContext) {
     this.connectionContext = connectionContext;
     this.isSessionOpen = false;
     this.session = null;
@@ -44,7 +44,7 @@ public class DatabricksSession implements IDatabricksSession {
    * Construct method to be used for mocking in a test case.
    */
   @VisibleForTesting
-  DatabricksSession(DatabricksConnectionContext connectionContext, StatementExecutionService statementExecutionService) {
+  DatabricksSession(IDatabricksConnectionContext connectionContext, StatementExecutionService statementExecutionService) {
     this.connectionContext = connectionContext;
     this.isSessionOpen = false;
     this.session = null;
@@ -61,29 +61,34 @@ public class DatabricksSession implements IDatabricksSession {
 
   @Override
   public boolean isOpen() {
+    // TODO: check for expired sessions
     return isSessionOpen;
   }
 
   @Override
   public void open() {
     // TODO: check for expired sessions
-    if (!isSessionOpen) {
-      CreateSessionRequest createSessionRequest = new CreateSessionRequest()
-          .setSession(new Session().setWarehouseId(this.warehouseId));
-      // TODO: handle errors
-      this.session = workspaceClient.statementExecution().createSession(createSessionRequest);
-      this.isSessionOpen = true;
+    synchronized (this) {
+      if (!isSessionOpen) {
+        CreateSessionRequest createSessionRequest = new CreateSessionRequest()
+            .setSession(new Session().setWarehouseId(this.warehouseId));
+        // TODO: handle errors
+        this.session = workspaceClient.statementExecution().createSession(createSessionRequest);
+        this.isSessionOpen = true;
+      }
     }
   }
 
   @Override
   public void close() {
     // TODO: check for any pending query executions
-    if (isSessionOpen) {
-      // TODO: handle closed connections by server
-      workspaceClient.statementExecution().deleteSession(this.session.getSessionId());
-      this.session = null;
-      this.isSessionOpen = false;
+    synchronized (this) {
+      if (isSessionOpen) {
+        // TODO: handle closed connections by server
+        workspaceClient.statementExecution().deleteSession(this.session.getSessionId());
+        this.session = null;
+        this.isSessionOpen = false;
+      }
     }
   }
 }

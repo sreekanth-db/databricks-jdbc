@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 
-public class DatabricksConnectionContext {
+public class DatabricksConnectionContext implements IDatabricksConnectionContext {
 
   private final String host;
   private final int port;
@@ -24,7 +24,7 @@ public class DatabricksConnectionContext {
    * @param properties connection properties
    * @return a connection context
    */
-  public static DatabricksConnectionContext parse(String url, Properties properties) {
+  public static IDatabricksConnectionContext parse(String url, Properties properties) {
     if (!isValid(url)) {
       // TODO: handle exceptions properly
       throw new IllegalArgumentException("Invalid url " + url);
@@ -72,6 +72,7 @@ public class DatabricksConnectionContext {
     return JDBC_URL_PATTERN.matcher(url).matches();
   }
 
+  @Override
   public String getHostUrl() {
     StringBuilder hostUrlBuilder = new StringBuilder().append(DatabricksJdbcConstants.HTTPS_SCHEMA)
         .append(this.host);
@@ -86,6 +87,7 @@ public class DatabricksConnectionContext {
     return getParameter(DatabricksJdbcConstants.HTTP_PATH);
   }
 
+  @Override
   public String getWarehouse() {
     String httpPath = getHttpPath();
     Matcher urlMatcher = HTTP_PATH_PATTERN.matcher(httpPath);
@@ -99,6 +101,7 @@ public class DatabricksConnectionContext {
     return warehouseId;
   }
 
+  @Override
   public String getToken() {
     return getParameter(DatabricksJdbcConstants.TOKEN);
   }

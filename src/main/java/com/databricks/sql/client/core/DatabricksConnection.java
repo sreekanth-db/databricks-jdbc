@@ -1,6 +1,6 @@
 package com.databricks.sql.client.core;
 
-import com.databricks.sql.client.jdbc.DatabricksConnectionContext;
+import com.databricks.sql.client.jdbc.IDatabricksConnectionContext;
 
 import java.sql.*;
 import java.util.Map;
@@ -18,7 +18,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
    * Creates an instance of Databricks connection for given connection context.
    * @param connectionContext underlying connection context
    */
-  public DatabricksConnection(DatabricksConnectionContext connectionContext) {
+  public DatabricksConnection(IDatabricksConnectionContext connectionContext) {
     this.session = new DatabricksSession(connectionContext);
   }
   @Override

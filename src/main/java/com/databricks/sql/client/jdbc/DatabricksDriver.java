@@ -35,7 +35,7 @@ public class DatabricksDriver implements Driver {
 
     @Override
     public Connection connect(String url, Properties info) {
-        DatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(url, info);
+        IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(url, info);
         return new DatabricksConnection(connectionContext);
     }
 
