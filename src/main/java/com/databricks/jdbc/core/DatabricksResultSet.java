@@ -16,7 +16,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   private final StatementStatus statementStatus;
   private final String statementId;
-  private final ResultData resultData;
+  private final IDBResultSet dbResultSet;
   private final ResultManifest resultManifest;
   private final DatabricksResultSetMetaData resultSetMetaData;
 
@@ -26,7 +26,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
       StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest) {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
-    this.resultData = resultData;
+    this.dbResultSet = DBResultSetFactory.getResultSet(resultData, resultManifest);
     this.resultManifest = resultManifest;
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, resultManifest);
   }
@@ -1029,6 +1029,6 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   private Object getObjectInternal(int columnIndex) {
     // Handle null and other errors
-    throw new UnsupportedOperationException("Not implemented");
+    return dbResultSet.getObject(columnIndex);
   }
 }
