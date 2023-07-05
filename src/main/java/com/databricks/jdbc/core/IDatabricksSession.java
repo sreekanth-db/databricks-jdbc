@@ -2,6 +2,8 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksClient;
 
+import javax.annotation.Nullable;
+
 /**
  * Session interface to represent an open connection to Databricks server.
  */
@@ -11,6 +13,7 @@ public interface IDatabricksSession {
    * Get the unique session-Id associated with the session.
    * @return session-Id
    */
+  @Nullable
   String getSessionId();
 
   /**

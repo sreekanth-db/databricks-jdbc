@@ -2,7 +2,7 @@ package com.databricks.jdbc.client;
 
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.IDatabricksResultSet;
-import com.databricks.jdbc.driver.DatabricksConnectionContext;
+import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.*;
@@ -14,11 +14,11 @@ public class DatabricksSdkClient implements DatabricksClient {
 
   private static final String ASYNC_TIMEOUT_VALUE = "0s";
 
-  private final DatabricksConnectionContext connectionContext;
+  private final IDatabricksConnectionContext connectionContext;
   private final DatabricksConfig databricksConfig;
   private final WorkspaceClient workspaceClient;
 
-  public DatabricksSdkClient(DatabricksConnectionContext connectionContext) {
+  public DatabricksSdkClient(IDatabricksConnectionContext connectionContext) {
     this.connectionContext = connectionContext;
     // Handle more auth types
     this.databricksConfig = new DatabricksConfig();

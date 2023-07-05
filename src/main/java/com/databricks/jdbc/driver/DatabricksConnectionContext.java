@@ -7,13 +7,21 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 
-public class DatabricksConnectionContext {
+public class DatabricksConnectionContext implements IDatabricksConnectionContext {
 
   private final String host;
   private final int port;
+
   @VisibleForTesting
   final ImmutableMap<String, String> parameters;
-  public static DatabricksConnectionContext parse(String url, Properties properties) {
+
+  /**
+   * Parses connection Url and properties into a Databricks specific connection context
+   * @param url Databricks server connection Url
+   * @param properties connection properties
+   * @return a connection context
+   */
+  public static IDatabricksConnectionContext parse(String url, Properties properties) {
     if (!isValid(url)) {
       // TODO: handle exceptions properly
       throw new IllegalArgumentException("Invalid url " + url);
@@ -48,7 +56,7 @@ public class DatabricksConnectionContext {
   }
 
   private static void handleInvalidUrl(String url) {
-
+    throw new IllegalArgumentException("Invalid url " + "incorrect");
   }
 
   private DatabricksConnectionContext(String host, int port, ImmutableMap<String, String> parameters) {
@@ -61,6 +69,7 @@ public class DatabricksConnectionContext {
     return DatabricksJdbcConstants.JDBC_URL_PATTERN.matcher(url).matches();
   }
 
+  @Override
   public String getHostUrl() {
     StringBuilder hostUrlBuilder = new StringBuilder().append(DatabricksJdbcConstants.HTTPS_SCHEMA)
         .append(this.host);
@@ -71,10 +80,25 @@ public class DatabricksConnectionContext {
     return hostUrlBuilder.toString();
   }
 
-  public String getHttpPath() {
+  String getHttpPath() {
     return getParameter(DatabricksJdbcConstants.HTTP_PATH);
   }
 
+  @Override
+  public String getWarehouse() {
+    String httpPath = getHttpPath();
+    Matcher urlMatcher = DatabricksJdbcConstants.HTTP_PATH_PATTERN.matcher(httpPath);
+
+    String warehouseId = null;
+    if (urlMatcher.find()) {
+      warehouseId = urlMatcher.group(1);
+    } else {
+      throw new IllegalArgumentException("Invalid httpPath " + httpPath);
+    }
+    return warehouseId;
+  }
+
+  @Override
   public String getToken() {
     return getParameter(DatabricksJdbcConstants.TOKEN);
   }

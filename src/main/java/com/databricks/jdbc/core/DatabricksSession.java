@@ -5,6 +5,8 @@ import com.databricks.jdbc.client.DatabricksSdkClient;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.sdk.service.sql.CreateSessionRequest;
 import com.databricks.sdk.service.sql.Session;
+import com.databricks.sdk.service.sql.StatementExecutionService;
+import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.google.common.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
@@ -20,23 +22,26 @@ public class DatabricksSession implements IDatabricksSession {
   private boolean isSessionOpen;
   private Session session;
 
-  public DatabricksSession(DatabricksConnectionContext connectionContext) {
+  /**
+   * Creates an instance of Databricks session for given connection context
+   * @param connectionContext underlying connection context
+   */
+  public DatabricksSession(IDatabricksConnectionContext connectionContext) {
     this.databricksClient = new DatabricksSdkClient(connectionContext);
     this.isSessionOpen = false;
     this.session = null;
-    this.warehouseId = parseWarehouse(connectionContext.getHttpPath());
+    this.warehouseId = connectionContext.getWarehouse();
   }
 
+  /**
+   * Construct method to be used for mocking in a test case.
+   */
   @VisibleForTesting
-  DatabricksSession(DatabricksConnectionContext connectionContext, DatabricksClient databricksClient) {
+  DatabricksSession(IDatabricksConnectionContext connectionContext, DatabricksClient databricksClient) {
     this.databricksClient = databricksClient;
     this.isSessionOpen = false;
     this.session = null;
-    this.warehouseId = parseWarehouse(connectionContext.getHttpPath());
-  }
-
-  private String parseWarehouse(String httpPath) {
-    return httpPath.substring(httpPath.lastIndexOf('/') +1);
+    this.warehouseId = connectionContext.getWarehouse();
   }
 
   @Override
@@ -52,29 +57,32 @@ public class DatabricksSession implements IDatabricksSession {
 
   @Override
   public boolean isOpen() {
+    // TODO: check for expired sessions
     return isSessionOpen;
   }
 
   @Override
   public void open() {
     // TODO: check for expired sessions
-    if (!isSessionOpen) {
-      CreateSessionRequest createSessionRequest = new CreateSessionRequest()
-          .setSession(new Session().setWarehouseId(this.warehouseId));
-      // TODO: handle errors
-      this.session = databricksClient.createSession(this.warehouseId);
-      this.isSessionOpen = true;
+    synchronized (this) {
+      if (!isSessionOpen) {
+        // TODO: handle errors
+        this.session = databricksClient.createSession(this.warehouseId);
+        this.isSessionOpen = true;
+      }
     }
   }
 
   @Override
   public void close() {
     // TODO: check for any pending query executions
-    if (isSessionOpen) {
-      // TODO: handle closed connections by server
-      databricksClient.deleteSession(this.session.getSessionId());
-      this.session = null;
-      this.isSessionOpen = false;
+    synchronized (this) {
+      if (isSessionOpen) {
+        // TODO: handle closed connections by server
+        databricksClient.deleteSession(this.session.getSessionId());
+        this.session = null;
+        this.isSessionOpen = false;
+      }
     }
   }
 

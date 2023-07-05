@@ -18,6 +18,7 @@ import java.util.Properties;
 public class DatabricksSessionTest {
 
   private static final String JDBC_URL = "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;";
+  private static final String JDBC_URL_INVALID = "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehou/erg6767gg;";
   private static final String WAREHOUSE_ID = "erg6767gg";
   private static final String SESSION_ID = "session_id";
 
@@ -39,5 +40,10 @@ public class DatabricksSessionTest {
     session.close();
     assertFalse(session.isOpen());
     assertNull(session.getSessionId());
+  }
+
+  @Test
+  public void testOpenSession_invalidWarehouseUrl() {
+    assertThrows(IllegalArgumentException.class, () -> new DatabricksSession(DatabricksConnectionContext.parse(JDBC_URL_INVALID, new Properties()), new FakeDatabricksClient(statementExecutionService)));
   }
 }

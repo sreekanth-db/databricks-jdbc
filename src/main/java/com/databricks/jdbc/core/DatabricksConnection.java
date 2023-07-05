@@ -1,6 +1,6 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.jdbc.driver.DatabricksConnectionContext;
+import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 
 import java.sql.*;
 import java.util.Map;
@@ -17,7 +17,11 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   private final IDatabricksSession session;
   private final Set<IDatabricksStatement> statementSet = ConcurrentHashMap.newKeySet();
 
-  public DatabricksConnection(DatabricksConnectionContext connectionContext) {
+  /**
+   * Creates an instance of Databricks connection for given connection context.
+   * @param connectionContext underlying connection context
+   */
+  public DatabricksConnection(IDatabricksConnectionContext connectionContext) {
     this.session = new DatabricksSession(connectionContext);
   }
   @Override
@@ -94,12 +98,12 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public boolean isReadOnly() throws SQLException {
-    return false;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void setCatalog(String catalog) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -234,17 +238,17 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public boolean isValid(int timeout) throws SQLException {
-    return false;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void setClientInfo(String name, String value) throws SQLClientInfoException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void setClientInfo(Properties properties) throws SQLClientInfoException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -269,7 +273,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public void setSchema(String schema) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -279,17 +283,17 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public void abort(Executor executor) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public int getNetworkTimeout() throws SQLException {
-    return 0;
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override

@@ -37,14 +37,15 @@ class DatabricksConnectionContestTest {
   @Test
   public void testParseValid() throws Exception {
     // test provided port
-    DatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(VALID_URL_1, properties);
+    DatabricksConnectionContext connectionContext =
+        (DatabricksConnectionContext) DatabricksConnectionContext.parse(VALID_URL_1, properties);
     assertEquals("https://adb-565757575.18.azuredatabricks.net:4423", connectionContext.getHostUrl());
     assertEquals("/sql/1.0/warehouses/erg6767gg", connectionContext.getHttpPath());
     assertEquals("passwd", connectionContext.getToken());
     assertEquals(5, connectionContext.parameters.size());
 
     // test default port
-    connectionContext = DatabricksConnectionContext.parse(VALID_URL_2, properties);
+    connectionContext = (DatabricksConnectionContext) DatabricksConnectionContext.parse(VALID_URL_2, properties);
     assertEquals("https://azuredatabricks.net:443", connectionContext.getHostUrl());
     assertEquals("/sql/1.0/warehouses/fgff575757", connectionContext.getHttpPath());
     assertEquals("passwd", connectionContext.getToken());
