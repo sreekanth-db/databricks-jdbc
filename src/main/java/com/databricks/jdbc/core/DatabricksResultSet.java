@@ -14,6 +14,8 @@ import java.util.Map;
 
 public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
+  private static final String DECIMAL = ".";
+
   private final StatementStatus statementStatus;
   private final String statementId;
   private final IDBResultSet dbResultSet;
@@ -31,7 +33,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public boolean next() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return this.dbResultSet.next();
   }
 
   @Override
@@ -87,22 +89,104 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public byte getByte(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return 0;
+    }
+
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    if (obj instanceof String) {
+      String s = getNumberStringWithoutDecimal((String) obj, columnType);
+      return Byte.parseByte((String) obj);
+    }
+
+    if (columnType == Types.INTEGER
+        || columnType == Types.SMALLINT
+        || columnType == Types.TINYINT
+        || columnType == Types.BIGINT
+        || columnType == Types.BIT
+        || columnType == Types.FLOAT
+        || columnType == Types.DOUBLE
+        || columnType == Types.CHAR) {
+      return ((Number) obj).byteValue();
+    }
+
+    throw new DatabricksSQLException("Invalid byte type");
   }
 
   @Override
   public short getShort(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return 0;
+    }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    if (obj instanceof String) {
+      String s = getNumberStringWithoutDecimal((String) obj, columnType);
+      return Short.parseShort((String) obj);
+    }
+
+    if (columnType == Types.INTEGER
+        || columnType == Types.SMALLINT
+        || columnType == Types.TINYINT
+        || columnType == Types.BIGINT
+        || columnType == Types.BIT
+        || columnType == Types.FLOAT
+        || columnType == Types.DOUBLE
+        || columnType == Types.CHAR) {
+      return ((Number) obj).shortValue();
+    }
+    throw new DatabricksSQLException("Invalid byte type");
   }
 
   @Override
   public int getInt(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return 0;
+    }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    if (obj instanceof String) {
+      String s = getNumberStringWithoutDecimal((String) obj, columnType);
+      return Integer.parseInt((String) obj);
+    }
+
+    if (columnType == Types.INTEGER
+        || columnType == Types.SMALLINT
+        || columnType == Types.TINYINT
+        || columnType == Types.BIGINT
+        || columnType == Types.BIT
+        || columnType == Types.FLOAT
+        || columnType == Types.DOUBLE
+        || columnType == Types.CHAR) {
+      return ((Number) obj).intValue();
+    }
+    throw new DatabricksSQLException("Invalid byte type");
   }
 
   @Override
   public long getLong(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return 0;
+    }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    if (obj instanceof String) {
+      String s = getNumberStringWithoutDecimal((String) obj, columnType);
+      return Long.parseLong((String) obj);
+    }
+
+    if (columnType == Types.INTEGER
+        || columnType == Types.SMALLINT
+        || columnType == Types.TINYINT
+        || columnType == Types.BIGINT
+        || columnType == Types.BIT
+        || columnType == Types.FLOAT
+        || columnType == Types.DOUBLE
+        || columnType == Types.CHAR) {
+      return ((Number) obj).longValue();
+    }
+    throw new DatabricksSQLException("Invalid byte type");
   }
 
   @Override
@@ -352,7 +436,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public void setFetchDirection(int direction) throws SQLException {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -657,22 +741,22 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public Ref getRef(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getRef(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public Blob getBlob(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getBlob(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public Clob getClob(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getClob(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public Array getArray(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getArray(getColumnNameIndex(columnLabel));
   }
 
   @Override
@@ -682,7 +766,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getDate(getColumnNameIndex(columnLabel), cal);
   }
 
   @Override
@@ -692,7 +776,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public Time getTime(String columnLabel, Calendar cal) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getTime(getColumnNameIndex(columnLabel), cal);
   }
 
   @Override
@@ -1025,8 +1109,25 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     return statementStatus;
   }
 
-  private Object getObjectInternal(int columnIndex) {
+  private Object getObjectInternal(int columnIndex) throws SQLException {
+    if (columnIndex <= 0) {
+      throw new DatabricksSQLException("Invalid column index");
+    }
     // Handle null and other errors
-    return dbResultSet.getObject(columnIndex);
+    return dbResultSet.getObject(columnIndex - 1);
+  }
+
+  /**
+   * For String values, return value without decimal fraction
+   */
+  private String getNumberStringWithoutDecimal(String s, int columnType) {
+    if (s.contains(DECIMAL) && (columnType == Types.DOUBLE || columnType == Types.FLOAT)) {
+      return s.substring(0, s.indexOf(DECIMAL));
+    }
+    return s;
+  }
+
+  private int getColumnNameIndex(String columnName) {
+    return this.resultSetMetaData.getColumnNameIndex(columnName);
   }
 }

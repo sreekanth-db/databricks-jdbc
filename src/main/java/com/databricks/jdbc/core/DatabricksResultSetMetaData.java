@@ -4,6 +4,7 @@ import com.databricks.sdk.service.sql.ColumnInfo;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 import com.databricks.sdk.service.sql.ResultManifest;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -13,11 +14,14 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   private final String statementId;
   private final ImmutableList<ImmutableDatabricksColumn> columns;
+  private final ImmutableMap<String, Integer> columnNameIndex;
 
   public DatabricksResultSetMetaData(String statementId, ResultManifest resultManifest) {
     this.statementId = statementId;
 
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
+    ImmutableMap.Builder<String, Integer> columnIndexBuilder = ImmutableMap.builder();
+    int currIndex = 0;
     for (ColumnInfo columnInfo: resultManifest.getSchema().getColumns()) {
       ImmutableDatabricksColumn column = ImmutableDatabricksColumn.builder()
           .columnName(columnInfo.getName())
@@ -26,8 +30,11 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
           .typePrecision(columnInfo.getTypePrecision().intValue())
           .build();
       columnsBuilder.add(column);
+      // Keep index starting from 1, to be consistent with JDBC convention
+      columnIndexBuilder.put(columnInfo.getName(), ++currIndex);
     }
     this.columns = columnsBuilder.build();
+    this.columnNameIndex = columnIndexBuilder.build();
   }
 
   @Override
@@ -190,5 +197,14 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     } else {
       throw new IllegalStateException("Invalid column index: " + columnIndex);
     }
+  }
+
+  /**
+   * Returns index of column-name in metadata starting from 1
+   * @param columnName column-name
+   * @return index of column if exists, else -1
+   */
+  public int getColumnNameIndex(String columnName) {
+    return columnNameIndex.getOrDefault(columnName, -1);
   }
 }
