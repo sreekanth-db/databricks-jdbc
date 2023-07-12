@@ -6,6 +6,7 @@ final class DatabricksJdbcConstants {
 
   static final Pattern JDBC_URL_PATTERN = Pattern.compile("jdbc:databricks:\\/\\/([^/]*)(?::\\d+)?\\/(.*)");
   static final Pattern HTTP_PATH_PATTERN = Pattern.compile(".*\\/warehouses\\/(.*)");
+  static final Pattern HTTP_PATH_SQL_PATTERN = Pattern.compile("sql\\/(.*)");
   static final String JDBC_SCHEMA = "jdbc:databricks://";
   static final String URL_DELIMITER = ";";
   static final String PORT_DELIMITER = ":";

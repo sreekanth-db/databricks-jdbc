@@ -93,7 +93,12 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     if (urlMatcher.find()) {
       warehouseId = urlMatcher.group(1);
     } else {
-      throw new IllegalArgumentException("Invalid httpPath " + httpPath);
+      Matcher sqlUrlMatcher = DatabricksJdbcConstants.HTTP_PATH_SQL_PATTERN.matcher(httpPath);
+      if (sqlUrlMatcher.matches()) {
+        warehouseId = httpPath.substring(httpPath.lastIndexOf('/') +1);
+      } else {
+        throw new IllegalArgumentException("Invalid httpPath " + httpPath);
+      }
     }
     return warehouseId;
   }

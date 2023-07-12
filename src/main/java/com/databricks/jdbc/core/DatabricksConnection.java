@@ -88,7 +88,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public DatabaseMetaData getMetaData() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return new DatabricksDatabaseMetadata(this);
   }
 
   @Override
