@@ -18,22 +18,20 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   private final StatementStatus statementStatus;
   private final String statementId;
-  private final IDBResultSet dbResultSet;
-  private final ResultManifest resultManifest;
+  private final IExecutionResult executionResult;
   private final DatabricksResultSetMetaData resultSetMetaData;
 
   public DatabricksResultSet(
       StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest) {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
-    this.dbResultSet = DBExecutionResultFactory.getResultSet(resultData, resultManifest);
-    this.resultManifest = resultManifest;
+    this.executionResult = DBExecutionResultFactory.getResultSet(resultData, resultManifest);
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, resultManifest);
   }
 
   @Override
   public boolean next() throws SQLException {
-    return this.dbResultSet.next();
+    return this.executionResult.next();
   }
 
   @Override
@@ -1114,7 +1112,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
       throw new DatabricksSQLException("Invalid column index");
     }
     // Handle null and other errors
-    return dbResultSet.getObject(columnIndex - 1);
+    return executionResult.getObject(columnIndex - 1);
   }
 
   /**
