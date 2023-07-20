@@ -9,14 +9,14 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
-public class DBInlineJsonResult implements IExecutionResult {
+public class InlineJsonResult implements IExecutionResult {
 
   private int currentRow;
   private List<List<String>> data;
   private ResultManifest resultManifest;
   private ResultData resultData;
 
-  DBInlineJsonResult(ResultManifest resultManifest, ResultData resultData) {
+  InlineJsonResult(ResultManifest resultManifest, ResultData resultData) {
     this.resultManifest = resultManifest;
     this.resultData = resultData;
     this.data = getDataList(resultData.getDataArray());

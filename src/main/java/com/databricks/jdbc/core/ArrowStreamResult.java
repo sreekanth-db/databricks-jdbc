@@ -5,8 +5,8 @@ import com.databricks.sdk.service.sql.ResultManifest;
 
 import java.sql.SQLException;
 
-class DBArrowStreamResult implements IExecutionResult {
-  DBArrowStreamResult(ResultManifest resultManifest, ResultData resultData) {
+class ArrowStreamResult implements IExecutionResult {
+  ArrowStreamResult(ResultManifest resultManifest, ResultData resultData) {
     // TODO: Add impl
   }
 

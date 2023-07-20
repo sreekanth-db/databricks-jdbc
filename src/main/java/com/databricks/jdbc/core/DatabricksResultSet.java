@@ -25,7 +25,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
       StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest) {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
-    this.executionResult = DBExecutionResultFactory.getResultSet(resultData, resultManifest);
+    this.executionResult = ExecutionResultFactory.getResultSet(resultData, resultManifest);
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, resultManifest);
   }
 
