@@ -31,7 +31,7 @@ public class DatabricksSdkClient implements DatabricksClient {
   @Override
   public Session createSession(String warehouseId) {
     CreateSessionRequest createSessionRequest = new CreateSessionRequest()
-        .setSession(new Session().setWarehouseId(warehouseId));
+        .setWarehouseId(warehouseId);
     return workspaceClient.statementExecution().createSession(createSessionRequest);
   }
 

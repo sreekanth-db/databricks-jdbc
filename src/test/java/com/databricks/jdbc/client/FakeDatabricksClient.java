@@ -14,7 +14,7 @@ public class FakeDatabricksClient implements DatabricksClient {
   @Override
   public Session createSession(String warehouseId) {
     return statementExecutionService.createSession(
-        new CreateSessionRequest().setSession(new Session().setWarehouseId(warehouseId)));
+        new CreateSessionRequest().setWarehouseId(warehouseId));
   }
 
   @Override

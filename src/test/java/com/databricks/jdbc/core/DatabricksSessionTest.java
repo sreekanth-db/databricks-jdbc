@@ -29,7 +29,7 @@ public class DatabricksSessionTest {
   public void testOpenSession() {
     DatabricksSession session = new DatabricksSession(DatabricksConnectionContext.parse(JDBC_URL, new Properties()), new FakeDatabricksClient(statementExecutionService));
 
-    CreateSessionRequest createSessionRequest = new CreateSessionRequest().setSession(new Session().setWarehouseId(WAREHOUSE_ID));
+    CreateSessionRequest createSessionRequest = new CreateSessionRequest().setWarehouseId(WAREHOUSE_ID);
     when(statementExecutionService.createSession(createSessionRequest)).thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
 
     assertFalse(session.isOpen());
