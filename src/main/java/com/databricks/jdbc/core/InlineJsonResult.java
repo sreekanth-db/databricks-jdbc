@@ -12,9 +12,9 @@ import java.util.List;
 public class InlineJsonResult implements IExecutionResult {
 
   private int currentRow;
-  private List<List<String>> data;
-  private ResultManifest resultManifest;
-  private ResultData resultData;
+  private final List<List<String>> data;
+  private final ResultManifest resultManifest;
+  private final ResultData resultData;
 
   InlineJsonResult(ResultManifest resultManifest, ResultData resultData) {
     this.resultManifest = resultManifest;
@@ -32,12 +32,12 @@ public class InlineJsonResult implements IExecutionResult {
     if (columnIndex < data.get(currentRow).size()) {
       return data.get(currentRow).get(columnIndex);
     }
-    throw new DatabricksSQLException("Column index out of bounds " + (columnIndex -1));
+    throw new DatabricksSQLException("Column index out of bounds " + columnIndex);
   }
 
   @Override
   public synchronized int getCurrentRow() {
-    return currentRow + 1;
+    return currentRow;
   }
 
   @Override

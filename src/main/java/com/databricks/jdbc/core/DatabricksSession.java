@@ -1,11 +1,8 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksClient;
-import com.databricks.jdbc.client.DatabricksSdkClient;
-import com.databricks.jdbc.driver.DatabricksConnectionContext;
-import com.databricks.sdk.service.sql.CreateSessionRequest;
+import com.databricks.jdbc.client.impl.DatabricksSdkClient;
 import com.databricks.sdk.service.sql.Session;
-import com.databricks.sdk.service.sql.StatementExecutionService;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.google.common.annotations.VisibleForTesting;
 

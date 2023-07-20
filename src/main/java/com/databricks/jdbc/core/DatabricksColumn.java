@@ -20,5 +20,8 @@ public interface DatabricksColumn {
    */
   String columnTypeText();
 
+  /**
+   * Precision is the maximum number of significant digits that can be stored in a column. For string, it's 255.
+   */
   int typePrecision();
 }

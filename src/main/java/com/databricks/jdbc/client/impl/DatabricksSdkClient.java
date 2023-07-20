@@ -1,5 +1,6 @@
-package com.databricks.jdbc.client;
+package com.databricks.jdbc.client.impl;
 
+import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.IDatabricksResultSet;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
@@ -21,9 +22,9 @@ public class DatabricksSdkClient implements DatabricksClient {
   public DatabricksSdkClient(IDatabricksConnectionContext connectionContext) {
     this.connectionContext = connectionContext;
     // Handle more auth types
-    this.databricksConfig = new DatabricksConfig();
-    databricksConfig.setHost(connectionContext.getHostUrl());
-    databricksConfig.setToken(connectionContext.getToken());
+    this.databricksConfig = new DatabricksConfig()
+        .setHost(connectionContext.getHostUrl())
+        .setToken(connectionContext.getToken());
 
     this.workspaceClient = new WorkspaceClient(databricksConfig);
   }
