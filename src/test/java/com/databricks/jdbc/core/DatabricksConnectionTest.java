@@ -1,12 +1,10 @@
-package com.databricks.sql.client.jdbc;
+package com.databricks.jdbc.core;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Properties;
 
-import com.databricks.sql.client.core.DatabricksConnection;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeAll;
+import com.databricks.jdbc.driver.DatabricksConnectionContext;
 
 public class DatabricksConnectionTest {
 

@@ -1,15 +1,13 @@
-package com.databricks.sql.client.core;
+package com.databricks.jdbc.core;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.databricks.sdk.WorkspaceClient;
+import com.databricks.jdbc.client.FakeDatabricksClient;
 import com.databricks.sdk.service.sql.*;
-import com.databricks.sql.client.jdbc.DatabricksConnectionContext;
-import org.junit.jupiter.api.BeforeEach;
+import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -29,9 +27,9 @@ public class DatabricksSessionTest {
 
   @Test
   public void testOpenSession() {
-    DatabricksSession session = new DatabricksSession(DatabricksConnectionContext.parse(JDBC_URL, new Properties()), statementExecutionService);
+    DatabricksSession session = new DatabricksSession(DatabricksConnectionContext.parse(JDBC_URL, new Properties()), new FakeDatabricksClient(statementExecutionService));
 
-    CreateSessionRequest createSessionRequest = new CreateSessionRequest().setSession(new Session().setWarehouseId(WAREHOUSE_ID));
+    CreateSessionRequest createSessionRequest = new CreateSessionRequest().setWarehouseId(WAREHOUSE_ID);
     when(statementExecutionService.createSession(createSessionRequest)).thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
 
     assertFalse(session.isOpen());
@@ -46,6 +44,6 @@ public class DatabricksSessionTest {
 
   @Test
   public void testOpenSession_invalidWarehouseUrl() {
-    assertThrows(IllegalArgumentException.class, () -> new DatabricksSession(DatabricksConnectionContext.parse(JDBC_URL_INVALID, new Properties()), statementExecutionService));
+    assertThrows(IllegalArgumentException.class, () -> new DatabricksSession(DatabricksConnectionContext.parse(JDBC_URL_INVALID, new Properties()), new FakeDatabricksClient(statementExecutionService)));
   }
 }

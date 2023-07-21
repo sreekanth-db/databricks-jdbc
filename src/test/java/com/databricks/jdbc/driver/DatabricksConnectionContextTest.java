@@ -1,4 +1,4 @@
-package com.databricks.sql.client.jdbc;
+package com.databricks.jdbc.driver;
 
 import static org.junit.jupiter.api.Assertions.*;
 

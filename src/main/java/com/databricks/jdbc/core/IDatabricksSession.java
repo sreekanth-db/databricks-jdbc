@@ -1,4 +1,6 @@
-package com.databricks.sql.client.core;
+package com.databricks.jdbc.core;
+
+import com.databricks.jdbc.client.DatabricksClient;
 
 import javax.annotation.Nullable;
 
@@ -15,6 +17,12 @@ public interface IDatabricksSession {
   String getSessionId();
 
   /**
+   * Get the warehouse associated with the session.
+   * @return warehouse-Id
+   */
+  String getWarehouseId();
+
+  /**
    * Checks if session is open and valid.
    * @return true if session is open
    */
@@ -29,4 +37,10 @@ public interface IDatabricksSession {
    * Closes the session.
    */
   void close();
+
+  /**
+   * Returns the client for connecting to Databricks server
+   * @return
+   */
+  DatabricksClient getDatabricksClient();
 }
