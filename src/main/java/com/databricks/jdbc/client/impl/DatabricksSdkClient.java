@@ -2,11 +2,15 @@ package com.databricks.jdbc.client.impl;
 
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.core.DatabricksResultSet;
+import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.core.IDatabricksResultSet;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.*;
+import com.google.common.annotations.VisibleForTesting;
+
+import java.sql.SQLException;
 
 /**
  * Implementation of DatabricksClient interface using Databricks Java SDK.
@@ -14,6 +18,7 @@ import com.databricks.sdk.service.sql.*;
 public class DatabricksSdkClient implements DatabricksClient {
 
   private static final String ASYNC_TIMEOUT_VALUE = "0s";
+  private static final int STATEMENT_RESULT_POLL_INTERVAL_MILLIS = 200;
 
   private final IDatabricksConnectionContext connectionContext;
   private final DatabricksConfig databricksConfig;
@@ -29,6 +34,17 @@ public class DatabricksSdkClient implements DatabricksClient {
     this.workspaceClient = new WorkspaceClient(databricksConfig);
   }
 
+  @VisibleForTesting
+  public DatabricksSdkClient(IDatabricksConnectionContext connectionContext, StatementExecutionService statementExecutionService) {
+    this.connectionContext = connectionContext;
+    // Handle more auth types
+    this.databricksConfig = new DatabricksConfig()
+        .setHost(connectionContext.getHostUrl())
+        .setToken(connectionContext.getToken());
+
+    this.workspaceClient = new WorkspaceClient(true).withStatementExecutionImpl(statementExecutionService);
+  }
+
   @Override
   public Session createSession(String warehouseId) {
     CreateSessionRequest createSessionRequest = new CreateSessionRequest()
@@ -42,7 +58,7 @@ public class DatabricksSdkClient implements DatabricksClient {
   }
 
   @Override
-  public DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId) {
+  public DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId) throws SQLException {
     // TODO: change disposition and format, and handle pending result
     ExecuteStatementRequest request = new ExecuteStatementRequest()
         .setStatement(statement)
@@ -59,6 +75,10 @@ public class DatabricksSdkClient implements DatabricksClient {
       return new DatabricksResultSet(response.getStatus(), statementId, response.getResult(),
           response.getManifest());
     }
+
+    handleFailedExecution(responseState, statementId);
+
+    // TODO: Add timeout
     while (responseState.equals(StatementState.PENDING) || responseState.equals(StatementState.RUNNING)) {
       GetStatementResponse getStatementResponse = workspaceClient.statementExecution().getStatement(statementId);
       responseState = getStatementResponse.getStatus().getState();
@@ -67,14 +87,32 @@ public class DatabricksSdkClient implements DatabricksClient {
             getStatementResponse.getManifest());
       }
 
+      handleFailedExecution(responseState, statementId);
+
+      try {
+        // TODO: make this configurable
+        Thread.sleep(STATEMENT_RESULT_POLL_INTERVAL_MILLIS);
+      } catch (InterruptedException e) {
+        // TODO: Handle gracefully
+        throw new DatabricksSQLException("Statement execution fetch interrupted");
+      }
     }
-
-
-
+    // should not reach here, add better handling
+    throw new RuntimeException("Unreachable code");
   }
 
   @Override
   public void closeStatement(String statementId) {
     workspaceClient.statementExecution().closeStatement(statementId);
+  }
+
+  private void handleFailedExecution(StatementState statementState, String statementId) throws SQLException {
+    switch (statementState) {
+      case FAILED:
+      case CLOSED:
+      case CANCELED:
+        // TODO: Handle differently for failed, closed and cancelled with proper error codes
+        throw new DatabricksSQLException("Statement execution failed " + statementId);
+    }
   }
 }

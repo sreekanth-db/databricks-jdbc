@@ -6,6 +6,8 @@ import com.databricks.sdk.service.sql.ExecuteStatementRequest;
 import com.databricks.sdk.service.sql.ExecuteStatementResponse;
 import com.databricks.sdk.service.sql.Session;
 
+import java.sql.SQLException;
+
 /**
  * Interface for Databricks client which abstracts the integration with Databricks server.
  */
@@ -31,7 +33,7 @@ public interface DatabricksClient {
    * @param warehouseId warehouse-Id which should be used for statement execution
    * @return response for statement execution
    */
-  DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId);
+  DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId) throws SQLException;
 
   /**
    * Closes a statement in Databricks server

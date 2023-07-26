@@ -3,6 +3,8 @@ package com.databricks.jdbc.client;
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.sdk.service.sql.*;
 
+import java.sql.SQLException;
+
 public class FakeDatabricksClient implements DatabricksClient {
 
   private final StatementExecutionService statementExecutionService;
@@ -23,7 +25,7 @@ public class FakeDatabricksClient implements DatabricksClient {
   }
 
   @Override
-  public DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId) {
+  public DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId) throws SQLException {
     return null;
   }
 

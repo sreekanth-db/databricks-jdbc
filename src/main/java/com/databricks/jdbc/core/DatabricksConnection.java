@@ -1,6 +1,8 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.google.common.annotations.VisibleForTesting;
 
 import java.sql.*;
 import java.util.Map;
@@ -23,6 +25,12 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
    */
   public DatabricksConnection(IDatabricksConnectionContext connectionContext) {
     this.session = new DatabricksSession(connectionContext);
+    this.session.open();
+  }
+
+  @VisibleForTesting
+  DatabricksConnection(IDatabricksConnectionContext connectionContext, DatabricksClient databricksClient) {
+    this.session = new DatabricksSession(connectionContext, databricksClient);
     this.session.open();
   }
   @Override
