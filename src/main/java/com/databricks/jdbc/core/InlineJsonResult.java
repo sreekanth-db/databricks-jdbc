@@ -49,9 +49,4 @@ public class InlineJsonResult implements IExecutionResult {
     }
     return false;
   }
-
-  @Override
-  public synchronized boolean previous() {
-    throw new UnsupportedOperationException("Not implemented");
-  }
 }

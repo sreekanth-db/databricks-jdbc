@@ -47,14 +47,30 @@ public class DatabricksSdkClient implements DatabricksClient {
     ExecuteStatementRequest request = new ExecuteStatementRequest()
         .setStatement(statement)
         .setWarehouseId(warehouseId)
-        .setDisposition(Disposition.INLINE)
-        .setFormat(Format.JSON_ARRAY)
+        .setDisposition(Disposition.EXTERNAL_LINKS)
+        .setFormat(Format.ARROW_STREAM)
         .setWaitTimeout(ASYNC_TIMEOUT_VALUE)
         .setSessionId(sessionId);
-    ExecuteStatementResponse response = workspaceClient.statementExecution().executeStatement(request);
 
-    return new DatabricksResultSet(response.getStatus(), response.getStatementId(), response.getResult(),
-        response.getManifest());
+    ExecuteStatementResponse response = workspaceClient.statementExecution().executeStatement(request);
+    String statementId = response.getStatementId();
+    StatementState responseState = response.getStatus().getState();
+    if (responseState.equals(StatementState.SUCCEEDED)) {
+      return new DatabricksResultSet(response.getStatus(), statementId, response.getResult(),
+          response.getManifest());
+    }
+    while (responseState.equals(StatementState.PENDING) || responseState.equals(StatementState.RUNNING)) {
+      GetStatementResponse getStatementResponse = workspaceClient.statementExecution().getStatement(statementId);
+      responseState = getStatementResponse.getStatus().getState();
+      if (responseState.equals(StatementState.SUCCEEDED)) {
+        return new DatabricksResultSet(getStatementResponse.getStatus(), statementId, getStatementResponse.getResult(),
+            getStatementResponse.getManifest());
+      }
+
+    }
+
+
+
   }
 
   @Override

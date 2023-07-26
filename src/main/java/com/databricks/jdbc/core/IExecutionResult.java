@@ -26,11 +26,4 @@ interface IExecutionResult {
    * @return true if cursor is moved at next row
    */
   boolean next();
-
-
-  /**
-   * Moves the cursor to previous row and returns true if this can be done
-   * @return true if cursor is moved at previous row
-   */
-  boolean previous();
 }

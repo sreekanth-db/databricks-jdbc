@@ -23,6 +23,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
    */
   public DatabricksConnection(IDatabricksConnectionContext connectionContext) {
     this.session = new DatabricksSession(connectionContext);
+    this.session.open();
   }
   @Override
   public IDatabricksSession getSession() {
