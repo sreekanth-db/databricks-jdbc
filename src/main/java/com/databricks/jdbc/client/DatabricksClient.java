@@ -2,6 +2,7 @@ package com.databricks.jdbc.client;
 
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.IDatabricksResultSet;
+import com.databricks.jdbc.core.IDatabricksSession;
 import com.databricks.sdk.service.sql.ExecuteStatementRequest;
 import com.databricks.sdk.service.sql.ExecuteStatementResponse;
 import com.databricks.sdk.service.sql.Session;
@@ -29,11 +30,12 @@ public interface DatabricksClient {
   /**
    * Executes a statement in Databricks server
    * @param statement SQL statement that needs to be executed
-   * @param sessionId underlying session-Id
    * @param warehouseId warehouse-Id which should be used for statement execution
+   * @param session underlying session
    * @return response for statement execution
    */
-  DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId) throws SQLException;
+  DatabricksResultSet executeStatement(String statement, String warehouseId, IDatabricksSession session)
+      throws SQLException;
 
   /**
    * Closes a statement in Databricks server

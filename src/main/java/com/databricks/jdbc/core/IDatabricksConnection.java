@@ -1,5 +1,7 @@
 package com.databricks.jdbc.core;
 
+import java.util.concurrent.ExecutorService;
+
 /**
  * Interface providing Databricks specific Connection APIs.
  */

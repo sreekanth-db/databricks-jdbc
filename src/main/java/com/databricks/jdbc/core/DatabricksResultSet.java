@@ -22,10 +22,10 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   private final DatabricksResultSetMetaData resultSetMetaData;
 
   public DatabricksResultSet(
-      StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest) {
+      StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest, IDatabricksSession session) {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
-    this.executionResult = ExecutionResultFactory.getResultSet(resultData, resultManifest);
+    this.executionResult = ExecutionResultFactory.getResultSet(resultData, resultManifest, session);
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, resultManifest);
   }
 

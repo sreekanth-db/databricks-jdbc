@@ -4,6 +4,7 @@ import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.core.IDatabricksResultSet;
+import com.databricks.jdbc.core.IDatabricksSession;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
@@ -58,7 +59,8 @@ public class DatabricksSdkClient implements DatabricksClient {
   }
 
   @Override
-  public DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId) throws SQLException {
+  public DatabricksResultSet executeStatement(String statement, String warehouseId, IDatabricksSession session)
+      throws SQLException {
     // TODO: change disposition and format, and handle pending result
     ExecuteStatementRequest request = new ExecuteStatementRequest()
         .setStatement(statement)
@@ -66,14 +68,14 @@ public class DatabricksSdkClient implements DatabricksClient {
         .setDisposition(Disposition.EXTERNAL_LINKS)
         .setFormat(Format.ARROW_STREAM)
         .setWaitTimeout(ASYNC_TIMEOUT_VALUE)
-        .setSessionId(sessionId);
+        .setSessionId(session.getSessionId());
 
     ExecuteStatementResponse response = workspaceClient.statementExecution().executeStatement(request);
     String statementId = response.getStatementId();
     StatementState responseState = response.getStatus().getState();
     if (responseState.equals(StatementState.SUCCEEDED)) {
       return new DatabricksResultSet(response.getStatus(), statementId, response.getResult(),
-          response.getManifest());
+          response.getManifest(), session);
     }
 
     handleFailedExecution(responseState, statementId);

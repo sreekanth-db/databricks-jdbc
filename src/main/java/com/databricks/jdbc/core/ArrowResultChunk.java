@@ -1,6 +1,10 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.sdk.service.sql.ChunkInfo;
+import com.databricks.sdk.service.sql.ExternalLink;
+
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 
 public class ArrowResultChunk {
 
@@ -42,11 +46,13 @@ public class ArrowResultChunk {
   }
 
   private final long chunkIndex;
-  private final long nextChunkIndex;
-  private long numRows;
-  private long rowOffset;
+  private final long numRows;
+  private final long rowOffset;
+  private final long byteCount;
 
   private String chunkUrl;
+  private Long nextChunkIndex;
+  private Instant expiryTime;
   private DownloadStatus status;
 
   ArrowResultChunk(ChunkInfo chunkInfo) {
@@ -54,15 +60,24 @@ public class ArrowResultChunk {
     this.numRows = chunkInfo.getRowCount();
     this.rowOffset = chunkInfo.getRowOffset();
     this.nextChunkIndex = chunkInfo.getNextChunkIndex();
+    this.byteCount = chunkInfo.getByteCount();
     this.status = DownloadStatus.PENDING;
+    this.chunkUrl = null;
   }
 
-  void setChunkUrl(String chunkUrl) {
-    this.chunkUrl = chunkUrl;
+  void setChunkUrl(ExternalLink chunk) {
+    this.chunkUrl = chunk.getExternalLink();
+    this.nextChunkIndex = chunk.getNextChunkIndex();
+    this.expiryTime = Instant.parse(chunk.getExpiration());
+    this.status = DownloadStatus.URL_FETCHED;
   }
 
   void setStatus(DownloadStatus status) {
     this.status = status;
+  }
+
+  boolean isChunkLinkExpired() {
+    return expiryTime != null && expiryTime.isAfter(Instant.now());
   }
 
   DownloadStatus getStatus() {
