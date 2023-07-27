@@ -20,6 +20,8 @@ public class ArrowResultChunk {
    * ->
    */
   enum DownloadStatus {
+    // Default status, though for the ArrowChunk, it should be initialized with Pending state
+    UNKNOWN,
     // This is a placeholder for chunk, we don't even have the Url
     PENDING,
     // We have the Url for the chunk, and it is ready for download

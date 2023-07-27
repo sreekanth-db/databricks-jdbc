@@ -2,6 +2,7 @@ package com.databricks.jdbc.core;
 
 import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
+import com.databricks.sdk.service.sql.StatementState;
 import com.databricks.sdk.service.sql.StatementStatus;
 
 import java.io.InputStream;
@@ -16,14 +17,14 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   private static final String DECIMAL = ".";
 
-  private final StatementStatus statementStatus;
+  private final StatementState statementState;
   private final String statementId;
   private final IExecutionResult executionResult;
   private final DatabricksResultSetMetaData resultSetMetaData;
 
   public DatabricksResultSet(
-      StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest) {
-    this.statementStatus = statementStatus;
+      StatementState statementState, String statementId, ResultData resultData, ResultManifest resultManifest) {
+    this.statementState = statementState;
     this.statementId = statementId;
     this.executionResult = ExecutionResultFactory.getResultSet(resultData, resultManifest);
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, resultManifest);
