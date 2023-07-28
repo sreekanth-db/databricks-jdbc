@@ -17,14 +17,14 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   private static final String DECIMAL = ".";
 
-  private final StatementState statementState;
+  private final StatementStatus statementStatus;
   private final String statementId;
   private final IExecutionResult executionResult;
   private final DatabricksResultSetMetaData resultSetMetaData;
 
   public DatabricksResultSet(
-      StatementState statementState, String statementId, ResultData resultData, ResultManifest resultManifest) {
-    this.statementState = statementState;
+      StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest) {
+    this.statementStatus = statementStatus;
     this.statementId = statementId;
     this.executionResult = ExecutionResultFactory.getResultSet(resultData, resultManifest);
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, resultManifest);

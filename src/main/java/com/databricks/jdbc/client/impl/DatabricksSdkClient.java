@@ -69,12 +69,13 @@ public class DatabricksSdkClient implements DatabricksClient {
 
     ExecuteStatementResponse response = workspaceClient.statementExecution().executeStatement(request);
     String statementId = response.getStatementId();
-    StatementState responseState = response.getStatus().getState();
-    ResultManifest resultManifest = responseState == StatementState.SUCCEEDED ? response.getManifest() : null;
-    ResultData resultData = responseState == StatementState.SUCCEEDED ? response.getResult() : null;
+    StatementStatus responseStatus = response.getStatus();
+    ResultManifest resultManifest =
+        responseStatus.getState() == StatementState.SUCCEEDED ? response.getManifest() : null;
+    ResultData resultData = responseStatus.getState() == StatementState.SUCCEEDED ? response.getResult() : null;
 
     // TODO: Add timeout
-    while (responseState == StatementState.PENDING || responseState == StatementState.RUNNING) {
+    while (responseStatus.getState() == StatementState.PENDING || responseStatus.getState() == StatementState.RUNNING) {
       try {
         // TODO: make this configurable
         Thread.sleep(STATEMENT_RESULT_POLL_INTERVAL_MILLIS);
@@ -83,18 +84,18 @@ public class DatabricksSdkClient implements DatabricksClient {
         throw new DatabricksSQLException("Statement execution fetch interrupted");
       }
       GetStatementResponse getStatementResponse = workspaceClient.statementExecution().getStatement(statementId);
-      responseState = getStatementResponse.getStatus().getState();
+      responseStatus = getStatementResponse.getStatus();
 
-      if (responseState == StatementState.SUCCEEDED) {
+      if (responseStatus.getState() == StatementState.SUCCEEDED) {
         resultManifest = getStatementResponse.getManifest();
         resultData = getStatementResponse.getResult();
       }
     }
-    if (responseState != StatementState.SUCCEEDED) {
-      handleFailedExecution(responseState, statementId);
+    if (responseStatus.getState() != StatementState.SUCCEEDED) {
+      handleFailedExecution(responseStatus.getState(), statementId);
     }
 
-    return new DatabricksResultSet(responseState, statementId, resultData,
+    return new DatabricksResultSet(responseStatus, statementId, resultData,
           resultManifest);
   }
 
