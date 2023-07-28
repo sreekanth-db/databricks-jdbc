@@ -20,12 +20,13 @@ class ArrowStreamResult implements IExecutionResult {
   private int currentRowIndex;
   private int currentChunkIndex;
 
-  ArrowStreamResult(ResultManifest resultManifest, ResultData resultData, IDatabricksSession session) {
+  ArrowStreamResult(ResultManifest resultManifest, ResultData resultData, String statementId,
+                    IDatabricksSession session) {
     this.totalRows = resultManifest.getTotalRowCount();
     this.totalChunks = resultManifest.getTotalChunkCount();
     this.rowOffsetToChunkMap = getRowOffsetMap(resultManifest);
     this.session = session;
-    this.chunkDownloader = new ChunkDownloader(resultManifest, resultData);
+    this.chunkDownloader = new ChunkDownloader(statementId, resultManifest, resultData, session);
   }
 
   private static ImmutableMap<Long, ChunkInfo> getRowOffsetMap(ResultManifest resultManifest) {
@@ -35,14 +36,7 @@ class ArrowStreamResult implements IExecutionResult {
     }
     return rowOffsetMapBuilder.build();
   }
-
-  private void initChunkDownloader(ResultData resultData) {
-    for (ExternalLink link: resultData.getExternalLinks()) {
-      link.
-    }
-    this.chunkDownloader
-  }
-
+  
   @Override
   public Object getObject(int columnIndex) throws SQLException {
     throw new UnsupportedOperationException("Not implemented");

@@ -83,4 +83,13 @@ public class ArrowResultChunk {
   DownloadStatus getStatus() {
     return this.status;
   }
+
+  long getNextChunkIndex() {
+    // This should never be called for pending state
+    if (status == DownloadStatus.PENDING) {
+      // TODO: log this
+      throw new IllegalStateException("Next index called for pending state chunk");
+    }
+    return this.nextChunkIndex;
+  }
 }

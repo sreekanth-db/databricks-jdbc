@@ -12,6 +12,7 @@ import com.databricks.sdk.service.sql.*;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.sql.SQLException;
+import java.util.Optional;
 
 /**
  * Implementation of DatabricksClient interface using Databricks Java SDK.
@@ -106,6 +107,11 @@ public class DatabricksSdkClient implements DatabricksClient {
   @Override
   public void closeStatement(String statementId) {
     workspaceClient.statementExecution().closeStatement(statementId);
+  }
+
+  @Override
+  public Optional<ExternalLink> getResultChunk(String statementId, long chunkIndex) {
+    return workspaceClient.statementExecution().getStatementResultChunkN(statementId, chunkIndex).getExternalLinks().stream().findFirst();
   }
 
   private void handleFailedExecution(StatementState statementState, String statementId) throws SQLException {

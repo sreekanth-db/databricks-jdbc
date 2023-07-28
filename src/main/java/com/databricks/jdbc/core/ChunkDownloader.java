@@ -14,6 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 public class ChunkDownloader {
+
+  private final IDatabricksSession session;
+  private final String statementId;
   private final long totalChunks;
   private long currentChunk;
   private long chunkLinkDownloadedOffset;
@@ -22,10 +25,14 @@ public class ChunkDownloader {
 
   ConcurrentHashMap<Long, ArrowResultChunk> chunkIndexToChunksMap;
 
-  ChunkDownloader(ResultManifest resultManifest, ResultData resultData) {
+  ChunkDownloader(String statementId, ResultManifest resultManifest, ResultData resultData, IDatabricksSession session) {
+    this.session = session;
+    this.statementId = statementId;
     this.totalChunks = resultManifest.getTotalChunkCount();
     this.chunkIndexToChunksMap = initializeChunksMap(resultManifest, resultData);
-    this.chunkLinkDownloadedOffset = resultData.getExternalLinks().size();
+    // We are assuming the all links provided are in sequence. Currently, it only returns the
+    // first chunk link, and next links need to be fetched sequentially using a separate API
+    this.chunkLinkDownloadedOffset = resultData.getExternalLinks().size() -1;
   }
 
   private static ConcurrentHashMap<Long, ArrowResultChunk> initializeChunksMap(ResultManifest resultManifest, ResultData resultData) {
@@ -51,7 +58,20 @@ public class ChunkDownloader {
   }
 
   public void initLinksDownload(ExecutorService executorService) {
-    while ()
+    if (chunkLinkDownloadedOffset < totalChunks) {
+      executorService.submit(
+          () -> {
+            while (chunkLinkDownloadedOffset < totalChunks) {
+              // We have downloaded till offset -1, and offset needs to be downloaded
+              long nextChunkIndex = chunkIndexToChunksMap.get(chunkDownloadedOffset -1).getNextChunkIndex();
+
+              // TODO: handle failures
+              ExternalLink chunk = session.getDatabricksClient().getResultChunk(statementId, nextChunkIndex).get();
+              chunkIndexToChunksMap.get(chunk.getChunkIndex()).setChunkUrl(chunk);
+              chunkLinkDownloadedOffset++;
+            }
+          });
+    }
   }
 
   /**
