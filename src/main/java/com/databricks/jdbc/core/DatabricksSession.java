@@ -60,14 +60,7 @@ public class DatabricksSession implements IDatabricksSession {
           public Thread newThread(final Runnable r) {
             final Thread thread = new Thread(r);
             thread.setName(LINKS_FETCHER_THREAD_POOL_PREFIX + threadCount++);
-
-            thread.setUncaughtExceptionHandler(
-                new Thread.UncaughtExceptionHandler() {
-                  public void uncaughtException(Thread t, Throwable e) {
-                    logger.error("uncaughtException in thread: " + t + " {}", e);
-                  }
-                });
-
+            // TODO: catch uncaught exceptions
             thread.setDaemon(true);
 
             return thread;

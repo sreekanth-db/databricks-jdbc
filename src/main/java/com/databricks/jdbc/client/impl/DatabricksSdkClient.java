@@ -9,7 +9,6 @@ import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.*;
-import com.google.common.annotations.VisibleForTesting;
 
 import java.sql.SQLException;
 import java.util.Optional;
@@ -36,8 +35,8 @@ public class DatabricksSdkClient implements DatabricksClient {
     this.workspaceClient = new WorkspaceClient(databricksConfig);
   }
 
-  @VisibleForTesting
-  public DatabricksSdkClient(IDatabricksConnectionContext connectionContext, StatementExecutionService statementExecutionService) {
+  public DatabricksSdkClient(IDatabricksConnectionContext connectionContext,
+                             StatementExecutionService statementExecutionService) {
     this.connectionContext = connectionContext;
     // Handle more auth types
     this.databricksConfig = new DatabricksConfig()
@@ -74,24 +73,9 @@ public class DatabricksSdkClient implements DatabricksClient {
     ExecuteStatementResponse response = workspaceClient.statementExecution().executeStatement(request);
     String statementId = response.getStatementId();
     StatementState responseState = response.getStatus().getState();
-    if (responseState.equals(StatementState.SUCCEEDED)) {
-      return new DatabricksResultSet(response.getStatus(), statementId, response.getResult(),
-          response.getManifest(), session);
-    }
-
-    handleFailedExecution(responseState, statementId);
 
     // TODO: Add timeout
-    while (responseState.equals(StatementState.PENDING) || responseState.equals(StatementState.RUNNING)) {
-      GetStatementResponse getStatementResponse = workspaceClient.statementExecution().getStatement(statementId);
-      responseState = getStatementResponse.getStatus().getState();
-      if (responseState.equals(StatementState.SUCCEEDED)) {
-        return new DatabricksResultSet(getStatementResponse.getStatus(), statementId, getStatementResponse.getResult(),
-            getStatementResponse.getManifest());
-      }
-
-      handleFailedExecution(responseState, statementId);
-
+    while (responseState == StatementState.PENDING || responseState == StatementState.RUNNING) {
       try {
         // TODO: make this configurable
         Thread.sleep(STATEMENT_RESULT_POLL_INTERVAL_MILLIS);
@@ -99,9 +83,15 @@ public class DatabricksSdkClient implements DatabricksClient {
         // TODO: Handle gracefully
         throw new DatabricksSQLException("Statement execution fetch interrupted");
       }
+      response = wrapGetStatementResponse(workspaceClient.statementExecution().getStatement(statementId));
+      responseState = response.getStatus().getState();
     }
-    // should not reach here, add better handling
-    throw new RuntimeException("Unreachable code");
+    if (responseState != StatementState.SUCCEEDED) {
+      handleFailedExecution(responseState, statementId);
+    }
+
+    return new DatabricksResultSet(response.getStatus(), statementId, response.getResult(),
+          response.getManifest(), session);
   }
 
   @Override
@@ -114,13 +104,26 @@ public class DatabricksSdkClient implements DatabricksClient {
     return workspaceClient.statementExecution().getStatementResultChunkN(statementId, chunkIndex).getExternalLinks().stream().findFirst();
   }
 
+  /**
+   * Handles a failed execution and throws appropriate exception
+   */
   private void handleFailedExecution(StatementState statementState, String statementId) throws SQLException {
+
     switch (statementState) {
       case FAILED:
       case CLOSED:
       case CANCELED:
         // TODO: Handle differently for failed, closed and cancelled with proper error codes
         throw new DatabricksSQLException("Statement execution failed " + statementId);
+      default:
+        throw new IllegalStateException("Invalid state for error");
     }
+  }
+
+  private ExecuteStatementResponse wrapGetStatementResponse(GetStatementResponse getStatementResponse) {
+    return new ExecuteStatementResponse().setStatementId(getStatementResponse.getStatementId())
+        .setStatus(getStatementResponse.getStatus())
+        .setManifest(getStatementResponse.getManifest())
+        .setResult(getStatementResponse.getResult());
   }
 }
