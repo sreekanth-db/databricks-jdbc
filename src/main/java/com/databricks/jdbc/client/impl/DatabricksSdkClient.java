@@ -69,13 +69,10 @@ public class DatabricksSdkClient implements DatabricksClient {
 
     ExecuteStatementResponse response = workspaceClient.statementExecution().executeStatement(request);
     String statementId = response.getStatementId();
-    StatementStatus responseStatus = response.getStatus();
-    ResultManifest resultManifest =
-        responseStatus.getState() == StatementState.SUCCEEDED ? response.getManifest() : null;
-    ResultData resultData = responseStatus.getState() == StatementState.SUCCEEDED ? response.getResult() : null;
+    StatementState responseState = response.getStatus().getState();
 
     // TODO: Add timeout
-    while (responseStatus.getState() == StatementState.PENDING || responseStatus.getState() == StatementState.RUNNING) {
+    while (responseState == StatementState.PENDING || responseState == StatementState.RUNNING) {
       try {
         // TODO: make this configurable
         Thread.sleep(STATEMENT_RESULT_POLL_INTERVAL_MILLIS);
@@ -83,20 +80,15 @@ public class DatabricksSdkClient implements DatabricksClient {
         // TODO: Handle gracefully
         throw new DatabricksSQLException("Statement execution fetch interrupted");
       }
-      GetStatementResponse getStatementResponse = workspaceClient.statementExecution().getStatement(statementId);
-      responseStatus = getStatementResponse.getStatus();
-
-      if (responseStatus.getState() == StatementState.SUCCEEDED) {
-        resultManifest = getStatementResponse.getManifest();
-        resultData = getStatementResponse.getResult();
-      }
+      response = wrapGetStatementResponse(workspaceClient.statementExecution().getStatement(statementId));
+      responseState = response.getStatus().getState();
     }
-    if (responseStatus.getState() != StatementState.SUCCEEDED) {
-      handleFailedExecution(responseStatus.getState(), statementId);
+    if (responseState != StatementState.SUCCEEDED) {
+      handleFailedExecution(responseState, statementId);
     }
 
-    return new DatabricksResultSet(responseStatus, statementId, resultData,
-          resultManifest);
+    return new DatabricksResultSet(response.getStatus(), statementId, response.getResult(),
+          response.getManifest());
   }
 
   @Override
@@ -118,5 +110,12 @@ public class DatabricksSdkClient implements DatabricksClient {
       default:
         throw new IllegalStateException("Invalid state for error");
     }
+  }
+
+  private ExecuteStatementResponse wrapGetStatementResponse(GetStatementResponse getStatementResponse) {
+    return new ExecuteStatementResponse().setStatementId(getStatementResponse.getStatementId())
+        .setStatus(getStatementResponse.getStatus())
+        .setManifest(getStatementResponse.getManifest())
+        .setResult(getStatementResponse.getResult());
   }
 }
