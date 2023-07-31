@@ -2,6 +2,7 @@ package com.databricks.jdbc.core;
 
 import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
+import com.databricks.sdk.service.sql.StatementState;
 import com.databricks.sdk.service.sql.StatementStatus;
 
 import java.io.InputStream;
@@ -429,17 +430,21 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public boolean previous() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    // We only support forward direction
+    throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public void setFetchDirection(int direction) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    // Only allow forward direction
+    if (direction != ResultSet.FETCH_FORWARD) {
+      throw new SQLFeatureNotSupportedException();
+    }
   }
 
   @Override
   public int getFetchDirection() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return ResultSet.FETCH_FORWARD;
   }
 
   @Override
