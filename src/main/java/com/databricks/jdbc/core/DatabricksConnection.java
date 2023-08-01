@@ -14,7 +14,7 @@ import java.util.concurrent.Executor;
 /**
  * Implementation for Databricks specific connection.
  */
-public class DatabricksConnection implements IDatabricksConnection, Connection {
+public class DatabricksConnection implements IDatabricksConnection {
 
   private final IDatabricksSession session;
   private final Set<IDatabricksStatement> statementSet = ConcurrentHashMap.newKeySet();
