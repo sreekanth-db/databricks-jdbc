@@ -15,7 +15,7 @@ public class DatabricksDatabaseMetadataTest {
         DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
         //Getting the connection
         String jdbcUrl = "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
-        connection = DriverManager.getConnection(jdbcUrl, "vikrant.puppala@databricks.com", "##");
+        connection = DriverManager.getConnection(jdbcUrl, "vikrant.puppala@databricks.com", "dapic7ffec94d7dfbd4a06d127ee67cd38ab");
         System.out.println("Connection established......");
     }
     @Test
