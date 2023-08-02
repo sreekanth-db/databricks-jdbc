@@ -14,7 +14,7 @@ import java.util.concurrent.Executor;
 /**
  * Implementation for Databricks specific connection.
  */
-public class DatabricksConnection implements IDatabricksConnection {
+public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   private final IDatabricksSession session;
   private final Set<IDatabricksStatement> statementSet = ConcurrentHashMap.newKeySet();
@@ -318,5 +318,10 @@ public class DatabricksConnection implements IDatabricksConnection {
   @Override
   public void closeStatement(IDatabricksStatement statement) {
     this.statementSet.remove(statement);
+  }
+
+  @Override
+  public Connection getConnection() {
+    return this;
   }
 }

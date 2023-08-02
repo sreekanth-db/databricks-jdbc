@@ -23,13 +23,15 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
     ImmutableMap.Builder<String, Integer> columnIndexBuilder = ImmutableMap.builder();
     int currIndex = 0;
-    for (ColumnInfo columnInfo: resultManifest.getSchema().getColumns()) {
+    for (ColumnInfo columnInfo : resultManifest.getSchema().getColumns()) {
       ImmutableDatabricksColumn.Builder columnBuilder = ImmutableDatabricksColumn.builder()
           .columnName(columnInfo.getName())
           .columnType(getColumnType(columnInfo.getTypeName()))
           .columnTypeText(columnInfo.getTypeText());
       if (columnInfo.getTypePrecision() != null) {
-          columnBuilder.typePrecision(columnInfo.getTypePrecision().intValue());
+        columnBuilder.typePrecision(columnInfo.getTypePrecision().intValue());
+      } else if (columnInfo.getTypeName().equals(ColumnInfoTypeName.STRING)) {
+        columnBuilder.typePrecision(255);
       } else {
         columnBuilder.typePrecision(0);
       }

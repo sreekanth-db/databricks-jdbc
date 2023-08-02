@@ -618,13 +618,26 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
     // TODO: Handle pattern for schema, assuming schema is not a regex for now
 
+    if (catalog == null) {
+      catalog = session.getCatalog();
+    }
+    if (catalog == null) {
+      // TODO: return an empty result set
+    }
+    if (schemaPattern == null) {
+      schemaPattern = session.getSchema();
+    }
+    if (schemaPattern == null) {
+      // TODO: return an empty result set
+    }
+
     String showTablesSQL = "show tables from " + catalog + "." + schemaPattern + " like '" + tableNamePattern + "'";
     return session.getDatabricksClient().executeStatement(showTablesSQL, session.getSessionId(), session.getWarehouseId(), true);
   }
 
   @Override
   public ResultSet getSchemas() throws SQLException {
-    return getSchemas(null, null);
+    return getSchemas(null /* catalog */, null /* schema pattern */);
   }
 
   @Override
@@ -764,7 +777,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public Connection getConnection() throws SQLException {
-    return connection;
+    return connection.getConnection();
   }
 
   @Override
@@ -858,6 +871,10 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
     if (catalog == null) {
         catalog = session.getCatalog();
+    }
+
+    if (catalog == null) {
+      // TODO: Return an empty result set
     }
 
     String showSchemaSQL = "show schemas in " + catalog + " like \'" + schemaPattern + "\'";
