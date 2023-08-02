@@ -33,7 +33,6 @@ public class DatabricksSdkClient implements DatabricksClient {
     this.workspaceClient = new WorkspaceClient(databricksConfig);
   }
 
-  @VisibleForTesting
   public DatabricksSdkClient(IDatabricksConnectionContext connectionContext, StatementExecutionService statementExecutionService) {
     this.connectionContext = connectionContext;
     // Handle more auth types
