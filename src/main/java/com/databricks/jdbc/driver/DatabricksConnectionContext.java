@@ -105,6 +105,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public String getToken() {
+    // TODO: decide on token/password from published specs
     return getParameter(DatabricksJdbcConstants.PASSWORD);
   }
 
