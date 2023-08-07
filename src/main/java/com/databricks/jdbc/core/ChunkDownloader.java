@@ -87,7 +87,7 @@ public class ChunkDownloader {
      * @param chunkIndex index of chunk
      * @return the chunk at given index
      */
-  public ArrowResultChunk getChunk(int chunkIndex) {
+  public ArrowResultChunk getChunk(long chunkIndex) {
     // TODO: download the chunk if not already downloaded
     return chunkIndexToChunksMap.get(chunkIndex);
   }
@@ -118,15 +118,15 @@ public class ChunkDownloader {
   /**
    * Starts the chunk download from given already downloaded position
    */
-  public void initChunksDownload() {
-    throw new UnsupportedOperationException("Not yet implemented");
+  private synchronized void initChunksDownload() {
+    // TODO: Add impl, avoiding UnsupportedOperationException for test case
   }
 
   /**
    * Release the memory for given chunk since it is already consumed
    * @param chunkIndex index of consumed chunk
    */
-  public void releaseChunk(int chunkIndex) {
+  public synchronized void releaseChunk(int chunkIndex) {
     throw new UnsupportedOperationException("Not yet implemented");
   }
 

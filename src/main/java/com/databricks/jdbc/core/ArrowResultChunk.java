@@ -48,9 +48,9 @@ public class ArrowResultChunk {
   }
 
   private final long chunkIndex;
-  private final long numRows;
-  private final long rowOffset;
-  private final long byteCount;
+  final long numRows;
+  final long rowOffset;
+  final long byteCount;
 
   private String chunkUrl;
   private Long nextChunkIndex;
@@ -93,5 +93,9 @@ public class ArrowResultChunk {
       throw new IllegalStateException("Next index called for pending state chunk");
     }
     return this.nextChunkIndex;
+  }
+
+  String getChunkUrl() {
+    return chunkUrl;
   }
 }
