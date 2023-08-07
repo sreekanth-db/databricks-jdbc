@@ -1,10 +1,7 @@
 package com.databricks.jdbc.client;
 
 import com.databricks.jdbc.core.DatabricksResultSet;
-import com.databricks.jdbc.core.IDatabricksResultSet;
 import com.databricks.jdbc.core.IDatabricksSession;
-import com.databricks.sdk.service.sql.ExecuteStatementRequest;
-import com.databricks.sdk.service.sql.ExecuteStatementResponse;
 import com.databricks.sdk.service.sql.ExternalLink;
 import com.databricks.sdk.service.sql.Session;
 
@@ -36,8 +33,8 @@ public interface DatabricksClient {
    * @param session underlying session
    * @return response for statement execution
    */
-  DatabricksResultSet executeStatement(String statement, String warehouseId, IDatabricksSession session)
-      throws SQLException;
+  DatabricksResultSet executeStatement(
+      String statement, String warehouseId, boolean isInternal, IDatabricksSession session) throws SQLException;
 
   /**
    * Closes a statement in Databricks server

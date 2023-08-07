@@ -41,7 +41,6 @@ public interface IDatabricksSession {
 
   /**
    * Returns the client for connecting to Databricks server
-   * @return
    */
   DatabricksClient getDatabricksClient();
 
@@ -50,4 +49,24 @@ public interface IDatabricksSession {
    * @return the shared executor service for the session
    */
   ExecutorService getExecutorService();
+
+  /**
+   * Returns default catalog associated with the session
+   */
+  String getCatalog();
+
+  /**
+   * Returns default schema associated with the session
+   */
+  String getSchema();
+
+  /**
+   * Sets the default catalog
+   */
+  void setCatalog(String catalog);
+
+  /**
+   * Sets the default schema
+   */
+  void setSchema(String schema);
 }
