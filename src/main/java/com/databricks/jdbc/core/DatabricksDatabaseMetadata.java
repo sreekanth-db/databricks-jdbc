@@ -632,7 +632,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
     }
 
     String showTablesSQL = "show tables from " + catalog + "." + schemaPattern + " like '" + tableNamePattern + "'";
-    return session.getDatabricksClient().executeStatement(showTablesSQL, session.getSessionId(), session.getWarehouseId(), true);
+    return session.getDatabricksClient().executeStatement(
+        showTablesSQL, session.getWarehouseId(), true, session);
   }
 
   @Override
@@ -646,8 +647,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
     String showCatalogsSQL = "show catalogs";
 
-    return session.getDatabricksClient().executeStatement(showCatalogsSQL, session.getSessionId(),
-            session.getWarehouseId(), true);
+    return session.getDatabricksClient().executeStatement(
+        showCatalogsSQL, session.getWarehouseId(), true, session);
   }
 
   @Override
@@ -878,7 +879,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
     }
 
     String showSchemaSQL = "show schemas in " + catalog + " like \'" + schemaPattern + "\'";
-    return session.getDatabricksClient().executeStatement(showSchemaSQL, session.getSessionId(), session.getWarehouseId(), true);
+    return session.getDatabricksClient().executeStatement(
+        showSchemaSQL, session.getWarehouseId(), true, session);
   }
 
   @Override
