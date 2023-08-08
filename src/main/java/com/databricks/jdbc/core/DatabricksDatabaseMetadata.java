@@ -1,5 +1,7 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.driver.DatabricksJdbcConstants;
+
 import java.sql.*;
 
 public class DatabricksDatabaseMetadata implements DatabaseMetaData {
@@ -14,12 +16,12 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
   }
   @Override
   public boolean allProceduresAreCallable() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return true;
   }
 
   @Override
   public boolean allTablesAreSelectable() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return true;
   }
 
   @Override
@@ -29,12 +31,14 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public String getUserName() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.USER_NAME;
   }
 
   @Override
   public boolean isReadOnly() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
@@ -59,22 +63,26 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public String getDatabaseProductName() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.PRODUCT_NAME;
   }
 
   @Override
   public String getDatabaseProductVersion() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.PRODUCT_VERSION;
   }
 
   @Override
   public String getDriverName() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.DRIVER_NAME;
   }
 
   @Override
   public String getDriverVersion() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.DRIVER_VERSION;
   }
 
   @Override
@@ -139,7 +147,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public String getIdentifierQuoteString() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return DatabricksJdbcConstants.IDENTIFIER_QUOTE_STRING;
   }
 
   @Override
@@ -174,7 +182,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public String getExtraNameCharacters() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.EMPTY_STRING;
   }
 
   @Override
@@ -194,7 +203,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean nullPlusNonNullIsNull() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
@@ -314,27 +324,32 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public String getSchemaTerm() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.SCHEMA;
   }
 
   @Override
   public String getProcedureTerm() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.PROCEDURE;
   }
 
   @Override
   public String getCatalogTerm() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.CATALOG;
   }
 
   @Override
   public boolean isCatalogAtStart() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public String getCatalogSeparator() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.FULL_STOP;
   }
 
   @Override
@@ -464,117 +479,121 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public int getMaxBinaryLiteralLength() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxCharLiteralLength() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxColumnNameLength() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
   }
 
   @Override
   public int getMaxColumnsInGroupBy() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxColumnsInIndex() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxColumnsInOrderBy() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxColumnsInSelect() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxColumnsInTable() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxConnections() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxCursorNameLength() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxIndexLength() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxSchemaNameLength() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
   }
 
   @Override
   public int getMaxProcedureNameLength() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxCatalogNameLength() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
   }
 
   @Override
   public int getMaxRowSize() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return false;
   }
 
   @Override
   public int getMaxStatementLength() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxStatements() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxTableNameLength() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
   }
 
   @Override
   public int getMaxTablesInSelect() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getMaxUserNameLength() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return 0;
   }
 
   @Override
   public int getDefaultTransactionIsolation() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return Connection.TRANSACTION_READ_COMMITTED;
   }
 
   @Override
   public boolean supportsTransactions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return false;
   }
 
   @Override
@@ -584,22 +603,22 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return false;
   }
 
   @Override
   public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return false;
   }
 
   @Override
   public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return false;
   }
 
   @Override
   public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return false;
   }
 
   @Override
@@ -614,7 +633,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
-    raiseSQLExceptionIfConnectionIsClosed();
+    throwExceptionIfConnectionIsClosed();
 
     // TODO: Handle pattern for schema, assuming schema is not a regex for now
 
@@ -642,7 +661,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public ResultSet getCatalogs() throws SQLException {
-    raiseSQLExceptionIfConnectionIsClosed();
+    throwExceptionIfConnectionIsClosed();
 
     String showCatalogsSQL = "show catalogs";
 
@@ -657,7 +676,16 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+
+    // TODO: Handle null catalog, schema, table behaviour
+
+    String showSchemaSQL = "show columns in " + catalog + "." + schemaPattern + "." + tableNamePattern;
+    ResultSet resultSet = session.getDatabricksClient().executeStatement(showSchemaSQL, session.getSessionId(), session.getWarehouseId(), true);
+
+    // TODO: Handle post result set generation filtering based on result set implementation
+
+    return resultSet;
   }
 
   @Override
@@ -822,37 +850,40 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public int getResultSetHoldability() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return ResultSet.CLOSE_CURSORS_AT_COMMIT;
   }
 
   @Override
   public int getDatabaseMajorVersion() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return DatabricksJdbcConstants.DATABASE_MAJOR_VERSION;
   }
 
   @Override
   public int getDatabaseMinorVersion() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return DatabricksJdbcConstants.DATABASE_MINOR_VERSION;
   }
 
   @Override
   public int getJDBCMajorVersion() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return DatabricksJdbcConstants.JDBC_MAJOR_VERSION;
   }
 
   @Override
   public int getJDBCMinorVersion() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return DatabricksJdbcConstants.JDBC_MINOR_VERSION;
   }
 
   @Override
   public int getSQLStateType() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabaseMetaData.sqlStateSQL;
   }
 
   @Override
   public boolean locatorsUpdateCopy() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
@@ -862,12 +893,13 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public RowIdLifetime getRowIdLifetime() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return RowIdLifetime.ROWID_UNSUPPORTED;
   }
 
   @Override
   public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
-    raiseSQLExceptionIfConnectionIsClosed();
+    throwExceptionIfConnectionIsClosed();
 
     if (catalog == null) {
         catalog = session.getCatalog();
@@ -888,7 +920,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return true;
   }
 
   @Override
@@ -898,7 +930,12 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+
+    // TODO: Handle null catalog, schema, function behaviour
+
+    String showSchemaSQL = "show functions in " + catalog + "." + schemaPattern + " like '" + functionNamePattern + "'";
+    return session.getDatabricksClient().executeStatement(showSchemaSQL, session.getSessionId(), session.getWarehouseId(), true);
   }
 
   @Override
@@ -913,7 +950,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean generatedKeyAlwaysReturned() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return false;
   }
 
   @Override
@@ -926,7 +963,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
     throw new UnsupportedOperationException("Not implemented");
   }
 
-  private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException {
+  private void throwExceptionIfConnectionIsClosed() throws SQLException {
     if (!connection.getSession().isOpen()) {
       throw new DatabricksSQLException("Connection closed!");
     }
