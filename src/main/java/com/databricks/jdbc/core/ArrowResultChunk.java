@@ -85,9 +85,9 @@ public class ArrowResultChunk {
   }
 
   /**
-   * Checks if the link is expired
+   * Checks if the link is valid
    */
-  boolean isChunkLinkExpired() {
+  boolean isChunkLinkValid() {
     return expiryTime == null || expiryTime.isAfter(Instant.now());
   }
 
