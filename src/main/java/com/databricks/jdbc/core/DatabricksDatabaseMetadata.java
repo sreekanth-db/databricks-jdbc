@@ -72,7 +72,9 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
   @Override
   public String getDatabaseProductVersion() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.PRODUCT_VERSION;
+    return DatabricksJdbcConstants.DATABASE_MAJOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + DatabricksJdbcConstants.DATABASE_MINOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + DatabricksJdbcConstants.DATABASE_PATCH_VERSION;
   }
 
   @Override
@@ -84,7 +86,9 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
   @Override
   public String getDriverVersion() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.DRIVER_VERSION;
+    return DatabricksJdbcConstants.JDBC_MAJOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + DatabricksJdbcConstants.JDBC_MINOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + DatabricksJdbcConstants.JDBC_PATCH_VERSION;
   }
 
   @Override
