@@ -16,11 +16,13 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
   }
   @Override
   public boolean allProceduresAreCallable() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean allTablesAreSelectable() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -147,6 +149,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public String getIdentifierQuoteString() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return DatabricksJdbcConstants.IDENTIFIER_QUOTE_STRING;
   }
 
@@ -479,11 +482,13 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public int getMaxBinaryLiteralLength() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxCharLiteralLength() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -495,41 +500,49 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public int getMaxColumnsInGroupBy() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxColumnsInIndex() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxColumnsInOrderBy() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxColumnsInSelect() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxColumnsInTable() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxConnections() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxCursorNameLength() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxIndexLength() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -541,6 +554,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public int getMaxProcedureNameLength() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -552,21 +566,25 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public int getMaxRowSize() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public int getMaxStatementLength() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxStatements() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
@@ -578,21 +596,25 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public int getMaxTablesInSelect() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxUserNameLength() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getDefaultTransactionIsolation() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return Connection.TRANSACTION_READ_COMMITTED;
   }
 
   @Override
   public boolean supportsTransactions() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -603,21 +625,25 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return false;
   }
 
@@ -920,6 +946,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return true;
   }
 
@@ -950,6 +977,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean generatedKeyAlwaysReturned() throws SQLException {
+    throwExceptionIfConnectionIsClosed();
     return false;
   }
 
