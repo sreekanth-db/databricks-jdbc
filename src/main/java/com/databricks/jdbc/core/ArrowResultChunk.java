@@ -67,6 +67,9 @@ public class ArrowResultChunk {
     this.chunkUrl = null;
   }
 
+  /**
+   * Sets link details for the given chunk.
+   */
   void setChunkUrl(ExternalLink chunk) {
     this.chunkUrl = chunk.getExternalLink();
     this.nextChunkIndex = chunk.getNextChunkIndex();
@@ -74,19 +77,31 @@ public class ArrowResultChunk {
     this.status = DownloadStatus.URL_FETCHED;
   }
 
+  /**
+   * Updates status for the chunk
+   */
   void setStatus(DownloadStatus status) {
     this.status = status;
   }
 
+  /**
+   * Checks if the link is expired
+   */
   boolean isChunkLinkExpired() {
-    return expiryTime != null && expiryTime.isAfter(Instant.now());
+    return expiryTime == null || expiryTime.isAfter(Instant.now());
   }
 
+  /**
+   * Returns the status for the chunk
+   */
   DownloadStatus getStatus() {
     return this.status;
   }
 
-  long getNextChunkIndex() {
+  /**
+   * Returns next chunk index for given chunk. Null is returned for last chunk.
+   */
+  Long getNextChunkIndex() {
     // This should never be called for pending state
     if (status == DownloadStatus.PENDING) {
       // TODO: log this
@@ -95,6 +110,9 @@ public class ArrowResultChunk {
     return this.nextChunkIndex;
   }
 
+  /**
+   * Returns the chunk download link
+   */
   String getChunkUrl() {
     return chunkUrl;
   }
