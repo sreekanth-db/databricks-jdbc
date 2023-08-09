@@ -43,4 +43,8 @@ class ArrowStreamResult implements IExecutionResult {
   public boolean next() {
     throw new UnsupportedOperationException("Not implemented");
   }
+  @Override
+  public boolean hasNext() {
+    throw new UnsupportedOperationException("Not implemented");
+  }
 }

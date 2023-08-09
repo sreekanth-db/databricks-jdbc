@@ -374,7 +374,8 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public boolean isBeforeFirst() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    // TODO: Madhav to check the best way to implement this, below is not correct
+    return !executionResult.hasNext();
   }
 
   @Override
