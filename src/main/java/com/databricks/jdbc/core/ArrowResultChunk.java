@@ -111,6 +111,14 @@ public class ArrowResultChunk {
   }
 
   /**
+   * Returns number of recordBatches in the chunk.
+   * @return
+   */
+  int getRecordBatchCountInChunk() {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  /**
    * Returns the chunk download link
    */
   String getChunkUrl() {
