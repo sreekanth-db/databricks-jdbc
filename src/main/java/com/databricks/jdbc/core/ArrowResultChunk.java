@@ -1,10 +1,19 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.FieldVector;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.ValueVector;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.VectorSchemaRoot;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamReader;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
 
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ArrowResultChunk {
 
@@ -57,6 +66,12 @@ public class ArrowResultChunk {
   private Instant expiryTime;
   private DownloadStatus status;
 
+  private final ArrayList<ArrayList<ValueVector>> recordBatchList;
+
+  private final ArrowResultChunkIterator chunkIterator;
+
+  private RootAllocator rootAllocator; // currently null, will be set from ArrowStreamResult
+
   ArrowResultChunk(ChunkInfo chunkInfo) {
     this.chunkIndex = chunkInfo.getChunkIndex();
     this.numRows = chunkInfo.getRowCount();
@@ -64,6 +79,8 @@ public class ArrowResultChunk {
     this.nextChunkIndex = chunkInfo.getNextChunkIndex();
     this.byteCount = chunkInfo.getByteCount();
     this.status = DownloadStatus.PENDING;
+    this.recordBatchList = new ArrayList<>();
+    this.chunkIterator = new ArrowResultChunkIterator(this);
     this.chunkUrl = null;
   }
 
@@ -108,6 +125,24 @@ public class ArrowResultChunk {
       throw new IllegalStateException("Next index called for pending state chunk");
     }
     return this.nextChunkIndex;
+  }
+
+  public void getArrowDataFromInputStream(InputStream inputStream) throws Exception {
+    // add check to see if input stream has been populated
+    ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputStream, this.rootAllocator);
+    VectorSchemaRoot vectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
+    while(arrowStreamReader.loadNextBatch()) {
+      ArrayList<ValueVector> vectors = new ArrayList<>();
+      List<FieldVector> fieldVectors = vectorSchemaRoot.getFieldVectors();
+      for(FieldVector fieldVector: fieldVectors) {
+        vectors.add((ValueVector) fieldVector);
+      }
+      this.recordBatchList.add(vectors);
+    }
+  }
+
+  public void nextInChunk() {
+    this.chunkIterator.nextRow();
   }
 
   /**
