@@ -67,9 +67,6 @@ public class ArrowResultChunk {
   private DownloadStatus status;
 
   private final ArrayList<ArrayList<ValueVector>> recordBatchList;
-
-  private final ArrowResultChunkIterator chunkIterator;
-
   private RootAllocator rootAllocator; // currently null, will be set from ArrowStreamResult
 
   ArrowResultChunk(ChunkInfo chunkInfo) {
@@ -80,8 +77,40 @@ public class ArrowResultChunk {
     this.byteCount = chunkInfo.getByteCount();
     this.status = DownloadStatus.PENDING;
     this.recordBatchList = new ArrayList<>();
-    this.chunkIterator = new ArrowResultChunkIterator(this);
     this.chunkUrl = null;
+  }
+
+  public static class ArrowResultChunkIterator {
+    private final ArrowResultChunk resultChunk;
+
+    private boolean begunIterationOverChunk;
+    private int recordBatchesInChunk;
+
+    private int recordBatchCursorInChunk;
+
+    private int rowsInRecordBatch;
+
+    private int rowCursorInRecordBatch;
+
+    ArrowResultChunkIterator(ArrowResultChunk resultChunk) {
+      this.resultChunk = resultChunk;
+      this.begunIterationOverChunk = false;
+      this.recordBatchesInChunk = resultChunk.getRecordBatchCountInChunk();
+      this.recordBatchCursorInChunk = 0;
+      this.rowsInRecordBatch = 0; // unimplemented, will be set to row size of first record batch
+      this.rowCursorInRecordBatch = 0;
+    }
+
+    public boolean nextRow() {
+      if(!this.begunIterationOverChunk) this.begunIterationOverChunk = true;
+      if(++this.rowCursorInRecordBatch < this.rowsInRecordBatch) return true;
+      if(++this.recordBatchCursorInChunk < this.recordBatchesInChunk) {
+        this.rowCursorInRecordBatch = 0;
+        this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(this.recordBatchCursorInChunk).size();
+        return true;
+      }
+      return false;
+    }
   }
 
   /**
@@ -139,10 +168,6 @@ public class ArrowResultChunk {
       }
       this.recordBatchList.add(vectors);
     }
-  }
-
-  public void nextInChunk() {
-    this.chunkIterator.nextRow();
   }
 
   /**
