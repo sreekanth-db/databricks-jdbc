@@ -68,8 +68,6 @@ public class ArrowResultChunk {
 
   private final ArrayList<ArrayList<ValueVector>> recordBatchList;
 
-  private final ArrowResultChunkIterator chunkIterator;
-
   private RootAllocator rootAllocator; // currently null, will be set from ArrowStreamResult
 
   ArrowResultChunk(ChunkInfo chunkInfo) {
@@ -80,7 +78,6 @@ public class ArrowResultChunk {
     this.byteCount = chunkInfo.getByteCount();
     this.status = DownloadStatus.PENDING;
     this.recordBatchList = new ArrayList<>();
-    this.chunkIterator = new ArrowResultChunkIterator(this);
     this.chunkUrl = null;
   }
 
@@ -139,10 +136,6 @@ public class ArrowResultChunk {
       }
       this.recordBatchList.add(vectors);
     }
-  }
-
-  public void nextInChunk() {
-    this.chunkIterator.nextRow();
   }
 
   /**
