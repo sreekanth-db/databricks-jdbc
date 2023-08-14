@@ -5,6 +5,7 @@ import com.databricks.client.jdbc42.internal.apache.arrow.vector.FieldVector;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.ValueVector;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.VectorSchemaRoot;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamReader;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.util.TransferPair;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
 
@@ -164,9 +165,12 @@ public class ArrowResultChunk {
       ArrayList<ValueVector> vectors = new ArrayList<>();
       List<FieldVector> fieldVectors = vectorSchemaRoot.getFieldVectors();
       for(FieldVector fieldVector: fieldVectors) {
-        vectors.add((ValueVector) fieldVector);
+        TransferPair transferPair = fieldVector.getTransferPair(rootAllocator);
+        transferPair.transfer();
+        vectors.add(transferPair.getTo());
       }
       this.recordBatchList.add(vectors);
+      vectorSchemaRoot.clear();
     }
   }
 
