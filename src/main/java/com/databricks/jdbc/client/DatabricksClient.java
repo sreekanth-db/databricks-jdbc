@@ -6,7 +6,7 @@ import com.databricks.sdk.service.sql.ExternalLink;
 import com.databricks.sdk.service.sql.Session;
 
 import java.sql.SQLException;
-import java.util.Optional;
+import java.util.Collection;
 
 /**
  * Interface for Databricks client which abstracts the integration with Databricks server.
@@ -48,5 +48,5 @@ public interface DatabricksClient {
    * @param statementId statement-Id for which chunk should be fetched
    * @param chunkIndex chunkIndex for which chunk should be fetched
    */
-  Optional<ExternalLink> getResultChunk(String statementId, long chunkIndex);
+  Collection<ExternalLink> getResultChunk(String statementId, long chunkIndex);
 }

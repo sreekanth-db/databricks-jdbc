@@ -7,9 +7,7 @@ import com.databricks.sdk.service.sql.ResultManifest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -105,9 +103,11 @@ public class ChunkDownloader {
           () -> {
             while (nextChunkLinkToDownload < totalChunks) {
               // TODO: handle failures
-              ExternalLink chunk = session.getDatabricksClient().getResultChunk(statementId, nextChunkLinkToDownload).get();
-              chunkIndexToChunksMap.get(chunk.getChunkIndex()).setChunkUrl(chunk);
-              nextChunkLinkToDownload++;
+              Collection<ExternalLink> chunks = session.getDatabricksClient().getResultChunk(statementId, nextChunkLinkToDownload);
+              for (ExternalLink chunkLink : chunks) {
+                chunkIndexToChunksMap.get(chunkLink.getChunkIndex()).setChunkUrl(chunkLink);
+                nextChunkLinkToDownload++;
+              }
             }
             // Once all chunk links has been downloaded, trigger the chunks download.
             initChunksDownload();
@@ -115,11 +115,63 @@ public class ChunkDownloader {
     }
   }
 
+  private void initLinksDownload(ExecutorService executorService, long chunkIndex) {
+    // TODO: log that we are refetching link for this chunk, likely this has expired
+      executorService.submit(
+          () -> {
+              // TODO: handle failures
+              Optional<ExternalLink> chunkOptional = session.getDatabricksClient()
+                  .getResultChunk(statementId, nextChunkLinkToDownload).stream().findFirst();
+              if (chunkOptional.isPresent()) {
+                ExternalLink chunk = chunkOptional.get();
+                chunkIndexToChunksMap.get(chunk.getChunkIndex()).setChunkUrl(chunk);
+                initChunksDownload();
+              }
+          });
+  }
+
   /**
    * Starts the chunk download from given already downloaded position
    */
   private synchronized void initChunksDownload() {
-    // TODO: Add impl, avoiding UnsupportedOperationException for test case
+    if (nextChunkToDownload < totalChunks) {
+      ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
+      boolean downloadChunkLink = false;
+      while (nextChunkToDownload - currentChunk < allowedChunksInMemory) {
+        // links are not yet ready
+        if (!isChunkDownloadable(chunk.getStatus())) {
+          break;
+        }
+        if (!chunk.isChunkLinkValid()) {
+          downloadChunkLink = true;
+          break;
+        }
+        final ArrowResultChunk chunkRef = chunk;
+        this.chunkDownloaderExecutorService.submit(
+            () -> {
+              downloadNextChunk(chunkRef);
+            });
+        totalChunksInMemory++;
+        nextChunkToDownload++;
+        chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
+      }
+      // Chunk link has expired, download the link again, which will trigger the chunk download implicitly
+      if (downloadChunkLink) {
+        initLinksDownload(this.session.getExecutorService(), chunk.getChunkIndex());
+      }
+    }
+  }
+
+  void downloadNextChunk(ArrowResultChunk chunk) throws Exception {
+    chunk.setStatus(ArrowResultChunk.DownloadStatus.DOWNLOAD_IN_PROGRESS);
+    chunk.downloadData();
+    chunk.setStatus(ArrowResultChunk.DownloadStatus.DOWNLOAD_SUCCEEDED);
+  }
+
+  boolean isChunkDownloadable(ArrowResultChunk.DownloadStatus status) {
+    return status == ArrowResultChunk.DownloadStatus.URL_FETCHED
+        || status == ArrowResultChunk.DownloadStatus.CANCELLED
+        || status == ArrowResultChunk.DownloadStatus.DOWNLOAD_FAILED_ABORTED;
   }
 
   /**

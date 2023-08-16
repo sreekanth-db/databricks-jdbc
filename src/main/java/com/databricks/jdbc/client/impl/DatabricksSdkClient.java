@@ -3,16 +3,14 @@ package com.databricks.jdbc.client.impl;
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.DatabricksSQLException;
-import com.databricks.jdbc.core.IDatabricksResultSet;
 import com.databricks.jdbc.core.IDatabricksSession;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.*;
-import com.google.common.annotations.VisibleForTesting;
 
 import java.sql.SQLException;
-import java.util.Optional;
+import java.util.Collection;
 
 /**
  * Implementation of DatabricksClient interface using Databricks Java SDK.
@@ -100,8 +98,8 @@ public class DatabricksSdkClient implements DatabricksClient {
   }
 
   @Override
-  public Optional<ExternalLink> getResultChunk(String statementId, long chunkIndex) {
-    return workspaceClient.statementExecution().getStatementResultChunkN(statementId, chunkIndex).getExternalLinks().stream().findFirst();
+  public Collection<ExternalLink> getResultChunk(String statementId, long chunkIndex) {
+    return workspaceClient.statementExecution().getStatementResultChunkN(statementId, chunkIndex).getExternalLinks();
   }
 
   /**
