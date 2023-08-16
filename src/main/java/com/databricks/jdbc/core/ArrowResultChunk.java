@@ -68,9 +68,9 @@ public class ArrowResultChunk {
   private DownloadStatus status;
 
   private final ArrayList<ArrayList<ValueVector>> recordBatchList;
-  private RootAllocator rootAllocator; // currently null, will be set from ArrowStreamResult
+  private RootAllocator rootAllocator;
 
-  ArrowResultChunk(ChunkInfo chunkInfo) {
+  ArrowResultChunk(ChunkInfo chunkInfo, RootAllocator rootAllocator) {
     this.chunkIndex = chunkInfo.getChunkIndex();
     this.numRows = chunkInfo.getRowCount();
     this.rowOffset = chunkInfo.getRowOffset();
@@ -79,6 +79,7 @@ public class ArrowResultChunk {
     this.status = DownloadStatus.PENDING;
     this.recordBatchList = new ArrayList<>();
     this.chunkUrl = null;
+    this.rootAllocator = rootAllocator;
   }
 
   public static class ArrowResultChunkIterator {
@@ -98,7 +99,7 @@ public class ArrowResultChunk {
       this.begunIterationOverChunk = false;
       this.recordBatchesInChunk = resultChunk.getRecordBatchCountInChunk();
       this.recordBatchCursorInChunk = 0;
-      this.rowsInRecordBatch = 0; // unimplemented, will be set to row size of first record batch
+      this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(0).size();
       this.rowCursorInRecordBatch = 0;
     }
 
@@ -179,7 +180,7 @@ public class ArrowResultChunk {
    * @return
    */
   int getRecordBatchCountInChunk() {
-    throw new UnsupportedOperationException("Not implemented");
+    return this.recordBatchList.size();
   }
 
   /**
