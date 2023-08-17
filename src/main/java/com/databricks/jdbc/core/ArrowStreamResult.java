@@ -1,6 +1,5 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
 import com.databricks.sdk.service.sql.ResultData;
