@@ -21,9 +21,6 @@ class ArrowStreamResult implements IExecutionResult {
   private int currentRowIndex;
   private int currentChunkIndex;
 
-  private final RootAllocator rootAllocator;
-  private static final int rootAllocatorLimit = Integer.MAX_VALUE; // max allocation size in bytes
-
   ArrowStreamResult(ResultManifest resultManifest, ResultData resultData, String statementId,
                     IDatabricksSession session) {
     this.totalRows = resultManifest.getTotalRowCount();
@@ -31,7 +28,6 @@ class ArrowStreamResult implements IExecutionResult {
     this.rowOffsetToChunkMap = getRowOffsetMap(resultManifest);
     this.session = session;
     this.chunkDownloader = new ChunkDownloader(statementId, resultManifest, resultData, session);
-    this.rootAllocator = new RootAllocator(rootAllocatorLimit);
   }
 
   private static ImmutableMap<Long, ChunkInfo> getRowOffsetMap(ResultManifest resultManifest) {
