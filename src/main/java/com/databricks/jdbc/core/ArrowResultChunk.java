@@ -148,7 +148,7 @@ public class ArrowResultChunk {
    * @return
    */
   int getRecordBatchCountInChunk() {
-    return recordBatchList.size();
+    return this.recordBatchList.size();
   }
 
   /**

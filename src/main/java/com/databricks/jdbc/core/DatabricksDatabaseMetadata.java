@@ -712,7 +712,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
     // TODO: Handle null catalog, schema, table behaviour
 
     String showSchemaSQL = "show columns in " + catalog + "." + schemaPattern + "." + tableNamePattern;
-    ResultSet resultSet = session.getDatabricksClient().executeStatement(showSchemaSQL, session.getSessionId(), session.getWarehouseId(), true);
+    ResultSet resultSet = session.getDatabricksClient().executeStatement(showSchemaSQL, session.getWarehouseId(), true, session);
 
     // TODO: Handle post result set generation filtering based on result set implementation
 
@@ -968,7 +968,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
     // TODO: Handle null catalog, schema, function behaviour
 
     String showSchemaSQL = "show functions in " + catalog + "." + schemaPattern + " like '" + functionNamePattern + "'";
-    return session.getDatabricksClient().executeStatement(showSchemaSQL, session.getSessionId(), session.getWarehouseId(), true);
+    return session.getDatabricksClient().executeStatement(showSchemaSQL, session.getWarehouseId(), true, session);
   }
 
   @Override
