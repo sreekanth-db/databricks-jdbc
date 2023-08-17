@@ -1,7 +1,6 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.IDatabricksHttpClient;
-import com.databricks.jdbc.client.http.DatabricksHttpClient;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
 import org.apache.http.HttpEntity;
@@ -10,7 +9,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 
 public class ArrowResultChunk {
@@ -55,7 +53,6 @@ public class ArrowResultChunk {
   }
 
   private final long chunkIndex;
-  private final IDatabricksHttpClient httpClient;
   final long numRows;
   final long rowOffset;
   final long byteCount;
@@ -64,6 +61,8 @@ public class ArrowResultChunk {
   private Long nextChunkIndex;
   private Instant expiryTime;
   private DownloadStatus status;
+  private Long downloadStartTime;
+  private Long downloadFinishTime;
 
   ArrowResultChunk(ChunkInfo chunkInfo) {
     this.chunkIndex = chunkInfo.getChunkIndex();
@@ -73,7 +72,8 @@ public class ArrowResultChunk {
     this.byteCount = chunkInfo.getByteCount();
     this.status = DownloadStatus.PENDING;
     this.chunkUrl = null;
-    this.httpClient = DatabricksHttpClient.getInstance();
+    this.downloadStartTime = null;
+    this.downloadFinishTime = null;
   }
 
   /**
@@ -107,15 +107,31 @@ public class ArrowResultChunk {
     return this.status;
   }
 
-  void downloadData() throws Exception {
-    URIBuilder uriBuilder = new URIBuilder(chunkUrl);
-    HttpGet getRequest = new HttpGet(uriBuilder.build());
-    // TODO: add appropriate headers
-    // Retry would be done in http client, we should not bother about that here
-    HttpResponse response = httpClient.execute(getRequest);
-    // TODO: handle error code
-    HttpEntity entity = response.getEntity();
-    parseData(entity.getContent());
+  void downloadData(IDatabricksHttpClient httpClient) throws Exception {
+    // TODO: record number of attempts for download, and abort if retried more than a threshold
+    synchronized (this) {
+      if (getStatus() == DownloadStatus.DOWNLOAD_IN_PROGRESS) {
+        // another thread is already downloading
+        return;
+      }
+      setStatus(DownloadStatus.DOWNLOAD_IN_PROGRESS);
+    }
+    try {
+      this.downloadStartTime = Instant.now().toEpochMilli();
+      URIBuilder uriBuilder = new URIBuilder(chunkUrl);
+      HttpGet getRequest = new HttpGet(uriBuilder.build());
+      // TODO: add appropriate headers
+      // Retry would be done in http client, we should not bother about that here
+      HttpResponse response = httpClient.execute(getRequest);
+      // TODO: handle error code
+      HttpEntity entity = response.getEntity();
+      parseData(entity.getContent());
+      this.downloadFinishTime = Instant.now().toEpochMilli();
+      setStatus(DownloadStatus.DOWNLOAD_SUCCEEDED);
+    } catch (Exception e) {
+      // TODO: log error, handle proper error code
+      setStatus(DownloadStatus.DOWNLOAD_FAILED_RETRYABLE);
+    }
   }
 
   void parseData(InputStream inputStream) {
@@ -146,5 +162,9 @@ public class ArrowResultChunk {
    */
   Long getChunkIndex() {
     return this.chunkIndex;
+  }
+
+  Long getDownloadFinishTime() {
+    return this.downloadFinishTime;
   }
 }

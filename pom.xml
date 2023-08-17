@@ -96,6 +96,7 @@
       <version>${immutables.value.version}</version>
       <scope>provided</scope>
     </dependency>
+
     <!--    TODO: remove before going to production    -->
     <dependency>
       <groupId>com.databricks</groupId>

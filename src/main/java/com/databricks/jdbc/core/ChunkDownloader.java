@@ -1,17 +1,16 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.IDatabricksHttpClient;
+import com.databricks.jdbc.client.http.DatabricksHttpClient;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
 import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.annotations.VisibleForTesting;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.concurrent.*;
 
 public class ChunkDownloader {
 
@@ -21,6 +20,7 @@ public class ChunkDownloader {
   private final String statementId;
   private final long totalChunks;
   private final ExecutorService chunkDownloaderExecutorService;
+  private final IDatabricksHttpClient httpClient;
   private long currentChunk;
   private long nextChunkLinkToDownload;
   private long nextChunkToDownload;
@@ -47,6 +47,30 @@ public class ChunkDownloader {
     // Number of worker threads are directly linked to allowed chunks in memory
     this.allowedChunksInMemory = Math.min(CHUNKS_DOWNLOADER_THREAD_POOL_SIZE, totalChunks);
     this.chunkDownloaderExecutorService = createChunksDownloaderExecutorService();
+    this.httpClient = DatabricksHttpClient.getInstance();
+    // The first link has been
+    this.initDownloader();
+  }
+
+  @VisibleForTesting
+  ChunkDownloader(String statementId, ResultManifest resultManifest, ResultData resultData, IDatabricksSession session, IDatabricksHttpClient httpClient) {
+    this.session = session;
+    this.statementId = statementId;
+    this.totalChunks = resultManifest.getTotalChunkCount();
+    this.chunkIndexToChunksMap = initializeChunksMap(resultManifest, resultData);
+    // We are assuming that all links provided are in sequence. Currently, it only returns the
+    // first chunk link, and next links need to be fetched sequentially using a separate API
+    this.nextChunkLinkToDownload = resultData.getExternalLinks().size();
+    // No chunks are downloaded, we need to start from first one
+    this.nextChunkToDownload = 0;
+    // Initialize current chunk to -1, since we don't have anything to read
+    this.currentChunk = -1;
+    // We don't have any chunk in downloaded yet
+    this.totalChunksInMemory = 0;
+    // Number of worker threads are directly linked to allowed chunks in memory
+    this.allowedChunksInMemory = Math.min(CHUNKS_DOWNLOADER_THREAD_POOL_SIZE, totalChunks);
+    this.chunkDownloaderExecutorService = createChunksDownloaderExecutorService();
+    this.httpClient = httpClient;
     // The first link has been
     this.initDownloader();
   }
@@ -103,7 +127,8 @@ public class ChunkDownloader {
           () -> {
             while (nextChunkLinkToDownload < totalChunks) {
               // TODO: handle failures
-              Collection<ExternalLink> chunks = session.getDatabricksClient().getResultChunk(statementId, nextChunkLinkToDownload);
+              Collection<ExternalLink> chunks = session.getDatabricksClient().getResultChunk(
+                  statementId, nextChunkLinkToDownload);
               for (ExternalLink chunkLink : chunks) {
                 chunkIndexToChunksMap.get(chunkLink.getChunkIndex()).setChunkUrl(chunkLink);
                 nextChunkLinkToDownload++;
@@ -137,7 +162,7 @@ public class ChunkDownloader {
     if (nextChunkToDownload < totalChunks) {
       ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
       boolean downloadChunkLink = false;
-      while (nextChunkToDownload - currentChunk < allowedChunksInMemory) {
+      while (totalChunksInMemory < allowedChunksInMemory) {
         // links are not yet ready
         if (!isChunkDownloadable(chunk.getStatus())) {
           break;
@@ -146,11 +171,8 @@ public class ChunkDownloader {
           downloadChunkLink = true;
           break;
         }
-        final ArrowResultChunk chunkRef = chunk;
         this.chunkDownloaderExecutorService.submit(
-            () -> {
-              downloadNextChunk(chunkRef);
-            });
+            getDownloadTask(chunk));
         totalChunksInMemory++;
         nextChunkToDownload++;
         chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
@@ -163,9 +185,7 @@ public class ChunkDownloader {
   }
 
   void downloadNextChunk(ArrowResultChunk chunk) throws Exception {
-    chunk.setStatus(ArrowResultChunk.DownloadStatus.DOWNLOAD_IN_PROGRESS);
-    chunk.downloadData();
-    chunk.setStatus(ArrowResultChunk.DownloadStatus.DOWNLOAD_SUCCEEDED);
+    chunk.downloadData(httpClient);
   }
 
   boolean isChunkDownloadable(ArrowResultChunk.DownloadStatus status) {
@@ -182,7 +202,21 @@ public class ChunkDownloader {
     throw new UnsupportedOperationException("Not yet implemented");
   }
 
+  Callable<Void> getDownloadTask(ArrowResultChunk chunk) {
+    return new Callable<Void>() {
+      @Override
+      public Void call() throws Exception {
+        downloadNextChunk(chunk);
+        return null;
+      }
+    };
+  }
+
   public void setChunkLink(int chunkIndex, ExternalLink chunkLink) {
     chunkIndexToChunksMap.get(chunkIndex).setChunkUrl(chunkLink);
+  }
+
+  long getTotalChunksInMemory() {
+    return totalChunksInMemory;
   }
 }
