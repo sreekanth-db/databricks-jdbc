@@ -5,6 +5,19 @@ import com.databricks.jdbc.driver.DatabricksJdbcConstants;
 import java.sql.*;
 
 public class DatabricksDatabaseMetadata implements DatabaseMetaData {
+  public static final String DRIVER_NAME = "DatabricksJDBC";
+  public static final String PRODUCT_NAME = "SparkSQL";
+  public static final int DATABASE_MAJOR_VERSION = 3;
+  public static final int DATABASE_MINOR_VERSION = 1;
+  public static final int DATABASE_PATCH_VERSION = 1;
+  public static final int JDBC_MAJOR_VERSION = 0;
+  public static final int JDBC_MINOR_VERSION = 0;
+  public static final int JDBC_PATCH_VERSION = 0;
+  public static final Integer MAX_NAME_LENGTH = 128;
+  public static final String NUMERIC_FUNCTIONS = "ABS,ACOS,ASIN,ATAN,ATAN2,CEILING,COS,COT,DEGREES,EXP,FLOOR,LOG,LOG10,MOD,PI,POWER,RADIANS,RAND,ROUND,SIGN,SIN,SQRT,TAN,TRUNCATE";
+  public static final String STRING_FUNCTIONS = "ASCII,CHAR,CHAR_LENGTH,CHARACTER_LENGTH,CONCAT,INSERT,LCASE,LEFT,LENGTH,LOCATE,LOCATE2,LTRIM,OCTET_LENGTH,POSITION,REPEAT,REPLACE,RIGHT,RTRIM,SOUNDEX,SPACE,SUBSTRING,UCASE";
+  public static final String SYSTEM_FUNCTIONS = "DATABASE,IFNULL,USER";
+  public static final String TIME_DATE_FUNCTIONS = "CURDATE,CURRENT_DATE,CURRENT_TIME,CURRENT_TIMESTAMP,CURTIME,DAYNAME,DAYOFMONTH,DAYOFWEEK,DAYOFYEAR,HOUR,MINUTE,MONTH,MONTHNAME,NOW,QUARTER,SECOND,TIMESTAMPADD,TIMESTAMPDIFF,WEEK,YEAR";
 
   private final IDatabricksConnection connection;
 
@@ -45,50 +58,54 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean nullsAreSortedHigh() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean nullsAreSortedLow() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean nullsAreSortedAtStart() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean nullsAreSortedAtEnd() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public String getDatabaseProductName() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.PRODUCT_NAME;
+    return PRODUCT_NAME;
   }
 
   @Override
   public String getDatabaseProductVersion() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.DATABASE_MAJOR_VERSION + DatabricksJdbcConstants.FULL_STOP
-            + DatabricksJdbcConstants.DATABASE_MINOR_VERSION + DatabricksJdbcConstants.FULL_STOP
-            + DatabricksJdbcConstants.DATABASE_PATCH_VERSION;
+    return DATABASE_MAJOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + DATABASE_MINOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + DATABASE_PATCH_VERSION;
   }
 
   @Override
   public String getDriverName() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.DRIVER_NAME;
+    return DRIVER_NAME;
   }
 
   @Override
   public String getDriverVersion() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.JDBC_MAJOR_VERSION + DatabricksJdbcConstants.FULL_STOP
-            + DatabricksJdbcConstants.JDBC_MINOR_VERSION + DatabricksJdbcConstants.FULL_STOP
-            + DatabricksJdbcConstants.JDBC_PATCH_VERSION;
+    return JDBC_MAJOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + JDBC_MINOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + JDBC_PATCH_VERSION;
   }
 
   @Override
@@ -103,52 +120,62 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean usesLocalFiles() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean usesLocalFilePerTable() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsMixedCaseIdentifiers() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean storesUpperCaseIdentifiers() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean storesLowerCaseIdentifiers() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean storesMixedCaseIdentifiers() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
@@ -159,27 +186,32 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public String getSQLKeywords() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return DatabricksJdbcConstants.EMPTY_STRING;
   }
 
   @Override
   public String getNumericFunctions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return NUMERIC_FUNCTIONS;
   }
 
   @Override
   public String getStringFunctions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return STRING_FUNCTIONS;
   }
 
   @Override
   public String getSystemFunctions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return SYSTEM_FUNCTIONS;
   }
 
   @Override
   public String getTimeDateFunctions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return TIME_DATE_FUNCTIONS;
   }
 
   @Override
@@ -195,17 +227,20 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean supportsAlterTableWithAddColumn() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsAlterTableWithDropColumn() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsColumnAliasing() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
@@ -216,7 +251,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean supportsConvert() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
@@ -226,107 +262,128 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean supportsTableCorrelationNames() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsDifferentTableCorrelationNames() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsExpressionsInOrderBy() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsOrderByUnrelated() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsGroupBy() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsGroupByUnrelated() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsGroupByBeyondSelect() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsLikeEscapeClause() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsMultipleResultSets() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsMultipleTransactions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsNonNullableColumns() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsMinimumSQLGrammar() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsCoreSQLGrammar() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsExtendedSQLGrammar() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsANSI92EntryLevelSQL() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsANSI92IntermediateSQL() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsANSI92FullSQL() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsIntegrityEnhancementFacility() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsOuterJoins() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsFullOuterJoins() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsLimitedOuterJoins() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
@@ -361,127 +418,154 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean supportsSchemasInDataManipulation() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsSchemasInProcedureCalls() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsSchemasInTableDefinitions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsSchemasInIndexDefinitions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsCatalogsInDataManipulation() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsCatalogsInProcedureCalls() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsCatalogsInTableDefinitions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsPositionedDelete() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsPositionedUpdate() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsSelectForUpdate() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsStoredProcedures() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsSubqueriesInComparisons() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsSubqueriesInExists() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsSubqueriesInIns() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsSubqueriesInQuantifieds() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsCorrelatedSubqueries() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsUnion() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsUnionAll() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    // Open cursors are not supported, however open statements are.
+    return false;
   }
 
   @Override
   public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    // Open cursors are not supported, however open statements are.
+    return false;
   }
 
   @Override
   public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
   public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
@@ -499,7 +583,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
   @Override
   public int getMaxColumnNameLength() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
+    return MAX_NAME_LENGTH;
   }
 
   @Override
@@ -553,7 +637,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
   @Override
   public int getMaxSchemaNameLength() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
+    return MAX_NAME_LENGTH;
   }
 
   @Override
@@ -565,7 +649,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
   @Override
   public int getMaxCatalogNameLength() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
+    return MAX_NAME_LENGTH;
   }
 
   @Override
@@ -595,7 +679,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
   @Override
   public int getMaxTableNameLength() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
+    return MAX_NAME_LENGTH;
   }
 
   @Override
@@ -776,42 +860,50 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return type == ResultSet.TYPE_FORWARD_ONLY && concurrency == ResultSet.CONCUR_READ_ONLY;
   }
 
   @Override
   public boolean ownUpdatesAreVisible(int type) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean ownDeletesAreVisible(int type) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean ownInsertsAreVisible(int type) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean othersUpdatesAreVisible(int type) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean othersDeletesAreVisible(int type) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean othersInsertsAreVisible(int type) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean updatesAreDetected(int type) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
@@ -821,12 +913,14 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean insertsAreDetected(int type) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsBatchUpdates() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
@@ -841,22 +935,26 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean supportsSavepoints() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsNamedParameters() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsMultipleOpenResults() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public boolean supportsGetGeneratedKeys() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
@@ -876,7 +974,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean supportsResultSetHoldability(int holdability) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return holdability == ResultSet.CLOSE_CURSORS_AT_COMMIT;
   }
 
   @Override
@@ -887,22 +986,22 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public int getDatabaseMajorVersion() throws SQLException {
-    return DatabricksJdbcConstants.DATABASE_MAJOR_VERSION;
+    return DATABASE_MAJOR_VERSION;
   }
 
   @Override
   public int getDatabaseMinorVersion() throws SQLException {
-    return DatabricksJdbcConstants.DATABASE_MINOR_VERSION;
+    return DATABASE_MINOR_VERSION;
   }
 
   @Override
   public int getJDBCMajorVersion() throws SQLException {
-    return DatabricksJdbcConstants.JDBC_MAJOR_VERSION;
+    return JDBC_MAJOR_VERSION;
   }
 
   @Override
   public int getJDBCMinorVersion() throws SQLException {
-    return DatabricksJdbcConstants.JDBC_MINOR_VERSION;
+    return JDBC_MINOR_VERSION;
   }
 
   @Override
@@ -919,7 +1018,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean supportsStatementPooling() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
@@ -947,7 +1047,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
