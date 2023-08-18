@@ -67,7 +67,8 @@ public class ArrowResultChunk {
   private Instant expiryTime;
   private DownloadStatus status;
 
-  private final ArrayList<ArrayList<ValueVector>> recordBatchList;
+  public ArrayList<ArrayList<ValueVector>> recordBatchList;
+
   private RootAllocator rootAllocator;
 
   ArrowResultChunk(ChunkInfo chunkInfo, RootAllocator rootAllocator) {
@@ -77,9 +78,8 @@ public class ArrowResultChunk {
     this.nextChunkIndex = chunkInfo.getNextChunkIndex();
     this.byteCount = chunkInfo.getByteCount();
     this.status = DownloadStatus.PENDING;
-    this.recordBatchList = new ArrayList<>();
-    this.chunkUrl = null;
     this.rootAllocator = rootAllocator;
+    this.chunkUrl = null;
   }
 
   public static class ArrowResultChunkIterator {
@@ -159,6 +159,7 @@ public class ArrowResultChunk {
   }
 
   public void getArrowDataFromInputStream(InputStream inputStream) throws Exception {
+    this.recordBatchList = new ArrayList<>();
     // add check to see if input stream has been populated
     ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputStream, this.rootAllocator);
     VectorSchemaRoot vectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
