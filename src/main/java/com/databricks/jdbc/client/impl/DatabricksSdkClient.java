@@ -57,6 +57,7 @@ public class DatabricksSdkClient implements DatabricksClient {
 
   @Override
   public DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId, boolean isInternal) throws SQLException {
+
     // TODO: change disposition and format, and handle pending result
     ExecuteStatementRequest request = new ExecuteStatementRequest()
         .setStatement(statement)
@@ -83,7 +84,7 @@ public class DatabricksSdkClient implements DatabricksClient {
       responseState = response.getStatus().getState();
     }
     if (responseState != StatementState.SUCCEEDED) {
-      handleFailedExecution(responseState, statementId);
+      handleFailedExecution(responseState, statementId, statement);
     }
 
     return new DatabricksResultSet(response.getStatus(), statementId, response.getResult(),
@@ -106,6 +107,21 @@ public class DatabricksSdkClient implements DatabricksClient {
       case CANCELED:
         // TODO: Handle differently for failed, closed and cancelled with proper error codes
         throw new DatabricksSQLException("Statement execution failed " + statementId);
+      default:
+        throw new IllegalStateException("Invalid state for error");
+    }
+  }
+  /**
+   * Handles a failed execution and throws appropriate exception
+   */
+  private void handleFailedExecution(StatementState statementState, String statementId, String statement) throws SQLException {
+
+    switch (statementState) {
+      case FAILED:
+      case CLOSED:
+      case CANCELED:
+        // TODO: Handle differently for failed, closed and cancelled with proper error codes
+        throw new DatabricksSQLException("Statement execution failed " + statementId + " -> " + statement);
       default:
         throw new IllegalStateException("Invalid state for error");
     }

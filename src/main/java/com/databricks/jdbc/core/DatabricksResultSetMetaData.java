@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableMap;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.List;
 
 public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
@@ -38,6 +39,26 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
       columnsBuilder.add(columnBuilder.build());
       // Keep index starting from 1, to be consistent with JDBC convention
       columnIndexBuilder.put(columnInfo.getName(), ++currIndex);
+    }
+    this.columns = columnsBuilder.build();
+    this.columnNameIndex = columnIndexBuilder.build();
+  }
+
+  public DatabricksResultSetMetaData(String statementId, List<String> columnNames, List<String> columnTypeText,
+     List<ColumnInfoTypeName> columnTypes, List<Integer> columnTypePrecisions) {
+    this.statementId = statementId;
+
+    ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
+    ImmutableMap.Builder<String, Integer> columnIndexBuilder = ImmutableMap.builder();
+    for (int i = 0; i < columnNames.size(); i++) {
+      ImmutableDatabricksColumn.Builder columnBuilder = ImmutableDatabricksColumn.builder()
+              .columnName(columnNames.get(i))
+              .columnType(getColumnType(columnTypes.get(i)))
+              .columnTypeText(columnTypeText.get(i))
+              .typePrecision(columnTypePrecisions.get(i));
+      columnsBuilder.add(columnBuilder.build());
+      // Keep index starting from 1, to be consistent with JDBC convention
+      columnIndexBuilder.put(columnNames.get(i), i + 1);
     }
     this.columns = columnsBuilder.build();
     this.columnNameIndex = columnIndexBuilder.build();

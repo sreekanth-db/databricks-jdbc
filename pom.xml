@@ -33,14 +33,24 @@
     <httpclient.version>4.5.14</httpclient.version>
     <commons-io.version>2.13.0</commons-io.version>
   </properties>
-
+  <repositories>
+    <repository>
+      <id>databricks-jdbc-oss-local-repo</id>
+      <url>file://${basedir}/src/main/resources</url>
+    </repository>
+  </repositories>
   <dependencies>
+<!--    <dependency>-->
+<!--      <groupId>com.databricks</groupId>-->
+<!--      <artifactId>databricks-sdk-java</artifactId>-->
+<!--      <version>0.1.1</version>-->
+<!--      <scope>system</scope>-->
+<!--      <systemPath>${project.basedir}/src/main/resources/databricks-sdk-java-0.1.1.jar</systemPath>-->
+<!--    </dependency>-->
     <dependency>
       <groupId>com.databricks</groupId>
       <artifactId>databricks-sdk-java</artifactId>
-      <version>0.1.1</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/src/main/resources/databricks-sdk-java-0.1.1.jar</systemPath>
+      <version>0.5.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>

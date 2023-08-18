@@ -1,16 +1,21 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.driver.DatabricksJdbcConstants;
+import com.databricks.sdk.service.sql.ColumnInfoTypeName;
+import com.databricks.sdk.service.sql.StatementState;
+import com.databricks.sdk.service.sql.StatementStatus;
 
 import java.sql.*;
+import java.util.Arrays;
+import java.util.Collections;
 
-public class DatabricksDatabaseMetadata implements DatabaseMetaData {
+public class DatabricksDatabaseMetaData implements DatabaseMetaData {
 
   private final IDatabricksConnection connection;
 
   private final IDatabricksSession session;
 
-  public DatabricksDatabaseMetadata(IDatabricksConnection connection) {
+  public DatabricksDatabaseMetaData(IDatabricksConnection connection) {
       this.connection = connection;
       this.session = connection.getSession();
   }
@@ -770,7 +775,14 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
   @Override
   public ResultSet getTableTypes() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return new DatabricksResultSet(new StatementStatus().setState(StatementState.SUCCEEDED),
+            "metadata-statement",
+            Collections.singletonList("TABLE_TYPE"),
+            Collections.singletonList("TEXT"),
+            Collections.singletonList(ColumnInfoTypeName.STRING),
+            Collections.singletonList(255),
+            new String[][] {{"SYSTEM TABLE"}, {"TABLE"}, {"VIEW"}});
   }
 
   @Override

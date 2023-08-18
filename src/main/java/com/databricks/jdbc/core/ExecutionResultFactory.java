@@ -16,4 +16,8 @@ class ExecutionResultFactory {
         throw new IllegalStateException("Invalid response format " + manifest.getFormat());
     }
   }
+
+  static IExecutionResult getResultSet(String[][] rows) {
+    return new InlineJsonResult(rows);
+  }
 }
