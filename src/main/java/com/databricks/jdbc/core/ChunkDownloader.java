@@ -1,5 +1,6 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
 import com.databricks.sdk.service.sql.ResultData;
@@ -56,7 +57,7 @@ public class ChunkDownloader {
   private static ConcurrentHashMap<Long, ArrowResultChunk> initializeChunksMap(ResultManifest resultManifest, ResultData resultData) {
     ConcurrentHashMap<Long, ArrowResultChunk> chunkIndexMap = new ConcurrentHashMap<>();
     for (ChunkInfo chunkInfo : resultManifest.getChunks()) {
-      chunkIndexMap.put(chunkInfo.getChunkIndex(), new ArrowResultChunk(chunkInfo));
+      chunkIndexMap.put(chunkInfo.getChunkIndex(), new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE)));
     }
 
     for (ExternalLink externalLink : resultData.getExternalLinks()) {
