@@ -57,7 +57,10 @@ public class ArrowStreamResultTest {
     @Mock
     StatementExecutionService statementExecutionService;
 
-
+    /*
+    If running into Arrow memory buffer error, run with jvm argument --add-opens java.base/java.nio=ALL-UNNAMED
+    i.e. mvn test -DargLine="--add-opens java.base/java.nio=ALL-UNNAMED"
+     */
     @Test
     public void testIteration() throws Exception {
         // Arrange
