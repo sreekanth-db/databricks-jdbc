@@ -99,7 +99,7 @@ public class ArrowResultChunk {
       this.begunIterationOverChunk = false;
       this.recordBatchesInChunk = resultChunk.getRecordBatchCountInChunk();
       this.recordBatchCursorInChunk = 0;
-      this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(0).size();
+      this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(0).get(0).getValueCount();
       this.rowCursorInRecordBatch = 0;
     }
 
@@ -108,10 +108,19 @@ public class ArrowResultChunk {
       if(++this.rowCursorInRecordBatch < this.rowsInRecordBatch) return true;
       if(++this.recordBatchCursorInChunk < this.recordBatchesInChunk) {
         this.rowCursorInRecordBatch = 0;
-        this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(this.recordBatchCursorInChunk).size();
+        this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(this.recordBatchCursorInChunk).get(0).getValueCount();
         return true;
       }
       return false;
+    }
+
+    public boolean hasNextRow() {
+      if(this.recordBatchCursorInChunk >= this.recordBatchesInChunk) return false;
+      if((this.recordBatchCursorInChunk == (this.recordBatchesInChunk - 1))
+              && (this.rowCursorInRecordBatch >= (this.rowsInRecordBatch - 1))) {
+        return false;
+      }
+      return true;
     }
   }
 
@@ -182,6 +191,10 @@ public class ArrowResultChunk {
    */
   int getRecordBatchCountInChunk() {
     return this.recordBatchList.size();
+  }
+
+  public ArrowResultChunkIterator getChunkIterator() {
+    return new ArrowResultChunkIterator(this);
   }
 
   /**
