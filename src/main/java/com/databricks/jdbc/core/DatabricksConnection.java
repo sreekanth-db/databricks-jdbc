@@ -108,7 +108,8 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public boolean isReadOnly() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
@@ -128,7 +129,8 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public int getTransactionIsolation() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return Connection.TRANSACTION_READ_UNCOMMITTED;
   }
 
   @Override
@@ -283,12 +285,12 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public void setSchema(String schema) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    session.setSchema(schema);
   }
 
   @Override
   public String getSchema() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return session.getSchema();
   }
 
   @Override

@@ -3,6 +3,8 @@ package com.databricks.jdbc.core;
 import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
 
+import java.util.List;
+
 class ExecutionResultFactory {
   static IExecutionResult getResultSet(ResultData data, ResultManifest manifest) {
     // We will use Arrow Stream only in prod. JSON is for testing and prototype purpose
@@ -17,7 +19,11 @@ class ExecutionResultFactory {
     }
   }
 
-  static IExecutionResult getResultSet(String[][] rows) {
+  static IExecutionResult getResultSet(Object[][] rows) {
+    return new InlineJsonResult(rows);
+  }
+
+  static IExecutionResult getResultSet(List<List<Object>> rows) {
     return new InlineJsonResult(rows);
   }
 }

@@ -45,7 +45,8 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
   }
 
   public DatabricksResultSetMetaData(String statementId, List<String> columnNames, List<String> columnTypeText,
-     List<ColumnInfoTypeName> columnTypes, List<Integer> columnTypePrecisions) {
+     List<Integer> columnTypes, List<Integer> columnTypePrecisions) {
+    // TODO: instead of passing precisions, maybe it can be set by default?
     this.statementId = statementId;
 
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
@@ -53,7 +54,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     for (int i = 0; i < columnNames.size(); i++) {
       ImmutableDatabricksColumn.Builder columnBuilder = ImmutableDatabricksColumn.builder()
               .columnName(columnNames.get(i))
-              .columnType(getColumnType(columnTypes.get(i)))
+              .columnType(columnTypes.get(i))
               .columnTypeText(columnTypeText.get(i))
               .typePrecision(columnTypePrecisions.get(i));
       columnsBuilder.add(columnBuilder.build());
@@ -91,7 +92,8 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   @Override
   public int isNullable(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    // TODO: implement
+    return ResultSetMetaData.columnNullable;
   }
 
   @Override
@@ -101,7 +103,8 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   @Override
   public int getColumnDisplaySize(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    //TODO: to be fixed
+    return 10;
   }
 
   @Override

@@ -1,6 +1,5 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
 import com.databricks.sdk.service.sql.StatementStatus;
@@ -32,7 +31,15 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   }
 
   public DatabricksResultSet(StatementStatus statementStatus, String statementId, List<String> columnNames, List<String> columnTypeText,
-                             List<ColumnInfoTypeName> columnTypes, List<Integer> columnTypePrecisions, String[][] rows) {
+                             List<Integer> columnTypes, List<Integer> columnTypePrecisions, Object[][] rows) {
+    this.statementStatus = statementStatus;
+    this.statementId = statementId;
+    this.executionResult = ExecutionResultFactory.getResultSet(rows);
+    this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, columnNames, columnTypeText, columnTypes, columnTypePrecisions);
+  }
+
+  public DatabricksResultSet(StatementStatus statementStatus, String statementId, List<String> columnNames, List<String> columnTypeText,
+                             List<Integer> columnTypes, List<Integer> columnTypePrecisions, List<List<Object>> rows) {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
     this.executionResult = ExecutionResultFactory.getResultSet(rows);

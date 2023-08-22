@@ -23,13 +23,19 @@ public class InlineJsonResult implements IExecutionResult {
     this.resultManifest = resultManifest;
     this.resultData = resultData;
     this.data = getDataList(resultData.getDataArray());
-    this.currentRow = 0;
+    this.currentRow = -1;
   }
-
-  InlineJsonResult(String[][] rows) {
+  InlineJsonResult(Object[][] rows) {
     this.resultData = null;
     this.resultManifest = null;
-    this.data = Arrays.stream(rows).map(Arrays::asList).collect(Collectors.toList());
+    this.data = Arrays.stream(rows).map(a -> Arrays.stream(a).map(o -> o == null ? null : o.toString()).collect(Collectors.toList())).collect(Collectors.toList());
+    this.currentRow = -1;
+  }
+
+  InlineJsonResult(List<List<Object>> rows) {
+    this.resultData = null;
+    this.resultManifest = null;
+    this.data = rows.stream().map(a -> a.stream().map(Object::toString).collect(Collectors.toList())).collect(Collectors.toList());
     this.currentRow = -1;
   }
 

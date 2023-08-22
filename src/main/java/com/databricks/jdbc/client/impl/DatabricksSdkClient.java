@@ -7,7 +7,6 @@ import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.*;
-import com.google.common.annotations.VisibleForTesting;
 
 import java.sql.SQLException;
 
@@ -17,6 +16,7 @@ import java.sql.SQLException;
 public class DatabricksSdkClient implements DatabricksClient {
 
   private static final String ASYNC_TIMEOUT_VALUE = "0s";
+  private static final String SYNC_TIMEOUT_VALUE = "20s";
   private static final int STATEMENT_RESULT_POLL_INTERVAL_MILLIS = 200;
 
   private final IDatabricksConnectionContext connectionContext;
@@ -64,7 +64,7 @@ public class DatabricksSdkClient implements DatabricksClient {
         .setWarehouseId(warehouseId)
         .setDisposition(isInternal ? Disposition.INLINE : Disposition.EXTERNAL_LINKS)
         .setFormat(isInternal ? Format.JSON_ARRAY : Format.ARROW_STREAM)
-        .setWaitTimeout(ASYNC_TIMEOUT_VALUE)
+        .setWaitTimeout(isInternal ? SYNC_TIMEOUT_VALUE : ASYNC_TIMEOUT_VALUE)
         .setSessionId(sessionId);
 
     ExecuteStatementResponse response = workspaceClient.statementExecution().executeStatement(request);

@@ -8,11 +8,22 @@ public class DriverTester {
     public void printResultSet(ResultSet resultSet) throws SQLException {
         ResultSetMetaData rsmd = resultSet.getMetaData();
         int columnsNumber = rsmd.getColumnCount();
+        for (int i = 1; i <= columnsNumber; i++)
+            System.out.print(rsmd.getColumnName(i) + "\t");
+        System.out.println();
+        for (int i = 1; i <= columnsNumber; i++)
+            System.out.print(rsmd.getColumnTypeName(i) + "\t\t");
+        System.out.println();
+        for (int i = 1; i <= columnsNumber; i++)
+            System.out.print(rsmd.getColumnType(i) + "\t\t\t");
+        System.out.println();
+        for (int i = 1; i <= columnsNumber; i++)
+            System.out.print(rsmd.getPrecision(i) + "\t\t\t");
+        System.out.println();
         while (resultSet.next()) {
             for (int i = 1; i <= columnsNumber; i++) {
-                if (i > 1) System.out.print(",  ");
-                String columnValue = resultSet.getString(i);
-                System.out.print(columnValue + " " + rsmd.getColumnName(i));
+                Object columnValue = resultSet.getObject(i);
+                System.out.print(columnValue + "\t\t");
             }
             System.out.println();
         }
@@ -23,7 +34,7 @@ public class DriverTester {
         DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
         //Getting the connection
         String jdbcUrl = "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
-        Connection con = DriverManager.getConnection(jdbcUrl, "vikrant.puppala@databricks.com", "dapic7ffec94d7dfbd4a06d127ee67cd38ab");
+        Connection con = DriverManager.getConnection(jdbcUrl, "vikrant.puppala@databricks.com", "##");
         System.out.println("Connection established......");
         //Retrieving the meta data object
         DatabaseMetaData metaData = con.getMetaData();
@@ -37,7 +48,7 @@ public class DriverTester {
         DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
         //Getting the connection
         String jdbcUrl = "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
-        Connection con = DriverManager.getConnection(jdbcUrl, "vikrant.puppala@databricks.com", "dapic7ffec94d7dfbd4a06d127ee67cd38ab");
+        Connection con = DriverManager.getConnection(jdbcUrl, "vikrant.puppala@databricks.com", "##");
         System.out.println("Connection established......");
         //Retrieving the meta data object
         DatabaseMetaData metaData = con.getMetaData();
@@ -52,13 +63,11 @@ public class DriverTester {
         DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
         //Getting the connection
         String jdbcUrl = "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
-        Connection con = DriverManager.getConnection(jdbcUrl, "vikrant.puppala@databricks.com", "dapic7ffec94d7dfbd4a06d127ee67cd38ab");
+        Connection con = DriverManager.getConnection(jdbcUrl, "vikrant.puppala@databricks.com", "##");
         System.out.println("Connection established......");
         //Retrieving the meta data object
         Statement statement = con.createStatement();
         statement.setMaxRows(10);
-//        DatabaseMetaData metaData = con.getMetaData();
-//        System.out.println(metaData.getJDBCMinorVersion());
         ResultSet rs = statement.executeQuery("select * from samples.tpch.lineitem limit 1");
         printResultSet(rs);
         rs.close();
