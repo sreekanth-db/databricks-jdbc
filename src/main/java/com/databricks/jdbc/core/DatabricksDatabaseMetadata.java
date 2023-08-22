@@ -1,6 +1,9 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.StatementType;
+
 import java.sql.*;
+import java.util.HashMap;
 
 public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
@@ -632,7 +635,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
     }
 
     String showTablesSQL = "show tables from " + catalog + "." + schemaPattern + " like '" + tableNamePattern + "'";
-    return session.getDatabricksClient().executeStatement(showTablesSQL, session.getSessionId(), session.getWarehouseId(), true);
+    return session.getDatabricksClient().executeStatement(showTablesSQL, session.getSessionId(),
+        session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA);
   }
 
   @Override
@@ -647,7 +651,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
     String showCatalogsSQL = "show catalogs";
 
     return session.getDatabricksClient().executeStatement(showCatalogsSQL, session.getSessionId(),
-            session.getWarehouseId(), true);
+            session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA);
   }
 
   @Override
@@ -878,7 +882,9 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
     }
 
     String showSchemaSQL = "show schemas in " + catalog + " like \'" + schemaPattern + "\'";
-    return session.getDatabricksClient().executeStatement(showSchemaSQL, session.getSessionId(), session.getWarehouseId(), true);
+    return session.getDatabricksClient().executeStatement(
+        showSchemaSQL, session.getSessionId(), session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(),
+        StatementType.METADATA);
   }
 
   @Override

@@ -2,11 +2,13 @@ package com.databricks.jdbc.client;
 
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.IDatabricksResultSet;
+import com.databricks.jdbc.core.ImmutableSqlParameter;
 import com.databricks.sdk.service.sql.ExecuteStatementRequest;
 import com.databricks.sdk.service.sql.ExecuteStatementResponse;
 import com.databricks.sdk.service.sql.Session;
 
 import java.sql.SQLException;
+import java.util.Map;
 
 /**
  * Interface for Databricks client which abstracts the integration with Databricks server.
@@ -31,9 +33,10 @@ public interface DatabricksClient {
    * @param statement SQL statement that needs to be executed
    * @param sessionId underlying session-Id
    * @param warehouseId warehouse-Id which should be used for statement execution
+   * @param statementType type of statement (metadata, update or generic SQL)
    * @return response for statement execution
    */
-  DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId, boolean isInternal) throws SQLException;
+  DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId, Map<Integer, ImmutableSqlParameter> parameters, StatementType statementType) throws SQLException;
 
   /**
    * Closes a statement in Databricks server

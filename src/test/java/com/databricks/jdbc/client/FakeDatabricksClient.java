@@ -1,9 +1,11 @@
 package com.databricks.jdbc.client;
 
 import com.databricks.jdbc.core.DatabricksResultSet;
+import com.databricks.jdbc.core.ImmutableSqlParameter;
 import com.databricks.sdk.service.sql.*;
 
 import java.sql.SQLException;
+import java.util.Map;
 
 public class FakeDatabricksClient implements DatabricksClient {
 
@@ -25,7 +27,8 @@ public class FakeDatabricksClient implements DatabricksClient {
   }
 
   @Override
-  public DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId, boolean isInternal) throws SQLException {
+  public DatabricksResultSet executeStatement(String statement, String sessionId, String warehouseId,
+                                              Map<Integer, ImmutableSqlParameter> params, StatementType statementType) throws SQLException {
     return null;
   }
 

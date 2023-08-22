@@ -13,13 +13,15 @@ class ArrowStreamResult implements IExecutionResult {
   private final long totalChunks;
   private final ImmutableMap<Long, ChunkInfo> rowOffsetToChunkMap;
 
-  private int currentRowIndex;
+  private long currentRowIndex;
   private int currentChunkIndex;
 
   ArrowStreamResult(ResultManifest resultManifest, ResultData resultData) {
     this.totalRows = resultManifest.getTotalRowCount();
     this.totalChunks = resultManifest.getTotalChunkCount();
     this.rowOffsetToChunkMap = getRowOffsetMap(resultManifest);
+    // Initialize to before first row
+    this.currentRowIndex = -1;
   }
 
   private static ImmutableMap<Long, ChunkInfo> getRowOffsetMap(ResultManifest resultManifest) {
@@ -35,7 +37,7 @@ class ArrowStreamResult implements IExecutionResult {
   }
 
   @Override
-  public int getCurrentRow() {
+  public long getCurrentRow() {
     throw new UnsupportedOperationException("Not implemented");
   }
 
