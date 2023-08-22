@@ -27,17 +27,17 @@ public class DatabricksConnectionTest {
   @Mock
   StatementExecutionService statementExecutionService;
 
+  @Test
+  public void testConnection() throws Exception {
+    CreateSessionRequest createSessionRequest = new CreateSessionRequest().setWarehouseId(WAREHOUSE_ID);
+    when(statementExecutionService.createSession(createSessionRequest))
+        .thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
 
-//  public void testConnection() throws Exception {
-//    CreateSessionRequest createSessionRequest = new CreateSessionRequest().setWarehouseId(WAREHOUSE_ID);
-//    when(statementExecutionService.createSession(createSessionRequest))
-//        .thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
-//
-//    IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
-//    DatabricksConnection connection = new DatabricksConnection(connectionContext,
-//        new DatabricksSdkClient(connectionContext, statementExecutionService));
-//
-//    assertFalse(connection.isClosed());
-//    assertEquals(connection.getSession().getSessionId(), SESSION_ID);
-//  }
+    IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+    DatabricksConnection connection = new DatabricksConnection(connectionContext,
+        new DatabricksSdkClient(connectionContext, statementExecutionService));
+
+    assertFalse(connection.isClosed());
+    assertEquals(connection.getSession().getSessionId(), SESSION_ID);
+  }
 }

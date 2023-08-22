@@ -35,7 +35,7 @@ public class InlineJsonResult implements IExecutionResult {
   InlineJsonResult(List<List<Object>> rows) {
     this.resultData = null;
     this.resultManifest = null;
-    this.data = rows.stream().map(a -> a.stream().map(Object::toString).collect(Collectors.toList())).collect(Collectors.toList());
+    this.data = rows.stream().map(a -> a.stream().map(o -> o == null ? null : o.toString()).collect(Collectors.toList())).collect(Collectors.toList());
     this.currentRow = -1;
   }
 

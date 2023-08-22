@@ -39,7 +39,7 @@ public class DriverTester {
         //Retrieving the meta data object
         DatabaseMetaData metaData = con.getMetaData();
         //Retrieving the columns in the database
-        ResultSet resultSet = metaData.getTableTypes();
+        ResultSet resultSet = metaData.getTables("samples", "tpch", null, null);
         printResultSet(resultSet);
     }
 

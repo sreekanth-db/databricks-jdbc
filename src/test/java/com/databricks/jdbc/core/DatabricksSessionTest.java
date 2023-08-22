@@ -28,25 +28,25 @@ public class DatabricksSessionTest {
   @Mock
   StatementExecutionService statementExecutionService;
 
+  @Test
+  public void testOpenSession() {
+    IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+    DatabricksSession session = new DatabricksSession(connectionContext,
+        new DatabricksSdkClient(connectionContext, statementExecutionService));
 
-//  public void testOpenSession() {
-//    IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
-//    DatabricksSession session = new DatabricksSession(connectionContext,
-//        new DatabricksSdkClient(connectionContext, statementExecutionService));
-//
-//    CreateSessionRequest createSessionRequest = new CreateSessionRequest().setWarehouseId(WAREHOUSE_ID);
-//    when(statementExecutionService.createSession(createSessionRequest))
-//        .thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
-//
-//    assertFalse(session.isOpen());
-//    session.open();
-//    assertTrue(session.isOpen());
-//    assertEquals(SESSION_ID, session.getSessionId());
-//
-//    session.close();
-//    assertFalse(session.isOpen());
-//    assertNull(session.getSessionId());
-//  }
+    CreateSessionRequest createSessionRequest = new CreateSessionRequest().setWarehouseId(WAREHOUSE_ID);
+    when(statementExecutionService.createSession(createSessionRequest))
+        .thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
+
+    assertFalse(session.isOpen());
+    session.open();
+    assertTrue(session.isOpen());
+    assertEquals(SESSION_ID, session.getSessionId());
+
+    session.close();
+    assertFalse(session.isOpen());
+    assertNull(session.getSessionId());
+  }
 
   @Test
   public void testOpenSession_invalidWarehouseUrl() {

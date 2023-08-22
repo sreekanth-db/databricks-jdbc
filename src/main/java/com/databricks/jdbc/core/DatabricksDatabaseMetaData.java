@@ -796,7 +796,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             showTablesSQL += " like '" + tableWithContext + "'";
           }
           try {
-            ResultSet rs = session.getDatabricksClient().executeStatement(showTablesSQL, session.getSessionId(), session.getWarehouseId(), true);
+            ResultSet rs = session.getDatabricksClient().executeStatement(showTablesSQL, session.getWarehouseId(), true, session);
             while (rs.next()) {
               rows.add(Arrays.asList(currentCatalog, currentSchema, rs.getString(2), "TABLE", null, null, null, null, null, null));
             }
@@ -834,8 +834,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
 
     String showCatalogsSQL = "show catalogs";
 
-    ResultSet rs = session.getDatabricksClient().executeStatement(showCatalogsSQL, session.getSessionId(),
-            session.getWarehouseId(), true);
+    ResultSet rs = session.getDatabricksClient().executeStatement(showCatalogsSQL,
+            session.getWarehouseId(), true, session);
     List<List<Object>> rows = new ArrayList<>();
     while (rs.next()) {
       rows.add(Collections.singletonList(rs.getString(1)));
@@ -880,7 +880,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
           String[] combination = catalogSchemaTableCombinations.poll();
           String showSchemaSQL = "show columns in " + combination[0] + "." + combination[1] + "." + combination[2];
           try {
-            ResultSet rs = session.getDatabricksClient().executeStatement(showSchemaSQL, session.getSessionId(), session.getWarehouseId(), true);
+            ResultSet rs = session.getDatabricksClient().executeStatement(showSchemaSQL, session.getWarehouseId(), true, session);
             while (rs.next()) {
               if (rs.getString(1).matches(columnNamePattern)) {
                 rows.add(Arrays.asList(combination[0], combination[1], combination[2], rs.getString(1)));
@@ -1586,7 +1586,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             showSchemaSQL += " like '" + schemaWithContext + "'";
           }
           try {
-            ResultSet rs = session.getDatabricksClient().executeStatement(showSchemaSQL, session.getSessionId(), session.getWarehouseId(), true);
+            ResultSet rs = session.getDatabricksClient().executeStatement(showSchemaSQL, session.getWarehouseId(), true, session);
             while (rs.next()) {
               rows.add(Arrays.asList(rs.getString(1), currentCatalog));
             }
