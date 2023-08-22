@@ -1,6 +1,20 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.FieldVector;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.ValueVector;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.VectorSchemaRoot;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamReader;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.util.TransferPair;
 import com.databricks.sdk.service.sql.ChunkInfo;
+import com.databricks.sdk.service.sql.ExternalLink;
+
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ArrowResultChunk {
 
@@ -44,30 +58,103 @@ public class ArrowResultChunk {
   }
 
   private final long chunkIndex;
-  private final long nextChunkIndex;
-  private long numRows;
-  private long rowOffset;
+  final long numRows;
+  final long rowOffset;
+  final long byteCount;
 
   private String chunkUrl;
+  private Long nextChunkIndex;
+  private Instant expiryTime;
   private DownloadStatus status;
 
-  ArrowResultChunk(ChunkInfo chunkInfo) {
+  public ArrayList<ArrayList<ValueVector>> recordBatchList;
+
+  private RootAllocator rootAllocator;
+
+  ArrowResultChunk(ChunkInfo chunkInfo, RootAllocator rootAllocator) {
     this.chunkIndex = chunkInfo.getChunkIndex();
     this.numRows = chunkInfo.getRowCount();
     this.rowOffset = chunkInfo.getRowOffset();
     this.nextChunkIndex = chunkInfo.getNextChunkIndex();
+    this.byteCount = chunkInfo.getByteCount();
     this.status = DownloadStatus.PENDING;
+    this.rootAllocator = rootAllocator;
+    this.chunkUrl = null;
   }
 
-  void setChunkUrl(String chunkUrl) {
-    this.chunkUrl = chunkUrl;
+  /**
+   * Sets link details for the given chunk.
+   */
+  void setChunkUrl(ExternalLink chunk) {
+    this.chunkUrl = chunk.getExternalLink();
+    this.nextChunkIndex = chunk.getNextChunkIndex();
+    this.expiryTime = Instant.parse(chunk.getExpiration());
+    this.status = DownloadStatus.URL_FETCHED;
   }
 
+  /**
+   * Updates status for the chunk
+   */
   void setStatus(DownloadStatus status) {
     this.status = status;
   }
 
+  /**
+   * Checks if the link is valid
+   */
+  boolean isChunkLinkValid() {
+    return expiryTime == null || expiryTime.isAfter(Instant.now());
+  }
+
+  /**
+   * Returns the status for the chunk
+   */
   DownloadStatus getStatus() {
     return this.status;
+  }
+
+  /**
+   * Returns next chunk index for given chunk. Null is returned for last chunk.
+   */
+  Long getNextChunkIndex() {
+    // This should never be called for pending state
+    if (status == DownloadStatus.PENDING) {
+      // TODO: log this
+      throw new IllegalStateException("Next index called for pending state chunk");
+    }
+    return this.nextChunkIndex;
+  }
+
+  public void getArrowDataFromInputStream(InputStream inputStream) throws Exception {
+    this.recordBatchList = new ArrayList<>();
+    // add check to see if input stream has been populated
+    ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputStream, this.rootAllocator);
+    VectorSchemaRoot vectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
+    while(arrowStreamReader.loadNextBatch()) {
+      ArrayList<ValueVector> vectors = new ArrayList<>();
+      List<FieldVector> fieldVectors = vectorSchemaRoot.getFieldVectors();
+      for(FieldVector fieldVector: fieldVectors) {
+        TransferPair transferPair = fieldVector.getTransferPair(rootAllocator);
+        transferPair.transfer();
+        vectors.add(transferPair.getTo());
+      }
+      this.recordBatchList.add(vectors);
+      vectorSchemaRoot.clear();
+    }
+  }
+
+  /**
+   * Returns number of recordBatches in the chunk.
+   * @return
+   */
+  int getRecordBatchCountInChunk() {
+    return this.recordBatchList.size();
+  }
+
+  /**
+   * Returns the chunk download link
+   */
+  String getChunkUrl() {
+    return chunkUrl;
   }
 }

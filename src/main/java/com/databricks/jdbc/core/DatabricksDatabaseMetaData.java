@@ -13,6 +13,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class DatabricksDatabaseMetaData implements DatabaseMetaData {
+  public static final String DRIVER_NAME = "DatabricksJDBC";
+  public static final String PRODUCT_NAME = "SparkSQL";
+  public static final int DATABASE_MAJOR_VERSION = 3;
+  public static final int DATABASE_MINOR_VERSION = 1;
+  public static final int DATABASE_PATCH_VERSION = 1;
+  public static final int JDBC_MAJOR_VERSION = 0;
+  public static final int JDBC_MINOR_VERSION = 0;
+  public static final int JDBC_PATCH_VERSION = 0;
+  public static final Integer MAX_NAME_LENGTH = 128;
+  public static final String NUMERIC_FUNCTIONS = "ABS,ACOS,ASIN,ATAN,ATAN2,CEILING,COS,COT,DEGREES,EXP,FLOOR,LOG,LOG10,MOD,PI,POWER,RADIANS,RAND,ROUND,SIGN,SIN,SQRT,TAN,TRUNCATE";
+  public static final String STRING_FUNCTIONS = "ASCII,CHAR,CHAR_LENGTH,CHARACTER_LENGTH,CONCAT,INSERT,LCASE,LEFT,LENGTH,LOCATE,LOCATE2,LTRIM,OCTET_LENGTH,POSITION,REPEAT,REPLACE,RIGHT,RTRIM,SOUNDEX,SPACE,SUBSTRING,UCASE";
+  public static final String SYSTEM_FUNCTIONS = "DATABASE,IFNULL,USER";
+  public static final String TIME_DATE_FUNCTIONS = "CURDATE,CURRENT_DATE,CURRENT_TIME,CURRENT_TIMESTAMP,CURTIME,DAYNAME,DAYOFMONTH,DAYOFWEEK,DAYOFYEAR,HOUR,MINUTE,MONTH,MONTHNAME,NOW,QUARTER,SECOND,TIMESTAMPADD,TIMESTAMPDIFF,WEEK,YEAR";
 
   private final IDatabricksConnection connection;
 
@@ -78,29 +91,29 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
   @Override
   public String getDatabaseProductName() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.PRODUCT_NAME;
+    return PRODUCT_NAME;
   }
 
   @Override
   public String getDatabaseProductVersion() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.DATABASE_MAJOR_VERSION + DatabricksJdbcConstants.FULL_STOP
-            + DatabricksJdbcConstants.DATABASE_MINOR_VERSION + DatabricksJdbcConstants.FULL_STOP
-            + DatabricksJdbcConstants.DATABASE_PATCH_VERSION;
+    return DATABASE_MAJOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + DATABASE_MINOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + DATABASE_PATCH_VERSION;
   }
 
   @Override
   public String getDriverName() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.DRIVER_NAME;
+    return DRIVER_NAME;
   }
 
   @Override
   public String getDriverVersion() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.JDBC_MAJOR_VERSION + DatabricksJdbcConstants.FULL_STOP
-            + DatabricksJdbcConstants.JDBC_MINOR_VERSION + DatabricksJdbcConstants.FULL_STOP
-            + DatabricksJdbcConstants.JDBC_PATCH_VERSION;
+    return JDBC_MAJOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + JDBC_MINOR_VERSION + DatabricksJdbcConstants.FULL_STOP
+            + JDBC_PATCH_VERSION;
   }
 
   @Override
@@ -188,25 +201,25 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
   @Override
   public String getNumericFunctions() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.NUMERIC_FUNCTIONS;
+    return NUMERIC_FUNCTIONS;
   }
 
   @Override
   public String getStringFunctions() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.STRING_FUNCTIONS;
+    return STRING_FUNCTIONS;
   }
 
   @Override
   public String getSystemFunctions() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.SYSTEM_FUNCTIONS;
+    return SYSTEM_FUNCTIONS;
   }
 
   @Override
   public String getTimeDateFunctions() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.TIME_DATE_FUNCTIONS;
+    return TIME_DATE_FUNCTIONS;
   }
 
   @Override
@@ -540,12 +553,14 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
   @Override
   public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
     throwExceptionIfConnectionIsClosed();
+    // Open cursors are not supported, however open statements are.
     return false;
   }
 
   @Override
   public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
     throwExceptionIfConnectionIsClosed();
+    // Open cursors are not supported, however open statements are.
     return false;
   }
 
@@ -576,7 +591,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
   @Override
   public int getMaxColumnNameLength() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
+    return MAX_NAME_LENGTH;
   }
 
   @Override
@@ -630,7 +645,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
   @Override
   public int getMaxSchemaNameLength() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
+    return MAX_NAME_LENGTH;
   }
 
   @Override
@@ -642,7 +657,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
   @Override
   public int getMaxCatalogNameLength() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
+    return MAX_NAME_LENGTH;
   }
 
   @Override
@@ -672,7 +687,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
   @Override
   public int getMaxTableNameLength() throws SQLException {
     throwExceptionIfConnectionIsClosed();
-    return DatabricksJdbcConstants.MAX_NAME_LENGTH;
+    return MAX_NAME_LENGTH;
   }
 
   @Override
@@ -1494,22 +1509,22 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public int getDatabaseMajorVersion() throws SQLException {
-    return DatabricksJdbcConstants.DATABASE_MAJOR_VERSION;
+    return DATABASE_MAJOR_VERSION;
   }
 
   @Override
   public int getDatabaseMinorVersion() throws SQLException {
-    return DatabricksJdbcConstants.DATABASE_MINOR_VERSION;
+    return DATABASE_MINOR_VERSION;
   }
 
   @Override
   public int getJDBCMajorVersion() throws SQLException {
-    return DatabricksJdbcConstants.JDBC_MAJOR_VERSION;
+    return JDBC_MAJOR_VERSION;
   }
 
   @Override
   public int getJDBCMinorVersion() throws SQLException {
-    return DatabricksJdbcConstants.JDBC_MINOR_VERSION;
+    return JDBC_MINOR_VERSION;
   }
 
   @Override
