@@ -117,12 +117,9 @@ public class ArrowResultChunk {
     }
 
     public boolean hasNextRow() {
-      if(this.recordBatchCursorInChunk >= this.recordBatchesInChunk) return false;
-      if((this.recordBatchCursorInChunk == (this.recordBatchesInChunk - 1))
-              && (this.rowCursorInRecordBatch >= (this.rowsInRecordBatch - 1))) {
-        return false;
-      }
-      return true;
+      return ((recordBatchCursorInChunk < (recordBatchesInChunk-1))
+              || ((recordBatchCursorInChunk == (recordBatchesInChunk-1))
+                    && (rowCursorInRecordBatch < (rowsInRecordBatch-1))));
     }
   }
 

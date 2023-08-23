@@ -32,6 +32,7 @@ class ArrowStreamResult implements IExecutionResult {
     this.session = session;
     this.chunkDownloader = new ChunkDownloader(statementId, resultManifest, resultData, session);
     this.firstChunkPopulated = false;
+    this.currentRowIndex = -1;
   }
 
   public ChunkDownloader getChunkDownloader() {return this.chunkDownloader;}
@@ -57,19 +58,20 @@ class ArrowStreamResult implements IExecutionResult {
   @Override
   public boolean next() {
     if(!this.firstChunkPopulated) {
-      // get first chunk from chunk downloader and set iterator to its iterator
+      // get first chunk from chunk downloader and set iterator to its iterator i.e. row 0
+      if(this.totalChunks == 0) return false;
+      ++this.currentRowIndex;
       ArrowResultChunk firstChunk = this.chunkDownloader.getChunk(/*chunkIndex =*/ 0L);
       this.chunkIterator = firstChunk.getChunkIterator();
       this.firstChunkPopulated = true;
       return true;
     }
+    ++this.currentRowIndex;
     if(this.chunkIterator.nextRow()) {
-      ++this.currentRowIndex;
       return true;
     }
     // switch to next chunk and iterate over it
-    ++this.currentChunkIndex;
-    if(this.currentChunkIndex == this.totalChunks) return false; // this implies that this was the last chunk
+    if(++this.currentChunkIndex == this.totalChunks) return false; // this implies that this was the last chunk
     ArrowResultChunk nextChunk = this.chunkDownloader.getChunk(this.currentChunkIndex);
     this.chunkIterator = nextChunk.getChunkIterator();
     return true;
@@ -77,8 +79,7 @@ class ArrowStreamResult implements IExecutionResult {
 
   @Override
   public boolean hasNext() {
-    if(this.currentChunkIndex >= this.totalChunks) return false;
-    if((this.currentChunkIndex == (this.totalChunks - 1)) && !(this.chunkIterator.hasNextRow())) return false;
-    return true;
+    return ((this.currentChunkIndex < (totalChunks - 1)) ||
+            ((currentChunkIndex == (totalChunks - 1)) && chunkIterator.hasNextRow()));
   }
 }
