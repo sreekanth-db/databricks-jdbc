@@ -62,7 +62,7 @@ public class DatabricksStatementTest {
             .setChunks(new ArrayList<>())
             .setSchema(new ResultSchema()
                 .setColumns(new ArrayList<>())))
-        .setResult(new ResultData());
+        .setResult(new ResultData().setExternalLinks(new ArrayList<>()));
     GetStatementRequest getStatementRequest = new GetStatementRequest().setStatementId(STATEMENT_ID);
     when(statementExecutionService.getStatement(getStatementRequest))
         .thenReturn(getResponsePending, getResponseSuccessful);

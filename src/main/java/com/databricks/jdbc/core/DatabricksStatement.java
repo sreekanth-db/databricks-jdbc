@@ -263,7 +263,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   DatabricksResultSet executeInternal(String sql, Map<Integer, ImmutableSqlParameter> params, StatementType statementType)
       throws SQLException {
     resultSet = connection.getSession().getDatabricksClient().executeStatement(
-        sql, getSessionId(), connection.getSession().getWarehouseId(), params, statementType);
+        sql, connection.getSession().getWarehouseId(), params, statementType, connection.getSession());
     this.isClosed = false;
     return resultSet;
   }

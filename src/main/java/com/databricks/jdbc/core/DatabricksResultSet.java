@@ -27,10 +27,11 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   private Long updateCount;
 
   public DatabricksResultSet(
-      StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest, StatementType statementType) {
+      StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest,
+      StatementType statementType, IDatabricksSession session) {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
-    this.executionResult = ExecutionResultFactory.getResultSet(resultData, resultManifest);
+    this.executionResult = ExecutionResultFactory.getResultSet(resultData, resultManifest, statementId, session);
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, resultManifest);
     this.statementType = statementType;
     this.updateCount = null;
@@ -381,7 +382,8 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public boolean isBeforeFirst() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    // TODO: Madhav to check the best way to implement this, below is not correct
+    return !executionResult.hasNext();
   }
 
   @Override
