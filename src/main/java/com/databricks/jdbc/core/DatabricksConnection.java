@@ -54,7 +54,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public CallableStatement prepareCall(String sql) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throw new SQLFeatureNotSupportedException("Unsupported feature");
   }
 
   @Override
