@@ -1,8 +1,10 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.StatementType;
 import com.databricks.jdbc.driver.DatabricksJdbcConstants;
 
 import java.sql.*;
+import java.util.HashMap;
 
 public class DatabricksDatabaseMetadata implements DatabaseMetaData {
   public static final String DRIVER_NAME = "DatabricksJDBC";
@@ -766,7 +768,7 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
     String showTablesSQL = "show tables from " + catalog + "." + schemaPattern + " like '" + tableNamePattern + "'";
     return session.getDatabricksClient().executeStatement(
-        showTablesSQL, session.getWarehouseId(), true, session);
+        showTablesSQL, session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA, session);
   }
 
   @Override
@@ -781,7 +783,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
     String showCatalogsSQL = "show catalogs";
 
     return session.getDatabricksClient().executeStatement(
-        showCatalogsSQL, session.getWarehouseId(), true, session);
+        showCatalogsSQL, session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(),
+        StatementType.METADATA, session);
   }
 
   @Override
@@ -796,7 +799,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
     // TODO: Handle null catalog, schema, table behaviour
 
     String showSchemaSQL = "show columns in " + catalog + "." + schemaPattern + "." + tableNamePattern;
-    ResultSet resultSet = session.getDatabricksClient().executeStatement(showSchemaSQL, session.getWarehouseId(), true, session);
+    ResultSet resultSet = session.getDatabricksClient().executeStatement(showSchemaSQL, session.getWarehouseId(),
+        new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA, session);
 
     // TODO: Handle post result set generation filtering based on result set implementation
 
@@ -1042,7 +1046,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
 
     String showSchemaSQL = "show schemas in " + catalog + " like \'" + schemaPattern + "\'";
     return session.getDatabricksClient().executeStatement(
-        showSchemaSQL, session.getWarehouseId(), true, session);
+        showSchemaSQL, session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(),
+        StatementType.METADATA, session);
   }
 
   @Override
@@ -1069,7 +1074,8 @@ public class DatabricksDatabaseMetadata implements DatabaseMetaData {
     // TODO: Handle null catalog, schema, function behaviour
 
     String showSchemaSQL = "show functions in " + catalog + "." + schemaPattern + " like '" + functionNamePattern + "'";
-    return session.getDatabricksClient().executeStatement(showSchemaSQL, session.getWarehouseId(), true, session);
+    return session.getDatabricksClient().executeStatement(showSchemaSQL, session.getWarehouseId(),
+        new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA, session);
   }
 
   @Override

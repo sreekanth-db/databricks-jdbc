@@ -1,17 +1,18 @@
 package com.databricks.jdbc.client.impl;
 
 import com.databricks.jdbc.client.DatabricksClient;
+import com.databricks.jdbc.client.StatementType;
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.DatabricksSQLException;
-import com.databricks.jdbc.core.IDatabricksResultSet;
 import com.databricks.jdbc.core.IDatabricksSession;
+import com.databricks.jdbc.core.ImmutableSqlParameter;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.*;
-import com.google.common.annotations.VisibleForTesting;
 
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -60,13 +61,16 @@ public class DatabricksSdkClient implements DatabricksClient {
 
   @Override
   public DatabricksResultSet executeStatement(
-      String statement, String warehouseId, boolean isInternal, IDatabricksSession session) throws SQLException {
-    // TODO: change disposition and format, and handle pending result
+      String statement, String warehouseId, Map<Integer, ImmutableSqlParameter> parameters,
+      StatementType statementType, IDatabricksSession session) throws SQLException {
+
+    Format format = useCloudFetchForResult(statementType) ? Format.ARROW_STREAM : Format.JSON_ARRAY;
+    Disposition disposition = useCloudFetchForResult(statementType) ? Disposition.EXTERNAL_LINKS : Disposition.INLINE;
     ExecuteStatementRequest request = new ExecuteStatementRequest()
         .setStatement(statement)
         .setWarehouseId(warehouseId)
-        .setDisposition(isInternal ? Disposition.INLINE : Disposition.EXTERNAL_LINKS)
-        .setFormat(isInternal ? Format.JSON_ARRAY : Format.ARROW_STREAM)
+        .setDisposition(disposition)
+        .setFormat(format)
         .setWaitTimeout(ASYNC_TIMEOUT_VALUE)
         .setSessionId(session.getSessionId());
 
@@ -91,7 +95,11 @@ public class DatabricksSdkClient implements DatabricksClient {
     }
 
     return new DatabricksResultSet(response.getStatus(), statementId, response.getResult(),
-          response.getManifest(), session);
+          response.getManifest(), statementType, session);
+  }
+
+  private boolean useCloudFetchForResult(StatementType statementType) {
+    return statementType == StatementType.QUERY || statementType == StatementType.SQL;
   }
 
   @Override

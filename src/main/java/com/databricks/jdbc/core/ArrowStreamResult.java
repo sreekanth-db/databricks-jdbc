@@ -1,7 +1,6 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.sdk.service.sql.ChunkInfo;
-import com.databricks.sdk.service.sql.ExternalLink;
 import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
 import com.google.common.collect.ImmutableMap;
@@ -17,7 +16,7 @@ class ArrowStreamResult implements IExecutionResult {
   private final ImmutableMap<Long, ChunkInfo> rowOffsetToChunkMap;
   private final ChunkDownloader chunkDownloader;
 
-  private int currentRowIndex;
+  private long currentRowIndex;
   private int currentChunkIndex;
 
   private boolean firstChunkPopulated;
@@ -29,6 +28,8 @@ class ArrowStreamResult implements IExecutionResult {
     this.totalRows = resultManifest.getTotalRowCount();
     this.totalChunks = resultManifest.getTotalChunkCount();
     this.rowOffsetToChunkMap = getRowOffsetMap(resultManifest);
+    // Initialize to before first row
+    this.currentRowIndex = -1;
     this.session = session;
     this.chunkDownloader = new ChunkDownloader(statementId, resultManifest, resultData, session);
     this.firstChunkPopulated = false;
@@ -51,7 +52,7 @@ class ArrowStreamResult implements IExecutionResult {
   }
 
   @Override
-  public int getCurrentRow() {
+  public long getCurrentRow() {
     return this.currentRowIndex;
   }
 

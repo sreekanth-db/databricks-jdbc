@@ -1,10 +1,11 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.memory.BufferAllocator;
 import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.*;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.FieldVector;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.Float8Vector;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.IntVector;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.VectorSchemaRoot;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.dictionary.DictionaryProvider;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamReader;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamWriter;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowWriter;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.Types;
@@ -12,15 +13,17 @@ import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.Fiel
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.FieldType;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.Schema;
 import com.databricks.sdk.service.sql.ChunkInfo;
-import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static java.lang.Math.*;
+import static java.lang.Math.min;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ArrowResultChunkTest {
