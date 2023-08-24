@@ -33,6 +33,10 @@ public class ArrowResultChunkTest {
 
     private long totalRows = 110;
 
+    /*
+    If running into Arrow memory buffer error, run with jvm argument --add-opens java.base/java.nio=ALL-UNNAMED
+    i.e. mvn test -DargLine="--add-opens java.base/java.nio=ALL-UNNAMED"
+     */
     @Test
     public void testGetArrowDataFromInputStream() throws Exception {
         // Arrange
