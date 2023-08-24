@@ -21,6 +21,7 @@ import java.util.Optional;
 public class DatabricksSdkClient implements DatabricksClient {
 
   private static final String ASYNC_TIMEOUT_VALUE = "0s";
+  private static final String SYNC_TIMEOUT_VALUE = "20s";
   private static final int STATEMENT_RESULT_POLL_INTERVAL_MILLIS = 200;
 
   private final IDatabricksConnectionContext connectionContext;
@@ -91,7 +92,7 @@ public class DatabricksSdkClient implements DatabricksClient {
       responseState = response.getStatus().getState();
     }
     if (responseState != StatementState.SUCCEEDED) {
-      handleFailedExecution(responseState, statementId);
+      handleFailedExecution(responseState, statementId, statement);
     }
 
     return new DatabricksResultSet(response.getStatus(), statementId, response.getResult(),
@@ -123,6 +124,21 @@ public class DatabricksSdkClient implements DatabricksClient {
       case CANCELED:
         // TODO: Handle differently for failed, closed and cancelled with proper error codes
         throw new DatabricksSQLException("Statement execution failed " + statementId);
+      default:
+        throw new IllegalStateException("Invalid state for error");
+    }
+  }
+  /**
+   * Handles a failed execution and throws appropriate exception
+   */
+  private void handleFailedExecution(StatementState statementState, String statementId, String statement) throws SQLException {
+
+    switch (statementState) {
+      case FAILED:
+      case CLOSED:
+      case CANCELED:
+        // TODO: Handle differently for failed, closed and cancelled with proper error codes
+        throw new DatabricksSQLException("Statement execution failed " + statementId + " -> " + statement);
       default:
         throw new IllegalStateException("Invalid state for error");
     }

@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 
 public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
@@ -37,6 +38,26 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     this.updateCount = null;
   }
 
+  public DatabricksResultSet(StatementStatus statementStatus, String statementId, List<String> columnNames, List<String> columnTypeText,
+                             List<Integer> columnTypes, List<Integer> columnTypePrecisions, Object[][] rows, StatementType statementType) {
+    this.statementStatus = statementStatus;
+    this.statementId = statementId;
+    this.executionResult = ExecutionResultFactory.getResultSet(rows);
+    this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, columnNames, columnTypeText, columnTypes, columnTypePrecisions, rows.length);
+    this.statementType = statementType;
+    this.updateCount = null;
+  }
+
+  public DatabricksResultSet(StatementStatus statementStatus, String statementId, List<String> columnNames, List<String> columnTypeText,
+                             List<Integer> columnTypes, List<Integer> columnTypePrecisions, List<List<Object>> rows, StatementType statementType) {
+    this.statementStatus = statementStatus;
+    this.statementId = statementId;
+    this.executionResult = ExecutionResultFactory.getResultSet(rows);
+    this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, columnNames, columnTypeText, columnTypes, columnTypePrecisions, rows.size());
+    this.statementType = statementType;
+    this.updateCount = null;
+  }
+
   @Override
   public boolean next() throws SQLException {
     return this.executionResult.next();
@@ -44,12 +65,13 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public void close() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    // TODO: Add implementation for close if needed
   }
 
   @Override
   public boolean wasNull() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    // TODO: fix implementation
+    return this == null;
   }
 
   @Override

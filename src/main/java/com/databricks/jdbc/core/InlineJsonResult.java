@@ -7,8 +7,10 @@ import com.databricks.sdk.service.sql.ResultManifest;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class InlineJsonResult implements IExecutionResult {
 
@@ -21,7 +23,19 @@ public class InlineJsonResult implements IExecutionResult {
     this.resultManifest = resultManifest;
     this.resultData = resultData;
     this.data = getDataList(resultData.getDataArray());
-    // Initialize cursor to before first row
+    this.currentRow = -1;
+  }
+  InlineJsonResult(Object[][] rows) {
+    this.resultData = null;
+    this.resultManifest = null;
+    this.data = Arrays.stream(rows).map(a -> Arrays.stream(a).map(o -> o == null ? null : o.toString()).collect(Collectors.toList())).collect(Collectors.toList());
+    this.currentRow = -1;
+  }
+
+  InlineJsonResult(List<List<Object>> rows) {
+    this.resultData = null;
+    this.resultManifest = null;
+    this.data = rows.stream().map(a -> a.stream().map(o -> o == null ? null : o.toString()).collect(Collectors.toList())).collect(Collectors.toList());
     this.currentRow = -1;
   }
 

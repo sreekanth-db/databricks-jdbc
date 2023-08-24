@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableMap;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.List;
 
 public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
@@ -45,6 +46,28 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     this.totalRows = resultManifest.getTotalRowCount();
   }
 
+  public DatabricksResultSetMetaData(String statementId, List<String> columnNames, List<String> columnTypeText,
+     List<Integer> columnTypes, List<Integer> columnTypePrecisions, long totalRows) {
+    // TODO: instead of passing precisions, maybe it can be set by default?
+    this.statementId = statementId;
+
+    ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
+    ImmutableMap.Builder<String, Integer> columnIndexBuilder = ImmutableMap.builder();
+    for (int i = 0; i < columnNames.size(); i++) {
+      ImmutableDatabricksColumn.Builder columnBuilder = ImmutableDatabricksColumn.builder()
+              .columnName(columnNames.get(i))
+              .columnType(columnTypes.get(i))
+              .columnTypeText(columnTypeText.get(i))
+              .typePrecision(columnTypePrecisions.get(i));
+      columnsBuilder.add(columnBuilder.build());
+      // Keep index starting from 1, to be consistent with JDBC convention
+      columnIndexBuilder.put(columnNames.get(i), i + 1);
+    }
+    this.columns = columnsBuilder.build();
+    this.columnNameIndex = columnIndexBuilder.build();
+    this.totalRows = totalRows;
+  }
+
   @Override
   public int getColumnCount() throws SQLException {
     return columns.size();
@@ -72,7 +95,8 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   @Override
   public int isNullable(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    // TODO: implement
+    return ResultSetMetaData.columnNullable;
   }
 
   @Override
@@ -82,7 +106,8 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   @Override
   public int getColumnDisplaySize(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    //TODO: to be fixed
+    return 10;
   }
 
   @Override

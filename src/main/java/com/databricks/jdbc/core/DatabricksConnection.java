@@ -69,7 +69,8 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public boolean getAutoCommit() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return true;
   }
 
   @Override
@@ -99,7 +100,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public DatabaseMetaData getMetaData() throws SQLException {
-    return new DatabricksDatabaseMetadata(this);
+    return new DatabricksDatabaseMetaData(this);
   }
 
   @Override
@@ -109,17 +110,18 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public boolean isReadOnly() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return false;
   }
 
   @Override
   public void setCatalog(String catalog) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    this.session.setCatalog(catalog);
   }
 
   @Override
   public String getCatalog() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return this.session.getCatalog();
   }
 
   @Override
@@ -129,7 +131,8 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public int getTransactionIsolation() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    throwExceptionIfConnectionIsClosed();
+    return Connection.TRANSACTION_READ_UNCOMMITTED;
   }
 
   @Override
@@ -284,12 +287,12 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   @Override
   public void setSchema(String schema) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    session.setSchema(schema);
   }
 
   @Override
   public String getSchema() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return session.getSchema();
   }
 
   @Override
@@ -325,5 +328,11 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   @Override
   public Connection getConnection() {
     return this;
+  }
+
+  private void throwExceptionIfConnectionIsClosed() throws SQLException {
+    if (this.isClosed()) {
+      throw new DatabricksSQLException("Connection closed!");
+    }
   }
 }
