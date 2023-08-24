@@ -115,6 +115,12 @@ public class ArrowResultChunk {
       }
       return false;
     }
+
+    public boolean hasNextRow() {
+      return ((recordBatchCursorInChunk < (recordBatchesInChunk-1))
+              || ((recordBatchCursorInChunk == (recordBatchesInChunk-1))
+                    && (rowCursorInRecordBatch < (rowsInRecordBatch-1))));
+    }
   }
 
   /**
@@ -184,6 +190,10 @@ public class ArrowResultChunk {
    */
   int getRecordBatchCountInChunk() {
     return this.recordBatchList.size();
+  }
+
+  public ArrowResultChunkIterator getChunkIterator() {
+    return new ArrowResultChunkIterator(this);
   }
 
   /**
