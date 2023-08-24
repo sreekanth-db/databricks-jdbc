@@ -755,7 +755,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128, 128, 128, 128, 128, 128, 128, 128),
-            new Object[0][0]
+            new Object[0][0],
+            StatementType.METADATA
     );
   }
 
@@ -822,7 +823,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128, 128, 128, 128, 128, 128, 128, 128, 128),
-            rows);
+            rows,
+            StatementType.METADATA);
   }
 
   @Override
@@ -850,7 +852,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Collections.singletonList("VARCHAR"),
             Collections.singletonList(Types.VARCHAR),
             Collections.singletonList(128),
-            rows);
+            rows,
+            StatementType.METADATA);
   }
 
   @Override
@@ -862,7 +865,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Collections.singletonList("VARCHAR"),
             Collections.singletonList(Types.VARCHAR),
             Collections.singletonList(128),
-            new String[][] {{"SYSTEM TABLE"}, {"TABLE"}, {"VIEW"}});
+            new String[][] {{"SYSTEM TABLE"}, {"TABLE"}, {"VIEW"}},
+            StatementType.METADATA);
   }
 
   @Override
@@ -909,7 +913,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128, 128, 128),
-            rows);
+            rows,
+            StatementType.METADATA);
   }
 
   @Override
@@ -1361,7 +1366,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
                             null,
                             null
                     }
-            });
+            },
+            StatementType.METADATA);
   }
 
   @Override
@@ -1451,7 +1457,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128, 128, 128, 128, 128, 128),
-            new String[0][0]
+            new String[0][0],
+            StatementType.METADATA
     );
   }
 
@@ -1613,7 +1620,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128),
-            rows);
+            rows,
+            StatementType.METADATA);
   }
 
   @Override
@@ -1645,7 +1653,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128, 128, 128, 128, 128),
-            new Object[0][0]
+            new Object[0][0],
+            StatementType.METADATA
     );
 
 //    // TODO: Handle null catalog, schema, function behaviour

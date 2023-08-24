@@ -47,7 +47,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
   }
 
   public DatabricksResultSetMetaData(String statementId, List<String> columnNames, List<String> columnTypeText,
-     List<Integer> columnTypes, List<Integer> columnTypePrecisions) {
+     List<Integer> columnTypes, List<Integer> columnTypePrecisions, long totalRows) {
     // TODO: instead of passing precisions, maybe it can be set by default?
     this.statementId = statementId;
 
@@ -65,6 +65,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     }
     this.columns = columnsBuilder.build();
     this.columnNameIndex = columnIndexBuilder.build();
+    this.totalRows = totalRows;
   }
 
   @Override

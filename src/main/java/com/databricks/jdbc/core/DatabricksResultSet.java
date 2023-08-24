@@ -39,19 +39,23 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   }
 
   public DatabricksResultSet(StatementStatus statementStatus, String statementId, List<String> columnNames, List<String> columnTypeText,
-                             List<Integer> columnTypes, List<Integer> columnTypePrecisions, Object[][] rows) {
+                             List<Integer> columnTypes, List<Integer> columnTypePrecisions, Object[][] rows, StatementType statementType) {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
     this.executionResult = ExecutionResultFactory.getResultSet(rows);
-    this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, columnNames, columnTypeText, columnTypes, columnTypePrecisions);
+    this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, columnNames, columnTypeText, columnTypes, columnTypePrecisions, rows.length);
+    this.statementType = statementType;
+    this.updateCount = null;
   }
 
   public DatabricksResultSet(StatementStatus statementStatus, String statementId, List<String> columnNames, List<String> columnTypeText,
-                             List<Integer> columnTypes, List<Integer> columnTypePrecisions, List<List<Object>> rows) {
+                             List<Integer> columnTypes, List<Integer> columnTypePrecisions, List<List<Object>> rows, StatementType statementType) {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
     this.executionResult = ExecutionResultFactory.getResultSet(rows);
-    this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, columnNames, columnTypeText, columnTypes, columnTypePrecisions);
+    this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, columnNames, columnTypeText, columnTypes, columnTypePrecisions, rows.size());
+    this.statementType = statementType;
+    this.updateCount = null;
   }
 
   @Override
