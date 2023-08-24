@@ -1,18 +1,18 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.FieldVector;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.Float8Vector;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.IntVector;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.VectorSchemaRoot;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.dictionary.DictionaryProvider;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamWriter;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowWriter;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.Types;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.Field;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.FieldType;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.Schema;
 import com.databricks.sdk.service.sql.ChunkInfo;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.Float8Vector;
+import org.apache.arrow.vector.IntVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.dictionary.DictionaryProvider;
+import org.apache.arrow.vector.ipc.ArrowStreamWriter;
+import org.apache.arrow.vector.ipc.ArrowWriter;
+import org.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;

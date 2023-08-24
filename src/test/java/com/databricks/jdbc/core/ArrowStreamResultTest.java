@@ -1,25 +1,26 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.FieldVector;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.Float8Vector;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.IntVector;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.VectorSchemaRoot;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.dictionary.DictionaryProvider;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamWriter;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowWriter;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.Types;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.Field;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.FieldType;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.Schema;
 import com.databricks.jdbc.client.impl.DatabricksSdkClient;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.service.sql.*;
-import org.junit.jupiter.api.BeforeEach;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.Float8Vector;
+import org.apache.arrow.vector.IntVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.dictionary.DictionaryProvider;
+import org.apache.arrow.vector.ipc.ArrowStreamWriter;
+import org.apache.arrow.vector.ipc.ArrowWriter;
+import org.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
@@ -35,10 +36,9 @@ import java.util.Properties;
 import java.util.Random;
 
 import static java.lang.Math.min;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ArrowStreamResultTest {
