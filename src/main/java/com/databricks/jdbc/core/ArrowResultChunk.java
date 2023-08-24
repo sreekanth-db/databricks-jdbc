@@ -1,18 +1,16 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.FieldVector;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ValueVector;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.VectorSchemaRoot;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamReader;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.util.TransferPair;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
-
-import java.text.SimpleDateFormat;
-import java.time.Instant;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
+import org.apache.arrow.vector.util.TransferPair;
 
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -82,6 +80,47 @@ public class ArrowResultChunk {
     this.chunkUrl = null;
   }
 
+  public static class ArrowResultChunkIterator {
+    private final ArrowResultChunk resultChunk;
+
+    private boolean begunIterationOverChunk;
+    private int recordBatchesInChunk;
+
+    private int recordBatchCursorInChunk;
+
+    private int rowsInRecordBatch;
+
+    private int rowCursorInRecordBatch;
+
+    ArrowResultChunkIterator(ArrowResultChunk resultChunk) {
+      this.resultChunk = resultChunk;
+      this.begunIterationOverChunk = false;
+      this.recordBatchesInChunk = resultChunk.getRecordBatchCountInChunk();
+      this.recordBatchCursorInChunk = 0;
+      // fetches number of rows in the record batch using the number of values in the first column vector
+      this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(0).get(0).getValueCount();
+      this.rowCursorInRecordBatch = 0;
+    }
+
+    public boolean nextRow() {
+      if(!this.begunIterationOverChunk) this.begunIterationOverChunk = true;
+      if(++this.rowCursorInRecordBatch < this.rowsInRecordBatch) return true;
+      if(++this.recordBatchCursorInChunk < this.recordBatchesInChunk) {
+        this.rowCursorInRecordBatch = 0;
+        // fetches number of rows in the record batch using the number of values in the first column vector
+        this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(this.recordBatchCursorInChunk).get(0).getValueCount();
+        return true;
+      }
+      return false;
+    }
+
+    public boolean hasNextRow() {
+      return ((recordBatchCursorInChunk < (recordBatchesInChunk-1))
+              || ((recordBatchCursorInChunk == (recordBatchesInChunk-1))
+                    && (rowCursorInRecordBatch < (rowsInRecordBatch-1))));
+    }
+  }
+
   /**
    * Sets link details for the given chunk.
    */
@@ -149,6 +188,10 @@ public class ArrowResultChunk {
    */
   int getRecordBatchCountInChunk() {
     return this.recordBatchList.size();
+  }
+
+  public ArrowResultChunkIterator getChunkIterator() {
+    return new ArrowResultChunkIterator(this);
   }
 
   /**

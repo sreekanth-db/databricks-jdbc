@@ -16,6 +16,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
   private final String statementId;
   private final ImmutableList<ImmutableDatabricksColumn> columns;
   private final ImmutableMap<String, Integer> columnNameIndex;
+  private final long totalRows;
 
   // TODO: Add handling for Arrow stream results
   public DatabricksResultSetMetaData(String statementId, ResultManifest resultManifest) {
@@ -42,10 +43,11 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     }
     this.columns = columnsBuilder.build();
     this.columnNameIndex = columnIndexBuilder.build();
+    this.totalRows = resultManifest.getTotalRowCount();
   }
 
   public DatabricksResultSetMetaData(String statementId, List<String> columnNames, List<String> columnTypeText,
-     List<Integer> columnTypes, List<Integer> columnTypePrecisions) {
+     List<Integer> columnTypes, List<Integer> columnTypePrecisions, long totalRows) {
     // TODO: instead of passing precisions, maybe it can be set by default?
     this.statementId = statementId;
 
@@ -63,6 +65,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     }
     this.columns = columnsBuilder.build();
     this.columnNameIndex = columnIndexBuilder.build();
+    this.totalRows = totalRows;
   }
 
   @Override
@@ -236,5 +239,9 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
    */
   public int getColumnNameIndex(String columnName) {
     return columnNameIndex.getOrDefault(columnName, -1);
+  }
+
+  public long getTotalRows() {
+    return totalRows;
   }
 }

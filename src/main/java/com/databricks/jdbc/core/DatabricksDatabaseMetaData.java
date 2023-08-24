@@ -1,5 +1,6 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.StatementType;
 import com.databricks.jdbc.driver.DatabricksJdbcConstants;
 import com.databricks.jdbc.util.WildcardUtil;
 import com.databricks.sdk.service.sql.StatementState;
@@ -873,7 +874,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128, 128, 128, 128, 128, 128, 128, 128),
-            new Object[0][0]
+            new Object[0][0],
+            StatementType.METADATA
     );
   }
 
@@ -918,7 +920,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
           }
           LOGGER.debug("SQL command to fetch tables: {}" + showTablesSQL);
           try {
-            ResultSet rs = session.getDatabricksClient().executeStatement(showTablesSQL, session.getWarehouseId(), true, session);
+            ResultSet rs = session.getDatabricksClient().executeStatement(
+                    showTablesSQL, session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA, session);
             while (rs.next()) {
               rows.add(Arrays.asList(currentCatalog, currentSchema, rs.getString(2), "TABLE", null, null, null, null, null, null));
             }
@@ -942,7 +945,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128, 128, 128, 128, 128, 128, 128, 128, 128),
-            rows);
+            rows,
+            StatementType.METADATA);
   }
 
   @Override
@@ -959,8 +963,9 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
     String showCatalogsSQL = "show catalogs";
     LOGGER.debug("SQL command to fetch catalogs: {}" + showCatalogsSQL);
 
-    ResultSet rs = session.getDatabricksClient().executeStatement(showCatalogsSQL,
-            session.getWarehouseId(), true, session);
+    ResultSet rs = session.getDatabricksClient().executeStatement(
+            showCatalogsSQL, session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(),
+            StatementType.METADATA, session);
     List<List<Object>> rows = new ArrayList<>();
     while (rs.next()) {
       rows.add(Collections.singletonList(rs.getString(1)));
@@ -972,7 +977,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Collections.singletonList("VARCHAR"),
             Collections.singletonList(Types.VARCHAR),
             Collections.singletonList(128),
-            rows);
+            rows,
+            StatementType.METADATA);
   }
 
   @Override
@@ -985,7 +991,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Collections.singletonList("VARCHAR"),
             Collections.singletonList(Types.VARCHAR),
             Collections.singletonList(128),
-            new String[][] {{"SYSTEM TABLE"}, {"TABLE"}, {"VIEW"}});
+            new String[][] {{"SYSTEM TABLE"}, {"TABLE"}, {"VIEW"}},
+            StatementType.METADATA);
   }
 
   @Override
@@ -1008,7 +1015,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
           String showColumnsSQL = "show columns in " + combination[0] + "." + combination[1] + "." + combination[2];
           LOGGER.debug("SQL command to fetch columns: {}" + showColumnsSQL);
           try {
-            ResultSet rs = session.getDatabricksClient().executeStatement(showColumnsSQL, session.getWarehouseId(), true, session);
+            ResultSet rs = session.getDatabricksClient().executeStatement(showColumnsSQL, session.getWarehouseId(),
+                    new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA, session);
             while (rs.next()) {
               if (rs.getString(1).matches(columnNamePattern)) {
                 rows.add(Arrays.asList(combination[0], combination[1], combination[2], rs.getString(1)));
@@ -1033,7 +1041,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128, 128, 128),
-            rows);
+            rows,
+            StatementType.METADATA);
   }
 
   @Override
@@ -1494,7 +1503,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
                             null,
                             null
                     }
-            });
+            },
+            StatementType.METADATA);
   }
 
   @Override
@@ -1598,7 +1608,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128, 128, 128, 128, 128, 128),
-            new String[0][0]
+            new String[0][0],
+            StatementType.METADATA
     );
   }
 
@@ -1757,7 +1768,9 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
           }
           LOGGER.debug("SQL command to fetch schemas: {}" + showSchemaSQL);
           try {
-            ResultSet rs = session.getDatabricksClient().executeStatement(showSchemaSQL, session.getWarehouseId(), true, session);
+            ResultSet rs = session.getDatabricksClient().executeStatement(
+                    showSchemaSQL, session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(),
+                    StatementType.METADATA, session);
             while (rs.next()) {
               rows.add(Arrays.asList(rs.getString(1), currentCatalog));
             }
@@ -1778,7 +1791,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128),
-            rows);
+            rows,
+            StatementType.METADATA);
   }
 
   @Override
@@ -1814,13 +1828,15 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             Arrays.asList("VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR"),
             Arrays.asList(Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR),
             Arrays.asList(128, 128, 128, 128, 128, 128),
-            new Object[0][0]
+            new Object[0][0],
+            StatementType.METADATA
     );
 
 //    // TODO: Handle null catalog, schema, function behaviour
 //
 //    String showSchemaSQL = "show functions in " + catalog + "." + schemaPattern + " like '" + functionNamePattern + "'";
-//    return session.getDatabricksClient().executeStatement(showSchemaSQL, session.getSessionId(), session.getWarehouseId(), true);
+//    return session.getDatabricksClient().executeStatement(showSchemaSQL, session.getWarehouseId(),
+//        new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA, session);
   }
 
   @Override

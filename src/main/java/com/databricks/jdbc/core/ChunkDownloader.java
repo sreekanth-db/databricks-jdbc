@@ -1,16 +1,11 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
 import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import org.apache.arrow.memory.RootAllocator;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,7 +52,8 @@ public class ChunkDownloader {
   private static ConcurrentHashMap<Long, ArrowResultChunk> initializeChunksMap(ResultManifest resultManifest, ResultData resultData) {
     ConcurrentHashMap<Long, ArrowResultChunk> chunkIndexMap = new ConcurrentHashMap<>();
     for (ChunkInfo chunkInfo : resultManifest.getChunks()) {
-      chunkIndexMap.put(chunkInfo.getChunkIndex(), new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE)));
+      // TODO: Add logging to check data (in bytes) from server and in root allocator. If they are close, we can directly assign the number of bytes as the limit with a small buffer.
+      chunkIndexMap.put(chunkInfo.getChunkIndex(), new ArrowResultChunk(chunkInfo, new RootAllocator(/*limit =*/ Integer.MAX_VALUE)));
     }
 
     for (ExternalLink externalLink : resultData.getExternalLinks()) {
