@@ -1,18 +1,16 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.FieldVector;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ValueVector;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.VectorSchemaRoot;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamReader;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.util.TransferPair;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
-
-import java.text.SimpleDateFormat;
-import java.time.Instant;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
+import org.apache.arrow.vector.util.TransferPair;
 
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -115,6 +113,12 @@ public class ArrowResultChunk {
       }
       return false;
     }
+
+    public boolean hasNextRow() {
+      return ((recordBatchCursorInChunk < (recordBatchesInChunk-1))
+              || ((recordBatchCursorInChunk == (recordBatchesInChunk-1))
+                    && (rowCursorInRecordBatch < (rowsInRecordBatch-1))));
+    }
   }
 
   /**
@@ -184,6 +188,10 @@ public class ArrowResultChunk {
    */
   int getRecordBatchCountInChunk() {
     return this.recordBatchList.size();
+  }
+
+  public ArrowResultChunkIterator getChunkIterator() {
+    return new ArrowResultChunkIterator(this);
   }
 
   /**

@@ -1,5 +1,6 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.StatementType;
 import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
 import com.databricks.sdk.service.sql.StatementStatus;
@@ -16,18 +17,25 @@ import java.util.Map;
 public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   private static final String DECIMAL = ".";
+  private static final String AFFECTED_ROWS_COUNT = "num_affected_rows";
 
   private final StatementStatus statementStatus;
   private final String statementId;
   private final IExecutionResult executionResult;
   private final DatabricksResultSetMetaData resultSetMetaData;
+  private final StatementType statementType;
+
+  private Long updateCount;
 
   public DatabricksResultSet(
-      StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest, IDatabricksSession session) {
+      StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest,
+      StatementType statementType, IDatabricksSession session) {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
     this.executionResult = ExecutionResultFactory.getResultSet(resultData, resultManifest, statementId, session);
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, resultManifest);
+    this.statementType = statementType;
+    this.updateCount = null;
   }
 
   public DatabricksResultSet(StatementStatus statementStatus, String statementId, List<String> columnNames, List<String> columnTypeText,
@@ -257,52 +265,52 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public String getString(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getString(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public boolean getBoolean(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getBoolean(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public byte getByte(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getByte(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public short getShort(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getShort(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public int getInt(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getInt(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public long getLong(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getLong(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public float getFloat(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getFloat(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public double getDouble(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getDouble(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return getBigDecimal(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public byte[] getBytes(String columnLabel) throws SQLException {
-    return new byte[0];
+    return getBytes(getColumnNameIndex(columnLabel));
   }
 
   @Override
@@ -1128,6 +1136,35 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   @Override
   public StatementStatus getStatementStatus() {
     return statementStatus;
+  }
+
+  @Override
+  public long getUpdateCount() throws SQLException {
+    if (updateCount != null) {
+      return updateCount;
+    }
+    if (this.statementType == StatementType.METADATA || this.statementType == StatementType.QUERY) {
+      updateCount = 0L;
+    }
+    else if (hasUpdateCount()) {
+      long rowsUpdated = 0;
+      while (next()) {
+        rowsUpdated += this.getLong(AFFECTED_ROWS_COUNT);
+      }
+      updateCount = rowsUpdated;
+    } else {
+      updateCount = 0L;
+    }
+    return updateCount;
+  }
+
+  @Override
+  public boolean hasUpdateCount() throws SQLException {
+    if (this.statementType == StatementType.UPDATE) {
+      return true;
+    }
+    return this.resultSetMetaData.getColumnNameIndex(AFFECTED_ROWS_COUNT) > -1
+        && this.resultSetMetaData.getTotalRows() == 1;
   }
 
   private Object getObjectInternal(int columnIndex) throws SQLException {

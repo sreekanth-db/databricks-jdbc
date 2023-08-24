@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 public class InlineJsonResult implements IExecutionResult {
 
-  private int currentRow;
+  private long currentRow;
   private final List<List<String>> data;
   private final ResultManifest resultManifest;
   private final ResultData resultData;
@@ -48,14 +48,17 @@ public class InlineJsonResult implements IExecutionResult {
 
   @Override
   public Object getObject(int columnIndex) throws SQLException {
-    if (columnIndex < data.get(currentRow).size()) {
-      return data.get(currentRow).get(columnIndex);
+    if (currentRow == -1) {
+      throw new DatabricksSQLException("Cursor is before first row");
+    }
+    if (columnIndex < data.get((int) currentRow).size()) {
+      return data.get((int) currentRow).get(columnIndex);
     }
     throw new DatabricksSQLException("Column index out of bounds " + columnIndex);
   }
 
   @Override
-  public synchronized int getCurrentRow() {
+  public synchronized long getCurrentRow() {
     return currentRow;
   }
 
