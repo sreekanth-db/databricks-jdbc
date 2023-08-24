@@ -82,6 +82,41 @@ public class ArrowResultChunk {
     this.chunkUrl = null;
   }
 
+  public static class ArrowResultChunkIterator {
+    private final ArrowResultChunk resultChunk;
+
+    private boolean begunIterationOverChunk;
+    private int recordBatchesInChunk;
+
+    private int recordBatchCursorInChunk;
+
+    private int rowsInRecordBatch;
+
+    private int rowCursorInRecordBatch;
+
+    ArrowResultChunkIterator(ArrowResultChunk resultChunk) {
+      this.resultChunk = resultChunk;
+      this.begunIterationOverChunk = false;
+      this.recordBatchesInChunk = resultChunk.getRecordBatchCountInChunk();
+      this.recordBatchCursorInChunk = 0;
+      // fetches number of rows in the record batch using the number of values in the first column vector
+      this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(0).get(0).getValueCount();
+      this.rowCursorInRecordBatch = 0;
+    }
+
+    public boolean nextRow() {
+      if(!this.begunIterationOverChunk) this.begunIterationOverChunk = true;
+      if(++this.rowCursorInRecordBatch < this.rowsInRecordBatch) return true;
+      if(++this.recordBatchCursorInChunk < this.recordBatchesInChunk) {
+        this.rowCursorInRecordBatch = 0;
+        // fetches number of rows in the record batch using the number of values in the first column vector
+        this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(this.recordBatchCursorInChunk).get(0).getValueCount();
+        return true;
+      }
+      return false;
+    }
+  }
+
   /**
    * Sets link details for the given chunk.
    */
