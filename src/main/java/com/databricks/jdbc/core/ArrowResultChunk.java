@@ -3,6 +3,12 @@ package com.databricks.jdbc.core;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
+import org.apache.arrow.vector.util.TransferPair;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -10,6 +16,8 @@ import org.apache.http.client.utils.URIBuilder;
 
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ArrowResultChunk {
 
@@ -64,16 +72,62 @@ public class ArrowResultChunk {
   private Long downloadStartTime;
   private Long downloadFinishTime;
 
-  ArrowResultChunk(ChunkInfo chunkInfo) {
+  public ArrayList<ArrayList<ValueVector>> recordBatchList;
+
+  private RootAllocator rootAllocator;
+
+  ArrowResultChunk(ChunkInfo chunkInfo, RootAllocator rootAllocator) {
     this.chunkIndex = chunkInfo.getChunkIndex();
     this.numRows = chunkInfo.getRowCount();
     this.rowOffset = chunkInfo.getRowOffset();
     this.nextChunkIndex = chunkInfo.getNextChunkIndex();
     this.byteCount = chunkInfo.getByteCount();
     this.status = DownloadStatus.PENDING;
+    this.rootAllocator = rootAllocator;
     this.chunkUrl = null;
     this.downloadStartTime = null;
     this.downloadFinishTime = null;
+  }
+
+  public static class ArrowResultChunkIterator {
+    private final ArrowResultChunk resultChunk;
+
+    private boolean begunIterationOverChunk;
+    private int recordBatchesInChunk;
+
+    private int recordBatchCursorInChunk;
+
+    private int rowsInRecordBatch;
+
+    private int rowCursorInRecordBatch;
+
+    ArrowResultChunkIterator(ArrowResultChunk resultChunk) {
+      this.resultChunk = resultChunk;
+      this.begunIterationOverChunk = false;
+      this.recordBatchesInChunk = resultChunk.getRecordBatchCountInChunk();
+      this.recordBatchCursorInChunk = 0;
+      // fetches number of rows in the record batch using the number of values in the first column vector
+      this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(0).get(0).getValueCount();
+      this.rowCursorInRecordBatch = 0;
+    }
+
+    public boolean nextRow() {
+      if(!this.begunIterationOverChunk) this.begunIterationOverChunk = true;
+      if(++this.rowCursorInRecordBatch < this.rowsInRecordBatch) return true;
+      if(++this.recordBatchCursorInChunk < this.recordBatchesInChunk) {
+        this.rowCursorInRecordBatch = 0;
+        // fetches number of rows in the record batch using the number of values in the first column vector
+        this.rowsInRecordBatch = this.resultChunk.recordBatchList.get(this.recordBatchCursorInChunk).get(0).getValueCount();
+        return true;
+      }
+      return false;
+    }
+
+    public boolean hasNextRow() {
+      return ((recordBatchCursorInChunk < (recordBatchesInChunk-1))
+              || ((recordBatchCursorInChunk == (recordBatchesInChunk-1))
+                    && (rowCursorInRecordBatch < (rowsInRecordBatch-1))));
+    }
   }
 
   /**
@@ -125,17 +179,13 @@ public class ArrowResultChunk {
       HttpResponse response = httpClient.execute(getRequest);
       // TODO: handle error code
       HttpEntity entity = response.getEntity();
-      parseData(entity.getContent());
+      getArrowDataFromInputStream(entity.getContent());
       this.downloadFinishTime = Instant.now().toEpochMilli();
       setStatus(DownloadStatus.DOWNLOAD_SUCCEEDED);
     } catch (Exception e) {
       // TODO: log error, handle proper error code
       setStatus(DownloadStatus.DOWNLOAD_FAILED_RETRYABLE);
     }
-  }
-
-  void parseData(InputStream inputStream) {
-
   }
 
   /**
@@ -148,6 +198,36 @@ public class ArrowResultChunk {
       throw new IllegalStateException("Next index called for pending state chunk");
     }
     return this.nextChunkIndex;
+  }
+
+  public void getArrowDataFromInputStream(InputStream inputStream) throws Exception {
+    this.recordBatchList = new ArrayList<>();
+    // add check to see if input stream has been populated
+    ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputStream, this.rootAllocator);
+    VectorSchemaRoot vectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
+    while(arrowStreamReader.loadNextBatch()) {
+      ArrayList<ValueVector> vectors = new ArrayList<>();
+      List<FieldVector> fieldVectors = vectorSchemaRoot.getFieldVectors();
+      for(FieldVector fieldVector: fieldVectors) {
+        TransferPair transferPair = fieldVector.getTransferPair(rootAllocator);
+        transferPair.transfer();
+        vectors.add(transferPair.getTo());
+      }
+      this.recordBatchList.add(vectors);
+      vectorSchemaRoot.clear();
+    }
+  }
+
+  /**
+   * Returns number of recordBatches in the chunk.
+   * @return
+   */
+  int getRecordBatchCountInChunk() {
+    return this.recordBatchList.size();
+  }
+
+  public ArrowResultChunkIterator getChunkIterator() {
+    return new ArrowResultChunkIterator(this);
   }
 
   /**

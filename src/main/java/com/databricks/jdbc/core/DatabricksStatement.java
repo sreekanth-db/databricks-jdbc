@@ -1,18 +1,24 @@
 package com.databricks.jdbc.core;
 
 
+import com.databricks.jdbc.client.StatementType;
+
 import java.sql.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DatabricksStatement implements IDatabricksStatement, Statement {
 
-  private final IDatabricksConnection connection;
-  private DatabricksResultSet resultSet;
+  private final DatabricksConnection connection;
+  DatabricksResultSet resultSet;
   private String statementId;
+  private boolean isClosed;
 
-  public DatabricksStatement(IDatabricksConnection connection) {
+  public DatabricksStatement(DatabricksConnection connection) {
     this.connection = connection;
     this.resultSet = null;
     this.statementId = null;
+    this.isClosed = true;
   }
 
   @Override
@@ -22,17 +28,19 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
-    return connection.getSession().getDatabricksClient().executeStatement(
-        sql, connection.getSession().getWarehouseId(), false /* isInternal */, connection.getSession());
+    return executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.QUERY);
   }
 
   @Override
   public int executeUpdate(String sql) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    executeInternal(
+        sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.UPDATE);
+    return (int) resultSet.getUpdateCount();
   }
 
   @Override
   public void close() throws SQLException {
+    this.isClosed = true;
     this.connection.getSession().getDatabricksClient().closeStatement(statementId);
   }
 
@@ -101,17 +109,18 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
   @Override
   public boolean execute(String sql) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    resultSet = executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.SQL);
+    return !resultSet.hasUpdateCount();
   }
 
   @Override
   public ResultSet getResultSet() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return resultSet;
   }
 
   @Override
   public int getUpdateCount() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return (int) resultSet.getUpdateCount();
   }
 
   @Override
@@ -121,12 +130,14 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
   @Override
   public void setFetchDirection(int direction) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    if (direction != ResultSet.FETCH_FORWARD) {
+      throw new SQLFeatureNotSupportedException("Not supported");
+    }
   }
 
   @Override
   public int getFetchDirection() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return ResultSet.FETCH_FORWARD;
   }
 
   @Override
@@ -141,12 +152,12 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
   @Override
   public int getResultSetConcurrency() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return ResultSet.CONCUR_READ_ONLY;
   }
 
   @Override
   public int getResultSetType() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return ResultSet.TYPE_FORWARD_ONLY;
   }
 
   @Override
@@ -166,7 +177,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
   @Override
   public Connection getConnection() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return this.connection;
   }
 
   @Override
@@ -216,7 +227,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
   @Override
   public boolean isClosed() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return this.isClosed;
   }
 
   @Override
@@ -247,5 +258,13 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
     throw new UnsupportedOperationException("Not implemented");
+  }
+
+  DatabricksResultSet executeInternal(String sql, Map<Integer, ImmutableSqlParameter> params, StatementType statementType)
+      throws SQLException {
+    resultSet = connection.getSession().getDatabricksClient().executeStatement(
+        sql, connection.getSession().getWarehouseId(), params, statementType, connection.getSession());
+    this.isClosed = false;
+    return resultSet;
   }
 }

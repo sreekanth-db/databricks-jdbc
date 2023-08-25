@@ -19,11 +19,13 @@ interface IExecutionResult {
    * Gets the current row position, starting with 0.
    * @return the current row position
    */
-  int getCurrentRow();
+  long getCurrentRow();
 
   /**
    * Moves the cursor to next row and returns true if this can be done
    * @return true if cursor is moved at next row
    */
   boolean next();
+
+  boolean hasNext();
 }
