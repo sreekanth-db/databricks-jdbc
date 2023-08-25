@@ -130,4 +130,8 @@ public class ChunkDownloader {
   public void setChunkLink(int chunkIndex, ExternalLink chunkLink) {
     chunkIndexToChunksMap.get(chunkIndex).setChunkUrl(chunkLink);
   }
+
+  void releaseAllChunks() {
+    // TODO: implement this
+  }
 }

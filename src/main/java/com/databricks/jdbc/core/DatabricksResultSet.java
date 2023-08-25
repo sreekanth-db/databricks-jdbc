@@ -77,6 +77,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   @Override
   public void close() throws SQLException {
     isClosed = true;
+    this.executionResult.close();
     if (parentStatement != null) {
       parentStatement.handleResultSetClose(this);
     }

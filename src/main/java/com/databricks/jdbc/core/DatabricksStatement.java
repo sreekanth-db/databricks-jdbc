@@ -19,7 +19,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
     this.connection = connection;
     this.resultSet = null;
     this.statementId = null;
-    this.isClosed = true;
+    this.isClosed = false;
   }
 
   @Override
@@ -43,13 +43,17 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
   @Override
   public void close() throws SQLException {
-    this.isClosed = true;
-    this.connection.getSession().getDatabricksClient().closeStatement(statementId);
+    close(true);
   }
 
   @Override
   public void close(boolean removeFromSession) throws SQLException {
-    close();
+    this.isClosed = true;
+    this.connection.getSession().getDatabricksClient().closeStatement(statementId);
+    if (resultSet != null) {
+      this.resultSet.close();
+      this.resultSet = null;
+    }
     if (removeFromSession) {
       this.connection.closeStatement(this);
     }

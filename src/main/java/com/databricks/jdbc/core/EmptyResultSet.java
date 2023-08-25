@@ -3,6 +3,7 @@ package com.databricks.jdbc.core;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
+import java.net.URL;
 import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
@@ -385,11 +386,6 @@ class EmptyResultSet implements ResultSet {
 
   @Override
   public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
-
-  }
-
-  @Override
-  public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
     checkIfClosed();
   }
 
@@ -639,11 +635,6 @@ class EmptyResultSet implements ResultSet {
   @Override
   public Array getArray(String columnLabel) throws SQLException {
     checkIfClosed();
-    return null;
-  }
-
-  @Override
-  public Date getDate(int columnIndex, Calendar cal) throws SQLException {
     return null;
   }
 

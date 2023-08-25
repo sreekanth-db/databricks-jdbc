@@ -15,28 +15,25 @@ import java.util.stream.Collectors;
 public class InlineJsonResult implements IExecutionResult {
 
   private long currentRow;
-  private final List<List<String>> data;
-  private final ResultManifest resultManifest;
-  private final ResultData resultData;
+  private List<List<String>> data;
+
+  private boolean isClosed;
 
   InlineJsonResult(ResultManifest resultManifest, ResultData resultData) {
-    this.resultManifest = resultManifest;
-    this.resultData = resultData;
     this.data = getDataList(resultData.getDataArray());
     this.currentRow = -1;
+    this.isClosed = false;
   }
   InlineJsonResult(Object[][] rows) {
-    this.resultData = null;
-    this.resultManifest = null;
     this.data = Arrays.stream(rows).map(a -> Arrays.stream(a).map(o -> o == null ? null : o.toString()).collect(Collectors.toList())).collect(Collectors.toList());
     this.currentRow = -1;
+    this.isClosed = false;
   }
 
   InlineJsonResult(List<List<Object>> rows) {
-    this.resultData = null;
-    this.resultManifest = null;
     this.data = rows.stream().map(a -> a.stream().map(o -> o == null ? null : o.toString()).collect(Collectors.toList())).collect(Collectors.toList());
     this.currentRow = -1;
+    this.isClosed = false;
   }
 
   private static List<List<String>> getDataList(Collection<Collection<String>> dataArray) {
@@ -48,6 +45,9 @@ public class InlineJsonResult implements IExecutionResult {
 
   @Override
   public Object getObject(int columnIndex) throws SQLException {
+    if (isClosed()) {
+      throw new DatabricksSQLException("Method called on closed result");
+    }
     if (currentRow == -1) {
       throw new DatabricksSQLException("Cursor is before first row");
     }
@@ -64,8 +64,7 @@ public class InlineJsonResult implements IExecutionResult {
 
   @Override
   public synchronized boolean next() {
-    // TODO: handle pagination
-    if (currentRow < data.size() -1) {
+    if (hasNext()) {
       currentRow++;
       return true;
     }
@@ -73,7 +72,18 @@ public class InlineJsonResult implements IExecutionResult {
   }
 
   @Override
-  public synchronized boolean hasNext() {
-    return currentRow < data.size() - 1;
+  public synchronized boolean hasNext()
+  {
+    return !this.isClosed() && currentRow < data.size() - 1;
+  }
+
+  @Override
+  public void close() {
+    this.isClosed = true;
+    this.data = null;
+  }
+
+  private boolean isClosed() {
+    return isClosed;
   }
 }

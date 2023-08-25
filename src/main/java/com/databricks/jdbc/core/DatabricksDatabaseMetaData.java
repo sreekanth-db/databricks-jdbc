@@ -1600,7 +1600,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
           try {
             ResultSet rs = session.getDatabricksClient().executeStatement(
                     showSchemaSQL, session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(),
-                    StatementType.METADATA, session);
+                    StatementType.METADATA, session, null);
             while (rs.next()) {
               rows.add(Arrays.asList(rs.getString(1), currentCatalog));
             }
