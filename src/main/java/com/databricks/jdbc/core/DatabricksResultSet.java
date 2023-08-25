@@ -24,18 +24,22 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   private final IExecutionResult executionResult;
   private final DatabricksResultSetMetaData resultSetMetaData;
   private final StatementType statementType;
+  private final IDatabricksStatement parentStatement;
 
   private Long updateCount;
+  private boolean isClosed;
 
   public DatabricksResultSet(
       StatementStatus statementStatus, String statementId, ResultData resultData, ResultManifest resultManifest,
-      StatementType statementType, IDatabricksSession session) {
+      StatementType statementType, IDatabricksSession session, IDatabricksStatement parentStatement) {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
     this.executionResult = ExecutionResultFactory.getResultSet(resultData, resultManifest, statementId, session);
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, resultManifest);
     this.statementType = statementType;
     this.updateCount = null;
+    this.parentStatement = parentStatement;
+    this.isClosed = false;
   }
 
   public DatabricksResultSet(StatementStatus statementStatus, String statementId, List<String> columnNames, List<String> columnTypeText,
@@ -46,6 +50,8 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, columnNames, columnTypeText, columnTypes, columnTypePrecisions, rows.length);
     this.statementType = statementType;
     this.updateCount = null;
+    this.parentStatement = null;
+    this.isClosed = false;
   }
 
   public DatabricksResultSet(StatementStatus statementStatus, String statementId, List<String> columnNames, List<String> columnTypeText,
@@ -56,16 +62,24 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, columnNames, columnTypeText, columnTypes, columnTypePrecisions, rows.size());
     this.statementType = statementType;
     this.updateCount = null;
+    this.parentStatement = null;
+    this.isClosed = false;
   }
 
   @Override
   public boolean next() throws SQLException {
+    if (isClosed()) {
+      return false;
+    }
     return this.executionResult.next();
   }
 
   @Override
   public void close() throws SQLException {
-    // TODO: Add implementation for close if needed
+    isClosed = true;
+    if (parentStatement != null) {
+      parentStatement.handleResultSetClose(this);
+    }
   }
 
   @Override
@@ -899,7 +913,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public boolean isClosed() throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return isClosed;
   }
 
   @Override

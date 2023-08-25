@@ -799,7 +799,8 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
           }
           try {
             ResultSet rs = session.getDatabricksClient().executeStatement(
-                    showTablesSQL, session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA, session);
+                    showTablesSQL, session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(),
+                StatementType.METADATA, session, null);
             while (rs.next()) {
               rows.add(Arrays.asList(currentCatalog, currentSchema, rs.getString(2), "TABLE", null, null, null, null, null, null));
             }
@@ -840,7 +841,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
 
     ResultSet rs = session.getDatabricksClient().executeStatement(
             showCatalogsSQL, session.getWarehouseId(), new HashMap<Integer, ImmutableSqlParameter>(),
-            StatementType.METADATA, session);
+            StatementType.METADATA, session, null);
     List<List<Object>> rows = new ArrayList<>();
     while (rs.next()) {
       rows.add(Collections.singletonList(rs.getString(1)));
@@ -888,7 +889,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
           String showSchemaSQL = "show columns in " + combination[0] + "." + combination[1] + "." + combination[2];
           try {
             ResultSet rs = session.getDatabricksClient().executeStatement(showSchemaSQL, session.getWarehouseId(),
-                    new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA, session);
+                    new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA, session, null);
             while (rs.next()) {
               if (rs.getString(1).matches(columnNamePattern)) {
                 rows.add(Arrays.asList(combination[0], combination[1], combination[2], rs.getString(1)));
