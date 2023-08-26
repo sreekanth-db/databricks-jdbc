@@ -27,5 +27,13 @@ interface IExecutionResult {
    */
   boolean next();
 
+  /**
+   * Returns if there is next row in the result set
+   */
   boolean hasNext();
+
+  /**
+   * Closes the result set and releases any in-memory chunks or data
+   */
+  void close();
 }

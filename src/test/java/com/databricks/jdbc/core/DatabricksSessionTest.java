@@ -1,6 +1,5 @@
 package com.databricks.jdbc.core;
 
-// import com.databricks.jdbc.client.FakeDatabricksClient;
 import com.databricks.jdbc.client.impl.DatabricksSdkClient;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
