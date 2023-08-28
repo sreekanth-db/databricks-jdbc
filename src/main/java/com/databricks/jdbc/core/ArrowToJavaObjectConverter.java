@@ -1,9 +1,8 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.types.Types;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;

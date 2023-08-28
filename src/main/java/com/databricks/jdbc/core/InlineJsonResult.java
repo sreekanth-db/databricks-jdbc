@@ -7,21 +7,33 @@ import com.databricks.sdk.service.sql.ResultManifest;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class InlineJsonResult implements IExecutionResult {
 
-  private int currentRow;
-  private final List<List<String>> data;
-  private final ResultManifest resultManifest;
-  private final ResultData resultData;
+  private long currentRow;
+  private List<List<String>> data;
+
+  private boolean isClosed;
 
   InlineJsonResult(ResultManifest resultManifest, ResultData resultData) {
-    this.resultManifest = resultManifest;
-    this.resultData = resultData;
     this.data = getDataList(resultData.getDataArray());
-    this.currentRow = 0;
+    this.currentRow = -1;
+    this.isClosed = false;
+  }
+  InlineJsonResult(Object[][] rows) {
+    this.data = Arrays.stream(rows).map(a -> Arrays.stream(a).map(o -> o == null ? null : o.toString()).collect(Collectors.toList())).collect(Collectors.toList());
+    this.currentRow = -1;
+    this.isClosed = false;
+  }
+
+  InlineJsonResult(List<List<Object>> rows) {
+    this.data = rows.stream().map(a -> a.stream().map(o -> o == null ? null : o.toString()).collect(Collectors.toList())).collect(Collectors.toList());
+    this.currentRow = -1;
+    this.isClosed = false;
   }
 
   private static List<List<String>> getDataList(Collection<Collection<String>> dataArray) {
@@ -33,21 +45,26 @@ public class InlineJsonResult implements IExecutionResult {
 
   @Override
   public Object getObject(int columnIndex) throws SQLException {
-    if (columnIndex < data.get(currentRow).size()) {
-      return data.get(currentRow).get(columnIndex);
+    if (isClosed()) {
+      throw new DatabricksSQLException("Method called on closed result");
+    }
+    if (currentRow == -1) {
+      throw new DatabricksSQLException("Cursor is before first row");
+    }
+    if (columnIndex < data.get((int) currentRow).size()) {
+      return data.get((int) currentRow).get(columnIndex);
     }
     throw new DatabricksSQLException("Column index out of bounds " + columnIndex);
   }
 
   @Override
-  public synchronized int getCurrentRow() {
+  public synchronized long getCurrentRow() {
     return currentRow;
   }
 
   @Override
   public synchronized boolean next() {
-    // TODO: handle pagination
-    if (currentRow < data.size() -1) {
+    if (hasNext()) {
       currentRow++;
       return true;
     }
@@ -55,7 +72,18 @@ public class InlineJsonResult implements IExecutionResult {
   }
 
   @Override
-  public synchronized boolean hasNext() {
-    return currentRow < data.size() - 1;
+  public synchronized boolean hasNext()
+  {
+    return !this.isClosed() && currentRow < data.size() - 1;
+  }
+
+  @Override
+  public void close() {
+    this.isClosed = true;
+    this.data = null;
+  }
+
+  private boolean isClosed() {
+    return isClosed;
   }
 }

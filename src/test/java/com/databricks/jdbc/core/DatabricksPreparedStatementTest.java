@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class DatabricksStatementTest {
+public class DatabricksPreparedStatementTest {
 
   private static final String WAREHOUSE_ID = "erg6767gg";
   private static final String SESSION_ID = "session_id";
@@ -70,8 +70,8 @@ public class DatabricksStatementTest {
     IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     DatabricksConnection connection = new DatabricksConnection(connectionContext,
         new DatabricksSdkClient(connectionContext, statementExecutionService));
-    DatabricksStatement statement = (DatabricksStatement) connection.createStatement();
-    DatabricksResultSet resultSet = (DatabricksResultSet) statement.executeQuery(STATEMENT);
+    DatabricksPreparedStatement statement = (DatabricksPreparedStatement) connection.prepareStatement(STATEMENT);
+    DatabricksResultSet resultSet = (DatabricksResultSet) statement.executeQuery();
     assertFalse(resultSet.hasUpdateCount());
     assertFalse(statement.isClosed());
     assertFalse(resultSet.isClosed());
@@ -119,7 +119,7 @@ public class DatabricksStatementTest {
             .setSchema(new ResultSchema()
                 .setColumns(ImmutableList.of(new ColumnInfo()
                     .setName("num_affected_rows")
-                        .setTypeText("Long")
+                    .setTypeText("Long")
                     .setTypeName(ColumnInfoTypeName.LONG)
                     .setPosition(0L)))))
         .setResult(new ResultData()
@@ -131,8 +131,8 @@ public class DatabricksStatementTest {
     IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     DatabricksConnection connection = new DatabricksConnection(connectionContext,
         new DatabricksSdkClient(connectionContext, statementExecutionService));
-    DatabricksStatement statement = (DatabricksStatement) connection.createStatement();
-    int updateCount = statement.executeUpdate(STATEMENT);
+    DatabricksPreparedStatement statement = (DatabricksPreparedStatement) connection.prepareStatement(STATEMENT);
+    int updateCount = statement.executeUpdate();
 
     assertEquals(2, updateCount);
     assertTrue(statement.resultSet.hasUpdateCount());
