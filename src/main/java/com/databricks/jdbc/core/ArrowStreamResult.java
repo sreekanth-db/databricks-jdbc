@@ -1,6 +1,6 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.types.Types;
 import com.databricks.sdk.service.sql.*;
 import com.google.common.collect.ImmutableMap;
 
@@ -19,10 +19,11 @@ class ArrowStreamResult implements IExecutionResult {
   private final ImmutableMap<Long, ChunkInfo> rowOffsetToChunkMap;
   private final ChunkDownloader chunkDownloader;
 
-  private int currentRowIndex;
+  private long currentRowIndex;
   private int currentChunkIndex;
 
   private boolean firstChunkPopulated;
+  private boolean isClosed;
 
   private ArrowResultChunk.ArrowResultChunkIterator chunkIterator;
 
@@ -38,6 +39,7 @@ class ArrowStreamResult implements IExecutionResult {
     this.firstChunkPopulated = false;
     this.columnInfo = new ArrayList(resultManifest.getSchema().getColumns());
     this.currentRowIndex = -1;
+    this.isClosed = false;
   }
 
   public ChunkDownloader getChunkDownloader() {return this.chunkDownloader;}
@@ -51,7 +53,7 @@ class ArrowStreamResult implements IExecutionResult {
   }
   
   @Override
-  public Object getObject(int columnIndex) throws SQLException, IOException {
+  public Object getObject(int columnIndex) throws SQLException {
     // we have two types:
     // 1. Required type via the metadata
     // 2. Interpreted type while reading from the arrow file into the record batches
@@ -63,12 +65,15 @@ class ArrowStreamResult implements IExecutionResult {
   }
 
   @Override
-  public int getCurrentRow() {
+  public long getCurrentRow() {
     return this.currentRowIndex;
   }
 
   @Override
   public boolean next() {
+    if (isClosed()) {
+      return false;
+    }
     if(!this.firstChunkPopulated) {
       // get first chunk from chunk downloader and set iterator to its iterator i.e. row 0
       if(this.totalChunks == 0) return false;
@@ -91,7 +96,17 @@ class ArrowStreamResult implements IExecutionResult {
 
   @Override
   public boolean hasNext() {
-    return ((this.currentChunkIndex < (totalChunks - 1)) ||
+    return !isClosed() && ((this.currentChunkIndex < (totalChunks - 1)) ||
             ((currentChunkIndex == (totalChunks - 1)) && chunkIterator.hasNextRow()));
+  }
+
+  @Override
+  public void close() {
+    this.isClosed = true;
+    this.chunkDownloader.releaseAllChunks();
+  }
+
+  private boolean isClosed() {
+    return this.isClosed;
   }
 }

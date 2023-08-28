@@ -1,9 +1,8 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.types.Types;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -11,7 +10,7 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 
 public class ArrowToJavaObjectConverter {
-    public static Object convert(Object object, ColumnInfoTypeName requiredType, Types.MinorType arrowType) throws SQLException, IOException {
+    public static Object convert(Object object, ColumnInfoTypeName requiredType, Types.MinorType arrowType) throws SQLException {
         switch (requiredType) {
             case BYTE:
                 return convertToByte(object, arrowType);
@@ -47,11 +46,15 @@ public class ArrowToJavaObjectConverter {
         return (boolean) object;
     }
 
-    private static byte[] convertToByteArray(Object object, Types.MinorType arrowType) throws IOException {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-        objectOutputStream.writeObject(object);
-        return byteArrayOutputStream.toByteArray();
+    private static byte[] convertToByteArray(Object object, Types.MinorType arrowType) throws SQLException {
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(object);
+            return byteArrayOutputStream.toByteArray();
+        } catch (IOException e) {
+            throw new SQLException();
+        }
     }
 
     private static byte convertToByte(Object object, Types.MinorType arrowType) {

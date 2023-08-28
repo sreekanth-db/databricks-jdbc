@@ -1,16 +1,11 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
 import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import org.apache.arrow.memory.RootAllocator;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -134,5 +129,9 @@ public class ChunkDownloader {
 
   public void setChunkLink(int chunkIndex, ExternalLink chunkLink) {
     chunkIndexToChunksMap.get(chunkIndex).setChunkUrl(chunkLink);
+  }
+
+  void releaseAllChunks() {
+    // TODO: implement this
   }
 }

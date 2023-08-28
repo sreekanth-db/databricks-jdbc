@@ -13,4 +13,6 @@ public interface IDatabricksStatement {
   String getSessionId();
 
   void close(boolean removeFromSession) throws SQLException;
+
+  void handleResultSetClose(IDatabricksResultSet resultSet) throws SQLException;
 }

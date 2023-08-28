@@ -14,13 +14,13 @@ interface IExecutionResult {
    * @return object at given index
    * @throws SQLException
    */
-  Object getObject(int columnIndex) throws SQLException, IOException;
+  Object getObject(int columnIndex) throws SQLException;
 
   /**
    * Gets the current row position, starting with 0.
    * @return the current row position
    */
-  int getCurrentRow();
+  long getCurrentRow();
 
   /**
    * Moves the cursor to next row and returns true if this can be done
@@ -28,5 +28,13 @@ interface IExecutionResult {
    */
   boolean next();
 
+  /**
+   * Returns if there is next row in the result set
+   */
   boolean hasNext();
+
+  /**
+   * Closes the result set and releases any in-memory chunks or data
+   */
+  void close();
 }

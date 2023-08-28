@@ -3,6 +3,8 @@ package com.databricks.jdbc.core;
 import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
 
+import java.util.List;
+
 class ExecutionResultFactory {
   static IExecutionResult getResultSet(
       ResultData data, ResultManifest manifest, String statementId, IDatabricksSession session) {
@@ -16,5 +18,13 @@ class ExecutionResultFactory {
       default:
         throw new IllegalStateException("Invalid response format " + manifest.getFormat());
     }
+  }
+
+  static IExecutionResult getResultSet(Object[][] rows) {
+    return new InlineJsonResult(rows);
+  }
+
+  static IExecutionResult getResultSet(List<List<Object>> rows) {
+    return new InlineJsonResult(rows);
   }
 }
