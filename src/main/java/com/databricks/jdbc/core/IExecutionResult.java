@@ -1,5 +1,6 @@
 package com.databricks.jdbc.core;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
 /**
@@ -13,7 +14,7 @@ interface IExecutionResult {
    * @return object at given index
    * @throws SQLException
    */
-  Object getObject(int columnIndex) throws SQLException;
+  Object getObject(int columnIndex) throws SQLException, IOException;
 
   /**
    * Gets the current row position, starting with 0.

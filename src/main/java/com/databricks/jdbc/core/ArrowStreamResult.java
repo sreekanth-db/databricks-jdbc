@@ -1,12 +1,14 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.sdk.service.sql.ChunkInfo;
-import com.databricks.sdk.service.sql.ExternalLink;
-import com.databricks.sdk.service.sql.ResultData;
-import com.databricks.sdk.service.sql.ResultManifest;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.Types;
+import com.databricks.sdk.service.sql.*;
 import com.google.common.collect.ImmutableMap;
 
+import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 class ArrowStreamResult implements IExecutionResult {
 
@@ -24,6 +26,8 @@ class ArrowStreamResult implements IExecutionResult {
 
   private ArrowResultChunk.ArrowResultChunkIterator chunkIterator;
 
+  List<ColumnInfo> columnInfo;
+
   ArrowStreamResult(ResultManifest resultManifest, ResultData resultData, String statementId,
                     IDatabricksSession session) {
     this.totalRows = resultManifest.getTotalRowCount();
@@ -32,6 +36,7 @@ class ArrowStreamResult implements IExecutionResult {
     this.session = session;
     this.chunkDownloader = new ChunkDownloader(statementId, resultManifest, resultData, session);
     this.firstChunkPopulated = false;
+    this.columnInfo = new ArrayList(resultManifest.getSchema().getColumns());
     this.currentRowIndex = -1;
   }
 
@@ -46,8 +51,15 @@ class ArrowStreamResult implements IExecutionResult {
   }
   
   @Override
-  public Object getObject(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+  public Object getObject(int columnIndex) throws SQLException, IOException {
+    // we have two types:
+    // 1. Required type via the metadata
+    // 2. Interpreted type while reading from the arrow file into the record batches
+    // We need to convert the interpreted type into the required type before returning the object
+    ColumnInfoTypeName requiredType = columnInfo.get(columnIndex).getTypeName();
+    Types.MinorType arrowType = this.chunkIterator.getColumnType(columnIndex);
+    Object unconvertedObject = this.chunkIterator.getObjectAtCurrentRow(columnIndex);
+    return ArrowToJavaObjectConverter.convert(unconvertedObject, requiredType, arrowType);
   }
 
   @Override

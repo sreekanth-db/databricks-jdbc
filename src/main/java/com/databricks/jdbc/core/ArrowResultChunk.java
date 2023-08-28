@@ -5,6 +5,8 @@ import com.databricks.client.jdbc42.internal.apache.arrow.vector.FieldVector;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.ValueVector;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.VectorSchemaRoot;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamReader;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.Types;
+import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.ArrowType;
 import com.databricks.client.jdbc42.internal.apache.arrow.vector.util.TransferPair;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
@@ -121,6 +123,14 @@ public class ArrowResultChunk {
               || ((recordBatchCursorInChunk == (recordBatchesInChunk-1))
                     && (rowCursorInRecordBatch < (rowsInRecordBatch-1))));
     }
+
+    public Types.MinorType getColumnType(int columnIndex) {
+      return this.resultChunk.getColumnType(columnIndex);
+    }
+
+    public Object getObjectAtCurrentRow(int columnIndex) {
+      return this.resultChunk.recordBatchList.get(this.recordBatchCursorInChunk).get(columnIndex).getObject(this.rowCursorInRecordBatch);
+    }
   }
 
   /**
@@ -194,6 +204,10 @@ public class ArrowResultChunk {
 
   public ArrowResultChunkIterator getChunkIterator() {
     return new ArrowResultChunkIterator(this);
+  }
+
+  public Types.MinorType getColumnType(int columnIndex) {
+    return Types.getMinorTypeForArrowType(recordBatchList.get(0).get(columnIndex).getField().getType());
   }
 
   /**
