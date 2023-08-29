@@ -70,8 +70,15 @@ public class DatabricksPreparedStatementTest {
     IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     DatabricksConnection connection = new DatabricksConnection(connectionContext,
         new DatabricksSdkClient(connectionContext, statementExecutionService));
-    DatabricksResultSet resultSet = (DatabricksResultSet) connection.prepareStatement(STATEMENT).executeQuery();
+    DatabricksPreparedStatement statement = (DatabricksPreparedStatement) connection.prepareStatement(STATEMENT);
+    DatabricksResultSet resultSet = (DatabricksResultSet) statement.executeQuery();
     assertFalse(resultSet.hasUpdateCount());
+    assertFalse(statement.isClosed());
+    assertFalse(resultSet.isClosed());
+
+    statement.close();
+    assertTrue(statement.isClosed());
+    assertTrue(resultSet.isClosed());
 
     // TODO: add more assertions
     verify(statementExecutionService, Mockito.times(1))

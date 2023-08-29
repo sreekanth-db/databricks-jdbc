@@ -8,10 +8,17 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+/**
+ * Http client implementation to be used for executing http requests.
+ */
 public class DatabricksHttpClient implements IDatabricksHttpClient {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksHttpClient.class);
 
   private static final int DEFAULT_MAX_HTTP_CONNECTIONS = 300;
   private static final int DEFAULT_MAX_HTTP_CONNECTIONS_PER_ROUTE = 300;
@@ -22,13 +29,13 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
   private final PoolingHttpClientConnectionManager connectionManager;
 
-  private final CloseableHttpClient hc;
+  private final CloseableHttpClient httpClient;
 
   private DatabricksHttpClient() {
     connectionManager = new PoolingHttpClientConnectionManager();
     connectionManager.setMaxTotal(DEFAULT_MAX_HTTP_CONNECTIONS);
     connectionManager.setDefaultMaxPerRoute(DEFAULT_MAX_HTTP_CONNECTIONS_PER_ROUTE);
-    hc = makeClosableHttpClient();
+    httpClient = makeClosableHttpClient();
   }
 
   private RequestConfig makeRequestConfig() {
@@ -58,12 +65,14 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
   @Override
   public HttpResponse execute(HttpUriRequest request) throws DatabricksHttpException {
+    LOGGER.atDebug().log("Executing HTTP request [%s]", request);
     // TODO: add retries and error handling
     try {
-      return hc.execute(request);
+      return httpClient.execute(request);
     } catch (IOException e) {
-      // TODO: handle this and log
-      throw new DatabricksHttpException(e.getMessage(), e);
+      String errorMsg = String.format("Caught error while executing http request: [%s]", request);
+      LOGGER.atError().setCause(e).log(errorMsg);
+      throw new DatabricksHttpException(errorMsg, e);
     }
   }
 }

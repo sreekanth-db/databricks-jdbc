@@ -4,6 +4,9 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 
+/**
+ * Http client interface for executing http requests.
+ */
 public interface IDatabricksHttpClient {
 
   /**

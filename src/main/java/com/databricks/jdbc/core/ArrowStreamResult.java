@@ -20,6 +20,7 @@ class ArrowStreamResult implements IExecutionResult {
   private int currentChunkIndex;
 
   private boolean firstChunkPopulated;
+  private boolean isClosed;
 
   private ArrowResultChunk.ArrowResultChunkIterator chunkIterator;
 
@@ -34,6 +35,8 @@ class ArrowStreamResult implements IExecutionResult {
     this.chunkDownloader = new ChunkDownloader(statementId, resultManifest, resultData, session);
     this.firstChunkPopulated = false;
     this.currentRowIndex = -1;
+    this.isClosed = false;
+    new Thread(chunkDownloader).start();
   }
 
   public ChunkDownloader getChunkDownloader() {return this.chunkDownloader;}
@@ -58,6 +61,9 @@ class ArrowStreamResult implements IExecutionResult {
 
   @Override
   public boolean next() {
+    if (isClosed()) {
+      return false;
+    }
     if(!this.firstChunkPopulated) {
       // get first chunk from chunk downloader and set iterator to its iterator i.e. row 0
       if(this.totalChunks == 0) return false;
@@ -80,7 +86,17 @@ class ArrowStreamResult implements IExecutionResult {
 
   @Override
   public boolean hasNext() {
-    return ((this.currentChunkIndex < (totalChunks - 1)) ||
+    return !isClosed() && ((this.currentChunkIndex < (totalChunks - 1)) ||
             ((currentChunkIndex == (totalChunks - 1)) && chunkIterator.hasNextRow()));
+  }
+
+  @Override
+  public void close() {
+    this.isClosed = true;
+    this.chunkDownloader.releaseAllChunks();
+  }
+
+  private boolean isClosed() {
+    return this.isClosed;
   }
 }

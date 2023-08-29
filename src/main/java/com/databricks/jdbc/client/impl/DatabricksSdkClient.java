@@ -2,10 +2,7 @@ package com.databricks.jdbc.client.impl;
 
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.StatementType;
-import com.databricks.jdbc.core.DatabricksResultSet;
-import com.databricks.jdbc.core.DatabricksSQLException;
-import com.databricks.jdbc.core.IDatabricksSession;
-import com.databricks.jdbc.core.ImmutableSqlParameter;
+import com.databricks.jdbc.core.*;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
@@ -62,13 +59,13 @@ public class DatabricksSdkClient implements DatabricksClient {
 
   @Override
   public DatabricksResultSet executeStatement(
-      String statement, String warehouseId, Map<Integer, ImmutableSqlParameter> parameters,
-      StatementType statementType, IDatabricksSession session) throws SQLException {
+      String sql, String warehouseId, Map<Integer, ImmutableSqlParameter> parameters,
+      StatementType statementType, IDatabricksSession session, IDatabricksStatement parentStatement) throws SQLException {
 
     Format format = useCloudFetchForResult(statementType) ? Format.ARROW_STREAM : Format.JSON_ARRAY;
     Disposition disposition = useCloudFetchForResult(statementType) ? Disposition.EXTERNAL_LINKS : Disposition.INLINE;
     ExecuteStatementRequest request = new ExecuteStatementRequest()
-        .setStatement(statement)
+        .setStatement(sql)
         .setWarehouseId(warehouseId)
         .setDisposition(disposition)
         .setFormat(format)
@@ -92,11 +89,11 @@ public class DatabricksSdkClient implements DatabricksClient {
       responseState = response.getStatus().getState();
     }
     if (responseState != StatementState.SUCCEEDED) {
-      handleFailedExecution(responseState, statementId, statement);
+      handleFailedExecution(responseState, statementId, sql);
     }
 
     return new DatabricksResultSet(response.getStatus(), statementId, response.getResult(),
-          response.getManifest(), statementType, session);
+          response.getManifest(), statementType, session, parentStatement);
   }
 
   private boolean useCloudFetchForResult(StatementType statementType) {
@@ -109,7 +106,7 @@ public class DatabricksSdkClient implements DatabricksClient {
   }
 
   @Override
-  public Collection<ExternalLink> getResultChunk(String statementId, long chunkIndex) {
+  public Collection<ExternalLink> getResultChunks(String statementId, long chunkIndex) {
     return workspaceClient.statementExecution().getStatementResultChunkN(statementId, chunkIndex).getExternalLinks();
   }
 

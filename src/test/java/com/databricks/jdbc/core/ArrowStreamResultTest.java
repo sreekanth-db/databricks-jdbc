@@ -53,6 +53,7 @@ public class ArrowStreamResultTest {
 
     private static final String JDBC_URL = "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;";
     private static final String CHUNK_URL_PREFIX = "chunk.databricks.com/";
+    private static final String STATEMENT_ID = "statement_id";
 
     @Mock
     StatementExecutionService statementExecutionService;
@@ -88,7 +89,7 @@ public class ArrowStreamResultTest {
                 }
             });
         });
-        ArrowStreamResult result = new ArrowStreamResult(resultManifest, resultData, "statement_id", session);
+        ArrowStreamResult result = new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, session);
 
         // Act & Assert
         for(int i = 0; i < this.numberOfChunks; ++i) {
@@ -109,7 +110,7 @@ public class ArrowStreamResultTest {
                     .setRowOffset((long) (i * 110L))
                     .setRowCount(this.rowsInChunk);
             this.chunkInfos.add(chunkInfo);
-            ArrowResultChunk arrowResultChunk = new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE));
+            ArrowResultChunk arrowResultChunk = new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
             Schema schema = createTestSchema();
             Object[][] testData = createTestData(schema, (int) this.rowsInChunk);
             File arrowFile = createTestArrowFile("TestFile", schema, testData, new RootAllocator(Integer.MAX_VALUE));
@@ -183,7 +184,7 @@ public class ArrowStreamResultTest {
 
     private GetStatementResultChunkNRequest getChunkNRequest(long chunkIndex) {
         return new GetStatementResultChunkNRequest()
-                .setStatementId("statement_id")
+                .setStatementId(STATEMENT_ID)
                 .setChunkIndex(chunkIndex);
     }
 

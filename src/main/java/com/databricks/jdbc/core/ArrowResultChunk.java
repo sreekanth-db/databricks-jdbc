@@ -1,6 +1,8 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
+import com.databricks.jdbc.client.http.DatabricksHttpClient;
 import com.databricks.sdk.service.sql.ChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
 import org.apache.arrow.memory.RootAllocator;
@@ -13,11 +15,16 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class ArrowResultChunk {
 
@@ -60,12 +67,15 @@ public class ArrowResultChunk {
     CHUNK_RELEASED;
   }
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(ArrowResultChunk.class);
+
   private final long chunkIndex;
   final long numRows;
   final long rowOffset;
   final long byteCount;
 
   private String chunkUrl;
+  private final String statementId;
   private Long nextChunkIndex;
   private Instant expiryTime;
   private DownloadStatus status;
@@ -76,7 +86,10 @@ public class ArrowResultChunk {
 
   private RootAllocator rootAllocator;
 
-  ArrowResultChunk(ChunkInfo chunkInfo, RootAllocator rootAllocator) {
+  private Object downloadLock = new Object();
+  private Object statusLock = new Object();
+
+  ArrowResultChunk(ChunkInfo chunkInfo, RootAllocator rootAllocator, String statementId) {
     this.chunkIndex = chunkInfo.getChunkIndex();
     this.numRows = chunkInfo.getRowCount();
     this.rowOffset = chunkInfo.getRowOffset();
@@ -87,6 +100,7 @@ public class ArrowResultChunk {
     this.chunkUrl = null;
     this.downloadStartTime = null;
     this.downloadFinishTime = null;
+    this.statementId = statementId;
   }
 
   public static class ArrowResultChunkIterator {
@@ -161,30 +175,42 @@ public class ArrowResultChunk {
     return this.status;
   }
 
-  void downloadData(IDatabricksHttpClient httpClient) throws Exception {
-    // TODO: record number of attempts for download, and abort if retried more than a threshold
-    synchronized (this) {
-      if (getStatus() == DownloadStatus.DOWNLOAD_IN_PROGRESS) {
+  void downloadData(IDatabricksHttpClient httpClient) throws URISyntaxException, DatabricksHttpException, DatabricksParsingException {
+      try {
+        this.downloadStartTime = Instant.now().toEpochMilli();
+        URIBuilder uriBuilder = new URIBuilder(chunkUrl);
+        HttpGet getRequest = new HttpGet(uriBuilder.build());
+        // TODO: add appropriate headers
+        // Retry would be done in http client, we should not bother about that here
+        HttpResponse response = httpClient.execute(getRequest);
+        // TODO: handle error code
+        HttpEntity entity = response.getEntity();
+        getArrowDataFromInputStream(entity.getContent());
+        this.downloadFinishTime = Instant.now().toEpochMilli();
+      } catch (IOException e) {
+        String errMsg = String.format("Data fetch failed for chunk index [%d] and statement [%s]",
+            this.chunkIndex, this.statementId);
+        LOGGER.atError().setCause(e).log(errMsg);
+        throw new DatabricksHttpException(errMsg, e);
+      }
+  }
+
+  boolean enterLock() {
+    synchronized (downloadLock) {
+      // Other status we are already checking before initiating download
+      if (status == DownloadStatus.DOWNLOAD_IN_PROGRESS || status == DownloadStatus.DOWNLOAD_SUCCEEDED) {
         // another thread is already downloading
-        return;
+        return false;
       }
       setStatus(DownloadStatus.DOWNLOAD_IN_PROGRESS);
+      return true;
     }
-    try {
-      this.downloadStartTime = Instant.now().toEpochMilli();
-      URIBuilder uriBuilder = new URIBuilder(chunkUrl);
-      HttpGet getRequest = new HttpGet(uriBuilder.build());
-      // TODO: add appropriate headers
-      // Retry would be done in http client, we should not bother about that here
-      HttpResponse response = httpClient.execute(getRequest);
-      // TODO: handle error code
-      HttpEntity entity = response.getEntity();
-      getArrowDataFromInputStream(entity.getContent());
-      this.downloadFinishTime = Instant.now().toEpochMilli();
-      setStatus(DownloadStatus.DOWNLOAD_SUCCEEDED);
-    } catch (Exception e) {
-      // TODO: log error, handle proper error code
-      setStatus(DownloadStatus.DOWNLOAD_FAILED_RETRYABLE);
+  }
+
+  void releaseLock(boolean downloadSuccess) {
+    synchronized (downloadLock) {
+      // TODO: Handle retry count
+      setStatus(downloadSuccess ? DownloadStatus.DOWNLOAD_SUCCEEDED : DownloadStatus.DOWNLOAD_FAILED_RETRYABLE);
     }
   }
 
@@ -200,22 +226,52 @@ public class ArrowResultChunk {
     return this.nextChunkIndex;
   }
 
-  public void getArrowDataFromInputStream(InputStream inputStream) throws Exception {
+  public void getArrowDataFromInputStream(InputStream inputStream) throws DatabricksParsingException {
+    LOGGER.atDebug().log("Parsing data for chunk index [%d] and statement [%s]",
+        this.getChunkIndex(), this.statementId);
     this.recordBatchList = new ArrayList<>();
     // add check to see if input stream has been populated
     ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputStream, this.rootAllocator);
-    VectorSchemaRoot vectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
-    while(arrowStreamReader.loadNextBatch()) {
-      ArrayList<ValueVector> vectors = new ArrayList<>();
-      List<FieldVector> fieldVectors = vectorSchemaRoot.getFieldVectors();
-      for(FieldVector fieldVector: fieldVectors) {
-        TransferPair transferPair = fieldVector.getTransferPair(rootAllocator);
-        transferPair.transfer();
-        vectors.add(transferPair.getTo());
+    try {
+      VectorSchemaRoot vectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
+      while (arrowStreamReader.loadNextBatch()) {
+        ArrayList<ValueVector> vectors = new ArrayList<>();
+        List<FieldVector> fieldVectors = vectorSchemaRoot.getFieldVectors();
+        for (FieldVector fieldVector : fieldVectors) {
+          TransferPair transferPair = fieldVector.getTransferPair(rootAllocator);
+          transferPair.transfer();
+          vectors.add(transferPair.getTo());
+        }
+        this.recordBatchList.add(vectors);
+        vectorSchemaRoot.clear();
       }
-      this.recordBatchList.add(vectors);
-      vectorSchemaRoot.clear();
+      LOGGER.atDebug().log("Data parsed for chunk index [%d] and statement [%s]",
+          this.getChunkIndex(), this.statementId);
+    } catch (IOException e) {
+      String errMsg = String.format("Data parsing failed for chunk index [%d] and statement [%s]",
+          this.chunkIndex, this.statementId);
+      LOGGER.atError().setCause(e).log(errMsg);
+      throw new DatabricksParsingException(errMsg, e);
     }
+  }
+
+  void refreshChunkLink(IDatabricksSession session) {
+    Optional<ExternalLink> chunkOptional = session.getDatabricksClient()
+        .getResultChunks(statementId, chunkIndex).stream().findFirst();
+    if (chunkOptional.isPresent()) {
+      ExternalLink chunk = chunkOptional.get();
+      setChunkUrl(chunk);
+    }
+  }
+
+  synchronized boolean releaseChunk() {
+    if (status == DownloadStatus.CHUNK_RELEASED) {
+      return false;
+    }
+    // TODO: release from memory
+    this.recordBatchList.clear();
+    this.setStatus(DownloadStatus.CHUNK_RELEASED);
+    return true;
   }
 
   /**

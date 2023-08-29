@@ -1,8 +1,11 @@
 package com.databricks.jdbc.client;
 
+/**
+ * Exception class to handle http errors while downloading chunk data from external links.
+ */
 public class DatabricksHttpException extends Exception {
 
-  private Throwable cause;
+  private final Throwable cause;
 
   public DatabricksHttpException(String message) {
     super(message);

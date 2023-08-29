@@ -2,6 +2,7 @@ package com.databricks.jdbc.client;
 
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.IDatabricksSession;
+import com.databricks.jdbc.core.IDatabricksStatement;
 import com.databricks.jdbc.core.ImmutableSqlParameter;
 import com.databricks.sdk.service.sql.ExternalLink;
 import com.databricks.sdk.service.sql.Session;
@@ -35,11 +36,13 @@ public interface DatabricksClient {
    * @param parameters SQL parameters for the statement
    * @param statementType type of statement (metadata, update or generic SQL)
    * @param session underlying session
+   * @param statement statement instance if called from a statement
    * @return response for statement execution
    */
   DatabricksResultSet executeStatement(
-      String statement, String warehouseId, Map<Integer, ImmutableSqlParameter> parameters,
-      StatementType statementType, IDatabricksSession session) throws SQLException;
+      String sql, String warehouseId, Map<Integer, ImmutableSqlParameter> parameters,
+      StatementType statementType, IDatabricksSession session, IDatabricksStatement parentStatement)
+      throws SQLException;
 
   /**
    * Closes a statement in Databricks server
@@ -53,5 +56,5 @@ public interface DatabricksClient {
    * @param statementId statement-Id for which chunk should be fetched
    * @param chunkIndex chunkIndex for which chunk should be fetched
    */
-  Collection<ExternalLink> getResultChunk(String statementId, long chunkIndex);
+  Collection<ExternalLink> getResultChunks(String statementId, long chunkIndex);
 }

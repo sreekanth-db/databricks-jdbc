@@ -13,7 +13,10 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.*;
 
-public class ChunkDownloader {
+/**
+ * Class to manage Arrow chunks and fetch them on proactive basis.
+ */
+public class ChunkDownloader implements Runnable {
 
   private static final int CHUNKS_DOWNLOADER_THREAD_POOL_SIZE = 4;
   private static final String CHUNKS_DOWNLOADER_THREAD_POOL_PREFIX = "databricks-jdbc-chunks-downloader-";
@@ -28,6 +31,8 @@ public class ChunkDownloader {
   private long totalChunksInMemory;
   private long allowedChunksInMemory;
   private long totalBytesInUse;
+  private boolean isClosed;
+  private Object downloadMonitor = new Object();
 
   ConcurrentHashMap<Long, ArrowResultChunk> chunkIndexToChunksMap;
 
@@ -35,7 +40,7 @@ public class ChunkDownloader {
     this.session = session;
     this.statementId = statementId;
     this.totalChunks = resultManifest.getTotalChunkCount();
-    this.chunkIndexToChunksMap = initializeChunksMap(resultManifest, resultData);
+    this.chunkIndexToChunksMap = initializeChunksMap(resultManifest, resultData, statementId);
     // We are assuming that all links provided are in sequence. Currently, it only returns the
     // first chunk link, and next links need to be fetched sequentially using a separate API
     this.nextChunkLinkToDownload = resultData.getExternalLinks().size();
@@ -49,7 +54,8 @@ public class ChunkDownloader {
     this.allowedChunksInMemory = Math.min(CHUNKS_DOWNLOADER_THREAD_POOL_SIZE, totalChunks);
     this.chunkDownloaderExecutorService = createChunksDownloaderExecutorService();
     this.httpClient = DatabricksHttpClient.getInstance();
-    // The first link has been
+    this.isClosed = false;
+    // The first link is available
     this.initDownloader();
   }
 
@@ -58,7 +64,7 @@ public class ChunkDownloader {
     this.session = session;
     this.statementId = statementId;
     this.totalChunks = resultManifest.getTotalChunkCount();
-    this.chunkIndexToChunksMap = initializeChunksMap(resultManifest, resultData);
+    this.chunkIndexToChunksMap = initializeChunksMap(resultManifest, resultData, statementId);
     // We are assuming that all links provided are in sequence. Currently, it only returns the
     // first chunk link, and next links need to be fetched sequentially using a separate API
     this.nextChunkLinkToDownload = resultData.getExternalLinks().size();
@@ -76,11 +82,11 @@ public class ChunkDownloader {
     this.initDownloader();
   }
 
-  private static ConcurrentHashMap<Long, ArrowResultChunk> initializeChunksMap(ResultManifest resultManifest, ResultData resultData) {
+  private static ConcurrentHashMap<Long, ArrowResultChunk> initializeChunksMap(ResultManifest resultManifest, ResultData resultData, String statementId) {
     ConcurrentHashMap<Long, ArrowResultChunk> chunkIndexMap = new ConcurrentHashMap<>();
     for (ChunkInfo chunkInfo : resultManifest.getChunks()) {
       // TODO: Add logging to check data (in bytes) from server and in root allocator. If they are close, we can directly assign the number of bytes as the limit with a small buffer.
-      chunkIndexMap.put(chunkInfo.getChunkIndex(), new ArrowResultChunk(chunkInfo, new RootAllocator(/*limit =*/ Integer.MAX_VALUE)));
+      chunkIndexMap.put(chunkInfo.getChunkIndex(), new ArrowResultChunk(chunkInfo, new RootAllocator(/*limit =*/ Integer.MAX_VALUE), statementId));
     }
 
     for (ExternalLink externalLink : resultData.getExternalLinks()) {
@@ -117,10 +123,10 @@ public class ChunkDownloader {
   }
 
   private void initDownloader() {
-    // The first link is already downloaded, we can download chunk for the same
-    initChunksDownload();
     // Download all links using session's executor service. The links are downloaded sequentially.
     initLinksDownload(this.session.getExecutorService());
+    // We already have the first link, start the download for arrow data
+    new Thread(this, "chunk-downloader-" + statementId).start();
   }
 
   private void initLinksDownload(ExecutorService executorService) {
@@ -129,7 +135,7 @@ public class ChunkDownloader {
           () -> {
             while (nextChunkLinkToDownload < totalChunks) {
               // TODO: handle failures
-              Collection<ExternalLink> chunks = session.getDatabricksClient().getResultChunk(
+              Collection<ExternalLink> chunks = session.getDatabricksClient().getResultChunks(
                   statementId, nextChunkLinkToDownload);
               for (ExternalLink chunkLink : chunks) {
                 chunkIndexToChunksMap.get(chunkLink.getChunkIndex()).setChunkUrl(chunkLink);
@@ -137,59 +143,14 @@ public class ChunkDownloader {
               }
             }
             // Once all chunk links has been downloaded, trigger the chunks download.
-            initChunksDownload();
+            downloadMonitor.notify();
           });
     }
-  }
-
-  private void initLinksDownload(ExecutorService executorService, long chunkIndex) {
-    // TODO: log that we are refetching link for this chunk, likely this has expired
-      executorService.submit(
-          () -> {
-              // TODO: handle failures
-              Optional<ExternalLink> chunkOptional = session.getDatabricksClient()
-                  .getResultChunk(statementId, nextChunkLinkToDownload).stream().findFirst();
-              if (chunkOptional.isPresent()) {
-                ExternalLink chunk = chunkOptional.get();
-                chunkIndexToChunksMap.get(chunk.getChunkIndex()).setChunkUrl(chunk);
-                initChunksDownload();
-              }
-          });
   }
 
   /**
-   * Starts the chunk download from given already downloaded position
+   * Check if chunk data can be downloaded from external link based on download status
    */
-  private synchronized void initChunksDownload() {
-    if (nextChunkToDownload < totalChunks) {
-      ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
-      boolean downloadChunkLink = false;
-      while (totalChunksInMemory < allowedChunksInMemory) {
-        // links are not yet ready
-        if (!isChunkDownloadable(chunk.getStatus())) {
-          break;
-        }
-        if (!chunk.isChunkLinkValid()) {
-          downloadChunkLink = true;
-          break;
-        }
-        this.chunkDownloaderExecutorService.submit(
-            getDownloadTask(chunk));
-        totalChunksInMemory++;
-        nextChunkToDownload++;
-        chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
-      }
-      // Chunk link has expired, download the link again, which will trigger the chunk download implicitly
-      if (downloadChunkLink) {
-        initLinksDownload(this.session.getExecutorService(), chunk.getChunkIndex());
-      }
-    }
-  }
-
-  void downloadNextChunk(ArrowResultChunk chunk) throws Exception {
-    chunk.downloadData(httpClient);
-  }
-
   boolean isChunkDownloadable(ArrowResultChunk.DownloadStatus status) {
     return status == ArrowResultChunk.DownloadStatus.URL_FETCHED
         || status == ArrowResultChunk.DownloadStatus.CANCELLED
@@ -200,25 +161,56 @@ public class ChunkDownloader {
    * Release the memory for given chunk since it is already consumed
    * @param chunkIndex index of consumed chunk
    */
-  public synchronized void releaseChunk(int chunkIndex) {
-    throw new UnsupportedOperationException("Not yet implemented");
+  public void releaseChunk(int chunkIndex) {
+    if (chunkIndexToChunksMap.get(chunkIndex).releaseChunk()) {
+      totalChunksInMemory--;
+      downloadMonitor.notify();
+    }
   }
 
-  Callable<Void> getDownloadTask(ArrowResultChunk chunk) {
-    return new Callable<Void>() {
-      @Override
-      public Void call() throws Exception {
-        downloadNextChunk(chunk);
-        return null;
-      }
-    };
-  }
-
-  public void setChunkLink(int chunkIndex, ExternalLink chunkLink) {
+  /**
+   * Initialize chunk with external link details
+   * @param chunkIndex index of chunk
+   * @param chunkLink external link details for chunk
+   */
+  void setChunkLink(int chunkIndex, ExternalLink chunkLink) {
     chunkIndexToChunksMap.get(chunkIndex).setChunkUrl(chunkLink);
   }
 
+  /**
+   * Fetches total chunks that we have in memory
+   */
   long getTotalChunksInMemory() {
     return totalChunksInMemory;
+  }
+
+  /**
+   * Release all chunks from memory. This would be called when result-set has been closed.
+   */
+  void releaseAllChunks() {
+    this.isClosed = true;
+    // TODO: release all chunks
+  }
+
+  @Override
+  public void run() {
+    // Starts the chunk download from given already downloaded position
+    while(!this.isClosed && (nextChunkToDownload < totalChunks)) {
+      try {
+        while (totalChunksInMemory == allowedChunksInMemory
+            || !isChunkDownloadable(chunkIndexToChunksMap.get(nextChunkToDownload).getStatus())) {
+          downloadMonitor.wait();
+        }
+      } catch (InterruptedException e) {
+        // Handle interruption
+      }
+      if (totalChunksInMemory < allowedChunksInMemory) {
+        ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
+        this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, session));
+        totalChunksInMemory++;
+        nextChunkToDownload++;
+        chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
+      }
+    }
   }
 }
