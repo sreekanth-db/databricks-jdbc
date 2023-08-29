@@ -64,10 +64,6 @@ public class ArrowStreamResultTest {
         setupChunks();
     }
 
-    /*
-    If running into Arrow memory buffer error, run with jvm argument --add-opens java.base/java.nio=ALL-UNNAMED
-    i.e. mvn test -DargLine="--add-opens java.base/java.nio=ALL-UNNAMED"
-     */
     @Test
     public void testIteration() throws Exception {
         // Arrange
@@ -98,7 +94,8 @@ public class ArrowStreamResultTest {
 
         // Act & Assert
         for(int i = 0; i < this.numberOfChunks; ++i) {
-            for(int j = 0; j < (this.rowsInChunk - 1); ++j) {
+            // Since the first row of the chunk is null
+            for(int j = 0; j < (this.rowsInChunk); ++j) {
                 assertTrue(result.hasNext());
                 assertTrue(result.next());
             }
@@ -180,14 +177,14 @@ public class ArrowStreamResultTest {
                 if(type.equals(Types.MinorType.INT)) {
                     IntVector intVector = (IntVector) fieldVector;
                     intVector.setInitialCapacity(rowsToAddToRecordBatch);
-                    for(int k = 1; k < rowsToAddToRecordBatch; k++) {
+                    for(int k = 0; k < rowsToAddToRecordBatch; k++) {
                         intVector.set(k, 1, (int) testData[i][j + k]);
                     }
                 }
                 else if(type.equals(Types.MinorType.FLOAT8)) {
                     Float8Vector float8Vector = (Float8Vector) fieldVector;
                     float8Vector.setInitialCapacity(rowsToAddToRecordBatch);
-                    for(int k = 1; k < rowsToAddToRecordBatch; k++) {
+                    for(int k = 0; k < rowsToAddToRecordBatch; k++) {
                         float8Vector.set(k, 1, (double) testData[i][j + k]);
                     }
                 }
