@@ -4,6 +4,7 @@ import com.databricks.jdbc.client.impl.DatabricksSdkClient;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.service.sql.*;
+import com.google.common.collect.ImmutableList;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.Float8Vector;
@@ -16,6 +17,7 @@ import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -57,6 +59,11 @@ public class ArrowStreamResultTest {
     @Mock
     StatementExecutionService statementExecutionService;
 
+    @BeforeEach
+    public void setup() throws Exception {
+        setupChunks();
+    }
+
     /*
     If running into Arrow memory buffer error, run with jvm argument --add-opens java.base/java.nio=ALL-UNNAMED
     i.e. mvn test -DargLine="--add-opens java.base/java.nio=ALL-UNNAMED"
@@ -64,7 +71,6 @@ public class ArrowStreamResultTest {
     @Test
     public void testIteration() throws Exception {
         // Arrange
-        setupChunks();
         ResultManifest resultManifest = new ResultManifest()
                 .setTotalChunkCount((long) this.numberOfChunks)
                 .setTotalRowCount(this.numberOfChunks * 110L)
@@ -92,13 +98,52 @@ public class ArrowStreamResultTest {
 
         // Act & Assert
         for(int i = 0; i < this.numberOfChunks; ++i) {
-            for(int j = 0; j < this.rowsInChunk; ++j) {
+            for(int j = 0; j < (this.rowsInChunk - 1); ++j) {
                 assertTrue(result.hasNext());
                 assertTrue(result.next());
             }
         }
         assertFalse(result.hasNext());
         assertFalse(result.next());
+        mocked.close();
+    }
+
+    @Test
+    public void testGetObject() throws Exception {
+        // Arrange
+        ResultManifest resultManifest = new ResultManifest()
+                .setTotalChunkCount((long) this.numberOfChunks)
+                .setTotalRowCount(this.numberOfChunks * 110L)
+                .setTotalByteCount(1000L)
+                .setChunks(this.chunkInfos)
+                .setSchema(new ResultSchema().setColumns(ImmutableList.of(new ColumnInfo().setTypeName(ColumnInfoTypeName.INT), new ColumnInfo().setTypeName(ColumnInfoTypeName.DOUBLE))));
+
+        ResultData resultData = new ResultData()
+                .setExternalLinks(getChunkLinks(0L, false));
+
+        IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+        DatabricksSession session = new DatabricksSession(connectionContext,
+                new DatabricksSdkClient(connectionContext, statementExecutionService));
+
+        MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
+            Mockito.when(mock.getChunk(anyLong())).thenAnswer(new Answer<ArrowResultChunk>() {
+                @Override
+                public ArrowResultChunk answer(InvocationOnMock invocation) {
+                    long index = invocation.getArgument(0);
+                    return resultChunks.get((int) index);
+                }
+            });
+        });
+        ArrowStreamResult result = new ArrowStreamResult(resultManifest, resultData, "statement_id", session);
+
+        result.next();
+        Object objectInFirstColumn = result.getObject(0);
+        Object objectInSecondColumn = result.getObject(1);
+
+        assertTrue(objectInFirstColumn instanceof Integer);
+        assertTrue(objectInSecondColumn instanceof Double);
+
+        mocked.close();
     }
 
     private void setupChunks() throws Exception {
