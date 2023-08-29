@@ -80,6 +80,7 @@ class ArrowStreamResult implements IExecutionResult {
       ++this.currentRowIndex;
       ArrowResultChunk firstChunk = this.chunkDownloader.getChunk(/*chunkIndex =*/ 0L);
       this.chunkIterator = firstChunk.getChunkIterator();
+      this.chunkIterator.nextRow();
       this.firstChunkPopulated = true;
       return true;
     }
@@ -91,6 +92,7 @@ class ArrowStreamResult implements IExecutionResult {
     if(++this.currentChunkIndex == this.totalChunks) return false; // this implies that this was the last chunk
     ArrowResultChunk nextChunk = this.chunkDownloader.getChunk(this.currentChunkIndex);
     this.chunkIterator = nextChunk.getChunkIterator();
+    this.chunkIterator.nextRow();
     return true;
   }
 

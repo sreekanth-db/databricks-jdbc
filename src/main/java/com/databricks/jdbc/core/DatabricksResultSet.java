@@ -5,7 +5,6 @@ import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
 import com.databricks.sdk.service.sql.StatementStatus;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
