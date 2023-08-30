@@ -10,8 +10,10 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.arrow.memory.RootAllocator;
 
 import java.util.Collection;
-import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Class to manage Arrow chunks and fetch them on proactive basis.

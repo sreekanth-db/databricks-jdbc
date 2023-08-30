@@ -2,9 +2,7 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
-import com.databricks.sdk.service.sql.ExternalLink;
 
-import java.util.Optional;
 import java.util.concurrent.Callable;
 
 public class SingleChunkDownloader implements Callable<Void> {

@@ -36,7 +36,6 @@ class ArrowStreamResult implements IExecutionResult {
     this.firstChunkPopulated = false;
     this.currentRowIndex = -1;
     this.isClosed = false;
-    new Thread(chunkDownloader).start();
   }
 
   public ChunkDownloader getChunkDownloader() {return this.chunkDownloader;}
