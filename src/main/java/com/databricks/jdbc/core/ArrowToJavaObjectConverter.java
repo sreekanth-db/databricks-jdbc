@@ -3,9 +3,7 @@ package com.databricks.jdbc.core;
 import org.apache.arrow.vector.types.Types;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 
-
 import java.math.BigDecimal;
-import java.time.ZoneId;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
