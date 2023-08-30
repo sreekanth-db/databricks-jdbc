@@ -5,7 +5,10 @@ import com.databricks.jdbc.client.IDatabricksHttpClient;
 
 import java.util.concurrent.Callable;
 
-public class SingleChunkDownloader implements Callable<Void> {
+/**
+ * Task class to manage download for a single chunk.
+ */
+class SingleChunkDownloader implements Callable<Void> {
 
   private final ArrowResultChunk chunk;
   private final IDatabricksHttpClient httpClient;
