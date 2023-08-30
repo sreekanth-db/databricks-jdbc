@@ -8,6 +8,7 @@ import org.apache.arrow.vector.types.Types;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -104,13 +105,13 @@ public class ArrowToJavaObjectConverterTest {
     public void testBigDecimalConversion() throws SQLException {
         DecimalVector decimalVector = new DecimalVector("decimalVector", this.bufferAllocator, 30, 10);
         decimalVector.allocateNew(1);
-        decimalVector.set(0, BigDecimal.valueOf(4.111111111));
+        decimalVector.set(0, BigDecimal.valueOf(4.1111111111));
         Object unconvertedObject = decimalVector.getObject(0);
         Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.DECIMAL,
                 Types.MinorType.DECIMAL);
 
         assertTrue(convertedObject instanceof BigDecimal);
-        assertEquals(convertedObject, BigDecimal.valueOf(4.111111111));
+        assertEquals(convertedObject, BigDecimal.valueOf(4.1111111111));
     }
 
     @Test
@@ -177,13 +178,13 @@ public class ArrowToJavaObjectConverterTest {
     public void testDateConversion() throws SQLException {
         DateDayVector dateDayVector = new DateDayVector("dateDayVector", this.bufferAllocator);
         dateDayVector.allocateNew(1);
-        dateDayVector.set(0, 19598); // 29th August
+        dateDayVector.set(0, 19598); // 29th August 2023
         Object unconvertedObject = dateDayVector.getObject(0);
         Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.DATE,
                 Types.MinorType.DATEDAY);
 
         assertTrue(convertedObject instanceof Date);
-        assertEquals(convertedObject, Date.from(Instant.ofEpochMilli(1693247400000L)));
+        assertEquals(convertedObject, Date.valueOf("2023-08-29"));
     }
 
     @Test

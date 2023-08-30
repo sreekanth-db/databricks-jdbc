@@ -3,10 +3,8 @@ package com.databricks.jdbc.core;
 import org.apache.arrow.vector.types.Types;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 
-
 import java.math.BigDecimal;
-import java.time.ZoneId;
-import java.util.Date;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -80,7 +78,7 @@ public class ArrowToJavaObjectConverter {
             throw new SQLException("Data does not agree with metadata");
         }
         LocalDate localDate = LocalDate.ofEpochDay((int) object);
-        return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        return Date.valueOf(localDate);
     }
 
     private static char convertToChar(Object object, Types.MinorType arrowType) throws SQLException {
