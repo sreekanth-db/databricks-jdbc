@@ -105,13 +105,13 @@ public class ArrowToJavaObjectConverterTest {
     public void testBigDecimalConversion() throws SQLException {
         DecimalVector decimalVector = new DecimalVector("decimalVector", this.bufferAllocator, 30, 10);
         decimalVector.allocateNew(1);
-        decimalVector.set(0, BigDecimal.valueOf(4.111111111));
+        decimalVector.set(0, BigDecimal.valueOf(4.1111111111));
         Object unconvertedObject = decimalVector.getObject(0);
         Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.DECIMAL,
                 Types.MinorType.DECIMAL);
 
         assertTrue(convertedObject instanceof BigDecimal);
-        assertEquals(convertedObject, BigDecimal.valueOf(4.111111111));
+        assertEquals(convertedObject, BigDecimal.valueOf(4.1111111111));
     }
 
     @Test
