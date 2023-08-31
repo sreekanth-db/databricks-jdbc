@@ -47,54 +47,63 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   @Override
   public void setBoolean(int parameterIndex, boolean x) throws SQLException {
     LOGGER.debug("public void setBoolean(int parameterIndex, boolean x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.BOOLEAN);
   }
 
   @Override
   public void setByte(int parameterIndex, byte x) throws SQLException {
     LOGGER.debug("public void setByte(int parameterIndex, byte x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.TINYINT);
   }
 
   @Override
   public void setShort(int parameterIndex, short x) throws SQLException {
     LOGGER.debug("public void setShort(int parameterIndex, short x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.SMALLINT);
   }
 
   @Override
   public void setInt(int parameterIndex, int x) throws SQLException {
     LOGGER.debug("public void setInt(int parameterIndex, int x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.INTEGER);
   }
 
   @Override
   public void setLong(int parameterIndex, long x) throws SQLException {
     LOGGER.debug("public void setLong(int parameterIndex, long x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.BIGINT);
   }
 
   @Override
   public void setFloat(int parameterIndex, float x) throws SQLException {
     LOGGER.debug("public void setFloat(int parameterIndex, float x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.FLOAT);
   }
 
   @Override
   public void setDouble(int parameterIndex, double x) throws SQLException {
     LOGGER.debug("public void setDouble(int parameterIndex, double x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.DOUBLE);
   }
 
   @Override
   public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
     LOGGER.debug("public void setBigDecimal(int parameterIndex, BigDecimal x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.DECIMAL);
   }
 
   @Override
   public void setString(int parameterIndex, String x) throws SQLException {
     LOGGER.debug("public void setString(int parameterIndex, String x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.VARCHAR);
   }
 
@@ -107,18 +116,21 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   @Override
   public void setDate(int parameterIndex, Date x) throws SQLException {
     LOGGER.debug("public void setDate(int parameterIndex, Date x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.DATE);
   }
 
   @Override
   public void setTime(int parameterIndex, Time x) throws SQLException {
     LOGGER.debug("public void setTime(int parameterIndex, Time x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.TIME);
   }
 
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
     LOGGER.debug("public void setTimestamp(int parameterIndex, Timestamp x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.TIMESTAMP);
   }
 
@@ -143,12 +155,14 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   @Override
   public void clearParameters() throws SQLException {
     LOGGER.debug("public void clearParameters()");
+    checkIfClosed();
     this.parameterBindings.clear();
   }
 
   @Override
   public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
     LOGGER.debug("public void setObject(int parameterIndex, Object x, int targetSqlType)");
+    checkIfClosed();
     this.parameterBindings.put(parameterIndex, ImmutableSqlParameter.builder()
             .type(targetSqlType)
             .value(x)
@@ -159,12 +173,14 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   @Override
   public void setObject(int parameterIndex, Object x) throws SQLException {
     LOGGER.debug("public void setObject(int parameterIndex, Object x)");
+    checkIfClosed();
     setObject(parameterIndex, x, Types.JAVA_OBJECT);
   }
 
   @Override
   public boolean execute() throws SQLException {
     LOGGER.debug("public boolean execute()");
+    checkIfClosed();
     executeInternal(sql, parameterBindings, StatementType.SQL);
     return !resultSet.hasUpdateCount();
   }
@@ -208,6 +224,7 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   @Override
   public ResultSetMetaData getMetaData() throws SQLException {
     LOGGER.debug("public ResultSetMetaData getMetaData()");
+    checkIfClosed();
     return resultSet.getMetaData();
   }
 
@@ -359,5 +376,50 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   public void setNClob(int parameterIndex, Reader reader) throws SQLException {
     LOGGER.debug("public void setNClob(int parameterIndex, Reader reader)");
     throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public int executeUpdate(String sql) throws SQLException {
+    throw new DatabricksSQLException("Method not supported in PreparedStatement");
+  }
+
+  @Override
+  public boolean execute(String sql) throws SQLException {
+    throw new DatabricksSQLException("Method not supported in PreparedStatement");
+  }
+
+  @Override
+  public ResultSet executeQuery(String sql) throws SQLException {
+    throw new DatabricksSQLException("Method not supported in PreparedStatement");
+  }
+
+  @Override
+  public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
+    throw new DatabricksSQLException("Method not supported in PreparedStatement");
+  }
+
+  @Override
+  public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
+    throw new DatabricksSQLException("Method not supported in PreparedStatement");
+  }
+
+  @Override
+  public int executeUpdate(String sql, String[] columnNames) throws SQLException {
+    throw new DatabricksSQLException("Method not supported in PreparedStatement");
+  }
+
+  @Override
+  public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
+    throw new DatabricksSQLException("Method not supported in PreparedStatement");
+  }
+
+  @Override
+  public boolean execute(String sql, int[] columnIndexes) throws SQLException {
+    throw new DatabricksSQLException("Method not supported in PreparedStatement");
+  }
+
+  @Override
+  public boolean execute(String sql, String[] columnNames) throws SQLException {
+    throw new DatabricksSQLException("Method not supported in PreparedStatement");
   }
 }

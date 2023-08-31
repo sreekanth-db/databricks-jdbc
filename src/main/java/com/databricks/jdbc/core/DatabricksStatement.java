@@ -16,12 +16,13 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   DatabricksResultSet resultSet;
   private String statementId;
   private boolean isClosed;
+  private boolean closeOnCompletion;
 
   public DatabricksStatement(DatabricksConnection connection) {
     this.connection = connection;
     this.resultSet = null;
     this.statementId = null;
-    this.isClosed = true;
+    this.isClosed = false;
   }
 
   @Override
@@ -31,11 +32,13 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
+    checkIfClosed();
     return executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.QUERY);
   }
 
   @Override
   public int executeUpdate(String sql) throws SQLException {
+    checkIfClosed();
     executeInternal(
             sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.UPDATE);
     return (int) resultSet.getUpdateCount();
@@ -44,14 +47,18 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public void close() throws SQLException {
     LOGGER.debug("public void close()");
-    this.isClosed = true;
-    this.connection.getSession().getDatabricksClient().closeStatement(statementId);
+    close(true);
   }
 
   @Override
   public void close(boolean removeFromSession) throws SQLException {
     LOGGER.debug("public void close(boolean removeFromSession)");
-    close();
+    this.isClosed = true;
+    this.connection.getSession().getDatabricksClient().closeStatement(statementId);
+    if (resultSet != null) {
+      this.resultSet.close();
+      this.resultSet = null;
+    }
     if (removeFromSession) {
       this.connection.closeStatement(this);
     }
@@ -125,6 +132,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
   @Override
   public boolean execute(String sql) throws SQLException {
+    checkIfClosed();
     resultSet = executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.SQL);
     return !resultSet.hasUpdateCount();
   }
@@ -132,12 +140,14 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public ResultSet getResultSet() throws SQLException {
     LOGGER.debug("public ResultSet getResultSet()");
+    checkIfClosed();
     return resultSet;
   }
 
   @Override
   public int getUpdateCount() throws SQLException {
     LOGGER.debug("public int getUpdateCount()");
+    checkIfClosed();
     return (int) resultSet.getUpdateCount();
   }
 
@@ -150,6 +160,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public void setFetchDirection(int direction) throws SQLException {
     LOGGER.debug("public void setFetchDirection(int direction = {})", direction);
+    checkIfClosed();
     if (direction != ResultSet.FETCH_FORWARD) {
       throw new SQLFeatureNotSupportedException("Not supported");
     }
@@ -158,6 +169,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public int getFetchDirection() throws SQLException {
     LOGGER.debug("public int getFetchDirection()");
+    checkIfClosed();
     return ResultSet.FETCH_FORWARD;
   }
 
@@ -176,31 +188,36 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public int getResultSetConcurrency() throws SQLException {
     LOGGER.debug("public int getResultSetConcurrency()");
+    checkIfClosed();
     return ResultSet.CONCUR_READ_ONLY;
   }
 
   @Override
   public int getResultSetType() throws SQLException {
     LOGGER.debug("public int getResultSetType()");
+    checkIfClosed();
     return ResultSet.TYPE_FORWARD_ONLY;
   }
 
   @Override
   public void addBatch(String sql) throws SQLException {
     LOGGER.debug("public void addBatch(String sql = {})", sql);
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    throw new DatabricksSQLFeatureNotSupportedException("Method not supported", "addBatch(String sql)");
   }
 
   @Override
   public void clearBatch() throws SQLException {
     LOGGER.debug("public void clearBatch()");
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    throw new DatabricksSQLFeatureNotSupportedException("Method not supported", "clearBatch()");
   }
 
   @Override
   public int[] executeBatch() throws SQLException {
     LOGGER.debug("public int[] executeBatch()");
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    throw new DatabricksSQLFeatureNotSupportedException("Method not supported", "executeBatch()");
   }
 
   @Override
@@ -218,44 +235,65 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public ResultSet getGeneratedKeys() throws SQLException {
     LOGGER.debug("public ResultSet getGeneratedKeys()");
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    return new EmptyResultSet();
   }
 
   @Override
   public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    if (autoGeneratedKeys == Statement.NO_GENERATED_KEYS) {
+      return executeUpdate(sql);
+    } else {
+      throw new DatabricksSQLFeatureNotSupportedException(
+          "Method not supported", "executeUpdate(String sql, int autoGeneratedKeys)");
+    }
   }
 
   @Override
   public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    throw new DatabricksSQLFeatureNotSupportedException(
+        "Method not supported", "executeUpdate(String sql, int[] columnIndexes)");
   }
 
   @Override
   public int executeUpdate(String sql, String[] columnNames) throws SQLException {
     LOGGER.debug("public int executeUpdate(String sql, String[] columnNames)");
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    throw new DatabricksSQLFeatureNotSupportedException(
+        "Method not supported", "executeUpdate(String sql, String[] columnNames)");
   }
 
   @Override
   public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    if (autoGeneratedKeys == Statement.NO_GENERATED_KEYS) {
+      return execute(sql);
+    } else {
+      throw new DatabricksSQLFeatureNotSupportedException(
+          "Method not supported", "execute(String sql, int autoGeneratedKeys)");
+    }
   }
 
   @Override
   public boolean execute(String sql, int[] columnIndexes) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    throw new DatabricksSQLFeatureNotSupportedException(
+        "Method not supported", "execute(String sql, int[] columnIndexes)");
   }
 
   @Override
   public boolean execute(String sql, String[] columnNames) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    throw new DatabricksSQLFeatureNotSupportedException(
+        "Method not supported", "execute(String sql, String[] columnNames)");
   }
 
   @Override
   public int getResultSetHoldability() throws SQLException {
     LOGGER.debug("public int getResultSetHoldability()");
-    throw new UnsupportedOperationException("Not implemented");
+    return ResultSet.CLOSE_CURSORS_AT_COMMIT;
   }
 
   @Override
@@ -267,25 +305,32 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public void setPoolable(boolean poolable) throws SQLException {
     LOGGER.debug("public void setPoolable(boolean poolable = {})", poolable);
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    if (poolable) {
+      throw new DatabricksSQLFeatureNotSupportedException(
+          "Method not supported", "setPoolable(boolean poolable)");
+    }
   }
 
   @Override
   public boolean isPoolable() throws SQLException {
     LOGGER.debug("public boolean isPoolable()");
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    return false;
   }
 
   @Override
   public void closeOnCompletion() throws SQLException {
     LOGGER.debug("public void closeOnCompletion()");
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    this.closeOnCompletion = true;
   }
 
   @Override
   public boolean isCloseOnCompletion() throws SQLException {
     LOGGER.debug("public boolean isCloseOnCompletion()");
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    return this.closeOnCompletion;
   }
 
   @Override
@@ -299,12 +344,26 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
     LOGGER.debug("public boolean isWrapperFor(Class<?> iface)");
     throw new UnsupportedOperationException("Not implemented");
   }
+  @Override
+  public void handleResultSetClose(IDatabricksResultSet resultSet) throws SQLException {
+    // Don't throw exception, we are already closing here
+    if (closeOnCompletion) {
+      this.close(true);
+    }
+  }
 
-  DatabricksResultSet executeInternal(String sql, Map<Integer, ImmutableSqlParameter> params, StatementType statementType) throws SQLException {
+  DatabricksResultSet executeInternal(String sql, Map<Integer, ImmutableSqlParameter> params, StatementType statementType)
+          throws SQLException {
     LOGGER.debug("DatabricksResultSet executeInternal(String sql = {}, Map<Integer, ImmutableSqlParameter> params = {}, StatementType statementType = {})", sql, params, statementType);
     resultSet = connection.getSession().getDatabricksClient().executeStatement(
-            sql, connection.getSession().getWarehouseId(), params, statementType, connection.getSession());
+        sql, connection.getSession().getWarehouseId(), params, statementType, connection.getSession(), this);
     this.isClosed = false;
     return resultSet;
+  }
+
+  void checkIfClosed() throws SQLException {
+    if (isClosed) {
+      throw new DatabricksSQLException("Statement is closed");
+    }
   }
 }
