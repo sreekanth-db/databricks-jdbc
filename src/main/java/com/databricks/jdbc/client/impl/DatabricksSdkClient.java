@@ -2,13 +2,19 @@ package com.databricks.jdbc.client.impl;
 
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.StatementType;
+import com.databricks.jdbc.client.sqlexec.CreateSessionRequest;
+import com.databricks.jdbc.client.sqlexec.DeleteSessionRequest;
+import com.databricks.jdbc.client.sqlexec.ExecuteStatementRequestWithSession;
+import com.databricks.jdbc.client.sqlexec.Session;
 import com.databricks.jdbc.core.*;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
+import com.databricks.sdk.core.ApiClient;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.*;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -35,26 +41,35 @@ public class DatabricksSdkClient implements DatabricksClient {
     this.workspaceClient = new WorkspaceClient(databricksConfig);
   }
 
-  public DatabricksSdkClient(IDatabricksConnectionContext connectionContext, StatementExecutionService statementExecutionService) {
+  public DatabricksSdkClient(IDatabricksConnectionContext connectionContext,
+                             StatementExecutionService statementExecutionService, ApiClient apiClient) {
     this.connectionContext = connectionContext;
     // Handle more auth types
     this.databricksConfig = new DatabricksConfig()
         .setHost(connectionContext.getHostUrl())
         .setToken(connectionContext.getToken());
 
-    this.workspaceClient = new WorkspaceClient(true).withStatementExecutionImpl(statementExecutionService);
+    this.workspaceClient = new WorkspaceClient(true /* mock */, apiClient)
+        .withStatementExecutionImpl(statementExecutionService);
   }
 
   @Override
   public Session createSession(String warehouseId) {
-    CreateSessionRequest createSessionRequest = new CreateSessionRequest()
+    CreateSessionRequest request = new CreateSessionRequest()
         .setWarehouseId(warehouseId);
-    return workspaceClient.statementExecution().createSession(createSessionRequest);
+    String path = "/api/2.0/sql/statements/sessions";
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Accept", "application/json");
+    headers.put("Content-Type", "application/json");
+    return (Session) workspaceClient.apiClient().POST(path, request, Session.class, headers);
   }
 
   @Override
   public void deleteSession(String sessionId) {
-    workspaceClient.statementExecution().deleteSession(sessionId);
+    DeleteSessionRequest request = new DeleteSessionRequest().setSessionId(sessionId);
+    String path = String.format("/api/2.0/sql/statements/sessions/%s", request.getSessionId());
+    Map<String, String> headers = new HashMap<>();
+    workspaceClient.apiClient().DELETE(path, request, Void.class, headers);
   }
 
   @Override
@@ -64,13 +79,15 @@ public class DatabricksSdkClient implements DatabricksClient {
 
     Format format = useCloudFetchForResult(statementType) ? Format.ARROW_STREAM : Format.JSON_ARRAY;
     Disposition disposition = useCloudFetchForResult(statementType) ? Disposition.EXTERNAL_LINKS : Disposition.INLINE;
-    ExecuteStatementRequest request = new ExecuteStatementRequest()
+    ExecuteStatementRequestWithSession request =
+        (ExecuteStatementRequestWithSession) new ExecuteStatementRequestWithSession()
+        .setSessionId(session.getSessionId())
         .setStatement(sql)
         .setWarehouseId(warehouseId)
         .setDisposition(disposition)
         .setFormat(format)
-        .setWaitTimeout(ASYNC_TIMEOUT_VALUE)
-        .setSessionId(session.getSessionId());
+        .setWaitTimeout(ASYNC_TIMEOUT_VALUE);
+
 
     ExecuteStatementResponse response = workspaceClient.statementExecution().executeStatement(request);
     String statementId = response.getStatementId();

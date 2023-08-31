@@ -33,18 +33,13 @@
     <immutables.value.version>2.9.2</immutables.value.version>
     <httpclient.version>4.5.14</httpclient.version>
     <commons-io.version>2.13.0</commons-io.version>
+    <databricks-sdk.version>0.6.0</databricks-sdk.version>
   </properties>
-  <repositories>
-    <repository>
-      <id>databricks-jdbc-oss-local-repo</id>
-      <url>file://${basedir}/src/main/resources</url>
-    </repository>
-  </repositories>
   <dependencies>
     <dependency>
       <groupId>com.databricks</groupId>
       <artifactId>databricks-sdk-java</artifactId>
-      <version>0.6.0</version>
+      <version>${databricks-sdk.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>

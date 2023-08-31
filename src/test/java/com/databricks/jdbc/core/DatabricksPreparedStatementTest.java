@@ -1,6 +1,7 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.impl.DatabricksSdkClient;
+import com.databricks.jdbc.client.sqlexec.ExecuteStatementRequestWithSession;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.service.sql.*;
@@ -37,8 +38,8 @@ public class DatabricksPreparedStatementTest {
     when(statementExecutionService.createSession(createSessionRequest))
         .thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
 
-    ExecuteStatementRequest executeStatementRequest =
-        new ExecuteStatementRequest()
+    ExecuteStatementRequestWithSession executeStatementRequest = (ExecuteStatementRequestWithSession)
+        new ExecuteStatementRequestWithSession()
             .setWarehouseId(WAREHOUSE_ID)
             .setSessionId(SESSION_ID)
             .setStatement(STATEMENT)
@@ -93,8 +94,8 @@ public class DatabricksPreparedStatementTest {
     when(statementExecutionService.createSession(createSessionRequest))
         .thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
 
-    ExecuteStatementRequest executeStatementRequest =
-        new ExecuteStatementRequest()
+    ExecuteStatementRequestWithSession executeStatementRequest = (ExecuteStatementRequestWithSession)
+        new ExecuteStatementRequestWithSession()
             .setWarehouseId(WAREHOUSE_ID)
             .setSessionId(SESSION_ID)
             .setStatement(STATEMENT)
