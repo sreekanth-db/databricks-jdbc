@@ -2,6 +2,8 @@ package com.databricks.jdbc.driver;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Properties;
@@ -9,6 +11,7 @@ import java.util.regex.Matcher;
 
 public class DatabricksConnectionContext implements IDatabricksConnectionContext {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksConnectionContext.class);
   private final String host;
   private final int port;
 
@@ -56,7 +59,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   private static void handleInvalidUrl(String url) {
-    throw new IllegalArgumentException("Invalid url " + "incorrect");
+    throw new IllegalArgumentException("Invalid url incorrect");
   }
 
   private DatabricksConnectionContext(String host, int port, ImmutableMap<String, String> parameters) {
@@ -71,6 +74,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public String getHostUrl() {
+    LOGGER.debug("public String getHostUrl()");
     StringBuilder hostUrlBuilder = new StringBuilder().append(DatabricksJdbcConstants.HTTPS_SCHEMA)
         .append(this.host);
     if (port != 0) {
@@ -81,11 +85,13 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   String getHttpPath() {
+    LOGGER.debug("String getHttpPath()");
     return getParameter(DatabricksJdbcConstants.HTTP_PATH);
   }
 
   @Override
   public String getWarehouse() {
+    LOGGER.debug("public String getWarehouse()");
     String httpPath = getHttpPath();
     Matcher urlMatcher = DatabricksJdbcConstants.HTTP_PATH_PATTERN.matcher(httpPath);
 
