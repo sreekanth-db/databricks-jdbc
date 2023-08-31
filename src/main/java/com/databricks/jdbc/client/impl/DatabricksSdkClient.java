@@ -8,6 +8,7 @@ import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.*;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
@@ -147,4 +148,5 @@ public class DatabricksSdkClient implements DatabricksClient {
         .setManifest(getStatementResponse.getManifest())
         .setResult(getStatementResponse.getResult());
   }
+
 }

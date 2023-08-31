@@ -14,7 +14,7 @@ import java.util.Properties;
  * TODO: Add implementation to accept Urls in format: jdbc:databricks://host:port.
  */
 public class DatabricksDriver implements Driver {
-    private static final DatabricksDriver INSTANCE;
+    public static final DatabricksDriver INSTANCE;
 
     private static int majorVersion = 0;
     private static int minorVersion = 0;
@@ -62,9 +62,5 @@ public class DatabricksDriver implements Driver {
     @Override
     public java.util.logging.Logger getParentLogger() {
         return null;
-    }
-
-    public static final void main(String[] args) {
-        System.out.printf("The driver %s has been initialized.\n", DatabricksDriver.class);
     }
 }

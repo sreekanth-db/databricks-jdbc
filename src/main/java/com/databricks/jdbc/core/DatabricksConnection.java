@@ -29,7 +29,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   }
 
   @VisibleForTesting
-  DatabricksConnection(IDatabricksConnectionContext connectionContext, DatabricksClient databricksClient) {
+  public DatabricksConnection(IDatabricksConnectionContext connectionContext, DatabricksClient databricksClient) {
     this.session = new DatabricksSession(connectionContext, databricksClient);
     this.session.open();
   }
