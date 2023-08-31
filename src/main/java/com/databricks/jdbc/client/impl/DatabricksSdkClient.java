@@ -65,7 +65,7 @@ public class DatabricksSdkClient implements DatabricksClient {
   public DatabricksResultSet executeStatement(
       String sql, String warehouseId, Map<Integer, ImmutableSqlParameter> parameters,
       StatementType statementType, IDatabricksSession session, IDatabricksStatement parentStatement) throws SQLException {
-    LOGGER.debug("public DatabricksResultSet executeStatement(String statement = {}, String warehouseId = {}, Map<Integer, ImmutableSqlParameter> parameters, StatementType statementType = {}, IDatabricksSession session)", statement, warehouseId, statementType);
+    LOGGER.debug("public DatabricksResultSet executeStatement(String sql = {}, String warehouseId = {}, Map<Integer, ImmutableSqlParameter> parameters, StatementType statementType = {}, IDatabricksSession session)", sql, warehouseId, statementType);
     Format format = useCloudFetchForResult(statementType) ? Format.ARROW_STREAM : Format.JSON_ARRAY;
     Disposition disposition = useCloudFetchForResult(statementType) ? Disposition.EXTERNAL_LINKS : Disposition.INLINE;
     ExecuteStatementRequest request = new ExecuteStatementRequest()
