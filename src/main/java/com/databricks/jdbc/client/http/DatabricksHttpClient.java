@@ -25,7 +25,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   private static final int DEFAULT_HTTP_CONNECTION_TIMEOUT = 60 * 1000; // ms
   private static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300 * 1000; // ms
 
-  private static DatabricksHttpClient instance = null;
+  private static DatabricksHttpClient instance = new DatabricksHttpClient();
 
   private final PoolingHttpClientConnectionManager connectionManager;
 
@@ -56,21 +56,19 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   }
 
   public static synchronized DatabricksHttpClient getInstance() {
-    if (instance == null) {
-      instance = new DatabricksHttpClient();
-    }
     return instance;
   }
 
 
   @Override
   public HttpResponse execute(HttpUriRequest request) throws DatabricksHttpException {
-    LOGGER.atDebug().log("Executing HTTP request [%s]", request);
+    LOGGER.atDebug().log("Executing HTTP request [%s]", RequestSanitizer.sanitizeRequest(request));
     // TODO: add retries and error handling
     try {
       return httpClient.execute(request);
     } catch (IOException e) {
-      String errorMsg = String.format("Caught error while executing http request: [%s]", request);
+      String errorMsg = String.format("Caught error while executing http request: [%s]",
+          RequestSanitizer.sanitizeRequest(request));
       LOGGER.atError().setCause(e).log(errorMsg);
       throw new DatabricksHttpException(errorMsg, e);
     }

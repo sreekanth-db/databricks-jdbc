@@ -39,26 +39,7 @@ public class ChunkDownloader implements Runnable {
   ConcurrentHashMap<Long, ArrowResultChunk> chunkIndexToChunksMap;
 
   ChunkDownloader(String statementId, ResultManifest resultManifest, ResultData resultData, IDatabricksSession session) {
-    this.session = session;
-    this.statementId = statementId;
-    this.totalChunks = resultManifest.getTotalChunkCount();
-    this.chunkIndexToChunksMap = initializeChunksMap(resultManifest, resultData, statementId);
-    // We are assuming that all links provided are in sequence. Currently, it only returns the
-    // first chunk link, and next links need to be fetched sequentially using a separate API
-    this.nextChunkLinkToDownload = resultData.getExternalLinks().size();
-    // No chunks are downloaded, we need to start from first one
-    this.nextChunkToDownload = 0;
-    // Initialize current chunk to -1, since we don't have anything to read
-    this.currentChunk = -1;
-    // We don't have any chunk in downloaded yet
-    this.totalChunksInMemory = 0;
-    // Number of worker threads are directly linked to allowed chunks in memory
-    this.allowedChunksInMemory = Math.min(CHUNKS_DOWNLOADER_THREAD_POOL_SIZE, totalChunks);
-    this.chunkDownloaderExecutorService = createChunksDownloaderExecutorService();
-    this.httpClient = DatabricksHttpClient.getInstance();
-    this.isClosed = false;
-    // The first link is available
-    this.initDownloader();
+    this(statementId, resultManifest, resultData, session, DatabricksHttpClient.getInstance());
   }
 
   @VisibleForTesting
@@ -80,7 +61,8 @@ public class ChunkDownloader implements Runnable {
     this.allowedChunksInMemory = Math.min(CHUNKS_DOWNLOADER_THREAD_POOL_SIZE, totalChunks);
     this.chunkDownloaderExecutorService = createChunksDownloaderExecutorService();
     this.httpClient = httpClient;
-    // The first link has been
+    this.isClosed = false;
+    // The first link is available
     this.initDownloader();
   }
 
@@ -140,7 +122,7 @@ public class ChunkDownloader implements Runnable {
               Collection<ExternalLink> chunks = session.getDatabricksClient().getResultChunks(
                   statementId, nextChunkLinkToDownload);
               for (ExternalLink chunkLink : chunks) {
-                chunkIndexToChunksMap.get(chunkLink.getChunkIndex()).setChunkUrl(chunkLink);
+                setChunkLink(chunkLink.getChunkIndex(), chunkLink);
                 nextChunkLinkToDownload++;
               }
             }
@@ -175,7 +157,7 @@ public class ChunkDownloader implements Runnable {
    * @param chunkIndex index of chunk
    * @param chunkLink external link details for chunk
    */
-  void setChunkLink(int chunkIndex, ExternalLink chunkLink) {
+  void setChunkLink(long chunkIndex, ExternalLink chunkLink) {
     chunkIndexToChunksMap.get(chunkIndex).setChunkUrl(chunkLink);
   }
 
@@ -206,12 +188,11 @@ public class ChunkDownloader implements Runnable {
       } catch (InterruptedException e) {
         // Handle interruption
       }
-      if (totalChunksInMemory < allowedChunksInMemory) {
+      if (!this.isClosed) {
         ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
         this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, session));
         totalChunksInMemory++;
         nextChunkToDownload++;
-        chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
       }
     }
   }

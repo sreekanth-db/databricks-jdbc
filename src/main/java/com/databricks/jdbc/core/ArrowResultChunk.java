@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ArrowResultChunk {
 
@@ -82,12 +83,9 @@ public class ArrowResultChunk {
   private Long downloadStartTime;
   private Long downloadFinishTime;
 
-  public ArrayList<ArrayList<ValueVector>> recordBatchList;
+  public List<List<ValueVector>> recordBatchList;
 
   private RootAllocator rootAllocator;
-
-  private Object downloadLock = new Object();
-  private Object statusLock = new Object();
 
   ArrowResultChunk(ChunkInfo chunkInfo, RootAllocator rootAllocator, String statementId) {
     this.chunkIndex = chunkInfo.getChunkIndex();
@@ -195,25 +193,6 @@ public class ArrowResultChunk {
       }
   }
 
-  boolean enterLock() {
-    synchronized (downloadLock) {
-      // Other status we are already checking before initiating download
-      if (status == DownloadStatus.DOWNLOAD_IN_PROGRESS || status == DownloadStatus.DOWNLOAD_SUCCEEDED) {
-        // another thread is already downloading
-        return false;
-      }
-      setStatus(DownloadStatus.DOWNLOAD_IN_PROGRESS);
-      return true;
-    }
-  }
-
-  void releaseLock(boolean downloadSuccess) {
-    synchronized (downloadLock) {
-      // TODO: Handle retry count
-      setStatus(downloadSuccess ? DownloadStatus.DOWNLOAD_SUCCEEDED : DownloadStatus.DOWNLOAD_FAILED_RETRYABLE);
-    }
-  }
-
   /**
    * Returns next chunk index for given chunk. Null is returned for last chunk.
    */
@@ -235,13 +214,14 @@ public class ArrowResultChunk {
     try {
       VectorSchemaRoot vectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
       while (arrowStreamReader.loadNextBatch()) {
-        ArrayList<ValueVector> vectors = new ArrayList<>();
-        List<FieldVector> fieldVectors = vectorSchemaRoot.getFieldVectors();
-        for (FieldVector fieldVector : fieldVectors) {
-          TransferPair transferPair = fieldVector.getTransferPair(rootAllocator);
-          transferPair.transfer();
-          vectors.add(transferPair.getTo());
-        }
+        List<ValueVector> vectors = vectorSchemaRoot.getFieldVectors().stream()
+            .map(fieldVector -> {
+                  TransferPair transferPair = fieldVector.getTransferPair(rootAllocator);
+                  transferPair.transfer();
+                  return transferPair.getTo();
+                }
+            ).collect(Collectors.toList());
+
         this.recordBatchList.add(vectors);
         vectorSchemaRoot.clear();
       }
@@ -256,14 +236,15 @@ public class ArrowResultChunk {
   }
 
   void refreshChunkLink(IDatabricksSession session) {
-    Optional<ExternalLink> chunkOptional = session.getDatabricksClient()
-        .getResultChunks(statementId, chunkIndex).stream().findFirst();
-    if (chunkOptional.isPresent()) {
-      ExternalLink chunk = chunkOptional.get();
-      setChunkUrl(chunk);
-    }
+    session.getDatabricksClient()
+        .getResultChunks(statementId, chunkIndex).stream().findFirst()
+        .ifPresent(chunk -> setChunkUrl(chunk));
   }
 
+  /**
+   * Releases chunk from memory
+   * @return true if chunk is released, false if it was already released
+   */
   synchronized boolean releaseChunk() {
     if (status == DownloadStatus.CHUNK_RELEASED) {
       return false;

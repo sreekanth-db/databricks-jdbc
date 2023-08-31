@@ -25,17 +25,11 @@ class SingleChunkDownloader implements Callable<Void> {
     if (!chunk.isChunkLinkValid()) {
       chunk.refreshChunkLink(session);
     }
-    if (chunk.enterLock()) {
-      try {
-        chunk.downloadData(httpClient);
-        chunk.releaseLock(true /* downloadSuccess */);
-      } catch (DatabricksHttpException | DatabricksParsingException e) {
-        // TODO: handle retries
-        chunk.releaseLock(false /* downloadSuccess */);
-      }
+    try {
+      chunk.downloadData(httpClient);
+    } catch (DatabricksHttpException | DatabricksParsingException e) {
+      // TODO: handle retries
     }
     return null;
   }
-
-
 }
