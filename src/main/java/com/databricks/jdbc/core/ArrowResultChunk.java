@@ -8,7 +8,10 @@ import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.util.TransferPair;
+
 import org.apache.arrow.vector.types.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.time.Instant;
@@ -16,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ArrowResultChunk {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ArrowResultChunk.class);
 
   /**
    * The status of a chunk would proceed in following path:
@@ -167,7 +171,7 @@ public class ArrowResultChunk {
   Long getNextChunkIndex() {
     // This should never be called for pending state
     if (status == DownloadStatus.PENDING) {
-      // TODO: log this
+      LOGGER.debug("Next index called for pending state chunk. chunkUrl = {}, nextChunkIndex = {}", chunkUrl, nextChunkIndex);
       throw new IllegalStateException("Next index called for pending state chunk");
     }
     return this.nextChunkIndex;
