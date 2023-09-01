@@ -4,10 +4,8 @@ import org.apache.arrow.vector.types.Types;
 import com.databricks.sdk.service.sql.*;
 import com.google.common.collect.ImmutableMap;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 class ArrowStreamResult implements IExecutionResult {
@@ -27,7 +25,7 @@ class ArrowStreamResult implements IExecutionResult {
 
   private ArrowResultChunk.ArrowResultChunkIterator chunkIterator;
 
-  List<ColumnInfo> columnInfo;
+  List<ColumnInfo> columnInfos;
 
   ArrowStreamResult(ResultManifest resultManifest, ResultData resultData, String statementId,
                     IDatabricksSession session) {
@@ -37,7 +35,7 @@ class ArrowStreamResult implements IExecutionResult {
     this.session = session;
     this.chunkDownloader = new ChunkDownloader(statementId, resultManifest, resultData, session);
     this.firstChunkPopulated = false;
-    this.columnInfo = new ArrayList(resultManifest.getSchema().getColumns());
+    this.columnInfos = new ArrayList(resultManifest.getSchema().getColumns());
     this.currentRowIndex = -1;
     this.isClosed = false;
   }
@@ -58,7 +56,7 @@ class ArrowStreamResult implements IExecutionResult {
     // 1. Required type via the metadata
     // 2. Interpreted type while reading from the arrow file into the record batches
     // We need to convert the interpreted type into the required type before returning the object
-    ColumnInfoTypeName requiredType = columnInfo.get(columnIndex).getTypeName();
+    ColumnInfoTypeName requiredType = columnInfos.get(columnIndex).getTypeName();
     Types.MinorType arrowType = this.chunkIterator.getColumnType(columnIndex);
     Object unconvertedObject = this.chunkIterator.getObjectAtCurrentRow(columnIndex);
     return ArrowToJavaObjectConverter.convert(unconvertedObject, requiredType, arrowType);
