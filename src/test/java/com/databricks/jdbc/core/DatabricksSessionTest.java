@@ -43,7 +43,7 @@ public class DatabricksSessionTest {
     Map<String, String> headers = new HashMap<>();
     headers.put("Accept", "application/json");
     headers.put("Content-Type", "application/json");
-    when(apiClient.POST("adb-565757575.18.azuredatabricks.net/api/2.0/sql/statements/sessions", createSessionRequest,
+    when(apiClient.POST("/api/2.0/sql/statements/sessions", createSessionRequest,
         Session.class, headers)).thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
 
     assertFalse(session.isOpen());

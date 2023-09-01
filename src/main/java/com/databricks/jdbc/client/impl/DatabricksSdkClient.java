@@ -2,6 +2,7 @@ package com.databricks.jdbc.client.impl;
 
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.StatementType;
+import com.databricks.jdbc.client.sqlexec.CloseStatementRequest;
 import com.databricks.jdbc.client.sqlexec.CreateSessionRequest;
 import com.databricks.jdbc.client.sqlexec.DeleteSessionRequest;
 import com.databricks.jdbc.client.sqlexec.ExecuteStatementRequestWithSession;
@@ -119,7 +120,10 @@ public class DatabricksSdkClient implements DatabricksClient {
 
   @Override
   public void closeStatement(String statementId) {
-    workspaceClient.statementExecution().closeStatement(statementId);
+    CloseStatementRequest request = new CloseStatementRequest().setStatementId(statementId);
+    String path = String.format("/api/2.0/sql/statements/%s", request.getStatementId());
+    Map<String, String> headers = new HashMap<>();
+    workspaceClient.apiClient().DELETE(path, request, Void.class, headers);
   }
 
   @Override

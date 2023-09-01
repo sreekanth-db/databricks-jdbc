@@ -2,11 +2,17 @@ package com.databricks.jdbc.client.sqlexec;
 
 import com.databricks.sdk.support.Generated;
 import com.databricks.sdk.support.ToStringer;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Objects;
 
 @Generated
 public class DeleteSessionRequest {
+
+  @JsonProperty("session_id")
   private String sessionId;
+  @JsonProperty("warehouse_id")
+  private String warehouseId;
 
   public DeleteSessionRequest() {
   }
@@ -16,8 +22,17 @@ public class DeleteSessionRequest {
     return this;
   }
 
+  public DeleteSessionRequest setWarehouseId(String warehouseId) {
+    this.warehouseId = warehouseId;
+    return this;
+  }
+
   public String getSessionId() {
     return this.sessionId;
+  }
+
+  public String getWarehouseId() {
+    return this.warehouseId;
   }
 
   public boolean equals(Object o) {
@@ -25,17 +40,21 @@ public class DeleteSessionRequest {
       return true;
     } else if (o != null && this.getClass() == o.getClass()) {
       DeleteSessionRequest that = (DeleteSessionRequest)o;
-      return Objects.equals(this.sessionId, that.sessionId);
+      return Objects.equals(this.sessionId, that.sessionId)
+          && Objects.equals(this.warehouseId, that.warehouseId);
     } else {
       return false;
     }
   }
 
   public int hashCode() {
-    return Objects.hash(new Object[]{this.sessionId});
+    return Objects.hash(this.sessionId, this.warehouseId);
   }
 
   public String toString() {
-    return (new ToStringer(DeleteSessionRequest.class)).add("sessionId", this.sessionId).toString();
+    return (new ToStringer(DeleteSessionRequest.class))
+        .add("sessionId", this.sessionId)
+        .add("warehouseId", this.warehouseId)
+        .toString();
   }
 }

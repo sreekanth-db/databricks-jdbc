@@ -3,6 +3,7 @@ package com.databricks.jdbc.core;
 import com.databricks.jdbc.client.impl.DatabricksSdkClient;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.databricks.sdk.core.ApiClient;
 import com.databricks.sdk.service.sql.*;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
@@ -56,6 +57,8 @@ public class ArrowStreamResultTest {
 
     @Mock
     StatementExecutionService statementExecutionService;
+    @Mock
+    ApiClient apiClient;
 
     /*
     If running into Arrow memory buffer error, run with jvm argument --add-opens java.base/java.nio=ALL-UNNAMED
@@ -77,7 +80,7 @@ public class ArrowStreamResultTest {
 
         IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
         DatabricksSession session = new DatabricksSession(connectionContext,
-                new DatabricksSdkClient(connectionContext, statementExecutionService));
+                new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient));
 
         MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
             Mockito.when(mock.getChunk(anyLong())).thenAnswer(new Answer<ArrowResultChunk>() {
