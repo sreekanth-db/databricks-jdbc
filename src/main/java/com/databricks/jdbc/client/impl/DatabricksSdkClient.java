@@ -13,6 +13,8 @@ import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.ApiClient;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -23,7 +25,7 @@ import java.util.Optional;
  * Implementation of DatabricksClient interface using Databricks Java SDK.
  */
 public class DatabricksSdkClient implements DatabricksClient {
-
+  private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksSdkClient.class);
   private static final String ASYNC_TIMEOUT_VALUE = "0s";
   private static final String SYNC_TIMEOUT_VALUE = "20s";
   private static final int STATEMENT_RESULT_POLL_INTERVAL_MILLIS = 200;
@@ -56,6 +58,7 @@ public class DatabricksSdkClient implements DatabricksClient {
 
   @Override
   public Session createSession(String warehouseId) {
+    LOGGER.debug("public Session createSession(String warehouseId = {})", warehouseId);
     CreateSessionRequest request = new CreateSessionRequest()
         .setWarehouseId(warehouseId);
     String path = "/api/2.0/sql/statements/sessions";
@@ -66,8 +69,9 @@ public class DatabricksSdkClient implements DatabricksClient {
   }
 
   @Override
-  public void deleteSession(String sessionId) {
-    DeleteSessionRequest request = new DeleteSessionRequest().setSessionId(sessionId);
+  public void deleteSession(String sessionId, String warehouseId) {
+    LOGGER.debug("public void deleteSession(String sessionId = {})", sessionId);
+    DeleteSessionRequest request = new DeleteSessionRequest().setSessionId(sessionId).setWarehouseId(warehouseId);
     String path = String.format("/api/2.0/sql/statements/sessions/%s", request.getSessionId());
     Map<String, String> headers = new HashMap<>();
     workspaceClient.apiClient().DELETE(path, request, Void.class, headers);
@@ -77,7 +81,7 @@ public class DatabricksSdkClient implements DatabricksClient {
   public DatabricksResultSet executeStatement(
       String sql, String warehouseId, Map<Integer, ImmutableSqlParameter> parameters,
       StatementType statementType, IDatabricksSession session, IDatabricksStatement parentStatement) throws SQLException {
-
+    LOGGER.debug("public DatabricksResultSet executeStatement(String sql = {}, String warehouseId = {}, Map<Integer, ImmutableSqlParameter> parameters, StatementType statementType = {}, IDatabricksSession session)", sql, warehouseId, statementType);
     Format format = useCloudFetchForResult(statementType) ? Format.ARROW_STREAM : Format.JSON_ARRAY;
     Disposition disposition = useCloudFetchForResult(statementType) ? Disposition.EXTERNAL_LINKS : Disposition.INLINE;
     ExecuteStatementRequestWithSession request =
@@ -120,6 +124,7 @@ public class DatabricksSdkClient implements DatabricksClient {
 
   @Override
   public void closeStatement(String statementId) {
+    LOGGER.debug("public void closeStatement(String statementId = {})", statementId);
     CloseStatementRequest request = new CloseStatementRequest().setStatementId(statementId);
     String path = String.format("/api/2.0/sql/statements/%s", request.getStatementId());
     Map<String, String> headers = new HashMap<>();
@@ -128,29 +133,15 @@ public class DatabricksSdkClient implements DatabricksClient {
 
   @Override
   public Optional<ExternalLink> getResultChunk(String statementId, long chunkIndex) {
+    LOGGER.debug("public Optional<ExternalLink> getResultChunk(String statementId = {}, long chunkIndex = {})", statementId, chunkIndex);
     return workspaceClient.statementExecution().getStatementResultChunkN(statementId, chunkIndex).getExternalLinks().stream().findFirst();
   }
 
   /**
    * Handles a failed execution and throws appropriate exception
    */
-  private void handleFailedExecution(StatementState statementState, String statementId) throws SQLException {
-
-    switch (statementState) {
-      case FAILED:
-      case CLOSED:
-      case CANCELED:
-        // TODO: Handle differently for failed, closed and cancelled with proper error codes
-        throw new DatabricksSQLException("Statement execution failed " + statementId);
-      default:
-        throw new IllegalStateException("Invalid state for error");
-    }
-  }
-  /**
-   * Handles a failed execution and throws appropriate exception
-   */
   private void handleFailedExecution(StatementState statementState, String statementId, String statement) throws SQLException {
-
+    LOGGER.debug("private void handleFailedExecution(StatementState statementState = {}, String statementId = {}, String statement = {})", statementState, statementId, statement);
     switch (statementState) {
       case FAILED:
       case CLOSED:

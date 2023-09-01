@@ -26,8 +26,9 @@ public interface DatabricksClient {
   /**
    * Deletes a session for given session-Id
    * @param sessionId for which the session should be deleted
+   * @param warehouseId underlying warehouse-Id
    */
-  void deleteSession(String sessionId);
+  void deleteSession(String sessionId, String warehouseId);
 
   /**
    * Executes a statement in Databricks server
