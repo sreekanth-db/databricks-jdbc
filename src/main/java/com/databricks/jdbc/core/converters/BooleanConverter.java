@@ -57,6 +57,6 @@ public class BooleanConverter extends AbstractObjectConverter {
 
     @Override
     public String convertToString() throws Exception {
-        return this.object ? "1" : "0";
+        return String.valueOf(this.object);
     }
 }

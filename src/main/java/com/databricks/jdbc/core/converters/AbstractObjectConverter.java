@@ -40,6 +40,10 @@ public abstract class AbstractObjectConverter {
         throw new Exception("Unsupported conversion operation");
     }
 
+    public boolean convertToBoolean() throws Exception {
+        throw new Exception("Unsupported conversion operation");
+    }
+
     public byte[] convertToByteArray() throws Exception {
         throw new Exception("Unsupported conversion operation");
     }
