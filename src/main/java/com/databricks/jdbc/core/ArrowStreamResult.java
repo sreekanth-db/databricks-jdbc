@@ -1,5 +1,6 @@
 package com.databricks.jdbc.core;
 
+import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.types.Types;
 import com.databricks.sdk.service.sql.*;
 import com.google.common.collect.ImmutableMap;
@@ -57,8 +58,8 @@ class ArrowStreamResult implements IExecutionResult {
     // 2. Interpreted type while reading from the arrow file into the record batches
     // We need to convert the interpreted type into the required type before returning the object
     ColumnInfoTypeName requiredType = columnInfos.get(columnIndex).getTypeName();
-    Types.MinorType arrowType = this.chunkIterator.getColumnType(columnIndex);
-    Object unconvertedObject = this.chunkIterator.getObjectAtCurrentRow(columnIndex);
+    Object unconvertedObject = this.chunkIterator.getColumnObjectAtCurrentRow(columnIndex);
+    Types.MinorType arrowType = Types.getMinorTypeForArrowType(((ValueVector)unconvertedObject).getField().getType());
     return ArrowToJavaObjectConverter.convert(unconvertedObject, requiredType, arrowType);
   }
 
