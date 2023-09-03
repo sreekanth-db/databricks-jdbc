@@ -107,6 +107,9 @@ public class ArrowResultChunk {
       this.rowCursorInRecordBatch = 0;
     }
 
+    /**
+     * Moves iterator to the next row of the chunk. Returns false if it is at the last row in the chunk.
+     */
     public boolean nextRow() {
       if(!this.begunIterationOverChunk) this.begunIterationOverChunk = true;
       if(++this.rowCursorInRecordBatch < this.rowsInRecordBatch) return true;
@@ -119,18 +122,21 @@ public class ArrowResultChunk {
       return false;
     }
 
+    /**
+     * Returns whether the next row in the chunk exists.
+     */
     public boolean hasNextRow() {
       return ((recordBatchCursorInChunk < (recordBatchesInChunk-1))
               || ((recordBatchCursorInChunk == (recordBatchesInChunk-1))
                     && (rowCursorInRecordBatch < (rowsInRecordBatch-1))));
     }
 
-    public Types.MinorType getColumnType(int columnIndex) {
-      return this.resultChunk.getColumnType(columnIndex);
-    }
-
-    public Object getObjectAtCurrentRow(int columnIndex) {
-      return this.resultChunk.recordBatchList.get(this.recordBatchCursorInChunk).get(columnIndex).getObject(this.rowCursorInRecordBatch);
+    /**
+     * Returns object in the current row at the specified columnIndex.
+     */
+    public Object getColumnObjectAtCurrentRow(int columnIndex) {
+      return this.resultChunk.getColumnVector(this.recordBatchCursorInChunk, columnIndex)
+              .getObject(this.rowCursorInRecordBatch);
     }
   }
 
@@ -207,8 +213,8 @@ public class ArrowResultChunk {
     return new ArrowResultChunkIterator(this);
   }
 
-  public Types.MinorType getColumnType(int columnIndex) {
-    return Types.getMinorTypeForArrowType(recordBatchList.get(0).get(columnIndex).getField().getType());
+  private ValueVector getColumnVector(int recordBatchIndex, int columnIndex) {
+    return this.recordBatchList.get(recordBatchIndex).get(columnIndex);
   }
 
   /**
