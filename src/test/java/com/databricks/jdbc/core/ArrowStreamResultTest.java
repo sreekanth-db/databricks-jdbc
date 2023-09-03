@@ -184,8 +184,8 @@ public class ArrowStreamResultTest {
                 else if(type.equals(Types.MinorType.FLOAT8)) {
                     Float8Vector float8Vector = (Float8Vector) fieldVector;
                     float8Vector.setInitialCapacity(rowsToAddToRecordBatch);
-                    for(int k = 0; k < rowsToAddToRecordBatch; k++) {
-                        float8Vector.set(k, 1, (double) testData[i][j + k]);
+                    for(int currentRow = 0; currentRow < rowsToAddToRecordBatch; currentRow++) {
+                        float8Vector.set(currentRow, 1, (double) testData[i][j + currentRow]);
                     }
                 }
                 fieldVector.setValueCount(rowsToAddToRecordBatch);
