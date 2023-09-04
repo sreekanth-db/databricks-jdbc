@@ -8,6 +8,8 @@ import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.util.TransferPair;
+
+import org.apache.arrow.vector.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,6 +107,9 @@ public class ArrowResultChunk {
       this.rowCursorInRecordBatch = 0;
     }
 
+    /**
+     * Moves iterator to the next row of the chunk. Returns false if it is at the last row in the chunk.
+     */
     public boolean nextRow() {
       if(!this.begunIterationOverChunk) this.begunIterationOverChunk = true;
       if(++this.rowCursorInRecordBatch < this.rowsInRecordBatch) return true;
@@ -117,10 +122,21 @@ public class ArrowResultChunk {
       return false;
     }
 
+    /**
+     * Returns whether the next row in the chunk exists.
+     */
     public boolean hasNextRow() {
       return ((recordBatchCursorInChunk < (recordBatchesInChunk-1))
               || ((recordBatchCursorInChunk == (recordBatchesInChunk-1))
                     && (rowCursorInRecordBatch < (rowsInRecordBatch-1))));
+    }
+
+    /**
+     * Returns object in the current row at the specified columnIndex.
+     */
+    public Object getColumnObjectAtCurrentRow(int columnIndex) {
+      return this.resultChunk.getColumnVector(this.recordBatchCursorInChunk, columnIndex)
+              .getObject(this.rowCursorInRecordBatch);
     }
   }
 
@@ -195,6 +211,10 @@ public class ArrowResultChunk {
 
   public ArrowResultChunkIterator getChunkIterator() {
     return new ArrowResultChunkIterator(this);
+  }
+
+  private ValueVector getColumnVector(int recordBatchIndex, int columnIndex) {
+    return this.recordBatchList.get(recordBatchIndex).get(columnIndex);
   }
 
   /**
