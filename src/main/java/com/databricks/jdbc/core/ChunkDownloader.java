@@ -148,7 +148,9 @@ public class ChunkDownloader implements Runnable {
   public void releaseChunk(int chunkIndex) {
     if (chunkIndexToChunksMap.get(chunkIndex).releaseChunk()) {
       totalChunksInMemory--;
-      downloadMonitor.notify();
+      synchronized (downloadMonitor) {
+        downloadMonitor.notify();
+      }
     }
   }
 
@@ -179,20 +181,22 @@ public class ChunkDownloader implements Runnable {
   @Override
   public void run() {
     // Starts the chunk download from given already downloaded position
-    while(!this.isClosed && (nextChunkToDownload < totalChunks)) {
-      try {
-        while (totalChunksInMemory == allowedChunksInMemory
-            || !isChunkDownloadable(chunkIndexToChunksMap.get(nextChunkToDownload).getStatus())) {
-          downloadMonitor.wait();
+    synchronized (downloadMonitor) {
+      while (!this.isClosed && (nextChunkToDownload < totalChunks)) {
+        try {
+          while (totalChunksInMemory == allowedChunksInMemory
+              || !isChunkDownloadable(chunkIndexToChunksMap.get(nextChunkToDownload).getStatus())) {
+            downloadMonitor.wait();
+          }
+        } catch (InterruptedException e) {
+          // Handle interruption
         }
-      } catch (InterruptedException e) {
-        // Handle interruption
-      }
-      if (!this.isClosed) {
-        ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
-        this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, session));
-        totalChunksInMemory++;
-        nextChunkToDownload++;
+        if (!this.isClosed) {
+          ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
+          this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, session));
+          totalChunksInMemory++;
+          nextChunkToDownload++;
+        }
       }
     }
   }
