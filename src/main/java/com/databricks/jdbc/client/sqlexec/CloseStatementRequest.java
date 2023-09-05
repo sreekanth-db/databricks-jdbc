@@ -1,11 +1,9 @@
 package com.databricks.jdbc.client.sqlexec;
 
-import com.databricks.sdk.support.Generated;
 import com.databricks.sdk.support.ToStringer;
 
 import java.util.Objects;
 
-@Generated
 public class CloseStatementRequest {
   private String statementId;
 

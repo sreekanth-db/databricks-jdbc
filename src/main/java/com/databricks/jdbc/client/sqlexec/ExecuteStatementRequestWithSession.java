@@ -43,17 +43,10 @@ public class ExecuteStatementRequestWithSession extends ExecuteStatementRequest 
 
   @Override
   public int hashCode() {
+
     return Objects.hash(
-        super.getByteLimit(),
-        super.getCatalog(),
-        super.getDisposition(),
-        super.getFormat(),
-        super.getOnWaitTimeout(),
-        super.getSchema(),
-        sessionId,
-        super.getStatement(),
-        super.getWaitTimeout(),
-        super.getWarehouseId());
+        super.hashCode(),
+        sessionId);
   }
 
   @Override
