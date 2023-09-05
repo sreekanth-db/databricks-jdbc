@@ -1,69 +1,76 @@
 package com.databricks.jdbc.core.converters;
 
+import com.databricks.jdbc.core.DatabricksSQLException;
+
 import java.math.BigDecimal;
 
 public class IntConverter extends AbstractObjectConverter {
 
     private int object;
-    IntConverter(Object object, int columnTypeName) throws Exception {
-        super(object, columnTypeName);
+    public IntConverter(Object object) throws DatabricksSQLException {
+        super(object);
         this.object = (int) object;
     }
 
     @Override
-    public boolean convertToBoolean() throws Exception {
-        return (this.object == 0 ? true : false);
+    public int convertToInt() throws DatabricksSQLException {
+        return this.object;
     }
 
     @Override
-    public byte convertToByte() throws Exception {
+    public boolean convertToBoolean() throws DatabricksSQLException {
+        return (this.object == 0 ? false : true);
+    }
+
+    @Override
+    public byte convertToByte() throws DatabricksSQLException {
         byte byteObject = (byte) this.object;
         if(byteObject == this.object) {
             return byteObject;
         }
-        throw new Exception("Invalid conversion");
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
-    public short convertToShort() throws Exception {
+    public short convertToShort() throws DatabricksSQLException {
         short shortObject = (short) this.object;
         if(shortObject == this.object) {
             return shortObject;
         }
-        throw new Exception("Invalid conversion");
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
-    public long convertToLong() throws Exception {
+    public long convertToLong() throws DatabricksSQLException {
         return (long) this.object;
     }
 
     @Override
-    public float convertToFloat() throws Exception {
+    public float convertToFloat() throws DatabricksSQLException {
         return (float) this.object;
     }
 
     @Override
-    public double convertToDouble() throws Exception {
+    public double convertToDouble() throws DatabricksSQLException {
         return (double) this.object;
     }
 
     @Override
-    public BigDecimal convertToBigDecimal() throws Exception {
+    public BigDecimal convertToBigDecimal() throws DatabricksSQLException {
         return BigDecimal.valueOf((long) this.object);
     }
 
     @Override
-    public byte[] convertToByteArray() throws Exception {
+    public byte[] convertToByteArray() throws DatabricksSQLException {
         byte byteObject = (byte) this.object;
         if(byteObject == this.object) {
             return new byte[]{byteObject};
         }
-        throw new Exception("Invalid conversion");
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
-    public String convertToString() throws Exception {
+    public String convertToString() throws DatabricksSQLException {
         return String.valueOf(this.object);
     }
 }

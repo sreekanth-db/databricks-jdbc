@@ -1,57 +1,64 @@
 package com.databricks.jdbc.core.converters;
 
+import com.databricks.jdbc.core.DatabricksSQLException;
+
 import java.math.BigDecimal;
 
 public class ByteConverter extends AbstractObjectConverter {
 
     private byte object;
-    ByteConverter(Object object, int columnTypeName) throws Exception {
-        super(object, columnTypeName);
+    public ByteConverter(Object object) throws DatabricksSQLException {
+        super(object);
         this.object = (byte) object;
     }
 
     @Override
-    public boolean convertToBoolean() throws Exception {
-        return (this.object == 0 ? true : false);
+    public byte convertToByte() throws DatabricksSQLException {
+        return this.object;
     }
 
     @Override
-    public short convertToShort() throws Exception {
+    public boolean convertToBoolean() throws DatabricksSQLException {
+        return (this.object == 0 ? false : true);
+    }
+
+    @Override
+    public short convertToShort() throws DatabricksSQLException {
         return (short) this.object;
     }
 
     @Override
-    public int convertToInt() throws Exception {
+    public int convertToInt() throws DatabricksSQLException {
         return (int) this.object;
     }
 
     @Override
-    public long convertToLong() throws Exception {
+    public long convertToLong() throws DatabricksSQLException {
         return (long) this.object;
     }
 
     @Override
-    public float convertToFloat() throws Exception {
+    public float convertToFloat() throws DatabricksSQLException {
         return (float) this.object;
     }
 
     @Override
-    public double convertToDouble() throws Exception {
+    public double convertToDouble() throws DatabricksSQLException {
         return (double) this.object;
     }
 
     @Override
-    public BigDecimal convertToBigDecimal() throws Exception {
+    public BigDecimal convertToBigDecimal() throws DatabricksSQLException {
         return BigDecimal.valueOf((long) this.object);
     }
 
     @Override
-    public byte[] convertToByteArray() throws Exception {
+    public byte[] convertToByteArray() throws DatabricksSQLException {
         return new byte[]{this.object};
     }
 
     @Override
-    public String convertToString() throws Exception {
+    public String convertToString() throws DatabricksSQLException {
         return new String(new byte[]{this.object});
     }
 }
