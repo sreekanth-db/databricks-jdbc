@@ -59,8 +59,7 @@ class ArrowStreamResult implements IExecutionResult {
     // We need to convert the interpreted type into the required type before returning the object
     ColumnInfoTypeName requiredType = columnInfos.get(columnIndex).getTypeName();
     Object unconvertedObject = this.chunkIterator.getColumnObjectAtCurrentRow(columnIndex);
-    Types.MinorType arrowType = Types.getMinorTypeForArrowType(((ValueVector)unconvertedObject).getField().getType());
-    return ArrowToJavaObjectConverter.convert(unconvertedObject, requiredType, arrowType);
+    return ArrowToJavaObjectConverter.convert(unconvertedObject, requiredType);
   }
 
   @Override

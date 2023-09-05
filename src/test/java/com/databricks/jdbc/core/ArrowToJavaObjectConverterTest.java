@@ -4,7 +4,6 @@ import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.*;
-import org.apache.arrow.vector.types.Types;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -29,8 +28,7 @@ public class ArrowToJavaObjectConverterTest {
         tinyIntVector.allocateNew(1);
         tinyIntVector.set(0, 65);
         Object unconvertedObject = tinyIntVector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.BYTE,
-                Types.MinorType.TINYINT);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.BYTE);
 
         assertTrue(convertedObject instanceof Byte);
         assertEquals(convertedObject, (byte) 65);
@@ -42,8 +40,7 @@ public class ArrowToJavaObjectConverterTest {
         smallIntVector.allocateNew(1);
         smallIntVector.set(0, 4);
         Object unconvertedObject = smallIntVector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.SHORT,
-                Types.MinorType.SMALLINT);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.SHORT);
 
         assertTrue(convertedObject instanceof Short);
         assertEquals(convertedObject, (short) 4);
@@ -55,8 +52,7 @@ public class ArrowToJavaObjectConverterTest {
         intVector.allocateNew(1);
         intVector.set(0, 1111111111);
         Object unconvertedObject = intVector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.INT,
-                Types.MinorType.INT);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.INT);
 
         assertTrue(convertedObject instanceof Integer);
         assertEquals(convertedObject, 1111111111);
@@ -68,8 +64,7 @@ public class ArrowToJavaObjectConverterTest {
         bigIntVector.allocateNew(1);
         bigIntVector.set(0, 1111111111111111111L);
         Object unconvertedObject = bigIntVector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.LONG,
-                Types.MinorType.BIGINT);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.LONG);
 
         assertTrue(convertedObject instanceof Long);
         assertEquals(convertedObject, 1111111111111111111L);
@@ -81,8 +76,7 @@ public class ArrowToJavaObjectConverterTest {
         float4Vector.allocateNew(1);
         float4Vector.set(0, 4.2f);
         Object unconvertedObject = float4Vector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.FLOAT,
-                Types.MinorType.FLOAT4);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.FLOAT);
 
         assertTrue(convertedObject instanceof Float);
         assertEquals(convertedObject, 4.2f);
@@ -94,8 +88,7 @@ public class ArrowToJavaObjectConverterTest {
         float8Vector.allocateNew(1);
         float8Vector.set(0, 4.11111111);
         Object unconvertedObject = float8Vector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.DOUBLE,
-                Types.MinorType.FLOAT8);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.DOUBLE);
 
         assertTrue(convertedObject instanceof Double);
         assertEquals(convertedObject, 4.11111111);
@@ -107,8 +100,7 @@ public class ArrowToJavaObjectConverterTest {
         decimalVector.allocateNew(1);
         decimalVector.set(0, BigDecimal.valueOf(4.1111111111));
         Object unconvertedObject = decimalVector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.DECIMAL,
-                Types.MinorType.DECIMAL);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.DECIMAL);
 
         assertTrue(convertedObject instanceof BigDecimal);
         assertEquals(convertedObject, BigDecimal.valueOf(4.1111111111));
@@ -120,8 +112,7 @@ public class ArrowToJavaObjectConverterTest {
         varBinaryVector.allocateNew(1);
         varBinaryVector.set(0, new byte[]{65, 66, 67});
         Object unconvertedObject = varBinaryVector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.BINARY,
-                Types.MinorType.VARBINARY);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.BINARY);
 
         assertTrue(convertedObject instanceof byte[]);
         assertArrayEquals((byte[]) convertedObject, "ABC".getBytes());
@@ -135,12 +126,10 @@ public class ArrowToJavaObjectConverterTest {
         bitVector.set(1, 1);
         Object unconvertedFalseObject = bitVector.getObject(0);
         Object convertedFalseObject = ArrowToJavaObjectConverter.convert(unconvertedFalseObject,
-                ColumnInfoTypeName.BOOLEAN,
-                Types.MinorType.BIT);
+                ColumnInfoTypeName.BOOLEAN);
         Object unconvertedTrueObject = bitVector.getObject(1);
         Object convertedTrueObject = ArrowToJavaObjectConverter.convert(unconvertedTrueObject,
-                ColumnInfoTypeName.BOOLEAN,
-                Types.MinorType.BIT);
+                ColumnInfoTypeName.BOOLEAN);
 
         assertTrue(unconvertedTrueObject instanceof Boolean);
         assertTrue(unconvertedFalseObject instanceof Boolean);
@@ -154,8 +143,7 @@ public class ArrowToJavaObjectConverterTest {
         varCharVector.allocateNew(1);
         varCharVector.set(0, new byte[]{65});
         Object unconvertedObject = varCharVector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.CHAR,
-                Types.MinorType.VARCHAR);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.CHAR);
 
         assertTrue(convertedObject instanceof Character);
         assertEquals(convertedObject, 'A');
@@ -167,8 +155,7 @@ public class ArrowToJavaObjectConverterTest {
         varCharVector.allocateNew(1);
         varCharVector.set(0, new byte[]{65, 66, 67});
         Object unconvertedObject = varCharVector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.STRING,
-                Types.MinorType.VARCHAR);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.STRING);
 
         assertTrue(convertedObject instanceof String);
         assertEquals(convertedObject, "ABC");
@@ -180,8 +167,7 @@ public class ArrowToJavaObjectConverterTest {
         dateDayVector.allocateNew(1);
         dateDayVector.set(0, 19598); // 29th August 2023
         Object unconvertedObject = dateDayVector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.DATE,
-                Types.MinorType.DATEDAY);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.DATE);
 
         assertTrue(convertedObject instanceof Date);
         assertEquals(convertedObject, Date.valueOf("2023-08-29"));
@@ -194,15 +180,13 @@ public class ArrowToJavaObjectConverterTest {
         intVector.set(0, 4);
         Object unconvertedIntObject = intVector.getObject(0);
         Object convertedFromIntObject = ArrowToJavaObjectConverter.convert(unconvertedIntObject,
-                ColumnInfoTypeName.TIMESTAMP,
-                Types.MinorType.INT);
+                ColumnInfoTypeName.TIMESTAMP);
         BigIntVector bigIntVector = new BigIntVector("bigIntVector", this.bufferAllocator);
         bigIntVector.allocateNew(1);
         bigIntVector.set(0, 1693312639000L);
         Object unconvertedBigIntObject = bigIntVector.getObject(0);
         Object convertedFromBigIntObject = ArrowToJavaObjectConverter.convert(unconvertedBigIntObject,
-                ColumnInfoTypeName.TIMESTAMP,
-                Types.MinorType.BIGINT);
+                ColumnInfoTypeName.TIMESTAMP);
 
         assertTrue(convertedFromIntObject instanceof Timestamp);
         assertEquals(((Timestamp) convertedFromIntObject).toInstant(), Instant.ofEpochMilli(4));
@@ -218,8 +202,7 @@ public class ArrowToJavaObjectConverterTest {
         varCharVector.allocateNew(1);
         varCharVector.set(0, map.toString().getBytes());
         Object unconvertedObject = varCharVector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.STRUCT,
-                Types.MinorType.VARCHAR);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.STRUCT);
         assertTrue(convertedObject instanceof String);
         assertEquals(convertedObject, "{key=value}");
     }
@@ -233,8 +216,7 @@ public class ArrowToJavaObjectConverterTest {
         varCharVector.allocateNew(1);
         varCharVector.set(0, list.toString().getBytes());
         Object unconvertedObject = varCharVector.getObject(0);
-        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.STRUCT,
-                Types.MinorType.VARCHAR);
+        Object convertedObject = ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.STRUCT);
 
         assertTrue(convertedObject instanceof String);
         assertEquals(convertedObject, "[A, B]");
