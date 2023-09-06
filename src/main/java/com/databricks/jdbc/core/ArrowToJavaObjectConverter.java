@@ -3,85 +3,104 @@ package com.databricks.jdbc.core;
 import org.apache.arrow.vector.types.Types;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
-import java.sql.SQLException;
+import java.sql.Date;
+import com.databricks.jdbc.core.DatabricksSQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDate;
 
 public class ArrowToJavaObjectConverter {
-    public static Object convert(Object object, ColumnInfoTypeName requiredType, Types.MinorType arrowType) throws SQLException {
+    public static Object convert(Object object, ColumnInfoTypeName requiredType) throws DatabricksSQLException {
         switch (requiredType) {
             case BYTE:
-                return convertToByte(object, arrowType);
+                return convertToByte(object);
             case SHORT:
-                return convertToShort(object, arrowType);
+                return convertToShort(object);
             case INT:
-                return convertToInteger(object, arrowType);
+                return convertToInteger(object);
             case LONG:
-                return convertToLong(object, arrowType);
+                return convertToLong(object);
             case FLOAT:
-                return convertToFloat(object, arrowType);
+                return convertToFloat(object);
             case DOUBLE:
-                return convertToDouble(object, arrowType);
+                return convertToDouble(object);
             case DECIMAL:
-                return convertToBigDecimal(object, arrowType);
+                return convertToBigDecimal(object);
             case BINARY:
-                return convertToByteArray(object, arrowType);
+                return convertToByteArray(object);
             case BOOLEAN:
-                return convertToBoolean(object, arrowType);
+                return convertToBoolean(object);
             case CHAR:
+                return convertToChar(object);
             case STRING:
-                return convertToString(object, arrowType);
+            // Struct and Array are present in Arrow data in the VARCHAR ValueVector format
+            case STRUCT:
+            case ARRAY:
+                return convertToString(object);
+            case DATE:
+                return convertToDate(object);
+            case TIMESTAMP:
+                return convertToTimestamp(object);
+            case NULL:
+                return null;
             default:
-                throw new SQLException("Unsupported type");
+                throw new DatabricksSQLException("Unsupported type");
         }
     }
 
-    private static String convertToString(Object object, Types.MinorType arrowType) {
+    private static Object convertToTimestamp(Object object) throws DatabricksSQLException {
+
+        Instant instant = Instant.ofEpochMilli(object instanceof Integer ? (int) object : (long) object);
+        return Timestamp.from(instant);
+    }
+
+    private static Date convertToDate(Object object) throws DatabricksSQLException {
+        LocalDate localDate = LocalDate.ofEpochDay((int) object);
+        return Date.valueOf(localDate);
+    }
+
+    private static char convertToChar(Object object) throws DatabricksSQLException {
+        return (object.toString()).charAt(0);
+    }
+
+    private static String convertToString(Object object) throws DatabricksSQLException {
         return object.toString();
     }
 
-    private static boolean convertToBoolean(Object object, Types.MinorType arrowType) {
+    private static boolean convertToBoolean(Object object) throws DatabricksSQLException {
         return (boolean) object;
     }
 
-    private static byte[] convertToByteArray(Object object, Types.MinorType arrowType) throws SQLException {
-        try {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-            objectOutputStream.writeObject(object);
-            return byteArrayOutputStream.toByteArray();
-        } catch (IOException e) {
-            throw new SQLException();
-        }
+    private static byte[] convertToByteArray(Object object) throws DatabricksSQLException {
+        return (byte[]) object;
     }
 
-    private static byte convertToByte(Object object, Types.MinorType arrowType) {
+    private static byte convertToByte(Object object) throws DatabricksSQLException {
         return (byte) object;
     }
 
-    private static short convertToShort(Object object, Types.MinorType arrowType) {
+    private static short convertToShort(Object object) throws DatabricksSQLException {
         return (short) object;
     }
 
-    private static BigDecimal convertToBigDecimal(Object object, Types.MinorType arrowType) {
+    private static BigDecimal convertToBigDecimal(Object object) throws DatabricksSQLException {
         return (BigDecimal) object;
     }
 
-    private static double convertToDouble(Object object, Types.MinorType arrowType) {
+    private static double convertToDouble(Object object) throws DatabricksSQLException {
         return (double) object;
     }
 
-    private static float convertToFloat(Object object, Types.MinorType arrowType) {
+    private static float convertToFloat(Object object) throws DatabricksSQLException {
         return (float) object;
     }
 
-    private static int convertToInteger(Object object, Types.MinorType arrowType) {
+    private static int convertToInteger(Object object) throws DatabricksSQLException {
         return (int) object;
     }
 
-    private static long convertToLong(Object object, Types.MinorType arrowType) {
+    private static long convertToLong(Object object) throws DatabricksSQLException {
         return (long) object;
     }
 }
