@@ -27,8 +27,14 @@ public class DatabricksDataSource implements DataSource {
 
     @Override
     public Connection getConnection(String username, String password) throws SQLException {
-        properties.put(DatabricksJdbcConstants.USER, username);
-        properties.put(DatabricksJdbcConstants.PASSWORD, password);
+        if (username != null) {
+            setUsername(username);
+            properties.put(DatabricksJdbcConstants.USER, username);
+        }
+        if (password != null) {
+            setPassword(password);
+            properties.put(DatabricksJdbcConstants.PASSWORD, password);
+        }
         return DatabricksDriver.INSTANCE.connect(getUrl(), properties);
     }
 

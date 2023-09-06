@@ -16,6 +16,7 @@ import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,13 +54,35 @@ public class DatabricksConnectionPoolingTest {
         List<ConnectionEvent> connectionClosedEvents = listener.getConnectionClosedEvents();
         Assertions.assertEquals(connectionClosedEvents.size(), 1);
         Connection actualConnection =
-                ((DatabricksPooledConnection) pooledConnection).getActualConnection();
+                ((DatabricksPooledConnection) pooledConnection).getPhysicalConnection();
         Assertions.assertFalse(actualConnection.isClosed());
 
         pooledConnection.removeConnectionEventListener(listener);
         // TODO: Connection close currently throws an error on close - missing warehouse ID, uncomment below once fixed
-//        pooledConnection.close();
-//        Assertions.assertTrue(actualConnection.isClosed());
+        // pooledConnection.close();
+        // Assertions.assertTrue(actualConnection.isClosed());
+    }
+
+
+    @Test
+    public void testPooledConnectionReuse() throws SQLException {
+        DatabricksConnectionPoolDataSource poolDataSource = Mockito.mock(DatabricksConnectionPoolDataSource.class);
+
+        IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+        DatabricksConnection databricksConnection = new DatabricksConnection(connectionContext,
+                new DatabricksSdkClient(connectionContext, statementExecutionService));
+        Mockito.when(poolDataSource.getPooledConnection()).thenReturn(new DatabricksPooledConnection(databricksConnection));
+
+        DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
+        DatabricksPooledConnection pooledConnection = (DatabricksPooledConnection) poolDataSource.getPooledConnection();
+        TestListener listener = new TestListener();
+        pooledConnection.addConnectionEventListener(listener);
+        Connection connection1 = pooledConnection.getPhysicalConnection();
+        connection1.close();
+        Connection connection2 = pooledConnection.getPhysicalConnection();
+        // The same physical connection must be reused
+        Assertions.assertEquals(connection1, connection2);
+        connection2.close();
     }
 }
 
