@@ -34,10 +34,6 @@ public class ArrowResultChunkTest {
 
     private long totalRows = 110;
 
-    /*
-    If running into Arrow memory buffer error, run with jvm argument --add-opens java.base/java.nio=ALL-UNNAMED
-    i.e. mvn test -DargLine="--add-opens java.base/java.nio=ALL-UNNAMED"
-     */
     @Test
     public void testGetArrowDataFromInputStream() throws Exception {
         // Arrange
@@ -76,14 +72,14 @@ public class ArrowResultChunkTest {
                 if(type.equals(Types.MinorType.INT)) {
                     IntVector intVector = (IntVector) fieldVector;
                     intVector.setInitialCapacity(rowsToAddToRecordBatch);
-                    for(int k = 1; k < rowsToAddToRecordBatch; k++) {
+                    for(int k = 0; k < rowsToAddToRecordBatch; k++) {
                         intVector.set(k, 1, (int) testData[i][j + k]);
                     }
                 }
                 else if(type.equals(Types.MinorType.FLOAT8)) {
                     Float8Vector float8Vector = (Float8Vector) fieldVector;
                     float8Vector.setInitialCapacity(rowsToAddToRecordBatch);
-                    for(int k = 1; k < rowsToAddToRecordBatch; k++) {
+                    for(int k = 0; k < rowsToAddToRecordBatch; k++) {
                         float8Vector.set(k, 1, (double) testData[i][j + k]);
                     }
                 }

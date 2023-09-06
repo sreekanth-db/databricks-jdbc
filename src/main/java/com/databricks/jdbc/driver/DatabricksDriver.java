@@ -1,6 +1,8 @@
 package com.databricks.jdbc.driver;
 
 import com.databricks.jdbc.core.DatabricksConnection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.Driver;
@@ -14,6 +16,8 @@ import java.util.Properties;
  * TODO: Add implementation to accept Urls in format: jdbc:databricks://host:port.
  */
 public class DatabricksDriver implements Driver {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksDriver.class);
     private static final DatabricksDriver INSTANCE;
 
     private static int majorVersion = 0;
@@ -35,6 +39,7 @@ public class DatabricksDriver implements Driver {
 
     @Override
     public Connection connect(String url, Properties info) {
+        LOGGER.debug("public Connection connect(String url = {}, Properties info)", url);
         IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(url, info);
         return new DatabricksConnection(connectionContext);
     }
@@ -64,7 +69,7 @@ public class DatabricksDriver implements Driver {
         return null;
     }
 
-    public static final void main(String[] args) {
-        System.out.printf("The driver %s has been initialized.\n", DatabricksDriver.class);
+    public static void main(String[] args) {
+        LOGGER.info("The driver {} has been initialized.", DatabricksDriver.class);
     }
 }

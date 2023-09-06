@@ -5,6 +5,8 @@ import com.databricks.jdbc.client.impl.DatabricksSdkClient;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.service.sql.Session;
 import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.ExecutorService;
@@ -14,6 +16,7 @@ import java.util.concurrent.ExecutorService;
  */
 public class DatabricksSession implements IDatabricksSession {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksSession.class);
   private final DatabricksClient databricksClient;
   private final String warehouseId;
 
@@ -50,22 +53,26 @@ public class DatabricksSession implements IDatabricksSession {
   @Override
   @Nullable
   public String getSessionId() {
+    LOGGER.debug("public String getSessionId()");
     return isSessionOpen ? session.getSessionId() : null;
   }
 
   @Override
   public String getWarehouseId() {
+    LOGGER.debug("public String getWarehouseId()");
     return warehouseId;
   }
 
   @Override
   public boolean isOpen() {
+    LOGGER.debug("public boolean isOpen()");
     // TODO: check for expired sessions
     return isSessionOpen;
   }
 
   @Override
   public void open() {
+    LOGGER.debug("public void open()");
     // TODO: check for expired sessions
     synchronized (this) {
       if (!isSessionOpen) {
@@ -78,6 +85,7 @@ public class DatabricksSession implements IDatabricksSession {
 
   @Override
   public void close() {
+    LOGGER.debug("public void close()");
     // TODO: check for any pending query executions
     synchronized (this) {
       if (isSessionOpen) {
@@ -91,26 +99,31 @@ public class DatabricksSession implements IDatabricksSession {
 
   @Override
   public DatabricksClient getDatabricksClient() {
+    LOGGER.debug("public DatabricksClient getDatabricksClient()");
     return databricksClient;
   }
 
   @Override
   public String getCatalog() {
+    LOGGER.debug("public String getCatalog()");
     return catalog;
   }
 
   @Override
   public void setCatalog(String catalog) {
+    LOGGER.debug("public void setCatalog(String catalog = {})", catalog);
     this.catalog = catalog;
   }
 
   @Override
   public String getSchema() {
+    LOGGER.debug("public String getSchema()");
     return schema;
   }
 
   @Override
   public void setSchema(String schema) {
+    LOGGER.debug("public void setSchema(String schema = {})", schema);
     this.schema = schema;
   }
 }
