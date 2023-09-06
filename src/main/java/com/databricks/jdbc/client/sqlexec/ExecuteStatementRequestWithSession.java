@@ -22,23 +22,10 @@ public class ExecuteStatementRequestWithSession extends ExecuteStatementRequest 
   }
 
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    } else if (o != null && this.getClass() == o.getClass()) {
-      ExecuteStatementRequestWithSession that = (ExecuteStatementRequestWithSession) o;
-      return Objects.equals(this.getByteLimit(), that.getByteLimit())
-          && Objects.equals(this.getCatalog(), that.getCatalog())
-          && Objects.equals(this.getDisposition(), that.getDisposition())
-          && Objects.equals(this.getFormat(), that.getFormat())
-          && Objects.equals(this.getOnWaitTimeout(), that.getOnWaitTimeout())
-          && Objects.equals(this.getSchema(), that.getSchema())
-          && Objects.equals(this.sessionId, that.sessionId)
-          && Objects.equals(this.getStatement(), that.getStatement())
-          && Objects.equals(this.getWaitTimeout(), that.getWaitTimeout())
-          && Objects.equals(this.getWarehouseId(), that.getWarehouseId());
-    } else {
-      return false;
+    if (o instanceof ExecuteStatementRequestWithSession) {
+      return super.equals(o) && Objects.equals(this.sessionId, ((ExecuteStatementRequestWithSession) o).sessionId);
     }
+    return false;
   }
 
   @Override
