@@ -2,28 +2,20 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.impl.DatabricksSdkClient;
-import com.databricks.sdk.service.sql.Session;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.databricks.sdk.service.sql.Session;
 import com.google.common.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Implementation for Session interface, which maintains an underlying session in SQL Gateway.
  */
 public class DatabricksSession implements IDatabricksSession {
 
-  private static final int LINKS_FETCHER_THREAD_POOL_SIZE = 4;
-  private static final String LINKS_FETCHER_THREAD_POOL_PREFIX = "databricks-jdbc-links-fetcher-";
   private final DatabricksClient databricksClient;
   private final String warehouseId;
-
-  // Common thread-pool for downloading external links asynchronously
-  private final ExecutorService executor;
 
   private boolean isSessionOpen;
   private Session session;
@@ -42,7 +34,6 @@ public class DatabricksSession implements IDatabricksSession {
     this.isSessionOpen = false;
     this.session = null;
     this.warehouseId = connectionContext.getWarehouse();
-    this.executor = createLinksDownloaderExecutorService();
   }
 
   /**
@@ -54,24 +45,6 @@ public class DatabricksSession implements IDatabricksSession {
     this.isSessionOpen = false;
     this.session = null;
     this.warehouseId = connectionContext.getWarehouse();
-    this.executor = Executors.newSingleThreadExecutor();
-  }
-
-  private static ExecutorService createLinksDownloaderExecutorService() {
-    ThreadFactory threadFactory =
-        new ThreadFactory() {
-          private int threadCount = 1;
-
-          public Thread newThread(final Runnable r) {
-            final Thread thread = new Thread(r);
-            thread.setName(LINKS_FETCHER_THREAD_POOL_PREFIX + threadCount++);
-            // TODO: catch uncaught exceptions
-            thread.setDaemon(true);
-
-            return thread;
-          }
-        };
-    return Executors.newFixedThreadPool(LINKS_FETCHER_THREAD_POOL_SIZE, threadFactory);
   }
 
   @Override

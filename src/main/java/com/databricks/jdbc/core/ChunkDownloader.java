@@ -107,38 +107,16 @@ public class ChunkDownloader implements Runnable {
   }
 
   private void initDownloader() {
-    // Download all links using session's executor service. The links are downloaded sequentially.
-    initLinksDownload(this.session.getExecutorService());
-    // We already have the first link, start the download for arrow data
+    // Start the downloader for arrow data
     new Thread(this, "chunk-downloader-" + statementId).start();
   }
 
-  private void initLinksDownload(ExecutorService executorService) {
-    if (nextChunkLinkToDownload < totalChunks) {
-      executorService.submit(
-          () -> {
-            while (nextChunkLinkToDownload < totalChunks) {
-              // TODO: handle failures
-              Collection<ExternalLink> chunks = session.getDatabricksClient().getResultChunks(
-                  statementId, nextChunkLinkToDownload);
-              for (ExternalLink chunkLink : chunks) {
-                setChunkLink(chunkLink.getChunkIndex(), chunkLink);
-                nextChunkLinkToDownload++;
-              }
-            }
-            // Once all chunk links has been downloaded, trigger the chunks download.
-            downloadMonitor.notify();
-          });
+  void downloadLinks(long chunkIndexToDownloadLink) {
+    Collection<ExternalLink> chunks = session.getDatabricksClient().getResultChunks(
+        statementId, chunkIndexToDownloadLink);
+    for (ExternalLink chunkLink : chunks) {
+      setChunkLink(chunkLink.getChunkIndex(), chunkLink);
     }
-  }
-
-  /**
-   * Check if chunk data can be downloaded from external link based on download status
-   */
-  boolean isChunkDownloadable(ArrowResultChunk.DownloadStatus status) {
-    return status == ArrowResultChunk.DownloadStatus.URL_FETCHED
-        || status == ArrowResultChunk.DownloadStatus.CANCELLED
-        || status == ArrowResultChunk.DownloadStatus.DOWNLOAD_FAILED_ABORTED;
   }
 
   /**
@@ -184,8 +162,7 @@ public class ChunkDownloader implements Runnable {
     synchronized (downloadMonitor) {
       while (!this.isClosed && (nextChunkToDownload < totalChunks)) {
         try {
-          while (totalChunksInMemory == allowedChunksInMemory
-              || !isChunkDownloadable(chunkIndexToChunksMap.get(nextChunkToDownload).getStatus())) {
+          while (totalChunksInMemory == allowedChunksInMemory) {
             downloadMonitor.wait();
           }
         } catch (InterruptedException e) {
@@ -193,7 +170,7 @@ public class ChunkDownloader implements Runnable {
         }
         if (!this.isClosed) {
           ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
-          this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, session));
+          this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, this));
           totalChunksInMemory++;
           nextChunkToDownload++;
         }

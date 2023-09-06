@@ -65,6 +65,8 @@ public class ArrowResultChunk {
     CHUNK_RELEASED;
   }
 
+  private static final Integer SECONDS_BUFFER_FOR_EXPIRY = 60;
+
   private static final Logger LOGGER = LoggerFactory.getLogger(ArrowResultChunk.class);
 
   private final long chunkIndex;
@@ -159,8 +161,9 @@ public class ArrowResultChunk {
   /**
    * Checks if the link is valid
    */
-  boolean isChunkLinkValid() {
-    return expiryTime == null || expiryTime.isAfter(Instant.now());
+  boolean isChunkLinkInvalid() {
+    return status == DownloadStatus.PENDING
+        || expiryTime.minusSeconds(SECONDS_BUFFER_FOR_EXPIRY).isBefore(Instant.now());
   }
 
   /**

@@ -12,18 +12,18 @@ class SingleChunkDownloader implements Callable<Void> {
 
   private final ArrowResultChunk chunk;
   private final IDatabricksHttpClient httpClient;
-  private final IDatabricksSession session;
+  private final ChunkDownloader chunkDownloader;
 
-  SingleChunkDownloader(ArrowResultChunk chunk, IDatabricksHttpClient httpClient, IDatabricksSession session) {
+  SingleChunkDownloader(ArrowResultChunk chunk, IDatabricksHttpClient httpClient, ChunkDownloader chunkDownloader) {
     this.chunk = chunk;
     this.httpClient = httpClient;
-    this.session = session;
+    this.chunkDownloader = chunkDownloader;
   }
 
   @Override
   public Void call() throws Exception {
-    if (!chunk.isChunkLinkValid()) {
-      chunk.refreshChunkLink(session);
+    if (chunk.isChunkLinkInvalid()) {
+      chunkDownloader.downloadLinks(chunk.getChunkIndex());
     }
     try {
       chunk.downloadData(httpClient);
