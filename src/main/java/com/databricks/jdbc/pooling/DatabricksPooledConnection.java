@@ -137,7 +137,6 @@ public class DatabricksPooledConnection implements PooledConnection {
         }
 
         @Override
-        @SuppressWarnings("throwing.nullable")
         public Object invoke(Object proxy, Method method, @Nullable Object[] args) throws Throwable {
             final String methodName = method.getName();
             if (method.getDeclaringClass() == Object.class) {
@@ -238,7 +237,6 @@ public class DatabricksPooledConnection implements PooledConnection {
         }
 
         @Override
-        @SuppressWarnings("throwing.nullable")
         public Object invoke(Object proxy, Method method, @Nullable Object[] args)
                 throws Throwable {
             final String methodName = method.getName();

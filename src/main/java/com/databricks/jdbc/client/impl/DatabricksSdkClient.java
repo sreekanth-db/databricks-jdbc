@@ -10,7 +10,6 @@ import com.databricks.sdk.service.sql.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
@@ -139,5 +138,4 @@ public class DatabricksSdkClient implements DatabricksClient {
         .setManifest(getStatementResponse.getManifest())
         .setResult(getStatementResponse.getResult());
   }
-
 }
