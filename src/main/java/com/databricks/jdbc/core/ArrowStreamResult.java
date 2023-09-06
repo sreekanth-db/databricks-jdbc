@@ -78,6 +78,7 @@ class ArrowStreamResult implements IExecutionResult {
     }
     // switch to next chunk and iterate over it
     if(++this.currentChunkIndex == this.totalChunks) return false; // this implies that this was the last chunk
+    this.chunkDownloader.releaseChunk(currentChunkIndex -1);
     ArrowResultChunk nextChunk = this.chunkDownloader.getChunk(this.currentChunkIndex);
     this.chunkIterator = nextChunk.getChunkIterator();
     return true;

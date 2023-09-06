@@ -35,6 +35,7 @@ public class ChunkDownloader implements Runnable {
   private long totalBytesInUse;
   private boolean isClosed;
   private Object downloadMonitor = new Object();
+  private Object consumerMonitor = new Object();
 
   ConcurrentHashMap<Long, ArrowResultChunk> chunkIndexToChunksMap;
 
@@ -102,13 +103,34 @@ public class ChunkDownloader implements Runnable {
      * @return the chunk at given index
      */
   public ArrowResultChunk getChunk(long chunkIndex) {
-    // TODO: download the chunk if not already downloaded
+    synchronized (consumerMonitor) {
+      try {
+        while (!isDownloadComplete(chunkIndexToChunksMap.get(chunkIndex).getStatus())) {
+          consumerMonitor.wait();
+        }
+      } catch (InterruptedException e) {
+        // Handle interruption
+      }
+    }
+    // TODO: check for errors
     return chunkIndexToChunksMap.get(chunkIndex);
   }
 
   private void initDownloader() {
     // Start the downloader for arrow data
     new Thread(this, "chunk-downloader-" + statementId).start();
+  }
+
+  private boolean isDownloadComplete(ArrowResultChunk.DownloadStatus status) {
+    return status == ArrowResultChunk.DownloadStatus.DOWNLOAD_SUCCEEDED
+        || status == ArrowResultChunk.DownloadStatus.DOWNLOAD_FAILED
+        || status == ArrowResultChunk.DownloadStatus.DOWNLOAD_FAILED_ABORTED;
+  }
+
+  void downloadProcessed() {
+    synchronized (consumerMonitor) {
+      consumerMonitor.notify();
+    }
   }
 
   void downloadLinks(long chunkIndexToDownloadLink) {
@@ -125,8 +147,8 @@ public class ChunkDownloader implements Runnable {
    */
   public void releaseChunk(int chunkIndex) {
     if (chunkIndexToChunksMap.get(chunkIndex).releaseChunk()) {
-      totalChunksInMemory--;
       synchronized (downloadMonitor) {
+        totalChunksInMemory--;
         downloadMonitor.notify();
       }
     }
@@ -159,21 +181,21 @@ public class ChunkDownloader implements Runnable {
   @Override
   public void run() {
     // Starts the chunk download from given already downloaded position
-    synchronized (downloadMonitor) {
-      while (!this.isClosed && (nextChunkToDownload < totalChunks)) {
+    while (!this.isClosed && (nextChunkToDownload < totalChunks)) {
+      synchronized (downloadMonitor) {
         try {
           while (totalChunksInMemory == allowedChunksInMemory) {
             downloadMonitor.wait();
           }
         } catch (InterruptedException e) {
-          // Handle interruption
+        // Handle interruption
         }
-        if (!this.isClosed) {
-          ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
-          this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, this));
-          totalChunksInMemory++;
-          nextChunkToDownload++;
-        }
+      }
+      if (!this.isClosed) {
+        ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
+        this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, this));
+        totalChunksInMemory++;
+        nextChunkToDownload++;
       }
     }
   }

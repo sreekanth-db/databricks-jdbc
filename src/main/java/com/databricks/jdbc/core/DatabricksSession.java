@@ -83,7 +83,6 @@ public class DatabricksSession implements IDatabricksSession {
       if (isSessionOpen) {
         // TODO: handle closed connections by server
         databricksClient.deleteSession(this.session.getSessionId());
-        this.executor.shutdown();
         this.session = null;
         this.isSessionOpen = false;
       }
@@ -93,11 +92,6 @@ public class DatabricksSession implements IDatabricksSession {
   @Override
   public DatabricksClient getDatabricksClient() {
     return databricksClient;
-  }
-
-  @Override
-  public ExecutorService getExecutorService() {
-    return this.executor;
   }
 
   @Override

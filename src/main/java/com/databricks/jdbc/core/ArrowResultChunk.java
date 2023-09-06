@@ -53,15 +53,12 @@ public class ArrowResultChunk {
     // Data has been downloaded and ready for consumption
     DOWNLOAD_SUCCEEDED,
     // Download has failed and it would be retried
-    DOWNLOAD_FAILED_RETRYABLE,
+    DOWNLOAD_FAILED,
     // Download has failed and we have given up
     DOWNLOAD_FAILED_ABORTED,
     // Download has been cancelled
     CANCELLED,
-    // Chunk has been consumed, and is free to be released. Since we do not support backward scroll in result set,
-    // the chunk won't be needed again
-    CHUNK_CONSUMED,
-    // Chunk memory has been released
+    // Chunk memory has been consumed and released
     CHUNK_RELEASED;
   }
 
@@ -185,10 +182,12 @@ public class ArrowResultChunk {
         HttpEntity entity = response.getEntity();
         getArrowDataFromInputStream(entity.getContent());
         this.downloadFinishTime = Instant.now().toEpochMilli();
+        this.setStatus(DownloadStatus.DOWNLOAD_SUCCEEDED);
       } catch (IOException e) {
         String errMsg = String.format("Data fetch failed for chunk index [%d] and statement [%s]",
             this.chunkIndex, this.statementId);
         LOGGER.atError().setCause(e).log(errMsg);
+        this.setStatus(DownloadStatus.DOWNLOAD_FAILED);
         throw new DatabricksHttpException(errMsg, e);
       }
   }
@@ -231,6 +230,7 @@ public class ArrowResultChunk {
       String errMsg = String.format("Data parsing failed for chunk index [%d] and statement [%s]",
           this.chunkIndex, this.statementId);
       LOGGER.atError().setCause(e).log(errMsg);
+      this.setStatus(DownloadStatus.DOWNLOAD_FAILED);
       throw new DatabricksParsingException(errMsg, e);
     }
   }
