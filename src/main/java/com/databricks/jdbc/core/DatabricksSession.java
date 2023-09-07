@@ -2,7 +2,7 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.impl.DatabricksSdkClient;
-import com.databricks.sdk.service.sql.Session;
+import com.databricks.jdbc.client.sqlexec.Session;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -12,7 +12,6 @@ import javax.annotation.Nullable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Implementation for Session interface, which maintains an underlying session in SQL Gateway.
@@ -118,7 +117,7 @@ public class DatabricksSession implements IDatabricksSession {
     synchronized (this) {
       if (isSessionOpen) {
         // TODO: handle closed connections by server
-        databricksClient.deleteSession(this.session.getSessionId());
+        databricksClient.deleteSession(this.session.getSessionId(), getWarehouseId());
         this.executor.shutdown();
         this.session = null;
         this.isSessionOpen = false;
