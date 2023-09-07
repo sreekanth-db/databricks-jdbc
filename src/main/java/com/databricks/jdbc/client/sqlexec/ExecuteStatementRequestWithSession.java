@@ -22,7 +22,7 @@ public class ExecuteStatementRequestWithSession extends ExecuteStatementRequest 
   }
 
   public boolean equals(Object o) {
-    if (o instanceof ExecuteStatementRequestWithSession) {
+    if (o != null && o.getClass() == getClass()) {
       return super.equals(o) && Objects.equals(this.sessionId, ((ExecuteStatementRequestWithSession) o).sessionId);
     }
     return false;
@@ -30,7 +30,6 @@ public class ExecuteStatementRequestWithSession extends ExecuteStatementRequest 
 
   @Override
   public int hashCode() {
-
     return Objects.hash(
         super.hashCode(),
         sessionId);
