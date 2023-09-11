@@ -7,6 +7,10 @@ import java.sql.Timestamp;
 import java.sql.Date;
 
 public abstract class AbstractObjectConverter {
+
+    long[] POWERS_OF_TEN = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
+
+    int DEFAULT_TIMESTAMP_SCALE = 3;
     Object object;
     AbstractObjectConverter(Object object) throws DatabricksSQLException {
         this.object = object;
@@ -32,11 +36,23 @@ public abstract class AbstractObjectConverter {
         throw new DatabricksSQLException("Unsupported conversion operation");
     }
 
+    public float convertToFloat(int scale) throws DatabricksSQLException {
+        throw new DatabricksSQLException("Unsupported conversion operation");
+    }
+
     public double convertToDouble() throws DatabricksSQLException {
         throw new DatabricksSQLException("Unsupported conversion operation");
     }
 
+    public double convertToDouble(int scale) throws DatabricksSQLException {
+        throw new DatabricksSQLException("Unsupported conversion operation");
+    }
+
     public BigDecimal convertToBigDecimal() throws DatabricksSQLException {
+        throw new DatabricksSQLException("Unsupported conversion operation");
+    }
+
+    public BigDecimal convertToBigDecimal(int scale) throws DatabricksSQLException {
         throw new DatabricksSQLException("Unsupported conversion operation");
     }
 
@@ -57,6 +73,10 @@ public abstract class AbstractObjectConverter {
     }
 
     public Timestamp convertToTimestamp() throws DatabricksSQLException {
+        throw new DatabricksSQLException("Unsupported conversion operation");
+    }
+
+    public Timestamp convertToTimestamp(int scale) throws DatabricksSQLException {
         throw new DatabricksSQLException("Unsupported conversion operation");
     }
 

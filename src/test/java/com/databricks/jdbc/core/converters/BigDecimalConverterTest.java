@@ -4,8 +4,6 @@ import com.databricks.jdbc.core.DatabricksSQLException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
