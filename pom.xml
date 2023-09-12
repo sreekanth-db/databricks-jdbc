@@ -33,16 +33,14 @@
     <immutables.value.version>2.9.2</immutables.value.version>
     <httpclient.version>4.5.14</httpclient.version>
     <commons-io.version>2.13.0</commons-io.version>
+    <databricks-sdk.version>0.7.0</databricks-sdk.version>
     <maven-surefire-plugin.version>3.0.0-M6</maven-surefire-plugin.version>
   </properties>
   <dependencies>
     <dependency>
-      <!-- TODO: Possibly rename SDK -->
       <groupId>com.databricks</groupId>
       <artifactId>databricks-sdk-java</artifactId>
-      <version>0.6.0</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/src/main/resources/databricks-sdk-java-0.6.0.jar</systemPath>
+      <version>${databricks-sdk.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>

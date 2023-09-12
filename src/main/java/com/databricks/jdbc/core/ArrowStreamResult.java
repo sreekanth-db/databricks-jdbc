@@ -11,17 +11,12 @@ import java.util.List;
 
 class ArrowStreamResult implements IExecutionResult {
 
-  private final long totalRows;
-  private final long totalChunks;
-
   private final IDatabricksSession session;
   private final ImmutableMap<Long, ChunkInfo> rowOffsetToChunkMap;
   private final ChunkDownloader chunkDownloader;
 
   private long currentRowIndex;
-  private int currentChunkIndex;
 
-  private boolean firstChunkPopulated;
   private boolean isClosed;
 
   private ArrowResultChunk.ArrowResultChunkIterator chunkIterator;
@@ -30,15 +25,13 @@ class ArrowStreamResult implements IExecutionResult {
 
   ArrowStreamResult(ResultManifest resultManifest, ResultData resultData, String statementId,
                     IDatabricksSession session) {
-    this.totalRows = resultManifest.getTotalRowCount();
-    this.totalChunks = resultManifest.getTotalChunkCount();
     this.rowOffsetToChunkMap = getRowOffsetMap(resultManifest);
     this.session = session;
     this.chunkDownloader = new ChunkDownloader(statementId, resultManifest, resultData, session);
-    this.firstChunkPopulated = false;
     this.columnInfos = new ArrayList(resultManifest.getSchema().getColumns());
     this.currentRowIndex = -1;
     this.isClosed = false;
+    this.chunkIterator = null;
   }
 
   public ChunkDownloader getChunkDownloader() {return this.chunkDownloader;}
@@ -69,34 +62,25 @@ class ArrowStreamResult implements IExecutionResult {
 
   @Override
   public boolean next() {
-    if (isClosed()) {
+    if (!hasNext()) {
       return false;
     }
-    if(!this.firstChunkPopulated) {
-      // get first chunk from chunk downloader and set iterator to its iterator i.e. row 0
-      if(this.totalChunks == 0) return false;
-      ++this.currentRowIndex;
-      ArrowResultChunk firstChunk = this.chunkDownloader.getChunk(/*chunkIndex =*/ 0L);
-      this.chunkIterator = firstChunk.getChunkIterator();
-      this.firstChunkPopulated = true;
+
+    this.currentRowIndex++;
+    if (this.chunkIterator == null || !this.chunkIterator.hasNextRow()) {
+      this.chunkDownloader.next();
+      ArrowResultChunk resultChunk = this.chunkDownloader.getChunk();
+      this.chunkIterator = resultChunk.getChunkIterator();
       return true;
     }
-    ++this.currentRowIndex;
-    if(this.chunkIterator.nextRow()) {
-      return true;
-    }
-    // switch to next chunk and iterate over it
-    if(++this.currentChunkIndex == this.totalChunks) return false; // this implies that this was the last chunk
-    this.chunkDownloader.releaseChunk(currentChunkIndex -1);
-    ArrowResultChunk nextChunk = this.chunkDownloader.getChunk(this.currentChunkIndex);
-    this.chunkIterator = nextChunk.getChunkIterator();
-    return true;
+
+    return this.chunkIterator.nextRow();
   }
 
   @Override
   public boolean hasNext() {
-    return !isClosed() && ((this.currentChunkIndex < (totalChunks - 1)) ||
-            ((currentChunkIndex == (totalChunks - 1)) && chunkIterator.hasNextRow()));
+    return !isClosed() && ((chunkIterator != null && chunkIterator.hasNextRow())
+        || chunkDownloader.hasNextChunk());
   }
 
   @Override

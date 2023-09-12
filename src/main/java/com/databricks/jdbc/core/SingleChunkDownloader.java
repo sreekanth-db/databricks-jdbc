@@ -30,7 +30,7 @@ class SingleChunkDownloader implements Callable<Void> {
     } catch (DatabricksHttpException | DatabricksParsingException e) {
       // TODO: handle retries
     } finally {
-      chunkDownloader.downloadProcessed();
+      chunkDownloader.downloadProcessed(chunk.getChunkIndex());
     }
     return null;
   }

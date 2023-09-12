@@ -1,8 +1,12 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.impl.DatabricksSdkClient;
+import com.databricks.jdbc.client.sqlexec.CreateSessionRequest;
+import com.databricks.jdbc.client.sqlexec.ExecuteStatementRequestWithSession;
+import com.databricks.jdbc.client.sqlexec.Session;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.databricks.sdk.core.ApiClient;
 import com.databricks.sdk.service.sql.*;
 import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;
@@ -12,6 +16,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,17 +36,22 @@ public class DatabricksStatementTest {
 
   @Mock
   StatementExecutionService statementExecutionService;
+  @Mock
+  ApiClient apiClient;
 
   @Test
   public void testExecuteStatement() throws Exception {
     CreateSessionRequest createSessionRequest = new CreateSessionRequest().setWarehouseId(WAREHOUSE_ID);
-    when(statementExecutionService.createSession(createSessionRequest))
-        .thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Accept", "application/json");
+    headers.put("Content-Type", "application/json");
+    when(apiClient.POST("/api/2.0/sql/statements/sessions", createSessionRequest,
+        Session.class, headers)).thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
 
-    ExecuteStatementRequest executeStatementRequest =
-        new ExecuteStatementRequest()
-            .setWarehouseId(WAREHOUSE_ID)
+    ExecuteStatementRequestWithSession executeStatementRequest = (ExecuteStatementRequestWithSession)
+        new ExecuteStatementRequestWithSession()
             .setSessionId(SESSION_ID)
+            .setWarehouseId(WAREHOUSE_ID)
             .setStatement(STATEMENT)
             .setDisposition(Disposition.EXTERNAL_LINKS)
             .setFormat(Format.ARROW_STREAM)
@@ -69,7 +80,7 @@ public class DatabricksStatementTest {
 
     IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     DatabricksConnection connection = new DatabricksConnection(connectionContext,
-        new DatabricksSdkClient(connectionContext, statementExecutionService));
+        new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient));
     DatabricksStatement statement = (DatabricksStatement) connection.createStatement();
     DatabricksResultSet resultSet = (DatabricksResultSet) statement.executeQuery(STATEMENT);
     assertFalse(resultSet.hasUpdateCount());
@@ -90,13 +101,16 @@ public class DatabricksStatementTest {
   @Test
   public void testExecuteUpdateStatement() throws Exception {
     CreateSessionRequest createSessionRequest = new CreateSessionRequest().setWarehouseId(WAREHOUSE_ID);
-    when(statementExecutionService.createSession(createSessionRequest))
-        .thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Accept", "application/json");
+    headers.put("Content-Type", "application/json");
+    when(apiClient.POST("/api/2.0/sql/statements/sessions", createSessionRequest,
+        Session.class, headers)).thenReturn(new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID));
 
-    ExecuteStatementRequest executeStatementRequest =
-        new ExecuteStatementRequest()
-            .setWarehouseId(WAREHOUSE_ID)
+    ExecuteStatementRequestWithSession executeStatementRequest = (ExecuteStatementRequestWithSession)
+        new ExecuteStatementRequestWithSession()
             .setSessionId(SESSION_ID)
+            .setWarehouseId(WAREHOUSE_ID)
             .setStatement(STATEMENT)
             .setDisposition(Disposition.INLINE)
             .setFormat(Format.JSON_ARRAY)
@@ -130,7 +144,7 @@ public class DatabricksStatementTest {
 
     IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     DatabricksConnection connection = new DatabricksConnection(connectionContext,
-        new DatabricksSdkClient(connectionContext, statementExecutionService));
+        new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient));
     DatabricksStatement statement = (DatabricksStatement) connection.createStatement();
     int updateCount = statement.executeUpdate(STATEMENT);
 

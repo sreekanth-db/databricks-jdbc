@@ -3,6 +3,7 @@ package com.databricks.jdbc.core;
 import com.databricks.jdbc.client.impl.DatabricksSdkClient;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.databricks.sdk.core.ApiClient;
 import com.databricks.sdk.service.sql.*;
 import com.google.common.collect.ImmutableList;
 import org.apache.arrow.memory.RootAllocator;
@@ -59,6 +60,8 @@ public class ArrowStreamResultTest {
 
     @Mock
     StatementExecutionService statementExecutionService;
+    @Mock
+    ApiClient apiClient;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -80,7 +83,7 @@ public class ArrowStreamResultTest {
 
         IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
         DatabricksSession session = new DatabricksSession(connectionContext,
-                new DatabricksSdkClient(connectionContext, statementExecutionService));
+                new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient));
 
         MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
             Mockito.when(mock.getChunk(anyLong())).thenAnswer(new Answer<ArrowResultChunk>() {
@@ -121,7 +124,7 @@ public class ArrowStreamResultTest {
 
         IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
         DatabricksSession session = new DatabricksSession(connectionContext,
-                new DatabricksSdkClient(connectionContext, statementExecutionService));
+                new DatabricksSdkClient(connectionContext, statementExecutionService, null));
 
         MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
             Mockito.when(mock.getChunk(anyLong())).thenAnswer(new Answer<ArrowResultChunk>() {

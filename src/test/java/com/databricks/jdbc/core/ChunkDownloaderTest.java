@@ -80,7 +80,7 @@ public class ChunkDownloaderTest {
 
     IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     DatabricksSession session = new DatabricksSession(connectionContext,
-        new DatabricksSdkClient(connectionContext, statementExecutionService));
+        new DatabricksSdkClient(connectionContext, statementExecutionService, null));
 
     when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(1L)))
         .thenReturn(new ResultData().setExternalLinks(getChunkLinks(1L, false)));

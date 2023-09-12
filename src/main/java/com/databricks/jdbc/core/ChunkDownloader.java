@@ -27,10 +27,10 @@ public class ChunkDownloader implements Runnable {
   private final long totalChunks;
   private final ExecutorService chunkDownloaderExecutorService;
   private final IDatabricksHttpClient httpClient;
-  private long currentChunk;
+  private Long currentChunkIndex;
   private long nextChunkLinkToDownload;
   private long nextChunkToDownload;
-  private long totalChunksInMemory;
+  private Long totalChunksInMemory;
   private long allowedChunksInMemory;
   private long totalBytesInUse;
   private boolean isClosed;
@@ -55,16 +55,16 @@ public class ChunkDownloader implements Runnable {
     // No chunks are downloaded, we need to start from first one
     this.nextChunkToDownload = 0;
     // Initialize current chunk to -1, since we don't have anything to read
-    this.currentChunk = -1;
+    this.currentChunkIndex = -1L;
     // We don't have any chunk in downloaded yet
-    this.totalChunksInMemory = 0;
+    this.totalChunksInMemory = 0L;
     // Number of worker threads are directly linked to allowed chunks in memory
     this.allowedChunksInMemory = Math.min(CHUNKS_DOWNLOADER_THREAD_POOL_SIZE, totalChunks);
     this.chunkDownloaderExecutorService = createChunksDownloaderExecutorService();
     this.httpClient = httpClient;
     this.isClosed = false;
     // The first link is available
-    this.initDownloader();
+    this.downloadNextChunks();
   }
 
   private static ConcurrentHashMap<Long, ArrowResultChunk> initializeChunksMap(ResultManifest resultManifest, ResultData resultData, String statementId) {
@@ -102,23 +102,35 @@ public class ChunkDownloader implements Runnable {
      * @param chunkIndex index of chunk
      * @return the chunk at given index
      */
-  public ArrowResultChunk getChunk(long chunkIndex) {
-    synchronized (consumerMonitor) {
+  public ArrowResultChunk getChunk() {
+    ArrowResultChunk chunk = chunkIndexToChunksMap.get(currentChunkIndex);
+    synchronized (chunk) {
       try {
-        while (!isDownloadComplete(chunkIndexToChunksMap.get(chunkIndex).getStatus())) {
-          consumerMonitor.wait();
+        while (!isDownloadComplete(chunk.getStatus())) {
+          chunk.wait();
         }
       } catch (InterruptedException e) {
         // Handle interruption
       }
     }
     // TODO: check for errors
-    return chunkIndexToChunksMap.get(chunkIndex);
+    return chunk;
   }
 
-  private void initDownloader() {
-    // Start the downloader for arrow data
-    new Thread(this, "chunk-downloader-" + statementId).start();
+  boolean hasNextChunk() {
+    synchronized (currentChunkIndex) {
+      return currentChunkIndex < totalChunks - 1;
+    }
+  }
+
+  boolean next() {
+    if (!hasNextChunk()) {
+      return false;
+    }
+    synchronized (currentChunkIndex) {
+      currentChunkIndex++;
+    }
+    releaseChunk();
   }
 
   private boolean isDownloadComplete(ArrowResultChunk.DownloadStatus status) {
@@ -127,9 +139,10 @@ public class ChunkDownloader implements Runnable {
         || status == ArrowResultChunk.DownloadStatus.DOWNLOAD_FAILED_ABORTED;
   }
 
-  void downloadProcessed() {
-    synchronized (consumerMonitor) {
-      consumerMonitor.notify();
+  void downloadProcessed(long chunkIndex) {
+    ArrowResultChunk chunk = chunkIndexToChunksMap.get(chunkIndex);
+    synchronized (chunk) {
+      chunk.notify();
     }
   }
 
@@ -142,15 +155,15 @@ public class ChunkDownloader implements Runnable {
   }
 
   /**
-   * Release the memory for given chunk since it is already consumed
+   * Release the memory for previous chunk since it is already consumed
    * @param chunkIndex index of consumed chunk
    */
-  public void releaseChunk(int chunkIndex) {
-    if (chunkIndexToChunksMap.get(chunkIndex).releaseChunk()) {
-      synchronized (downloadMonitor) {
+  public void releaseChunk() {
+    if (chunkIndexToChunksMap.get(currentChunkIndex - 1).releaseChunk()) {
+      synchronized (totalChunksInMemory) {
         totalChunksInMemory--;
-        downloadMonitor.notify();
       }
+      downloadNextChunks();
     }
   }
 
@@ -178,20 +191,9 @@ public class ChunkDownloader implements Runnable {
     // TODO: release all chunks
   }
 
-  @Override
-  public void run() {
-    // Starts the chunk download from given already downloaded position
-    while (!this.isClosed && (nextChunkToDownload < totalChunks)) {
-      synchronized (downloadMonitor) {
-        try {
-          while (totalChunksInMemory == allowedChunksInMemory) {
-            downloadMonitor.wait();
-          }
-        } catch (InterruptedException e) {
-        // Handle interruption
-        }
-      }
-      if (!this.isClosed) {
+  void downloadNextChunks() {
+    synchronized (totalChunksInMemory) {
+      while (!this.isClosed && nextChunkToDownload < totalChunks && totalChunksInMemory < allowedChunksInMemory) {
         ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
         this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, this));
         totalChunksInMemory++;
