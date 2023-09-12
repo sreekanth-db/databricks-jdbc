@@ -116,18 +116,16 @@ public class ChunkDownloader {
   }
 
   boolean hasNextChunk() {
-    synchronized (currentChunkIndex) {
-      return currentChunkIndex < totalChunks - 1;
-    }
+    return currentChunkIndex < totalChunks - 1;
   }
 
   boolean next() {
     if (!hasNextChunk()) {
       return false;
     }
-    synchronized (currentChunkIndex) {
-      currentChunkIndex++;
-    }
+    // go to next chunk
+    currentChunkIndex++;
+    // release previous chunk
     releaseChunk();
     return true;
   }
@@ -159,9 +157,7 @@ public class ChunkDownloader {
    */
   public void releaseChunk() {
     if (chunkIndexToChunksMap.get(currentChunkIndex - 1).releaseChunk()) {
-      synchronized (totalChunksInMemory) {
-        totalChunksInMemory--;
-      }
+      totalChunksInMemory--;
       downloadNextChunks();
     }
   }
@@ -187,17 +183,16 @@ public class ChunkDownloader {
    */
   void releaseAllChunks() {
     this.isClosed = true;
+    this.chunkDownloaderExecutorService.shutdown();
     // TODO: release all chunks
   }
 
   void downloadNextChunks() {
-    synchronized (totalChunksInMemory) {
-      while (!this.isClosed && nextChunkToDownload < totalChunks && totalChunksInMemory < allowedChunksInMemory) {
-        ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
-        this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, this));
-        totalChunksInMemory++;
-        nextChunkToDownload++;
-      }
+    while (!this.isClosed && nextChunkToDownload < totalChunks && totalChunksInMemory < allowedChunksInMemory) {
+      ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
+      this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, this));
+      totalChunksInMemory++;
+      nextChunkToDownload++;
     }
   }
 }

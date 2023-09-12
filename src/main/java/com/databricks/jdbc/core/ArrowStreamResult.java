@@ -67,13 +67,14 @@ class ArrowStreamResult implements IExecutionResult {
     }
 
     this.currentRowIndex++;
+    // Either this is first chunk or we are crossing chunk boundary
     if (this.chunkIterator == null || !this.chunkIterator.hasNextRow()) {
       this.chunkDownloader.next();
-      ArrowResultChunk resultChunk = this.chunkDownloader.getChunk();
-      this.chunkIterator = resultChunk.getChunkIterator();
-      return true;
+      this.chunkIterator = this.chunkDownloader.getChunk().getChunkIterator();
+      return chunkIterator.nextRow();
     }
 
+    // Traversing within a chunk
     return this.chunkIterator.nextRow();
   }
 
