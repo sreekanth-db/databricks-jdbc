@@ -90,7 +90,6 @@ public class DatabricksSession implements IDatabricksSession {
       if (isSessionOpen) {
         // TODO: handle closed connections by server
         databricksClient.deleteSession(this.session.getSessionId(), getWarehouseId());
-        this.executor.shutdown();
         this.session = null;
         this.isSessionOpen = false;
       }

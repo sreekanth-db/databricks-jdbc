@@ -104,7 +104,8 @@ public class ChunkDownloaderTest {
     assertEquals(4, chunkDownloader.getTotalChunksInMemory());
 
     for (long chunkResultIndex = 0L; chunkResultIndex < TOTAL_CHUNKS; chunkResultIndex++) {
-      assertChunkResult(chunkDownloader.getChunk(chunkResultIndex), chunkResultIndex);
+      chunkDownloader.next();
+      assertChunkResult(chunkDownloader.getChunk(), chunkResultIndex);
     }
   }
 

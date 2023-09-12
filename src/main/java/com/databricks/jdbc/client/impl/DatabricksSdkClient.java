@@ -11,6 +11,7 @@ import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.core.IDatabricksSession;
 import com.databricks.jdbc.core.IDatabricksStatement;
+import com.databricks.jdbc.core.ImmutableSqlParameter;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.ApiClient;

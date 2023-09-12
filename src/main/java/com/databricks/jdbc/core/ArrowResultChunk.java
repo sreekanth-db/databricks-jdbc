@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ArrowResultChunk {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ArrowResultChunk.class);
 
   /**
    * The status of a chunk would proceed in following path:

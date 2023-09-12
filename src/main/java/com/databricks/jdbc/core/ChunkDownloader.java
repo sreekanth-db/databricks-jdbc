@@ -18,7 +18,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * Class to manage Arrow chunks and fetch them on proactive basis.
  */
-public class ChunkDownloader implements Runnable {
+public class ChunkDownloader {
 
   private static final int CHUNKS_DOWNLOADER_THREAD_POOL_SIZE = 4;
   private static final String CHUNKS_DOWNLOADER_THREAD_POOL_PREFIX = "databricks-jdbc-chunks-downloader-";
@@ -34,8 +34,6 @@ public class ChunkDownloader implements Runnable {
   private long allowedChunksInMemory;
   private long totalBytesInUse;
   private boolean isClosed;
-  private Object downloadMonitor = new Object();
-  private Object consumerMonitor = new Object();
 
   ConcurrentHashMap<Long, ArrowResultChunk> chunkIndexToChunksMap;
 
@@ -131,6 +129,7 @@ public class ChunkDownloader implements Runnable {
       currentChunkIndex++;
     }
     releaseChunk();
+    return true;
   }
 
   private boolean isDownloadComplete(ArrowResultChunk.DownloadStatus status) {

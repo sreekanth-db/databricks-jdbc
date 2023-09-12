@@ -86,7 +86,7 @@ public class ArrowStreamResultTest {
                 new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient));
 
         MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
-            Mockito.when(mock.getChunk(anyLong())).thenAnswer(new Answer<ArrowResultChunk>() {
+            Mockito.when(mock.getChunk()).thenAnswer(new Answer<ArrowResultChunk>() {
                 @Override
                 public ArrowResultChunk answer(InvocationOnMock invocation) {
                     long index = invocation.getArgument(0);
@@ -127,7 +127,7 @@ public class ArrowStreamResultTest {
                 new DatabricksSdkClient(connectionContext, statementExecutionService, null));
 
         MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
-            Mockito.when(mock.getChunk(anyLong())).thenAnswer(new Answer<ArrowResultChunk>() {
+            Mockito.when(mock.getChunk()).thenAnswer(new Answer<ArrowResultChunk>() {
                 @Override
                 public ArrowResultChunk answer(InvocationOnMock invocation) {
                     long index = invocation.getArgument(0);
