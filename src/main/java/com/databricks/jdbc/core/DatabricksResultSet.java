@@ -90,6 +90,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     return this == null;
   }
 
+  // TODO (Madhav): Clean up code by removing code duplicity by having common functions that branch out.
   @Override
   public String getString(int columnIndex) throws SQLException {
     Object obj = getObjectInternal(columnIndex);

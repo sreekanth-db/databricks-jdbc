@@ -15,9 +15,7 @@ public class FloatConverterTest {
     private float ZERO_OBJECT = 0f;
     @Test
     public void testConvertToByte() throws DatabricksSQLException {
-        DatabricksSQLException exception =
-                assertThrows(DatabricksSQLException.class, () -> new FloatConverter(NON_ZERO_OBJECT).convertToByte());
-        assertTrue(exception.getMessage().contains("Invalid conversion"));
+        assertEquals(new FloatConverter(NON_ZERO_OBJECT).convertToByte(), (byte) 10);
         assertEquals(new FloatConverter(ZERO_OBJECT).convertToByte(), (byte) 0);
     }
 

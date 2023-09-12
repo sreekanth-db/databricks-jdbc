@@ -15,9 +15,7 @@ public class DoubleConverterTest {
     private double ZERO_OBJECT = 0;
     @Test
     public void testConvertToByte() throws DatabricksSQLException {
-        DatabricksSQLException exception =
-                assertThrows(DatabricksSQLException.class, () -> new DoubleConverter(NON_ZERO_OBJECT).convertToByte());
-        assertTrue(exception.getMessage().contains("Invalid conversion"));
+        assertEquals(new DoubleConverter(NON_ZERO_OBJECT).convertToByte(), (byte) 10);
         assertEquals(new DoubleConverter(ZERO_OBJECT).convertToByte(), (byte) 0);
     }
 

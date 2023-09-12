@@ -40,7 +40,11 @@ public class StringConverter extends AbstractObjectConverter {
 
     @Override
     public byte convertToByte() throws DatabricksSQLException {
-        return this.object.getBytes()[0];
+        byte[] byteArray = this.object.getBytes();
+        if(byteArray.length == 1) {
+            return this.object.getBytes()[0];
+        }
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override

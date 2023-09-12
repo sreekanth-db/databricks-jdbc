@@ -26,11 +26,7 @@ public class FloatConverter extends AbstractObjectConverter {
 
     @Override
     public byte convertToByte() throws DatabricksSQLException {
-        byte byteObject = (byte) this.object;
-        if(byteObject == this.object) {
-            return byteObject;
-        }
-        throw new DatabricksSQLException("Invalid conversion");
+        return (byte) this.object;
     }
 
     @Override

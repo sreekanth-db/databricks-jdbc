@@ -4,6 +4,7 @@ import com.databricks.jdbc.core.DatabricksSQLException;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.nio.ByteBuffer;
 
 public class LongConverter extends AbstractObjectConverter {
 
@@ -71,11 +72,7 @@ public class LongConverter extends AbstractObjectConverter {
 
     @Override
     public byte[] convertToByteArray() throws DatabricksSQLException {
-        byte byteObject = (byte) this.object;
-        if(byteObject == this.object) {
-            return new byte[]{byteObject};
-        }
-        throw new DatabricksSQLException("Invalid conversion");
+        return ByteBuffer.allocate(8).putLong(this.object).array();
     }
 
     @Override

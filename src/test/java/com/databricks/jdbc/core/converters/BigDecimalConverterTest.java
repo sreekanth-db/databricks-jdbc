@@ -84,9 +84,10 @@ public class BigDecimalConverterTest {
 
     @Test
     public void testConvertToByteArray() throws DatabricksSQLException {
-        DatabricksSQLException exception =
-                assertThrows(DatabricksSQLException.class, () -> new BigDecimalConverter(NON_ZERO_OBJECT).convertToChar());
-        assertTrue(exception.getMessage().contains("Unsupported conversion operation"));
+        assertTrue(Arrays.equals(new BigDecimalConverter(NON_ZERO_OBJECT).convertToByteArray(),
+               BigDecimal.valueOf(10.2).toBigInteger().toByteArray()));
+        assertTrue(Arrays.equals(new BigDecimalConverter(ZERO_OBJECT).convertToByteArray(),
+                BigDecimal.valueOf(0).toBigInteger().toByteArray()));
     }
 
     @Test

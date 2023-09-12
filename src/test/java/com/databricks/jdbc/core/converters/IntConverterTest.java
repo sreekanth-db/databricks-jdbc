@@ -1,9 +1,11 @@
 package com.databricks.jdbc.core.converters;
 
 import com.databricks.jdbc.core.DatabricksSQLException;
+import org.apache.arrow.flatbuf.Int;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -72,8 +74,10 @@ public class IntConverterTest {
 
     @Test
     public void testConvertToByteArray() throws DatabricksSQLException {
-        assertTrue(Arrays.equals(new IntConverter(NON_ZERO_OBJECT).convertToByteArray(), new byte[]{10}));
-        assertTrue(Arrays.equals(new IntConverter(ZERO_OBJECT).convertToByteArray(), new byte[]{0}));
+        assertTrue(Arrays.equals(new IntConverter(NON_ZERO_OBJECT).convertToByteArray(),
+                ByteBuffer.allocate(4).putInt(10).array()));
+        assertTrue(Arrays.equals(new IntConverter(ZERO_OBJECT).convertToByteArray(),
+                ByteBuffer.allocate(4).putInt(0).array()));
     }
 
     @Test
