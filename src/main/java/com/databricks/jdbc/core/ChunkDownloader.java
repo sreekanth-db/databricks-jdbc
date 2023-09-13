@@ -183,7 +183,7 @@ public class ChunkDownloader {
    */
   void releaseAllChunks() {
     this.isClosed = true;
-    this.chunkDownloaderExecutorService.shutdown();
+    this.chunkDownloaderExecutorService.shutdownNow();
     // TODO: release all chunks
   }
 
