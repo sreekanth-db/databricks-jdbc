@@ -1,6 +1,7 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.StatementType;
+import com.databricks.jdbc.core.converters.*;
 import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
 import com.databricks.sdk.service.sql.StatementStatus;
@@ -89,10 +90,16 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     return this == null;
   }
 
+  // TODO (Madhav): Clean up code by removing code duplicity by having common functions that branch out.
   @Override
   public String getString(int columnIndex) throws SQLException {
     Object obj = getObjectInternal(columnIndex);
-    return obj != null ? String.valueOf(obj) : null;
+    if(obj == null) {
+      return null;
+    }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToString();
   }
 
   @Override
@@ -101,33 +108,9 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     if (obj == null) {
       return false;
     }
-    if (obj instanceof Boolean) {
-      return (Boolean) obj;
-    }
     int columnType = resultSetMetaData.getColumnType(columnIndex);
-    // Convert to boolean types from other types
-    if (columnType == Types.BOOLEAN
-        || columnType == Types.VARCHAR) {
-      String type = obj.toString();
-      if (Boolean.TRUE.toString().equalsIgnoreCase(type) || Boolean.FALSE.toString().equalsIgnoreCase(type)) {
-        return Boolean.valueOf(type.toLowerCase());
-      }
-    }
-    if (columnType == Types.INTEGER
-        || columnType == Types.SMALLINT
-        || columnType == Types.TINYINT
-        || columnType == Types.BIGINT
-        || columnType == Types.BIT
-        || columnType == Types.CHAR) {
-      String type = obj.toString();
-      if ("1".equals(type)) {
-        return true;
-      }
-      if ("0".equals(type)) {
-        return false;
-      }
-    }
-    throw new DatabricksSQLException("Invalid boolean type");
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToBoolean();
   }
 
   @Override
@@ -138,23 +121,8 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     }
 
     int columnType = resultSetMetaData.getColumnType(columnIndex);
-    if (obj instanceof String) {
-      String s = getNumberStringWithoutDecimal((String) obj, columnType);
-      return Byte.parseByte((String) obj);
-    }
-
-    if (columnType == Types.INTEGER
-        || columnType == Types.SMALLINT
-        || columnType == Types.TINYINT
-        || columnType == Types.BIGINT
-        || columnType == Types.BIT
-        || columnType == Types.FLOAT
-        || columnType == Types.DOUBLE
-        || columnType == Types.CHAR) {
-      return ((Number) obj).byteValue();
-    }
-
-    throw new DatabricksSQLException("Invalid byte type");
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToByte();
   }
 
   @Override
@@ -164,22 +132,8 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
       return 0;
     }
     int columnType = resultSetMetaData.getColumnType(columnIndex);
-    if (obj instanceof String) {
-      String s = getNumberStringWithoutDecimal((String) obj, columnType);
-      return Short.parseShort((String) obj);
-    }
-
-    if (columnType == Types.INTEGER
-        || columnType == Types.SMALLINT
-        || columnType == Types.TINYINT
-        || columnType == Types.BIGINT
-        || columnType == Types.BIT
-        || columnType == Types.FLOAT
-        || columnType == Types.DOUBLE
-        || columnType == Types.CHAR) {
-      return ((Number) obj).shortValue();
-    }
-    throw new DatabricksSQLException("Invalid byte type");
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToShort();
   }
 
   @Override
@@ -189,22 +143,8 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
       return 0;
     }
     int columnType = resultSetMetaData.getColumnType(columnIndex);
-    if (obj instanceof String) {
-      String s = getNumberStringWithoutDecimal((String) obj, columnType);
-      return Integer.parseInt((String) obj);
-    }
-
-    if (columnType == Types.INTEGER
-        || columnType == Types.SMALLINT
-        || columnType == Types.TINYINT
-        || columnType == Types.BIGINT
-        || columnType == Types.BIT
-        || columnType == Types.FLOAT
-        || columnType == Types.DOUBLE
-        || columnType == Types.CHAR) {
-      return ((Number) obj).intValue();
-    }
-    throw new DatabricksSQLException("Invalid byte type");
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToInt();
   }
 
   @Override
@@ -214,22 +154,8 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
       return 0;
     }
     int columnType = resultSetMetaData.getColumnType(columnIndex);
-    if (obj instanceof String) {
-      String s = getNumberStringWithoutDecimal((String) obj, columnType);
-      return Long.parseLong((String) obj);
-    }
-
-    if (columnType == Types.INTEGER
-        || columnType == Types.SMALLINT
-        || columnType == Types.TINYINT
-        || columnType == Types.BIGINT
-        || columnType == Types.BIT
-        || columnType == Types.FLOAT
-        || columnType == Types.DOUBLE
-        || columnType == Types.CHAR) {
-      return ((Number) obj).longValue();
-    }
-    throw new DatabricksSQLException("Invalid byte type");
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToLong();
   }
 
   @Override
@@ -1202,6 +1128,32 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
       return s.substring(0, s.indexOf(DECIMAL));
     }
     return s;
+  }
+
+  private AbstractObjectConverter getObjectConverter(Object object, int columnType) throws DatabricksSQLException {
+    switch(columnType) {
+      case Types.TINYINT:
+        return new ByteConverter(object);
+      case Types.SMALLINT:
+        return new ShortConverter(object);
+      case Types.INTEGER:
+        return new IntConverter(object);
+      case Types.BIGINT:
+        return new LongConverter(object);
+      case Types.FLOAT:
+        return new FloatConverter(object);
+      case Types.DOUBLE:
+        return new DoubleConverter(object);
+      case Types.DECIMAL:
+        return new BigDecimalConverter(object);
+      case Types.BOOLEAN:
+        return new BooleanConverter(object);
+      case Types.VARCHAR:
+      case Types.CHAR:
+        return new StringConverter(object);
+      default:
+        throw new DatabricksSQLException("Bad object type");
+    }
   }
 
   private int getColumnNameIndex(String columnName) {
