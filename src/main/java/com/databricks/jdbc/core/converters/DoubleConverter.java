@@ -26,27 +26,42 @@ public class DoubleConverter extends AbstractObjectConverter {
 
     @Override
     public byte convertToByte() throws DatabricksSQLException {
-        return (byte) this.object;
+        if(this.object >= Byte.MIN_VALUE && this.object <= Byte.MAX_VALUE) {
+            return (byte) this.object;
+        }
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
     public short convertToShort() throws DatabricksSQLException {
-        return (short) this.object;
+        if(this.object >= Short.MIN_VALUE && this.object <= Short.MAX_VALUE) {
+            return (short) this.object;
+        }
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
     public int convertToInt() throws DatabricksSQLException {
-        return (int) this.object;
+        if(this.object >= Integer.MIN_VALUE && this.object <= Integer.MAX_VALUE) {
+            return (int) this.object;
+        }
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
     public long convertToLong() throws DatabricksSQLException {
-        return (long) this.object;
+        if(this.object >= Long.MIN_VALUE && this.object < Long.MAX_VALUE) {
+            return (long) this.object;
+        }
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
     public float convertToFloat() throws DatabricksSQLException {
-        return (float) this.object;
+        if(this.object >= -Float.MAX_VALUE && this.object <= Float.MAX_VALUE) {
+            return (float) this.object;
+        }
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override

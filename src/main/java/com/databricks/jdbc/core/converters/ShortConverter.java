@@ -25,9 +25,8 @@ public class ShortConverter extends AbstractObjectConverter {
 
     @Override
     public byte convertToByte() throws DatabricksSQLException {
-        byte byteObject = (byte) this.object;
-        if(byteObject == this.object) {
-            return byteObject;
+        if(this.object >= Byte.MIN_VALUE && this.object <= Byte.MAX_VALUE) {
+            return (byte) this.object;
         }
         throw new DatabricksSQLException("Invalid conversion");
     }

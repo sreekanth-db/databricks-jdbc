@@ -17,24 +17,44 @@ public class FloatConverterTest {
     public void testConvertToByte() throws DatabricksSQLException {
         assertEquals(new FloatConverter(NON_ZERO_OBJECT).convertToByte(), (byte) 10);
         assertEquals(new FloatConverter(ZERO_OBJECT).convertToByte(), (byte) 0);
+
+        float floatThatDoesNotFitInByte = 128.5f;
+        DatabricksSQLException exception =
+                assertThrows(DatabricksSQLException.class, () -> new FloatConverter(floatThatDoesNotFitInByte).convertToByte());
+        assertTrue(exception.getMessage().contains("Invalid conversion"));
     }
 
     @Test
     public void testConvertToShort() throws DatabricksSQLException {
         assertEquals(new FloatConverter(NON_ZERO_OBJECT).convertToShort(), (short) 10);
         assertEquals(new FloatConverter(ZERO_OBJECT).convertToShort(), (short) 0);
+
+        float floatThatDoesNotFitInShort = 32768.1f;
+        DatabricksSQLException exception =
+                assertThrows(DatabricksSQLException.class, () -> new FloatConverter(floatThatDoesNotFitInShort).convertToShort());
+        assertTrue(exception.getMessage().contains("Invalid conversion"));
     }
 
     @Test
     public void testConvertToInt() throws DatabricksSQLException {
         assertEquals(new FloatConverter(NON_ZERO_OBJECT).convertToInt(), (int) 10);
         assertEquals(new FloatConverter(ZERO_OBJECT).convertToInt(), (int) 0);
+
+        float floatThatDoesNotFitInInt = 2147483648.5f;
+        DatabricksSQLException exception =
+                assertThrows(DatabricksSQLException.class, () -> new FloatConverter(floatThatDoesNotFitInInt).convertToInt());
+        assertTrue(exception.getMessage().contains("Invalid conversion"));
     }
 
     @Test
     public void testConvertToLong() throws DatabricksSQLException {
         assertEquals(new FloatConverter(NON_ZERO_OBJECT).convertToLong(), 10L);
         assertEquals(new FloatConverter(ZERO_OBJECT).convertToLong(), 0L);
+
+        float floatThatDoesNotFitInLong = 1.5E20f;
+        DatabricksSQLException exception =
+                assertThrows(DatabricksSQLException.class, () -> new FloatConverter(floatThatDoesNotFitInLong).convertToLong());
+        assertTrue(exception.getMessage().contains("Invalid conversion"));
     }
 
     @Test

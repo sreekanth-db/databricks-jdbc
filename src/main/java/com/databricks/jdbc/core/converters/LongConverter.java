@@ -26,27 +26,24 @@ public class LongConverter extends AbstractObjectConverter {
 
     @Override
     public byte convertToByte() throws DatabricksSQLException {
-        byte byteObject = (byte) this.object;
-        if(byteObject == this.object) {
-            return byteObject;
+        if(this.object >= Byte.MIN_VALUE && this.object <= Byte.MAX_VALUE) {
+            return (byte) this.object;
         }
         throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
     public short convertToShort() throws DatabricksSQLException {
-        short shortObject = (short) this.object;
-        if(shortObject == this.object) {
-            return shortObject;
+        if(this.object >= Short.MIN_VALUE && this.object <= Short.MAX_VALUE) {
+            return (short) this.object;
         }
         throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
     public int convertToInt() throws DatabricksSQLException {
-        int intObject = (int) this.object;
-        if(intObject == this.object) {
-            return intObject;
+        if(this.object >= Integer.MIN_VALUE && this.object <= Integer.MAX_VALUE) {
+            return (int) this.object;
         }
         throw new DatabricksSQLException("Invalid conversion");
     }
