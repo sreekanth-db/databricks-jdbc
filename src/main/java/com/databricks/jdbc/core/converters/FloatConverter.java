@@ -23,29 +23,36 @@ public class FloatConverter extends AbstractObjectConverter {
     public boolean convertToBoolean() throws DatabricksSQLException {
         return (this.object == 0f ? false : true);
     }
-
     @Override
     public byte convertToByte() throws DatabricksSQLException {
-        byte byteObject = (byte) this.object;
-        if(byteObject == this.object) {
-            return byteObject;
+        if(this.object >= Byte.MIN_VALUE && this.object <= Byte.MAX_VALUE) {
+            return (byte) this.object;
         }
         throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
     public short convertToShort() throws DatabricksSQLException {
-        return (short) this.object;
+        if(this.object >= Short.MIN_VALUE && this.object <= Short.MAX_VALUE) {
+            return (short) this.object;
+        }
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
     public int convertToInt() throws DatabricksSQLException {
-        return (int) this.object;
+        if(this.object >= Integer.MIN_VALUE && this.object < Integer.MAX_VALUE) {
+            return (int) this.object;
+        }
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
     public long convertToLong() throws DatabricksSQLException {
-        return (long) this.object;
+        if(this.object >= Long.MIN_VALUE && this.object < Long.MAX_VALUE) {
+            return (long) this.object;
+        }
+        throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override

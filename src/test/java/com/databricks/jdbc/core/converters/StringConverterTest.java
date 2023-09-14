@@ -22,7 +22,12 @@ public class StringConverterTest {
     private String DATE_STRING = "2023-09-10";
     @Test
     public void testConvertToByte() throws DatabricksSQLException {
-        assertEquals(new StringConverter(CHARACTER_STRING).convertToByte(), (byte) 'A');
+        String singleCharacterString = "A";
+        assertEquals(new StringConverter(singleCharacterString).convertToByte(), (byte) 'A');
+
+        DatabricksSQLException tooManyCharactersException =
+                assertThrows(DatabricksSQLException.class, () -> new StringConverter(CHARACTER_STRING).convertToByte());
+        assertTrue(tooManyCharactersException.getMessage().contains("Invalid conversion"));
     }
 
     @Test

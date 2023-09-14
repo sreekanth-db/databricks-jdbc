@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -88,8 +89,10 @@ public class LongConverterTest {
 
     @Test
     public void testConvertToByteArray() throws DatabricksSQLException {
-        assertTrue(Arrays.equals(new LongConverter(NON_ZERO_OBJECT).convertToByteArray(), new byte[]{10}));
-        assertTrue(Arrays.equals(new LongConverter(ZERO_OBJECT).convertToByteArray(), new byte[]{0}));
+        assertTrue(Arrays.equals(new LongConverter(NON_ZERO_OBJECT).convertToByteArray(),
+                ByteBuffer.allocate(8).putLong(10L).array()));
+        assertTrue(Arrays.equals(new LongConverter(ZERO_OBJECT).convertToByteArray(),
+                ByteBuffer.allocate(8).putLong(0).array()));
     }
 
     @Test

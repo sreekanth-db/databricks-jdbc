@@ -3,6 +3,7 @@ package com.databricks.jdbc.core.converters;
 import com.databricks.jdbc.core.DatabricksSQLException;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 public class BigDecimalConverter extends AbstractObjectConverter {
 
@@ -25,6 +26,11 @@ public class BigDecimalConverter extends AbstractObjectConverter {
         catch(ArithmeticException e) {
             throw new DatabricksSQLException("Invalid conversion");
         }
+    }
+
+    @Override
+    public byte[] convertToByteArray() throws DatabricksSQLException {
+        return this.object.toBigInteger().toByteArray();
     }
 
     @Override

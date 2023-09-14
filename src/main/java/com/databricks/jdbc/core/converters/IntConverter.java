@@ -7,6 +7,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.nio.ByteBuffer;
 
 public class IntConverter extends AbstractObjectConverter {
 
@@ -28,18 +29,16 @@ public class IntConverter extends AbstractObjectConverter {
 
     @Override
     public byte convertToByte() throws DatabricksSQLException {
-        byte byteObject = (byte) this.object;
-        if(byteObject == this.object) {
-            return byteObject;
+        if(this.object >= Byte.MIN_VALUE && this.object <= Byte.MAX_VALUE) {
+            return (byte) this.object;
         }
         throw new DatabricksSQLException("Invalid conversion");
     }
 
     @Override
     public short convertToShort() throws DatabricksSQLException {
-        short shortObject = (short) this.object;
-        if(shortObject == this.object) {
-            return shortObject;
+        if(this.object >= Short.MIN_VALUE && this.object <= Short.MAX_VALUE) {
+            return (short) this.object;
         }
         throw new DatabricksSQLException("Invalid conversion");
     }
@@ -81,11 +80,7 @@ public class IntConverter extends AbstractObjectConverter {
 
     @Override
     public byte[] convertToByteArray() throws DatabricksSQLException {
-        byte byteObject = (byte) this.object;
-        if(byteObject == this.object) {
-            return new byte[]{byteObject};
-        }
-        throw new DatabricksSQLException("Invalid conversion");
+        return ByteBuffer.allocate(4).putInt(this.object).array();
     }
 
     @Override

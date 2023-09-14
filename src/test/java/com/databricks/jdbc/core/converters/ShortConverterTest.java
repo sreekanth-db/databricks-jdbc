@@ -4,6 +4,7 @@ import com.databricks.jdbc.core.DatabricksSQLException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -76,8 +77,10 @@ public class ShortConverterTest {
 
     @Test
     public void testConvertToByteArray() throws DatabricksSQLException {
-        assertTrue(Arrays.equals(new ShortConverter(NON_ZERO_OBJECT).convertToByteArray(), new byte[]{10}));
-        assertTrue(Arrays.equals(new ShortConverter(ZERO_OBJECT).convertToByteArray(), new byte[]{0}));
+        assertTrue(Arrays.equals(new ShortConverter(NON_ZERO_OBJECT).convertToByteArray(),
+                ByteBuffer.allocate(2).putShort((short) 10).array()));
+        assertTrue(Arrays.equals(new ShortConverter(ZERO_OBJECT).convertToByteArray(),
+                ByteBuffer.allocate(2).putShort((short) 0).array()));
     }
 
     @Test
