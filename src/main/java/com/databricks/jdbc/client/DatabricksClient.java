@@ -1,11 +1,11 @@
 package com.databricks.jdbc.client;
 
+import com.databricks.jdbc.client.sqlexec.Session;
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.IDatabricksSession;
 import com.databricks.jdbc.core.IDatabricksStatement;
 import com.databricks.jdbc.core.ImmutableSqlParameter;
 import com.databricks.sdk.service.sql.ExternalLink;
-import com.databricks.sdk.service.sql.Session;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -26,8 +26,9 @@ public interface DatabricksClient {
   /**
    * Deletes a session for given session-Id
    * @param sessionId for which the session should be deleted
+   * @param warehouseId underlying warehouse-Id
    */
-  void deleteSession(String sessionId);
+  void deleteSession(String sessionId, String warehouseId);
 
   /**
    * Executes a statement in Databricks server
