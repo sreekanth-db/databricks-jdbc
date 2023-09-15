@@ -28,15 +28,13 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.Executors;
 
 import static java.lang.Math.min;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -85,7 +83,7 @@ public class ArrowStreamResultTest {
         DatabricksSession session = new DatabricksSession(connectionContext,
                 new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient));
 
-        MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
+   /*     MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
             Mockito.when(mock.getChunk()).thenAnswer(new Answer<ArrowResultChunk>() {
                 @Override
                 public ArrowResultChunk answer(InvocationOnMock invocation) {
@@ -93,7 +91,7 @@ public class ArrowStreamResultTest {
                     return resultChunks.get((int) index);
                 }
             });
-        });
+        }); */
         ArrowStreamResult result = new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, session);
 
         // Act & Assert
@@ -106,7 +104,7 @@ public class ArrowStreamResultTest {
         }
         assertFalse(result.hasNext());
         assertFalse(result.next());
-        mocked.close();
+  //      mocked.close();
     }
 
     @Test
@@ -126,7 +124,7 @@ public class ArrowStreamResultTest {
         DatabricksSession session = new DatabricksSession(connectionContext,
                 new DatabricksSdkClient(connectionContext, statementExecutionService, null));
 
-        MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
+   /*     MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
             Mockito.when(mock.getChunk()).thenAnswer(new Answer<ArrowResultChunk>() {
                 @Override
                 public ArrowResultChunk answer(InvocationOnMock invocation) {
@@ -134,7 +132,7 @@ public class ArrowStreamResultTest {
                     return resultChunks.get((int) index);
                 }
             });
-        });
+        }); */
         ArrowStreamResult result = new ArrowStreamResult(resultManifest, resultData, "statement_id", session);
 
         result.next();
@@ -144,7 +142,7 @@ public class ArrowStreamResultTest {
         assertTrue(objectInFirstColumn instanceof Integer);
         assertTrue(objectInSecondColumn instanceof Double);
 
-        mocked.close();
+   //     mocked.close();
     }
 
     private void setupChunks() throws Exception {

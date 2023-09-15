@@ -19,7 +19,6 @@ import java.util.concurrent.ThreadFactory;
  * Class to manage Arrow chunks and fetch them on proactive basis.
  */
 public class ChunkDownloader {
-
   private static final int CHUNKS_DOWNLOADER_THREAD_POOL_SIZE = 4;
   private static final String CHUNKS_DOWNLOADER_THREAD_POOL_PREFIX = "databricks-jdbc-chunks-downloader-";
   private final IDatabricksSession session;
@@ -42,7 +41,8 @@ public class ChunkDownloader {
   }
 
   @VisibleForTesting
-  ChunkDownloader(String statementId, ResultManifest resultManifest, ResultData resultData, IDatabricksSession session, IDatabricksHttpClient httpClient) {
+  ChunkDownloader(String statementId, ResultManifest resultManifest, ResultData resultData, IDatabricksSession session,
+                  IDatabricksHttpClient httpClient) {
     this.session = session;
     this.statementId = statementId;
     this.totalChunks = resultManifest.getTotalChunkCount();
@@ -125,8 +125,10 @@ public class ChunkDownloader {
     }
     // go to next chunk
     currentChunkIndex++;
-    // release previous chunk
-    releaseChunk();
+    if (currentChunkIndex > 0) {
+      // release previous chunk
+      releaseChunk();
+    }
     return true;
   }
 
@@ -147,7 +149,7 @@ public class ChunkDownloader {
     Collection<ExternalLink> chunks = session.getDatabricksClient().getResultChunks(
         statementId, chunkIndexToDownloadLink);
     for (ExternalLink chunkLink : chunks) {
-      setChunkLink(chunkLink.getChunkIndex(), chunkLink);
+      setChunkLink(chunkLink);
     }
   }
 
@@ -167,8 +169,8 @@ public class ChunkDownloader {
    * @param chunkIndex index of chunk
    * @param chunkLink external link details for chunk
    */
-  void setChunkLink(long chunkIndex, ExternalLink chunkLink) {
-    chunkIndexToChunksMap.get(chunkIndex).setChunkUrl(chunkLink);
+  void setChunkLink(ExternalLink chunkLink) {
+    chunkIndexToChunksMap.get(chunkLink.getChunkIndex()).setChunkUrl(chunkLink);
   }
 
   /**
