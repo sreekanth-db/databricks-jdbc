@@ -8,8 +8,8 @@ import com.databricks.jdbc.core.ImmutableSqlParameter;
 import com.databricks.sdk.service.sql.ExternalLink;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Interface for Databricks client which abstracts the integration with Databricks server.
@@ -57,5 +57,5 @@ public interface DatabricksClient {
    * @param statementId statement-Id for which chunk should be fetched
    * @param chunkIndex chunkIndex for which chunk should be fetched
    */
-  Optional<ExternalLink> getResultChunk(String statementId, long chunkIndex);
+  Collection<ExternalLink> getResultChunks(String statementId, long chunkIndex);
 }

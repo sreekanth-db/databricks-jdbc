@@ -5,9 +5,13 @@ import com.databricks.jdbc.client.StatementType;
 import com.databricks.jdbc.client.sqlexec.CloseStatementRequest;
 import com.databricks.jdbc.client.sqlexec.CreateSessionRequest;
 import com.databricks.jdbc.client.sqlexec.DeleteSessionRequest;
-import com.databricks.jdbc.client.sqlexec.ExecuteStatementRequestWithSession;
 import com.databricks.jdbc.client.sqlexec.Session;
-import com.databricks.jdbc.core.*;
+import com.databricks.jdbc.client.sqlexec.*;
+import com.databricks.jdbc.core.DatabricksResultSet;
+import com.databricks.jdbc.core.DatabricksSQLException;
+import com.databricks.jdbc.core.IDatabricksSession;
+import com.databricks.jdbc.core.IDatabricksStatement;
+import com.databricks.jdbc.core.ImmutableSqlParameter;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.ApiClient;
@@ -17,9 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Implementation of DatabricksClient interface using Databricks Java SDK.
@@ -132,9 +136,9 @@ public class DatabricksSdkClient implements DatabricksClient {
   }
 
   @Override
-  public Optional<ExternalLink> getResultChunk(String statementId, long chunkIndex) {
+  public Collection<ExternalLink> getResultChunks(String statementId, long chunkIndex) {
     LOGGER.debug("public Optional<ExternalLink> getResultChunk(String statementId = {}, long chunkIndex = {})", statementId, chunkIndex);
-    return workspaceClient.statementExecution().getStatementResultChunkN(statementId, chunkIndex).getExternalLinks().stream().findFirst();
+    return workspaceClient.statementExecution().getStatementResultChunkN(statementId, chunkIndex).getExternalLinks();
   }
 
   /**
