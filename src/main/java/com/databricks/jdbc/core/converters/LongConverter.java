@@ -58,28 +58,13 @@ public class LongConverter extends AbstractObjectConverter {
     }
 
     @Override
-    public float convertToFloat(int scale) throws DatabricksSQLException {
-        return convertToFloat()/super.POWERS_OF_TEN[scale];
-    }
-
-    @Override
     public double convertToDouble() throws DatabricksSQLException {
         return (double) this.object;
     }
 
     @Override
-    public double convertToDouble(int scale) throws DatabricksSQLException {
-        return convertToDouble()/super.POWERS_OF_TEN[scale];
-    }
-
-    @Override
     public BigDecimal convertToBigDecimal() throws DatabricksSQLException {
         return BigDecimal.valueOf((long) this.object);
-    }
-
-    @Override
-    public BigDecimal convertToBigDecimal(int scale) throws DatabricksSQLException {
-        return BigDecimal.valueOf(convertToDouble()/super.POWERS_OF_TEN[scale]);
     }
 
     @Override
