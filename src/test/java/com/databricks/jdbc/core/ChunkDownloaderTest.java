@@ -1,23 +1,32 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.impl.DatabricksSdkClient;
 import com.databricks.jdbc.core.ArrowResultChunk.DownloadStatus;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.databricks.sdk.core.ApiClient;
 import com.databricks.sdk.service.sql.*;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ChunkDownloaderTest {
@@ -35,8 +44,59 @@ public class ChunkDownloaderTest {
   @Mock
   StatementExecutionService statementExecutionService;
 
+  @Mock
+  IDatabricksHttpClient mockHttpClient;
+  @Mock
+  CloseableHttpResponse httpResponse;
+  @Mock
+  HttpEntity httpEntity;
+
+  @Mock
+  ApiClient apiClient;
+
   @Test
   public void testInitChunkDownloader() throws Exception {
+    ResultManifest resultManifest = getResultManifest();
+    ResultData resultData = getResultData();
+
+    IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+    DatabricksSession session = new DatabricksSession(connectionContext,
+        new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient));
+
+    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(1L)))
+        .thenReturn(new ResultData().setExternalLinks(getChunkLinks(1L, false)));
+    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(2L)))
+        .thenReturn(new ResultData().setExternalLinks(getChunkLinks(2L, false)));
+    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(3L)))
+        .thenReturn(new ResultData().setExternalLinks(getChunkLinks(3L, false)));
+    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(4L)))
+        .thenReturn(new ResultData().setExternalLinks(getChunkLinks(4L, false)));
+
+    setupMockResponse();
+    when(mockHttpClient.execute(isA(HttpUriRequest.class))).thenReturn(httpResponse);
+
+    ChunkDownloader chunkDownloader =
+        new ChunkDownloader(STATEMENT_ID, resultManifest, resultData, session, mockHttpClient);
+    verify(statementExecutionService, times(3))
+        .getStatementResultChunkN(isA(GetStatementResultChunkNRequest.class));
+    // TDOD: assert urls as well
+    verify(mockHttpClient, times(4)).execute(isA(HttpUriRequest.class));
+
+    assertEquals(4, chunkDownloader.getTotalChunksInMemory());
+    assertTrue(chunkDownloader.next());
+
+    for (long chunkResultIndex = 0L; chunkResultIndex < TOTAL_CHUNKS; chunkResultIndex++) {
+      assertTrue(chunkDownloader.next());
+      assertChunkResult(chunkDownloader.getChunk(), chunkResultIndex);
+    }
+  }
+
+  private ResultData getResultData() {
+    return new ResultData()
+        .setExternalLinks(getChunkLinks(0L, false));
+  }
+
+  private ResultManifest getResultManifest() {
     List<ChunkInfo> chunks = new ArrayList<>();
     for (long chunkIndex =0; chunkIndex < TOTAL_CHUNKS; chunkIndex++) {
       ChunkInfo chunkInfo = new ChunkInfo()
@@ -51,32 +111,17 @@ public class ChunkDownloaderTest {
       }
       chunks.add(chunkInfo);
     }
-    ResultManifest resultManifest = new ResultManifest()
+    return new ResultManifest()
         .setTotalChunkCount(TOTAL_CHUNKS)
         .setTotalRowCount(TOTAL_ROWS)
         .setTotalByteCount(TOTAL_BYTES)
         .setChunks(chunks)
         .setSchema(new ResultSchema().setColumns(new ArrayList<>()));
+  }
 
-    ResultData resultData = new ResultData()
-        .setExternalLinks(getChunkLinks(0L, false));
-
-    IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(JDBC_URL, new Properties());
-    DatabricksSession session = new DatabricksSession(connectionContext,
-        new DatabricksSdkClient(connectionContext, statementExecutionService, null));
-
-    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(1L))).thenReturn(new ResultData().setExternalLinks(getChunkLinks(1L, false)));
-    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(2L))).thenReturn(new ResultData().setExternalLinks(getChunkLinks(2L, false)));
-    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(3L))).thenReturn(new ResultData().setExternalLinks(getChunkLinks(3L, false)));
-    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(4L))).thenReturn(new ResultData().setExternalLinks(getChunkLinks(4L, false)));
-
-    ChunkDownloader chunkDownloader = new ChunkDownloader(STATEMENT_ID, resultManifest, resultData, session);
-    verify(statementExecutionService, times(4))
-        .getStatementResultChunkN(Mockito.isA(GetStatementResultChunkNRequest.class));
-
-    for (long chunkResultIndex = 0L; chunkResultIndex < TOTAL_CHUNKS; chunkResultIndex++) {
-      assertChunkResult(chunkDownloader.getChunk(chunkResultIndex), chunkResultIndex);
-    }
+  private void setupMockResponse() throws Exception {
+    when(httpResponse.getEntity()).thenReturn(httpEntity);
+    when(httpEntity.getContent()).thenReturn(new FakeInputStream());
   }
 
   private List<ExternalLink> getChunkLinks(long chunkIndex, boolean isLast) {
@@ -104,6 +149,20 @@ public class ChunkDownloaderTest {
     assertEquals(expectedRows, chunk.numRows);
     assertEquals(expectedRowsOffSet, chunk.rowOffset);
     assertEquals(CHUNK_URL_PREFIX + chunkIndex, chunk.getChunkUrl());
-    assertEquals(DownloadStatus.URL_FETCHED, chunk.getStatus());
+
+    if (chunkIndex < 4) {
+      assertNotNull(chunk.getDownloadFinishTime());
+      assertEquals(DownloadStatus.DOWNLOAD_SUCCEEDED, chunk.getStatus());
+    } else {
+      assertNull(chunk.getDownloadFinishTime());
+      assertEquals(DownloadStatus.URL_FETCHED, chunk.getStatus());
+    }
+  }
+
+  class FakeInputStream extends InputStream {
+    @Override
+    public int read() throws IOException {
+      return 0;
+    }
   }
 }
