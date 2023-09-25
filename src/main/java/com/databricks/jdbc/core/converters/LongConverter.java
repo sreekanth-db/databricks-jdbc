@@ -15,7 +15,12 @@ public class LongConverter extends AbstractObjectConverter {
     private long object;
     public LongConverter(Object object) throws DatabricksSQLException {
         super(object);
-        this.object = (long) object;
+        if (object instanceof String) {
+            this.object = Long.parseLong((String) object);
+        }
+        else {
+            this.object = (long) object;
+        }
     }
 
     @Override

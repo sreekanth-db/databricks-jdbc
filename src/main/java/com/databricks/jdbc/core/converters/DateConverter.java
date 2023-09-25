@@ -13,7 +13,12 @@ public class DateConverter extends AbstractObjectConverter {
     private Date object;
     public DateConverter(Object object) throws DatabricksSQLException {
         super(object);
-        this.object = (Date) object;
+        if (object instanceof String) {
+            this.object = Date.valueOf((String) object);
+        }
+        else {
+            this.object = (Date) object;
+        }
     }
 
     @Override

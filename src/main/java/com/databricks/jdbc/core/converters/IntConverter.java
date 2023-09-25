@@ -14,7 +14,12 @@ public class IntConverter extends AbstractObjectConverter {
     private int object;
     public IntConverter(Object object) throws DatabricksSQLException {
         super(object);
-        this.object = (int) object;
+        if (object instanceof String) {
+            this.object = Integer.parseInt((String) object);
+        }
+        else {
+            this.object = (int) object;
+        }
     }
 
     @Override
