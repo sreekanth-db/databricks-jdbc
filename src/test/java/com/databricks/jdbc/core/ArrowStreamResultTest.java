@@ -1,5 +1,6 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.impl.DatabricksSdkClient;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
@@ -18,6 +19,9 @@ import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,9 +44,12 @@ import static java.lang.Math.min;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ArrowStreamResultTest {
+
     private ArrayList<ArrowResultChunk> resultChunks = new ArrayList<>();
 
     private List<ChunkInfo> chunkInfos = new ArrayList<>();
@@ -60,6 +67,12 @@ public class ArrowStreamResultTest {
     StatementExecutionService statementExecutionService;
     @Mock
     ApiClient apiClient;
+    @Mock
+    IDatabricksHttpClient mockHttpClient;
+    @Mock
+    CloseableHttpResponse httpResponse;
+    @Mock
+    HttpEntity httpEntity;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -83,16 +96,21 @@ public class ArrowStreamResultTest {
         DatabricksSession session = new DatabricksSession(connectionContext,
                 new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient));
 
-   /*     MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
-            Mockito.when(mock.getChunk()).thenAnswer(new Answer<ArrowResultChunk>() {
-                @Override
-                public ArrowResultChunk answer(InvocationOnMock invocation) {
-                    long index = invocation.getArgument(0);
-                    return resultChunks.get((int) index);
-                }
-            });
-        }); */
-        ArrowStreamResult result = new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, session);
+        setupMockLinks(1, false);
+        setupMockLinks(2, false);
+        setupMockLinks(3, false);
+        setupMockLinks(4, false);
+        setupMockLinks(5, false);
+        setupMockLinks(6, false);
+        setupMockLinks(7, false);
+        setupMockLinks(8, false);
+        setupMockLinks(9, true);
+
+        setupMockResponse();
+        when(mockHttpClient.execute(isA(HttpUriRequest.class))).thenReturn(httpResponse);
+
+        ArrowStreamResult result = new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, session,
+            mockHttpClient);
 
         // Act & Assert
         for(int i = 0; i < this.numberOfChunks; ++i) {
@@ -124,16 +142,15 @@ public class ArrowStreamResultTest {
         DatabricksSession session = new DatabricksSession(connectionContext,
                 new DatabricksSdkClient(connectionContext, statementExecutionService, null));
 
-   /*     MockedConstruction<ChunkDownloader> mocked = Mockito.mockConstruction(ChunkDownloader.class, (mock, context) -> {
-            Mockito.when(mock.getChunk()).thenAnswer(new Answer<ArrowResultChunk>() {
-                @Override
-                public ArrowResultChunk answer(InvocationOnMock invocation) {
-                    long index = invocation.getArgument(0);
-                    return resultChunks.get((int) index);
-                }
-            });
-        }); */
-        ArrowStreamResult result = new ArrowStreamResult(resultManifest, resultData, "statement_id", session);
+        setupMockLinks(1, false);
+        setupMockLinks(2, false);
+        setupMockLinks(3, false);
+
+        setupMockResponse();
+        when(mockHttpClient.execute(isA(HttpUriRequest.class))).thenReturn(httpResponse);
+
+        ArrowStreamResult result = new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, session,
+            mockHttpClient);
 
         result.next();
         Object objectInFirstColumn = result.getObject(0);
@@ -142,7 +159,24 @@ public class ArrowStreamResultTest {
         assertTrue(objectInFirstColumn instanceof Integer);
         assertTrue(objectInSecondColumn instanceof Double);
 
-   //     mocked.close();
+    }
+
+    private void setupMockLinks(long chunkIndex, boolean isLast) {
+        when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(chunkIndex)))
+            .thenReturn(new ResultData().setExternalLinks(getChunkLinks(chunkIndex, isLast)));
+    }
+
+    private List<ExternalLink> getChunkLinks(long chunkIndex, boolean isLast) {
+        List<ExternalLink> chunkLinks = new ArrayList<>();
+        ExternalLink chunkLink = new ExternalLink()
+            .setChunkIndex(chunkIndex)
+            .setExternalLink(CHUNK_URL_PREFIX + chunkIndex)
+            .setExpiration(Instant.now().plusSeconds(3600L).toString());
+        if (!isLast) {
+            chunkLink.setNextChunkIndex(chunkIndex + 1);
+        }
+        chunkLinks.add(chunkLink);
+        return chunkLinks;
     }
 
     private void setupChunks() throws Exception {
@@ -153,13 +187,16 @@ public class ArrowStreamResultTest {
                     .setRowOffset((long) (i * 110L))
                     .setRowCount(this.rowsInChunk);
             this.chunkInfos.add(chunkInfo);
-            ArrowResultChunk arrowResultChunk = new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
-            Schema schema = createTestSchema();
-            Object[][] testData = createTestData(schema, (int) this.rowsInChunk);
-            File arrowFile = createTestArrowFile("TestFile", schema, testData, new RootAllocator(Integer.MAX_VALUE));
-            arrowResultChunk.getArrowDataFromInputStream(new FileInputStream(arrowFile));
-            this.resultChunks.add(arrowResultChunk);
         }
+    }
+
+    private void setupMockResponse() throws Exception {
+        Schema schema = createTestSchema();
+        Object[][] testData = createTestData(schema, (int) this.rowsInChunk);
+        File arrowFile = createTestArrowFile("TestFile", schema, testData, new RootAllocator(Integer.MAX_VALUE));
+
+        when(httpResponse.getEntity()).thenReturn(httpEntity);
+        when(httpEntity.getContent()).thenAnswer(invocation -> new FileInputStream(arrowFile));
     }
 
     private File createTestArrowFile(String fileName, Schema schema, Object[][] testData, RootAllocator allocator) throws IOException {
@@ -231,16 +268,6 @@ public class ArrowStreamResultTest {
                 .setChunkIndex(chunkIndex);
     }
 
-    private List<ExternalLink> getChunkLinks(long chunkIndex, boolean isLast) {
-        List<ExternalLink> chunkLinks = new ArrayList<>();
-        ExternalLink chunkLink = new ExternalLink()
-                .setChunkIndex(chunkIndex)
-                .setExternalLink(CHUNK_URL_PREFIX + chunkIndex)
-                .setExpiration(Instant.now().plusSeconds(3600L).toString());
-        if (!isLast) {
-            chunkLink.setNextChunkIndex(chunkIndex + 1);
-        }
-        chunkLinks.add(chunkLink);
-        return chunkLinks;
-    }
+
+
 }

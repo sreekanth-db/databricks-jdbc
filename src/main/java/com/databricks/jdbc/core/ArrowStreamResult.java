@@ -1,5 +1,7 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.IDatabricksHttpClient;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.types.Types;
 import com.databricks.sdk.service.sql.*;
@@ -25,9 +27,20 @@ class ArrowStreamResult implements IExecutionResult {
 
   ArrowStreamResult(ResultManifest resultManifest, ResultData resultData, String statementId,
                     IDatabricksSession session) {
+    this(resultManifest, new ChunkDownloader(statementId, resultManifest, resultData, session), session);
+  }
+
+  @VisibleForTesting
+  ArrowStreamResult(ResultManifest resultManifest, ResultData resultData, String statementId,
+                    IDatabricksSession session, IDatabricksHttpClient httpClient) {
+    this(resultManifest, new ChunkDownloader(statementId, resultManifest, resultData, session, httpClient), session);
+  }
+
+  private ArrowStreamResult(ResultManifest resultManifest, ChunkDownloader chunkDownloader,
+                            IDatabricksSession session) {
     this.rowOffsetToChunkMap = getRowOffsetMap(resultManifest);
     this.session = session;
-    this.chunkDownloader = new ChunkDownloader(statementId, resultManifest, resultData, session);
+    this.chunkDownloader = chunkDownloader;
     this.columnInfos = new ArrayList(resultManifest.getSchema().getColumns());
     this.currentRowIndex = -1;
     this.isClosed = false;
@@ -65,7 +78,6 @@ class ArrowStreamResult implements IExecutionResult {
     if (!hasNext()) {
       return false;
     }
-
     this.currentRowIndex++;
     // Either this is first chunk or we are crossing chunk boundary
     if (this.chunkIterator == null || !this.chunkIterator.hasNextRow()) {
@@ -73,7 +85,6 @@ class ArrowStreamResult implements IExecutionResult {
       this.chunkIterator = this.chunkDownloader.getChunk().getChunkIterator();
       return chunkIterator.nextRow();
     }
-
     // Traversing within a chunk
     return this.chunkIterator.nextRow();
   }

@@ -100,12 +100,16 @@ public class ArrowResultChunk {
   public static class ArrowResultChunkIterator {
     private final ArrowResultChunk resultChunk;
 
+    // total number of record batches in the chunk
     private int recordBatchesInChunk;
 
+    // index of record batch in chunk
     private int recordBatchCursorInChunk;
 
+    // total number of rows in record batch under consideration
     private int rowsInRecordBatch;
 
+    // current row index in current record batch
     private int rowCursorInRecordBatch;
 
     ArrowResultChunkIterator(ArrowResultChunk resultChunk) {
