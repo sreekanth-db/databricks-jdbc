@@ -86,6 +86,9 @@ public class IntConverter extends AbstractObjectConverter {
 
     @Override
     public Timestamp convertToTimestamp(int scale) throws DatabricksSQLException {
+        if(scale > 9) {
+            throw new DatabricksSQLException("Unsupported scale");
+        }
         long nanoseconds = (long) this.object * super.POWERS_OF_TEN[9 - scale];
         Time time = new Time(nanoseconds/super.POWERS_OF_TEN[6]);
         return new Timestamp(time.getTime());
