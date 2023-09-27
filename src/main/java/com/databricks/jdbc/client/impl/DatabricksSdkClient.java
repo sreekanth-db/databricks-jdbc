@@ -11,6 +11,7 @@ import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.core.IDatabricksSession;
 import com.databricks.jdbc.core.IDatabricksStatement;
+import com.databricks.jdbc.core.ImmutableSessionInfo;
 import com.databricks.jdbc.core.ImmutableSqlParameter;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
@@ -61,7 +62,7 @@ public class DatabricksSdkClient implements DatabricksClient {
   }
 
   @Override
-  public Session createSession(String warehouseId) {
+  public ImmutableSessionInfo createSession(String warehouseId) {
     LOGGER.debug("public Session createSession(String warehouseId = {})", warehouseId);
     CreateSessionRequest request = new CreateSessionRequest()
         .setWarehouseId(warehouseId);
@@ -69,7 +70,11 @@ public class DatabricksSdkClient implements DatabricksClient {
     Map<String, String> headers = new HashMap<>();
     headers.put("Accept", "application/json");
     headers.put("Content-Type", "application/json");
-    return (Session) workspaceClient.apiClient().POST(path, request, Session.class, headers);
+    Session session = (Session) workspaceClient.apiClient().POST(path, request, Session.class, headers);
+    return ImmutableSessionInfo.builder()
+        .warehouseId(session.getWarehouseId())
+        .sessionId(session.getSessionId())
+        .build();
   }
 
   @Override
