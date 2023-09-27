@@ -1,10 +1,11 @@
 package com.databricks.jdbc.core.converters;
 
 import com.databricks.jdbc.core.DatabricksSQLException;
-import org.apache.arrow.flatbuf.Int;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -14,6 +15,7 @@ public class IntConverterTest {
 
     private int NON_ZERO_OBJECT = 10;
     private int ZERO_OBJECT = 0;
+
     @Test
     public void testConvertToByte() throws DatabricksSQLException {
         assertEquals(new IntConverter(NON_ZERO_OBJECT).convertToByte(), (byte) 10);
@@ -95,15 +97,13 @@ public class IntConverterTest {
 
     @Test
     public void testConvertToTimestamp() throws DatabricksSQLException {
-        DatabricksSQLException exception =
-                assertThrows(DatabricksSQLException.class, () -> new IntConverter(NON_ZERO_OBJECT).convertToTimestamp());
-        assertTrue(exception.getMessage().contains("Unsupported conversion operation"));
+        assertEquals(new IntConverter(NON_ZERO_OBJECT).convertToTimestamp(), Timestamp.valueOf("1970-01-01 05:30:00.01"));
+        assertEquals(new IntConverter(ZERO_OBJECT).convertToTimestamp(), Timestamp.valueOf("1970-01-01 05:30:00"));
     }
 
     @Test
     public void testConvertToDate() throws DatabricksSQLException {
-        DatabricksSQLException exception =
-                assertThrows(DatabricksSQLException.class, () -> new IntConverter(NON_ZERO_OBJECT).convertToDate());
-        assertTrue(exception.getMessage().contains("Unsupported conversion operation"));
+        assertEquals(new IntConverter(NON_ZERO_OBJECT).convertToDate(), Date.valueOf("1970-01-11"));
+        assertEquals(new IntConverter(ZERO_OBJECT).convertToDate(), Date.valueOf("1970-01-01"));
     }
 }

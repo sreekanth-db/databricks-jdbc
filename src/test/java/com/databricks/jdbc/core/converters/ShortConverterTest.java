@@ -13,6 +13,7 @@ public class ShortConverterTest {
 
     private short NON_ZERO_OBJECT = 10;
     private short ZERO_OBJECT = 0;
+
     @Test
     public void testConvertToByte() throws DatabricksSQLException {
         assertEquals(new ShortConverter(NON_ZERO_OBJECT).convertToByte(), (byte) 10);

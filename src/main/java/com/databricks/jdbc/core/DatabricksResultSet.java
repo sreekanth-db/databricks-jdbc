@@ -90,7 +90,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     return this == null;
   }
 
-  // TODO (Madhav): Clean up code by removing code duplicity by having common functions that branch out.
+  // TODO (Madhav): Clean up code by removing code duplicity by having common functions that branch out and to reuse converter objects.
   @Override
   public String getString(int columnIndex) throws SQLException {
     Object obj = getObjectInternal(columnIndex);
@@ -160,27 +160,58 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public float getFloat(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return 0f;
+    }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToFloat();
   }
 
   @Override
   public double getDouble(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return 0;
+    }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToDouble();
   }
 
+  // TODO (Madhav): Handle case when scale is not provided when getScale is implemented.
   @Override
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return BigDecimal.ZERO;
+    }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToBigDecimal();
   }
 
   @Override
   public byte[] getBytes(int columnIndex) throws SQLException {
-    return new byte[0];
+    Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return null;
+    }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToByteArray();
   }
 
   @Override
   public Date getDate(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return null;
+    }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToDate();
   }
 
   @Override
@@ -188,9 +219,16 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     throw new UnsupportedOperationException("Not implemented");
   }
 
+  // TODO (Madhav): Handle case when scale is not provided when getScale is implemented.
   @Override
   public Timestamp getTimestamp(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return null;
+    }
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    AbstractObjectConverter converter = getObjectConverter(obj, columnType);
+    return converter.convertToTimestamp(resultSetMetaData.getScale(columnIndex));
   }
 
   @Override
@@ -1151,6 +1189,10 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
       case Types.VARCHAR:
       case Types.CHAR:
         return new StringConverter(object);
+      case Types.DATE:
+        return new DateConverter(object);
+      case Types.TIMESTAMP:
+        return new TimestampConverter(object);
       default:
         throw new DatabricksSQLException("Bad object type");
     }
