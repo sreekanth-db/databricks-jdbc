@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of DatabricksClient interface using Databricks Java SDK.
@@ -95,7 +96,13 @@ public class DatabricksSdkClient implements DatabricksClient {
         .setWarehouseId(warehouseId)
         .setDisposition(disposition)
         .setFormat(format)
-        .setWaitTimeout(ASYNC_TIMEOUT_VALUE);
+        .setWaitTimeout(ASYNC_TIMEOUT_VALUE)
+        .setParameters(parameters.values().stream().map(
+            param -> new PositionalStatementParameterListItem()
+                .setOrdinal(param.cardinal())
+                .setType(param.type())
+                .setValue(param.value().toString()))
+            .collect(Collectors.toList()));
 
 
     ExecuteStatementResponse response = workspaceClient.statementExecution().executeStatement(request);
