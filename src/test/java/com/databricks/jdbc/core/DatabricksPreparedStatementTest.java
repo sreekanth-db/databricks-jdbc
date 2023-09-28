@@ -82,6 +82,11 @@ public class DatabricksPreparedStatementTest {
     DatabricksConnection connection = new DatabricksConnection(connectionContext,
         new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient));
     DatabricksPreparedStatement statement = (DatabricksPreparedStatement) connection.prepareStatement(STATEMENT);
+    statement.setLong(1, 100);
+    statement.setShort(2, (short) 10);
+    statement.setByte(3, (byte) 15);
+    statement.setString(4, "value");
+
     DatabricksResultSet resultSet = (DatabricksResultSet) statement.executeQuery();
     assertFalse(resultSet.hasUpdateCount());
     assertFalse(statement.isClosed());
