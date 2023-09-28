@@ -4,6 +4,10 @@ import com.databricks.jdbc.core.DatabricksSQLException;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.nio.ByteBuffer;
 
 public class LongConverter extends AbstractObjectConverter {
@@ -50,11 +54,7 @@ public class LongConverter extends AbstractObjectConverter {
 
     @Override
     public float convertToFloat() throws DatabricksSQLException {
-        float floatObject = (float) this.object;
-        if(new BigDecimal(this.object).compareTo(new BigDecimal(floatObject, MathContext.DECIMAL32)) == 0) {
-            return floatObject;
-        }
-        throw new DatabricksSQLException("Invalid conversion");
+        return (float) this.object;
     }
 
     @Override
@@ -75,5 +75,26 @@ public class LongConverter extends AbstractObjectConverter {
     @Override
     public String convertToString() throws DatabricksSQLException {
         return String.valueOf(this.object);
+    }
+
+    @Override
+    public Date convertToDate() throws DatabricksSQLException {
+        LocalDate localDate = LocalDate.ofEpochDay(this.object);
+        return Date.valueOf(localDate);
+    }
+
+    @Override
+    public Timestamp convertToTimestamp() throws DatabricksSQLException {
+        return convertToTimestamp(super.DEFAULT_TIMESTAMP_SCALE);
+    }
+
+    @Override
+    public Timestamp convertToTimestamp(int scale) throws DatabricksSQLException {
+        if(scale > 9) {
+            throw new DatabricksSQLException("Unsupported scale");
+        }
+        long nanoseconds = this.object * super.POWERS_OF_TEN[9 - scale];
+        Time time = new Time(nanoseconds/super.POWERS_OF_TEN[6]);
+        return new Timestamp(time.getTime());
     }
 }

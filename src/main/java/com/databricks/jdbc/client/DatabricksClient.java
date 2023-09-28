@@ -1,9 +1,9 @@
 package com.databricks.jdbc.client;
 
-import com.databricks.jdbc.client.sqlexec.Session;
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.IDatabricksSession;
 import com.databricks.jdbc.core.IDatabricksStatement;
+import com.databricks.jdbc.core.ImmutableSessionInfo;
 import com.databricks.jdbc.core.ImmutableSqlParameter;
 import com.databricks.sdk.service.sql.ExternalLink;
 
@@ -21,7 +21,7 @@ public interface DatabricksClient {
    * @param warehouseId for which a session should be created
    * @return created session
    */
-  Session createSession(String warehouseId);
+  ImmutableSessionInfo createSession(String warehouseId);
 
   /**
    * Deletes a session for given session-Id

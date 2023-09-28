@@ -104,13 +104,11 @@ public class StringConverter extends AbstractObjectConverter {
 
     @Override
     public Date convertToDate() throws DatabricksSQLException {
-        // TODO: Implement convertToDate function
-        throw new DatabricksSQLException("Unimplemented");
+        return Date.valueOf(this.object);
     }
 
     @Override
     public Timestamp convertToTimestamp() throws DatabricksSQLException {
-        // TODO: Implement convertToTimestamp function
-        throw new DatabricksSQLException("Unimplemented");
+        return Timestamp.valueOf(this.object);
     }
 }

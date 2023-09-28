@@ -4,6 +4,8 @@ import com.databricks.jdbc.core.DatabricksSQLException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -14,6 +16,10 @@ public class StringConverterTest {
     private String NUMBERICAL_ZERO_STRING = "0";
 
     private String CHARACTER_STRING = "ABC";
+
+    private String TIME_STAMP_STRING = "2023-09-10 00:00:00";
+
+    private String DATE_STRING = "2023-09-10";
     @Test
     public void testConvertToByte() throws DatabricksSQLException {
         String singleCharacterString = "A";
@@ -133,15 +139,11 @@ public class StringConverterTest {
 
     @Test
     public void testConvertToTimestamp() throws DatabricksSQLException {
-        DatabricksSQLException exception =
-                assertThrows(DatabricksSQLException.class, () -> new StringConverter(NUMERICAL_STRING).convertToTimestamp());
-        assertTrue(exception.getMessage().contains("Unimplemented"));
+        assertEquals(new StringConverter(TIME_STAMP_STRING).convertToTimestamp(), Timestamp.valueOf(TIME_STAMP_STRING));
     }
 
     @Test
     public void testConvertToDate() throws DatabricksSQLException {
-        DatabricksSQLException exception =
-                assertThrows(DatabricksSQLException.class, () -> new StringConverter(NUMERICAL_STRING).convertToDate());
-        assertTrue(exception.getMessage().contains("Unimplemented"));
+        assertEquals(new StringConverter(DATE_STRING).convertToDate(), Date.valueOf(DATE_STRING));
     }
 }
