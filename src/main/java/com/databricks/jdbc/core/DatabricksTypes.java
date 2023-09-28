@@ -2,6 +2,9 @@ package com.databricks.jdbc.core;
 
 import java.sql.Types;
 
+/**
+ * Databricks types as supported in https://docs.databricks.com/en/sql/language-manual/sql-ref-datatypes.html
+ */
 public class DatabricksTypes {
 
   public static final String BIGINT = "BIGINT";
