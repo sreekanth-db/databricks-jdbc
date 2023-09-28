@@ -101,6 +101,9 @@ public class ChunkDownloader {
      * @return the chunk at given index
      */
   public ArrowResultChunk getChunk() {
+    if (currentChunkIndex < 0) {
+      return null;
+    }
     ArrowResultChunk chunk = chunkIndexToChunksMap.get(currentChunkIndex);
     synchronized (chunk) {
       try {
@@ -192,8 +195,10 @@ public class ChunkDownloader {
   void downloadNextChunks() {
     while (!this.isClosed && nextChunkToDownload < totalChunks && totalChunksInMemory < allowedChunksInMemory) {
       ArrowResultChunk chunk = chunkIndexToChunksMap.get(nextChunkToDownload);
-      this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, this));
-      totalChunksInMemory++;
+      if (chunk.getStatus() != ArrowResultChunk.DownloadStatus.DOWNLOAD_SUCCEEDED) {
+        this.chunkDownloaderExecutorService.submit(new SingleChunkDownloader(chunk, httpClient, this));
+        totalChunksInMemory++;
+      }
       nextChunkToDownload++;
     }
   }

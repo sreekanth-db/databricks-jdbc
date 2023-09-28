@@ -28,8 +28,7 @@ public class DateConverter extends AbstractObjectConverter {
 
     @Override
     public short convertToShort() throws DatabricksSQLException {
-        LocalDate localStartDate = LocalDate.ofEpochDay(0);
-        long epochDays = ChronoUnit.DAYS.between(localStartDate, this.object.toLocalDate());
+        long epochDays = convertToLong();
         if((short) epochDays == epochDays) {
             return (short) epochDays;
         }
@@ -38,8 +37,7 @@ public class DateConverter extends AbstractObjectConverter {
 
     @Override
     public int convertToInt() throws DatabricksSQLException {
-        LocalDate localStartDate = LocalDate.ofEpochDay(0);
-        long epochDays = ChronoUnit.DAYS.between(localStartDate, this.object.toLocalDate());
+        long epochDays = convertToLong();
         if((int) epochDays == epochDays) {
             return (int) epochDays;
         }
