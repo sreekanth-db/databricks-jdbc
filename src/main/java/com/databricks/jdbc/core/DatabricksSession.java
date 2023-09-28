@@ -2,7 +2,6 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.impl.DatabricksSdkClient;
-import com.databricks.jdbc.client.sqlexec.Session;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -20,7 +19,7 @@ public class DatabricksSession implements IDatabricksSession {
   private final String warehouseId;
 
   private boolean isSessionOpen;
-  private Session session;
+  private ImmutableSessionInfo session;
 
   // For context based commands
   private String catalog;
@@ -53,7 +52,7 @@ public class DatabricksSession implements IDatabricksSession {
   @Nullable
   public String getSessionId() {
     LOGGER.debug("public String getSessionId()");
-    return isSessionOpen ? session.getSessionId() : null;
+    return isSessionOpen ? session.sessionId() : null;
   }
 
   @Override
@@ -89,7 +88,7 @@ public class DatabricksSession implements IDatabricksSession {
     synchronized (this) {
       if (isSessionOpen) {
         // TODO: handle closed connections by server
-        databricksClient.deleteSession(this.session.getSessionId(), getWarehouseId());
+        databricksClient.deleteSession(this.session.sessionId(), getWarehouseId());
         this.session = null;
         this.isSessionOpen = false;
       }

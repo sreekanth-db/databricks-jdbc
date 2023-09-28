@@ -55,7 +55,8 @@ public class DatabricksPreparedStatementTest {
             .setStatement(STATEMENT)
             .setDisposition(Disposition.EXTERNAL_LINKS)
             .setFormat(Format.ARROW_STREAM)
-            .setWaitTimeout("0s");
+            .setWaitTimeout("10s")
+            .setOnWaitTimeout(TimeoutAction.CONTINUE);
     when(statementExecutionService.executeStatement(executeStatementRequest))
         .thenReturn(new ExecuteStatementResponse()
             .setStatementId(STATEMENT_ID)
@@ -114,7 +115,8 @@ public class DatabricksPreparedStatementTest {
             .setStatement(STATEMENT)
             .setDisposition(Disposition.INLINE)
             .setFormat(Format.JSON_ARRAY)
-            .setWaitTimeout("0s");
+            .setWaitTimeout("10s")
+            .setOnWaitTimeout(TimeoutAction.CONTINUE);
     when(statementExecutionService.executeStatement(executeStatementRequest))
         .thenReturn(new ExecuteStatementResponse()
             .setStatementId(STATEMENT_ID)
