@@ -19,4 +19,8 @@ public interface IDatabricksConnectionContext {
    * @return auth token
    */
   String getToken();
+
+  String getClientId();
+
+  String getClientSecret();
 }

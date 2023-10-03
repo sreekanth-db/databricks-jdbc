@@ -1,10 +1,7 @@
 package com.databricks.jdbc.client.impl;
 
 import com.databricks.jdbc.client.DatabricksClient;
-import com.databricks.jdbc.core.DatabricksResultSet;
-import com.databricks.jdbc.core.DatabricksSQLException;
-import com.databricks.jdbc.core.IDatabricksResultSet;
-import com.databricks.jdbc.core.IDatabricksSession;
+import com.databricks.jdbc.core.*;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
@@ -33,7 +30,9 @@ public class DatabricksSdkClient implements DatabricksClient {
         .setHost(connectionContext.getHostUrl())
         .setToken(connectionContext.getToken());
 
-    this.workspaceClient = new WorkspaceClient(databricksConfig);
+    OAuthAuthenticator oAuthAuthenticator = new OAuthAuthenticator();
+
+    this.workspaceClient = oAuthAuthenticator.authenticatePersonalAccessToken(connectionContext);
   }
 
   public DatabricksSdkClient(IDatabricksConnectionContext connectionContext, StatementExecutionService statementExecutionService) {

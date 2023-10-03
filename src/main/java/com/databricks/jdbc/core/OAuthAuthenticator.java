@@ -1,23 +1,24 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.jdbc.driver.DatabricksConnectionContext;
+import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
+import com.databricks.sdk.core.oauth.OAuthClient;
 
 public class OAuthAuthenticator {
     public OAuthAuthenticator() {
     }
 
-    public WorkspaceClient authenticateU2M(DatabricksConnectionContext connectionContext) {
+    public WorkspaceClient authenticateU2M(IDatabricksConnectionContext connectionContext) {
         DatabricksConfig config = new DatabricksConfig()
                 .setAuthType("databricks-cli")
                 .setHost(connectionContext.getHostUrl())
-                .setClientId("placeholder")
-                .setClientSecret("placeholder");
+                .setClientId(connectionContext.getClientId())
+                .setClientSecret(connectionContext.getClientSecret());
         return new WorkspaceClient(config);
     }
 
-    public WorkspaceClient authenticatePersonalAccessToken(DatabricksConnectionContext connectionContext) {
+    public WorkspaceClient authenticatePersonalAccessToken(IDatabricksConnectionContext connectionContext) {
         DatabricksConfig config = new DatabricksConfig()
                 .setAuthType("pat")
                 .setHost(connectionContext.getHostUrl())
@@ -25,13 +26,12 @@ public class OAuthAuthenticator {
         return new WorkspaceClient(config);
     }
 
-    public WorkspaceClient authenticateM2M(DatabricksConnectionContext connectionContext) {
+    public WorkspaceClient authenticateM2M(IDatabricksConnectionContext connectionContext) {
         DatabricksConfig config = new DatabricksConfig()
                 .setAuthType("oauth-m2m")
                 .setHost(connectionContext.getHostUrl())
-                .setClientId("placeholder")
-                .setClientSecret("placeholder");
+                .setClientId(connectionContext.getClientId())
+                .setClientSecret(connectionContext.getClientSecret());
         return new WorkspaceClient(config);
     }
-
 }

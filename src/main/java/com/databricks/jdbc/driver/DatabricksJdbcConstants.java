@@ -13,6 +13,15 @@ public final class DatabricksJdbcConstants {
   static final String PAIR_DELIMITER = "=";
   static final String TOKEN = "token";
   static final String PASSWORD = "password";
+
+  static final String CLIENT_ID = "DATABRICKS_CLIENT_ID";
+
+  static final String CLIENT_SECRET = "DATABRICKS_CLIENT_SECRET";
+
+  static final String AWS_CLIENT_ID = "databricks-sql-jdbc";
+
+  static final String AAD_CLIENT_ID = "96eecda7-19ea-49cc-abb5-240097d554f5";
+
   static final String HTTP_PATH = "httpPath";
   static final String HTTPS_SCHEMA = "https://";
 

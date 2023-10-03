@@ -109,6 +109,17 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     return getParameter(DatabricksJdbcConstants.PASSWORD);
   }
 
+  @Override
+  public String getClientId() {
+    // TODO(Madhav): Return default AWS or AAD Client ID if not provided.
+    return getParameter(DatabricksJdbcConstants.CLIENT_ID);
+  }
+
+  @Override
+  public String getClientSecret() {
+    return getParameter(DatabricksJdbcConstants.CLIENT_SECRET);
+  }
+
   private String getParameter(String key) {
     return this.parameters.getOrDefault(key, null);
   }
