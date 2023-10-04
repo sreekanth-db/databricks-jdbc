@@ -9,7 +9,12 @@ public class ByteConverter extends AbstractObjectConverter {
     private byte object;
     public ByteConverter(Object object) throws DatabricksSQLException {
         super(object);
-        this.object = (byte) object;
+        if (object instanceof String) {
+            this.object = Byte.parseByte((String) object);
+        }
+        else {
+            this.object = (byte) object;
+        }
     }
 
     @Override
