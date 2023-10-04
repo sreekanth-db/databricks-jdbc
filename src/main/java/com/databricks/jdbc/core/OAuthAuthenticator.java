@@ -3,7 +3,6 @@ package com.databricks.jdbc.core;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
-import com.databricks.sdk.core.oauth.OAuthClient;
 
 public class OAuthAuthenticator {
     public OAuthAuthenticator() {
