@@ -1,33 +1,53 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.sdk.service.sql.ChunkInfo;
-import com.databricks.sdk.service.sql.ExternalLink;
-import com.databricks.sdk.service.sql.ResultData;
-import com.databricks.sdk.service.sql.ResultManifest;
+import com.databricks.jdbc.client.IDatabricksHttpClient;
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.types.Types;
+import com.databricks.sdk.service.sql.*;
 import com.google.common.collect.ImmutableMap;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 class ArrowStreamResult implements IExecutionResult {
-
-  private final long totalRows;
-  private final long totalChunks;
 
   private final IDatabricksSession session;
   private final ImmutableMap<Long, ChunkInfo> rowOffsetToChunkMap;
   private final ChunkDownloader chunkDownloader;
 
-  private int currentRowIndex;
-  private int currentChunkIndex;
+  private long currentRowIndex;
+
+  private boolean isClosed;
+
+  private ArrowResultChunk.ArrowResultChunkIterator chunkIterator;
+
+  List<ColumnInfo> columnInfos;
 
   ArrowStreamResult(ResultManifest resultManifest, ResultData resultData, String statementId,
                     IDatabricksSession session) {
-    this.totalRows = resultManifest.getTotalRowCount();
-    this.totalChunks = resultManifest.getTotalChunkCount();
+    this(resultManifest, new ChunkDownloader(statementId, resultManifest, resultData, session), session);
+  }
+
+  @VisibleForTesting
+  ArrowStreamResult(ResultManifest resultManifest, ResultData resultData, String statementId,
+                    IDatabricksSession session, IDatabricksHttpClient httpClient) {
+    this(resultManifest, new ChunkDownloader(statementId, resultManifest, resultData, session, httpClient), session);
+  }
+
+  private ArrowStreamResult(ResultManifest resultManifest, ChunkDownloader chunkDownloader,
+                            IDatabricksSession session) {
     this.rowOffsetToChunkMap = getRowOffsetMap(resultManifest);
     this.session = session;
-    this.chunkDownloader = new ChunkDownloader(statementId, resultManifest, resultData, session);
+    this.chunkDownloader = chunkDownloader;
+    this.columnInfos = new ArrayList(resultManifest.getSchema().getColumns());
+    this.currentRowIndex = -1;
+    this.isClosed = false;
+    this.chunkIterator = null;
   }
+
+  public ChunkDownloader getChunkDownloader() {return this.chunkDownloader;}
 
   private static ImmutableMap<Long, ChunkInfo> getRowOffsetMap(ResultManifest resultManifest) {
     ImmutableMap.Builder<Long, ChunkInfo> rowOffsetMapBuilder = ImmutableMap.builder();
@@ -39,20 +59,49 @@ class ArrowStreamResult implements IExecutionResult {
   
   @Override
   public Object getObject(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    // we have two types:
+    // 1. Required type via the metadata
+    // 2. Interpreted type while reading from the arrow file into the record batches
+    // We need to convert the interpreted type into the required type before returning the object
+    ColumnInfoTypeName requiredType = columnInfos.get(columnIndex).getTypeName();
+    Object unconvertedObject = this.chunkIterator.getColumnObjectAtCurrentRow(columnIndex);
+    return ArrowToJavaObjectConverter.convert(unconvertedObject, requiredType);
   }
 
   @Override
-  public int getCurrentRow() {
-    throw new UnsupportedOperationException("Not implemented");
+  public long getCurrentRow() {
+    return this.currentRowIndex;
   }
 
   @Override
   public boolean next() {
-    throw new UnsupportedOperationException("Not implemented");
+    if (!hasNext()) {
+      return false;
+    }
+    this.currentRowIndex++;
+    // Either this is first chunk or we are crossing chunk boundary
+    if (this.chunkIterator == null || !this.chunkIterator.hasNextRow()) {
+      this.chunkDownloader.next();
+      this.chunkIterator = this.chunkDownloader.getChunk().getChunkIterator();
+      return chunkIterator.nextRow();
+    }
+    // Traversing within a chunk
+    return this.chunkIterator.nextRow();
   }
+
   @Override
   public boolean hasNext() {
-    throw new UnsupportedOperationException("Not implemented");
+    return !isClosed() && ((chunkIterator != null && chunkIterator.hasNextRow())
+        || chunkDownloader.hasNextChunk());
+  }
+
+  @Override
+  public void close() {
+    this.isClosed = true;
+    this.chunkDownloader.releaseAllChunks();
+  }
+
+  private boolean isClosed() {
+    return this.isClosed;
   }
 }

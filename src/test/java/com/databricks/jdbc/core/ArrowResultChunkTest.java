@@ -1,30 +1,34 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.client.jdbc42.internal.apache.arrow.memory.BufferAllocator;
-import com.databricks.client.jdbc42.internal.apache.arrow.memory.RootAllocator;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.*;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.dictionary.DictionaryProvider;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamReader;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowStreamWriter;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.ipc.ArrowWriter;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.Types;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.Field;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.FieldType;
-import com.databricks.client.jdbc42.internal.apache.arrow.vector.types.pojo.Schema;
 import com.databricks.sdk.service.sql.ChunkInfo;
-import org.checkerframework.checker.units.qual.A;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.Float8Vector;
+import org.apache.arrow.vector.IntVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.dictionary.DictionaryProvider;
+import org.apache.arrow.vector.ipc.ArrowStreamWriter;
+import org.apache.arrow.vector.ipc.ArrowWriter;
+import org.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static java.lang.Math.*;
+import static java.lang.Math.min;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ArrowResultChunkTest {
 
+    private static final String STATEMENT_ID = "statement_id";
     private Random random = new Random();
     private int rowsInRecordBatch = 20;
 
@@ -38,7 +42,8 @@ public class ArrowResultChunkTest {
                 .setByteCount(200L)
                 .setRowOffset(0L)
                 .setRowCount(totalRows);
-        ArrowResultChunk arrowResultChunk = new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE));
+        ArrowResultChunk arrowResultChunk = new ArrowResultChunk(
+            chunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
         Schema schema = createTestSchema();
         Object[][] testData = createTestData(schema, (int) totalRows);
         File arrowFile = createTestArrowFile("TestFile", schema, testData, new RootAllocator(Integer.MAX_VALUE));
@@ -67,14 +72,14 @@ public class ArrowResultChunkTest {
                 if(type.equals(Types.MinorType.INT)) {
                     IntVector intVector = (IntVector) fieldVector;
                     intVector.setInitialCapacity(rowsToAddToRecordBatch);
-                    for(int k = 1; k < rowsToAddToRecordBatch; k++) {
+                    for(int k = 0; k < rowsToAddToRecordBatch; k++) {
                         intVector.set(k, 1, (int) testData[i][j + k]);
                     }
                 }
                 else if(type.equals(Types.MinorType.FLOAT8)) {
                     Float8Vector float8Vector = (Float8Vector) fieldVector;
                     float8Vector.setInitialCapacity(rowsToAddToRecordBatch);
-                    for(int k = 1; k < rowsToAddToRecordBatch; k++) {
+                    for(int k = 0; k < rowsToAddToRecordBatch; k++) {
                         float8Vector.set(k, 1, (double) testData[i][j + k]);
                     }
                 }
