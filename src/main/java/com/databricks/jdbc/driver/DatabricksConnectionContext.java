@@ -49,7 +49,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
         parametersBuilder.put(pair[0], pair[1]);
       }
       for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-        parametersBuilder.put(entry.getKey().toString(), entry.getValue().toString());
+        parametersBuilder.put(entry.getKey().toString().toLowerCase(), entry.getValue().toString());
       }
       return new DatabricksConnectionContext(hostValue, portValue, parametersBuilder.build());
     } else {
@@ -115,10 +115,29 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     return getParameter(DatabricksJdbcConstants.PASSWORD);
   }
 
+  public String getCloud() {
+    String hostURL = getHostUrl();
+    if (hostURL.contains(".azuredatabricks.net")
+            || hostURL.contains(".databricks.azure.cn") || hostURL.contains(".databricks.azure.us")) {
+      return "AAD";
+    } else if (hostURL.contains(".cloud.databricks.com")) {
+      return "AWS";
+    }
+    return "OTHER";
+  }
+
   @Override
   public String getClientId() {
-    // TODO(Madhav): Return default AWS or AAD Client ID if not provided.
-    return getParameter(DatabricksJdbcConstants.CLIENT_ID);
+    String clientId = getParameter(DatabricksJdbcConstants.CLIENT_ID);
+    if(clientId == null) {
+      if(getCloud().equals("AWS")) {
+        return DatabricksJdbcConstants.AWS_CLIENT_ID;
+      }
+      else if(getCloud().equals("AAD")) {
+        return DatabricksJdbcConstants.AAD_CLIENT_ID;
+      }
+    }
+    return clientId;
   }
 
   @Override

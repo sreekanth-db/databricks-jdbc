@@ -12,11 +12,11 @@ public final class DatabricksJdbcConstants {
   static final String PORT_DELIMITER = ":";
   static final String PAIR_DELIMITER = "=";
   static final String TOKEN = "token";
-  static final String PASSWORD = "password";
+  static final String PASSWORD = "pwd";
 
-  static final String CLIENT_ID = "DATABRICKS_CLIENT_ID";
+  static final String CLIENT_ID = "databricks_client_id";
 
-  static final String CLIENT_SECRET = "DATABRICKS_CLIENT_SECRET";
+  static final String CLIENT_SECRET = "databricks_client_secret";
 
   static final String AWS_CLIENT_ID = "databricks-sql-jdbc";
 
