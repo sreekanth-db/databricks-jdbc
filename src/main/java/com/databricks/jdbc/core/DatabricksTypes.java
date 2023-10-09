@@ -1,5 +1,7 @@
 package com.databricks.jdbc.core;
 
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.sql.Types;
 
 /**
@@ -26,16 +28,22 @@ public class DatabricksTypes {
   public static final String ARRAY = "ARRAY";
   public static final String STRUCT = "STRUCT";
 
-  public static String getDatabricksType(int type) {
-    switch (type) {
+  /**
+   * Converts SQL type into Databricks type as defined in
+   * https://docs.databricks.com/en/sql/language-manual/sql-ref-datatypes.html
+   * @param sqlType SQL type input
+   * @return databricks type
+   */
+  public static String getDatabricksTypeFromSQLType(int sqlType) {
+    switch (sqlType) {
       case Types.ARRAY:
         return ARRAY;
-        case Types.BIGINT:
-          return BIGINT;
-          case Types.BINARY:
+      case Types.BIGINT:
+        return BIGINT;
+      case Types.BINARY:
       case Types.VARBINARY:
       case Types.LONGVARBINARY:
-            return BINARY;
+        return BINARY;
       case Types.DATE:
         return DATE;
       case Types.DECIMAL:
@@ -54,9 +62,9 @@ public class DatabricksTypes {
       case Types.LONGNVARCHAR:
         return STRING;
       case Types.TIMESTAMP:
-        return TIMESTAMP;
-      case Types.TIMESTAMP_WITH_TIMEZONE:
         return TIMESTAMP_NTZ;
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+        return TIMESTAMP;
       case Types.STRUCT:
         return STRUCT;
       case Types.TINYINT:
@@ -64,7 +72,41 @@ public class DatabricksTypes {
       case Types.SMALLINT:
         return SMALLINT;
       default:
+        // TODO: handle more types
         return null;
     }
+  }
+
+  /**
+   * Infers Databricks type from class of given object as defined in
+   * https://docs.databricks.com/en/sql/language-manual/sql-ref-datatypes.html
+   * @param obj input object
+   * @return inferred Databricks type
+   */
+  public static String inferDatabricksType(Object obj) {
+    String type = null;
+    if (obj == null) {
+      type = VOID;
+    } else if (obj instanceof Long) {
+      type = BIGINT;
+    } else if (obj instanceof Short) {
+      type = SMALLINT;
+    } else if (obj instanceof Byte) {
+      type = TINYINT;
+    } else if (obj instanceof Float) {
+      type = FLOAT;
+    } else if (obj instanceof String) {
+      type = STRING;
+    } else if (obj instanceof Integer) {
+      type = INT;
+    } else if (obj instanceof Timestamp) {
+      type = TIMESTAMP;
+    } else if (obj instanceof Date) {
+      type = DATE;
+    } else if (obj instanceof Double) {
+      type = DOUBLE;
+    }
+    // TODO: handle more types
+    return type;
   }
 }

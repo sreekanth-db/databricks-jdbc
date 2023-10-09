@@ -165,9 +165,10 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
     LOGGER.debug("public void setObject(int parameterIndex, Object x, int targetSqlType)");
     checkIfClosed();
-    String databricksType = getDatabricksType(targetSqlType);
+    String databricksType = getDatabricksTypeFromSQLType(targetSqlType);
     if (databricksType != null) {
       setObject(parameterIndex, x, databricksType);
+      return;
     }
     // TODO: handle other types
     throw new UnsupportedOperationException("Not implemented");
@@ -177,30 +178,10 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   public void setObject(int parameterIndex, Object x) throws SQLException {
     LOGGER.debug("public void setObject(int parameterIndex, Object x)");
     checkIfClosed();
-    String type = null;
-    if (x == null) {
-      type = VOID;
-    } else if (x instanceof Long) {
-       type = BIGINT;
-    } else if (x instanceof Short) {
-      type = SMALLINT;
-    } else if (x instanceof Byte) {
-      type = TINYINT;
-    } else if (x instanceof Float) {
-      type = FLOAT;
-    } else if (x instanceof String) {
-      type = STRING;
-    } else if (x instanceof Integer) {
-      type = INT;
-    } else if (x instanceof Timestamp) {
-      type = TIMESTAMP;
-    } else if (x instanceof Date) {
-      type = DATE;
-    } else if (x instanceof Double) {
-      type = DOUBLE;
-    }
+    String type = inferDatabricksType(x);
     if (type != null) {
       setObject(parameterIndex, x, type);
+      return;
     }
     // TODO: handle other types and generic objects
     throw new UnsupportedOperationException("Not implemented");

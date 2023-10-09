@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class DatabricksSdkClient implements DatabricksClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksSdkClient.class);
   private static final String ASYNC_TIMEOUT_VALUE = "0s";
-  private static final String SYNC_TIMEOUT_VALUE = "20s";
+  private static final String SYNC_TIMEOUT_VALUE = "10s";
   private static final int STATEMENT_RESULT_POLL_INTERVAL_MILLIS = 200;
 
   private final IDatabricksConnectionContext connectionContext;
