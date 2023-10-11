@@ -2,6 +2,18 @@ package com.databricks.jdbc.driver;
 
 public interface IDatabricksConnectionContext {
 
+  enum AuthFlow {
+    TOKEN_PASSTHROUGH,
+    CLIENT_CREDENTIALS,
+    BROWSER_BASED_AUTHENTICATION
+  }
+
+  enum AuthMech {
+    OTHER,
+    PAT,
+    OAUTH
+  }
+
   /**
    * Returns host-Url for Databricks server as parsed from JDBC connection in format https://server:port
    * @return Databricks host-Url
@@ -23,4 +35,8 @@ public interface IDatabricksConnectionContext {
   String getClientId();
 
   String getClientSecret();
+
+  AuthMech getAuthMech();
+
+  AuthFlow getAuthFlow();
 }

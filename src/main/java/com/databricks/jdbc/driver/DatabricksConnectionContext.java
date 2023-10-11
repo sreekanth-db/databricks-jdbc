@@ -148,4 +148,23 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   private String getParameter(String key) {
     return this.parameters.getOrDefault(key, null);
   }
+
+
+  @Override
+  public AuthFlow getAuthFlow() {
+    String authFlow = getParameter(DatabricksJdbcConstants.AUTH_FLOW);
+    return AuthFlow.values()[Integer.parseInt(authFlow)];
+  }
+
+  @Override
+  public AuthMech getAuthMech() {
+    String authMech = getParameter(DatabricksJdbcConstants.AUTH_MECH);
+    if(authMech.equals("3")) {
+      return AuthMech.PAT;
+    }
+    else if (authMech.equals("11")) {
+      return AuthMech.OAUTH;
+    }
+    return AuthMech.OTHER;
+  }
 }

@@ -18,6 +18,10 @@ public final class DatabricksJdbcConstants {
 
   static final String CLIENT_SECRET = "databricks_client_secret";
 
+  static final String AUTH_MECH = "authmech";
+
+  static final String AUTH_FLOW = "auth_flow";
+
   static final String AWS_CLIENT_ID = "databricks-sql-jdbc";
 
   static final String AAD_CLIENT_ID = "96eecda7-19ea-49cc-abb5-240097d554f5";
