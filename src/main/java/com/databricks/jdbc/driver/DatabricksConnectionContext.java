@@ -30,7 +30,6 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       throw new IllegalArgumentException("Invalid url " + url);
     }
     Matcher urlMatcher = DatabricksJdbcConstants.JDBC_URL_PATTERN.matcher(url);
-
     if (urlMatcher.find()) {
       String hostUrlVal = urlMatcher.group(1);
       String urlMinusHost = urlMatcher.group(2);
@@ -46,7 +45,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
         if (pair.length != 2) {
           handleInvalidUrl(url);
         }
-        parametersBuilder.put(pair[0], pair[1]);
+        parametersBuilder.put(pair[0].toLowerCase(), pair[1]);
       }
       for (Map.Entry<Object, Object> entry : properties.entrySet()) {
         parametersBuilder.put(entry.getKey().toString().toLowerCase(), entry.getValue().toString());

@@ -6,7 +6,7 @@ import com.databricks.sdk.core.DatabricksConfig;
 
 public class OAuthAuthenticator {
 
-    private IDatabricksConnectionContext connectionContext;
+    private final IDatabricksConnectionContext connectionContext;
 
     public OAuthAuthenticator(IDatabricksConnectionContext connectionContext) {
         this.connectionContext = connectionContext;
@@ -14,19 +14,20 @@ public class OAuthAuthenticator {
 
     public WorkspaceClient getWorkspaceClient() {
         if(this.connectionContext.getAuthMech().equals(IDatabricksConnectionContext.AuthMech.PAT)) {
-            return authenticatePersonalAccessToken();
+            return authenticateAccessToken();
         }
         // TODO(Madhav): Revisit these to set JDBC values
         else if(this.connectionContext.getAuthMech().equals(IDatabricksConnectionContext.AuthMech.OAUTH)) {
             switch(this.connectionContext.getAuthFlow()) {
                 case TOKEN_PASSTHROUGH:
-                    return authenticateU2M();
+                    return authenticateAccessToken();
                 case CLIENT_CREDENTIALS:
-                case BROWSER_BASED_AUTHENTICATION:
                     return authenticateM2M();
+                case BROWSER_BASED_AUTHENTICATION:
+                    return authenticateU2M();
             }
         }
-        return authenticatePersonalAccessToken();
+        return authenticateAccessToken();
     }
 
     public WorkspaceClient authenticateU2M() {
@@ -38,7 +39,7 @@ public class OAuthAuthenticator {
         return new WorkspaceClient(config);
     }
 
-    public WorkspaceClient authenticatePersonalAccessToken() {
+    public WorkspaceClient authenticateAccessToken() {
         DatabricksConfig config = new DatabricksConfig()
                 .setAuthType("pat")
                 .setHost(this.connectionContext.getHostUrl())
