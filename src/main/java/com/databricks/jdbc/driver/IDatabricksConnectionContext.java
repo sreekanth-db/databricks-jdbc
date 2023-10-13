@@ -32,6 +32,8 @@ public interface IDatabricksConnectionContext {
    */
   String getToken();
 
+  String getHostForOAuth();
+
   String getClientId();
 
   String getClientSecret();

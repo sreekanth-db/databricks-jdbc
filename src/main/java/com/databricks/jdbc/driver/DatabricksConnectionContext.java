@@ -89,6 +89,11 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
+  public String getHostForOAuth() {
+    return getParameter(DatabricksJdbcConstants.DATABRICKS_HOST);
+  }
+
+  @Override
   public String getWarehouse() {
     LOGGER.debug("public String getWarehouse()");
     String httpPath = getHttpPath();

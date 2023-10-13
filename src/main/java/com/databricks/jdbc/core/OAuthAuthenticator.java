@@ -1,5 +1,6 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.driver.DatabricksJdbcConstants;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
@@ -32,8 +33,8 @@ public class OAuthAuthenticator {
 
     public WorkspaceClient authenticateU2M() {
         DatabricksConfig config = new DatabricksConfig()
-                .setAuthType("databricks-cli")
-                .setHost(this.connectionContext.getHostUrl())
+                .setAuthType(DatabricksJdbcConstants.U2M_AUTH_TYPE)
+                .setHost(this.connectionContext.getHostForOAuth())
                 .setClientId(this.connectionContext.getClientId())
                 .setClientSecret(this.connectionContext.getClientSecret());
         return new WorkspaceClient(config);
@@ -41,7 +42,7 @@ public class OAuthAuthenticator {
 
     public WorkspaceClient authenticateAccessToken() {
         DatabricksConfig config = new DatabricksConfig()
-                .setAuthType("pat")
+                .setAuthType(DatabricksJdbcConstants.ACCESS_TOKEN_AUTH_TYPE)
                 .setHost(this.connectionContext.getHostUrl())
                 .setToken(this.connectionContext.getToken());
         return new WorkspaceClient(config);
@@ -49,8 +50,8 @@ public class OAuthAuthenticator {
 
     public WorkspaceClient authenticateM2M() {
         DatabricksConfig config = new DatabricksConfig()
-                .setAuthType("oauth-m2m")
-                .setHost(this.connectionContext.getHostUrl())
+                .setAuthType(DatabricksJdbcConstants.M2M_AUTH_TYPE)
+                .setHost(this.connectionContext.getHostForOAuth())
                 .setClientId(this.connectionContext.getClientId())
                 .setClientSecret(this.connectionContext.getClientSecret());
         return new WorkspaceClient(config);

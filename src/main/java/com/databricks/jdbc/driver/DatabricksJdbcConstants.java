@@ -18,6 +18,8 @@ public final class DatabricksJdbcConstants {
 
   static final String CLIENT_SECRET = "databricks_client_secret";
 
+  static final String DATABRICKS_HOST = "databricks_host";
+
   static final String AUTH_MECH = "authmech";
 
   static final String AUTH_FLOW = "auth_flow";
@@ -28,6 +30,13 @@ public final class DatabricksJdbcConstants {
 
   static final String HTTP_PATH = "httppath";
   static final String HTTPS_SCHEMA = "https://";
+
+  public static final String U2M_AUTH_TYPE = "databricks-cli";
+
+  public static final String M2M_AUTH_TYPE = "oauth-m2m";
+
+  public static final String ACCESS_TOKEN_AUTH_TYPE = "pat";
+
 
   public static final String FULL_STOP = ".";
   public static final String EMPTY_STRING = "";
