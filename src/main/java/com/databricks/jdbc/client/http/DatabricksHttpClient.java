@@ -17,7 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Http client implementation to be used for executing http requests.
@@ -35,6 +37,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   private static final int MAX_RETRY_INTERVAL = 10 * 1000; // 10s
   private static final int DEFAULT_RETRY_COUNT = 5;
   private static final String HTTP_GET = "GET";
+  private static final Set<Integer> RETRYABLE_HTTP_CODES = getRetryableHttpCodes();
 
   private static DatabricksHttpClient instance = new DatabricksHttpClient();
 
@@ -55,6 +58,17 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
         .setConnectTimeout(DEFAULT_HTTP_CONNECTION_TIMEOUT)
         .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT)
         .build();
+  }
+
+  private static Set<Integer> getRetryableHttpCodes() {
+    Set<Integer> retryableCodes = new HashSet<>();
+    retryableCodes.add(408); // request timeout
+    retryableCodes.add(425); // too early response
+    retryableCodes.add(429); // too many requests
+    retryableCodes.add(500); // internal server error
+    retryableCodes.add(502); // bad gateway (should this be retried?)
+    retryableCodes.add(503); // service unavailable
+    retryableCodes.add(504); // gateway timeout
   }
 
   private CloseableHttpClient makeClosableHttpClient() {
@@ -95,7 +109,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   }
 
   private static boolean isErrorCodeRetryable(int errCode) {
-    return errCode == 500 || errCode == 503;
+    return RETRYABLE_HTTP_CODES.contains(errCode);
   }
 
   public static synchronized DatabricksHttpClient getInstance() {
