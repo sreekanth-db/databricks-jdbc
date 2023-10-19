@@ -18,8 +18,6 @@ public final class DatabricksJdbcConstants {
 
   static final String CLIENT_SECRET = "databricks_client_secret";
 
-  static final String DATABRICKS_HOST = "databricks_host";
-
   static final String AUTH_MECH = "authmech";
 
   static final String AUTH_FLOW = "auth_flow";

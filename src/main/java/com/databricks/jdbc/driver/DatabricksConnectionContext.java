@@ -90,7 +90,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public String getHostForOAuth() {
-    return getParameter(DatabricksJdbcConstants.DATABRICKS_HOST);
+    return this.host;
   }
 
   @Override
@@ -163,12 +163,6 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public AuthMech getAuthMech() {
     String authMech = getParameter(DatabricksJdbcConstants.AUTH_MECH);
-    if(authMech.equals("3")) {
-      return AuthMech.PAT;
-    }
-    else if (authMech.equals("11")) {
-      return AuthMech.OAUTH;
-    }
-    return AuthMech.OTHER;
+    return AuthMech.parseAuthMech(authMech);
   }
 }
