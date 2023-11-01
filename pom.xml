@@ -33,7 +33,7 @@
     <immutables.value.version>2.9.2</immutables.value.version>
     <httpclient.version>4.5.14</httpclient.version>
     <commons-io.version>2.13.0</commons-io.version>
-    <databricks-sdk.version>0.7.0</databricks-sdk.version>
+    <databricks-sdk.version>0.8.0</databricks-sdk.version>
     <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
   </properties>
   <dependencies>
@@ -51,6 +51,11 @@
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-vector</artifactId>
       <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.diffplug.spotless</groupId>
+      <artifactId>spotless-maven-plugin</artifactId>
+      <version>2.39.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
@@ -132,7 +137,10 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin.version}</version>
           <configuration>
-            <argLine>--add-opens=java.base/java.nio=ALL-UNNAMED</argLine>
+            <argLine>
+              --add-opens=java.base/java.nio=ALL-UNNAMED
+              -Dnet.bytebuddy.experimental=true
+            </argLine>
           </configuration>
         </plugin>
         <plugin>
@@ -159,6 +167,29 @@
               </configuration>
             </execution>
           </executions>
+        </plugin>
+        <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>2.39.0</version>
+          <executions>
+            <execution>
+              <id>format</id>
+              <goals>
+                <goal>apply</goal>
+              </goals>
+              <phase>compile</phase>
+            </execution>
+          </executions>
+          <configuration>
+            <sourceDirectory>src/</sourceDirectory>
+            <targetDirectory>src/</targetDirectory>
+            <java>
+              <googleJavaFormat>
+                <version>1.18.1</version>
+              </googleJavaFormat>
+            </java>
+          </configuration>
         </plugin>
       </plugins>
     </build>
