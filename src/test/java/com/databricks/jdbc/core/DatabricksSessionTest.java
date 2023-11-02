@@ -3,7 +3,7 @@ package com.databricks.jdbc.core;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
-import com.databricks.jdbc.client.impl.DatabricksSdkClient;
+import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
 import com.databricks.jdbc.client.sqlexec.CreateSessionRequest;
 import com.databricks.jdbc.client.sqlexec.Session;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;

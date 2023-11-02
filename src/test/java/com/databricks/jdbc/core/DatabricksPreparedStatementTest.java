@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.databricks.jdbc.client.impl.DatabricksSdkClient;
+import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
 import com.databricks.jdbc.client.sqlexec.CreateSessionRequest;
 import com.databricks.jdbc.client.sqlexec.ExecuteStatementRequestWithSession;
 import com.databricks.jdbc.client.sqlexec.PositionalStatementParameterListItem;

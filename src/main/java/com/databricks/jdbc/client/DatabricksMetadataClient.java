@@ -1,34 +1,87 @@
 package com.databricks.jdbc.client;
 
 import com.databricks.jdbc.core.DatabricksResultSet;
+import com.databricks.jdbc.core.IDatabricksSession;
+import java.sql.SQLException;
 
 public interface DatabricksMetadataClient {
 
-  /**
-   * Returns information about types supported by Databricks server
-   */
-  DatabricksResultSet listTypeInfo();
+  /** Returns information about types supported by Databricks server */
+  DatabricksResultSet listTypeInfo(IDatabricksSession session);
 
-  /**
-   * Returns the list of catalogs
-   */
-  DatabricksResultSet listCatalogs();
+  /** Returns the list of catalogs */
+  DatabricksResultSet listCatalogs(IDatabricksSession session) throws SQLException;
 
   /**
    * Returns the list of schemas
-   * @param catalog
-   * @param schemaNamePattern
-   * @return
+   *
+   * @param session underlying session
+   * @param catalog catalogName which must match to catalog in database
+   * @param schemaNamePattern must match to schema name in database
+   * @return a DatabricksResultSet representing list of schemas
    */
-  DatabricksResultSet listSchemas(String catalog, String schemaNamePattern);
+  DatabricksResultSet listSchemas(
+      IDatabricksSession session, String catalog, String schemaNamePattern) throws SQLException;
 
-  DatabricksResultSet listTables(String catalog, String schemaNamePattern, String tableNamePattern);
+  /**
+   * Returns the list of tables
+   *
+   * @param session underlying session
+   * @param catalog catalogName which must match to catalog in database
+   * @param schemaNamePattern must match to schema name in database
+   * @param tableNamePattern must match to table name in database
+   * @return a DatabricksResultSet representing list of tables
+   */
+  DatabricksResultSet listTables(
+      IDatabricksSession session, String catalog, String schemaNamePattern, String tableNamePattern)
+      throws SQLException;
 
-  DatabricksResultSet listTableTypes();
+  /** Returns list of table types */
+  DatabricksResultSet listTableTypes(IDatabricksSession session);
 
-  DatabricksResultSet listColumns(String catalog, String schemaNamePattern, String tableNamePattern, String columnNamePattern);
+  /**
+   * Returns the list of columns
+   *
+   * @param session underlying session
+   * @param catalog catalogName which must match to catalog in database
+   * @param schemaNamePattern must match to schema name in database
+   * @param tableNamePattern must match to table name in database
+   * @param columnNamePattern must match to column name in database
+   * @return a DatabricksResultSet representing list of columns
+   */
+  DatabricksResultSet listColumns(
+      IDatabricksSession session,
+      String catalog,
+      String schemaNamePattern,
+      String tableNamePattern,
+      String columnNamePattern)
+      throws SQLException;
 
-  DatabricksResultSet listFunctions(String catalog, String schemaNamePattern, String functionNamePattern);
+  /**
+   * Returns the list of functions
+   *
+   * @param session underlying session
+   * @param catalog catalogName which must match to catalog in database
+   * @param schemaNamePattern must match to schema name in database
+   * @param functionNamePattern must match to function name in database
+   * @return a DatabricksResultSet representing list of functions
+   */
+  DatabricksResultSet listFunctions(
+      IDatabricksSession session,
+      String catalog,
+      String schemaNamePattern,
+      String functionNamePattern)
+      throws SQLException;
 
-  DatabricksResultSet listPrimaryKeys(String catalog, String schema, String table);
+  /**
+   * Returns the list of primary keys
+   *
+   * @param session underlying session
+   * @param catalog catalogName which must match to catalog in database
+   * @param schema must match to a schema in database
+   * @param table must match to a table in database
+   * @return a DatabricksResultSet representing list of functions
+   */
+  DatabricksResultSet listPrimaryKeys(
+      IDatabricksSession session, String catalog, String schema, String table) throws SQLException;
 }
