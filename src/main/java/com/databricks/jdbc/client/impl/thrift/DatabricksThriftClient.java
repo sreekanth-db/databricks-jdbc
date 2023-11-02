@@ -12,11 +12,13 @@ import java.util.Map;
 public class DatabricksThriftClient implements DatabricksClient, DatabricksMetadataClient {
   @Override
   public ImmutableSessionInfo createSession(String warehouseId) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
-  public void deleteSession(String sessionId, String warehouseId) {}
+  public void deleteSession(String sessionId, String warehouseId) {
+    throw new UnsupportedOperationException();
+  }
 
   @Override
   public DatabricksResultSet executeStatement(
@@ -27,31 +29,33 @@ public class DatabricksThriftClient implements DatabricksClient, DatabricksMetad
       IDatabricksSession session,
       IDatabricksStatement parentStatement)
       throws SQLException {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
-  public void closeStatement(String statementId) {}
+  public void closeStatement(String statementId) {
+    throw new UnsupportedOperationException();
+  }
 
   @Override
   public Collection<ExternalLink> getResultChunks(String statementId, long chunkIndex) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public DatabricksResultSet listTypeInfo(IDatabricksSession session) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public DatabricksResultSet listCatalogs(IDatabricksSession session) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public DatabricksResultSet listSchemas(
       IDatabricksSession session, String catalog, String schemaNamePattern) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -60,12 +64,12 @@ public class DatabricksThriftClient implements DatabricksClient, DatabricksMetad
       String catalog,
       String schemaNamePattern,
       String tableNamePattern) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public DatabricksResultSet listTableTypes(IDatabricksSession session) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -75,7 +79,7 @@ public class DatabricksThriftClient implements DatabricksClient, DatabricksMetad
       String schemaNamePattern,
       String tableNamePattern,
       String columnNamePattern) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -84,12 +88,12 @@ public class DatabricksThriftClient implements DatabricksClient, DatabricksMetad
       String catalog,
       String schemaNamePattern,
       String functionNamePattern) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public DatabricksResultSet listPrimaryKeys(
       IDatabricksSession session, String catalog, String schema, String table) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 }
