@@ -50,6 +50,6 @@ class DatabricksConnectionContestTest {
     assertEquals("/sql/1.0/warehouses/fgff575757", connectionContext.getHttpPath());
     assertEquals("passwd", connectionContext.getToken());
     assertEquals(5, connectionContext.parameters.size());
-    assertEquals("3", connectionContext.parameters.get("AuthMech"));
+    assertEquals("3", connectionContext.parameters.get("authmech"));
   }
 }
