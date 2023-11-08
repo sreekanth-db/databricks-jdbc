@@ -2,10 +2,10 @@ package com.databricks.jdbc.client.impl.sdk;
 
 import com.databricks.jdbc.client.DatabricksMetadataClient;
 import com.databricks.jdbc.client.StatementType;
+import com.databricks.jdbc.commons.util.WildcardUtil;
 import com.databricks.jdbc.core.DatabricksResultSet;
 import com.databricks.jdbc.core.IDatabricksSession;
 import com.databricks.jdbc.core.ImmutableSqlParameter;
-import com.databricks.jdbc.util.WildcardUtil;
 import com.databricks.sdk.service.sql.StatementState;
 import com.databricks.sdk.service.sql.StatementStatus;
 import java.sql.ResultSet;

@@ -113,8 +113,7 @@ public class DatabricksSdkClient implements DatabricksClient {
         try {
           Thread.sleep(STATEMENT_RESULT_POLL_INTERVAL_MILLIS); // TODO: make this configurable
         } catch (InterruptedException e) {
-          throw new DatabricksTimeoutException(
-              "Thread interrupted due to statement timeout");
+          throw new DatabricksTimeoutException("Thread interrupted due to statement timeout");
         }
       }
       response =
