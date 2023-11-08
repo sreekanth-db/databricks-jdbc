@@ -2,9 +2,7 @@ package com.databricks.jdbc.core;
 
 import java.sql.SQLException;
 
-/**
- * Top level exception for Databricks driver
- */
+/** Top level exception for Databricks driver */
 public class DatabricksSQLException extends SQLException {
 
   public DatabricksSQLException(String reason, String sqlState, int vendorCode) {
@@ -14,5 +12,9 @@ public class DatabricksSQLException extends SQLException {
   public DatabricksSQLException(String reason) {
     // TODO: Add proper error code
     super(reason, null, 0);
+  }
+
+  public DatabricksSQLException(String reason, Throwable cause) {
+    super(reason, cause);
   }
 }

@@ -1,21 +1,21 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksClient;
-import com.databricks.jdbc.client.impl.DatabricksSdkClient;
+import com.databricks.jdbc.client.DatabricksMetadataClient;
+import com.databricks.jdbc.client.impl.sdk.DatabricksMetadataSdkClient;
+import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.google.common.annotations.VisibleForTesting;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-
-/**
- * Implementation for Session interface, which maintains an underlying session in SQL Gateway.
- */
+/** Implementation for Session interface, which maintains an underlying session in SQL Gateway. */
 public class DatabricksSession implements IDatabricksSession {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksSession.class);
   private final DatabricksClient databricksClient;
+  private final DatabricksMetadataClient databricksMetadataClient;
   private final String warehouseId;
 
   private boolean isSessionOpen;
@@ -28,21 +28,25 @@ public class DatabricksSession implements IDatabricksSession {
 
   /**
    * Creates an instance of Databricks session for given connection context
+   *
    * @param connectionContext underlying connection context
    */
   public DatabricksSession(IDatabricksConnectionContext connectionContext) {
     this.databricksClient = new DatabricksSdkClient(connectionContext);
+    this.databricksMetadataClient =
+        new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
     this.isSessionOpen = false;
     this.session = null;
     this.warehouseId = connectionContext.getWarehouse();
   }
 
-  /**
-   * Construct method to be used for mocking in a test case.
-   */
+  /** Construct method to be used for mocking in a test case. */
   @VisibleForTesting
-  DatabricksSession(IDatabricksConnectionContext connectionContext, DatabricksClient databricksClient) {
+  DatabricksSession(
+      IDatabricksConnectionContext connectionContext, DatabricksClient databricksClient) {
     this.databricksClient = databricksClient;
+    this.databricksMetadataClient =
+        new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
     this.isSessionOpen = false;
     this.session = null;
     this.warehouseId = connectionContext.getWarehouse();
@@ -99,6 +103,12 @@ public class DatabricksSession implements IDatabricksSession {
   public DatabricksClient getDatabricksClient() {
     LOGGER.debug("public DatabricksClient getDatabricksClient()");
     return databricksClient;
+  }
+
+  @Override
+  public DatabricksMetadataClient getDatabricksMetadataClient() {
+    LOGGER.debug("public DatabricksClient getDatabricksMetadataClient()");
+    return databricksMetadataClient;
   }
 
   @Override
