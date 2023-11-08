@@ -124,7 +124,8 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   public String getCloud() {
     String hostURL = getHostUrl();
     if (hostURL.contains(".azuredatabricks.net")
-            || hostURL.contains(".databricks.azure.cn") || hostURL.contains(".databricks.azure.us")) {
+        || hostURL.contains(".databricks.azure.cn")
+        || hostURL.contains(".databricks.azure.us")) {
       return "AAD";
     } else if (hostURL.contains(".cloud.databricks.com")) {
       return "AWS";
@@ -135,11 +136,10 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public String getClientId() {
     String clientId = getParameter(DatabricksJdbcConstants.CLIENT_ID);
-    if(clientId == null) {
-      if(getCloud().equals("AWS")) {
+    if (clientId == null) {
+      if (getCloud().equals("AWS")) {
         return DatabricksJdbcConstants.AWS_CLIENT_ID;
-      }
-      else if(getCloud().equals("AAD")) {
+      } else if (getCloud().equals("AAD")) {
         return DatabricksJdbcConstants.AAD_CLIENT_ID;
       }
     }
@@ -154,7 +154,6 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   private String getParameter(String key) {
     return this.parameters.getOrDefault(key, null);
   }
-
 
   @Override
   public AuthFlow getAuthFlow() {

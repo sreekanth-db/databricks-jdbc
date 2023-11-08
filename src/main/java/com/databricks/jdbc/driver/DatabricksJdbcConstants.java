@@ -36,7 +36,6 @@ public final class DatabricksJdbcConstants {
 
   public static final String ACCESS_TOKEN_AUTH_TYPE = "pat";
 
-
   public static final String FULL_STOP = ".";
   public static final String EMPTY_STRING = "";
   public static final String IDENTIFIER_QUOTE_STRING = "`";

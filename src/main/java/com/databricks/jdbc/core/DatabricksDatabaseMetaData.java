@@ -1,7 +1,6 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.StatementType;
-import com.databricks.jdbc.commons.util.WildcardUtil;
 import com.databricks.jdbc.driver.DatabricksJdbcConstants;
 import com.databricks.sdk.service.sql.StatementState;
 import com.databricks.sdk.service.sql.StatementStatus;
