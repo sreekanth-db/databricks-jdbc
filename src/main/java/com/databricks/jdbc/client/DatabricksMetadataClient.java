@@ -17,7 +17,7 @@ public interface DatabricksMetadataClient {
    *
    * @param session underlying session
    * @param catalog catalogName which must match to catalog in database
-   * @param schemaNamePattern must match to schema name in database
+   * @param schemaNamePattern must match to schema name in database (can be a regex pattern or absolute name)
    * @return a DatabricksResultSet representing list of schemas
    */
   DatabricksResultSet listSchemas(
@@ -28,8 +28,8 @@ public interface DatabricksMetadataClient {
    *
    * @param session underlying session
    * @param catalog catalogName which must match to catalog in database
-   * @param schemaNamePattern must match to schema name in database
-   * @param tableNamePattern must match to table name in database
+   * @param schemaNamePattern must match to schema name in database (can be a regex pattern or absolute name)
+   * @param tableNamePattern must match to table name in database (can be a regex pattern or absolute name)
    * @return a DatabricksResultSet representing list of tables
    */
   DatabricksResultSet listTables(
@@ -44,9 +44,9 @@ public interface DatabricksMetadataClient {
    *
    * @param session underlying session
    * @param catalog catalogName which must match to catalog in database
-   * @param schemaNamePattern must match to schema name in database
-   * @param tableNamePattern must match to table name in database
-   * @param columnNamePattern must match to column name in database
+   * @param schemaNamePattern must match to schema name in database (can be a regex pattern or absolute name)
+   * @param tableNamePattern must match to table name in database (can be a regex pattern or absolute name)
+   * @param columnNamePattern must match to column name in database (can be a regex pattern or absolute name)
    * @return a DatabricksResultSet representing list of columns
    */
   DatabricksResultSet listColumns(
@@ -62,8 +62,8 @@ public interface DatabricksMetadataClient {
    *
    * @param session underlying session
    * @param catalog catalogName which must match to catalog in database
-   * @param schemaNamePattern must match to schema name in database
-   * @param functionNamePattern must match to function name in database
+   * @param schemaNamePattern must match to schema name in database (can be a regex pattern or absolute name)
+   * @param functionNamePattern must match to function name in database (can be a regex pattern or absolute name)
    * @return a DatabricksResultSet representing list of functions
    */
   DatabricksResultSet listFunctions(
