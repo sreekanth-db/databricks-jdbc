@@ -29,7 +29,6 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       throw new IllegalArgumentException("Invalid url " + url);
     }
     Matcher urlMatcher = DatabricksJdbcConstants.JDBC_URL_PATTERN.matcher(url);
-
     if (urlMatcher.find()) {
       String hostUrlVal = urlMatcher.group(1);
       String urlMinusHost = urlMatcher.group(2);
@@ -48,10 +47,10 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
         if (pair.length != 2) {
           handleInvalidUrl(url);
         }
-        parametersBuilder.put(pair[0], pair[1]);
+        parametersBuilder.put(pair[0].toLowerCase(), pair[1]);
       }
       for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-        parametersBuilder.put(entry.getKey().toString(), entry.getValue().toString());
+        parametersBuilder.put(entry.getKey().toString().toLowerCase(), entry.getValue().toString());
       }
       return new DatabricksConnectionContext(hostValue, portValue, parametersBuilder.build());
     } else {
@@ -92,6 +91,11 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
+  public String getHostForOAuth() {
+    return this.host;
+  }
+
+  @Override
   public String getWarehouse() {
     LOGGER.debug("public String getWarehouse()");
     String httpPath = getHttpPath();
@@ -117,7 +121,50 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     return getParameter(DatabricksJdbcConstants.PASSWORD);
   }
 
+  public String getCloud() {
+    String hostURL = getHostUrl();
+    if (hostURL.contains(".azuredatabricks.net")
+            || hostURL.contains(".databricks.azure.cn") || hostURL.contains(".databricks.azure.us")) {
+      return "AAD";
+    } else if (hostURL.contains(".cloud.databricks.com")) {
+      return "AWS";
+    }
+    return "OTHER";
+  }
+
+  @Override
+  public String getClientId() {
+    String clientId = getParameter(DatabricksJdbcConstants.CLIENT_ID);
+    if(clientId == null) {
+      if(getCloud().equals("AWS")) {
+        return DatabricksJdbcConstants.AWS_CLIENT_ID;
+      }
+      else if(getCloud().equals("AAD")) {
+        return DatabricksJdbcConstants.AAD_CLIENT_ID;
+      }
+    }
+    return clientId;
+  }
+
+  @Override
+  public String getClientSecret() {
+    return getParameter(DatabricksJdbcConstants.CLIENT_SECRET);
+  }
+
   private String getParameter(String key) {
     return this.parameters.getOrDefault(key, null);
+  }
+
+
+  @Override
+  public AuthFlow getAuthFlow() {
+    String authFlow = getParameter(DatabricksJdbcConstants.AUTH_FLOW);
+    return AuthFlow.values()[Integer.parseInt(authFlow)];
+  }
+
+  @Override
+  public AuthMech getAuthMech() {
+    String authMech = getParameter(DatabricksJdbcConstants.AUTH_MECH);
+    return AuthMech.parseAuthMech(authMech);
   }
 }

@@ -1,5 +1,9 @@
 .idea/
 target/
 *.iml
+<<<<<<< HEAD
+/TestFile
+=======
 *DS_Store
 TestFile
+>>>>>>> origin/development

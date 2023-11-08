@@ -2,6 +2,30 @@ package com.databricks.jdbc.driver;
 
 public interface IDatabricksConnectionContext {
 
+  enum AuthFlow {
+    TOKEN_PASSTHROUGH,
+    CLIENT_CREDENTIALS,
+    BROWSER_BASED_AUTHENTICATION
+  }
+
+  enum AuthMech {
+    OTHER,
+    PAT,
+    OAUTH;
+
+    public static AuthMech parseAuthMech(String authMech) {
+      int authMechValue = Integer.parseInt(authMech);
+      switch (authMechValue) {
+        case 3:
+          return AuthMech.PAT;
+        case 11:
+          return AuthMech.OAUTH;
+        default:
+          throw new UnsupportedOperationException();
+      }
+    }
+  }
+
   /**
    * Returns host-Url for Databricks server as parsed from JDBC connection in format
    * https://server:port
@@ -23,4 +47,14 @@ public interface IDatabricksConnectionContext {
    * @return auth token
    */
   String getToken();
+
+  String getHostForOAuth();
+
+  String getClientId();
+
+  String getClientSecret();
+
+  AuthMech getAuthMech();
+
+  AuthFlow getAuthFlow();
 }
