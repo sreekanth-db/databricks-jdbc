@@ -1,16 +1,17 @@
 package com.databricks.jdbc.core;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-
-import com.databricks.jdbc.client.impl.DatabricksSdkClient;
+import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
-import java.util.Properties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class DatabricksSessionTest {
