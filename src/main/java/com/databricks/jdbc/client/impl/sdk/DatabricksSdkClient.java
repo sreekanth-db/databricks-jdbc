@@ -41,7 +41,8 @@ public class DatabricksSdkClient implements DatabricksClient {
             .setHost(connectionContext.getHostUrl())
             .setToken(connectionContext.getToken());
 
-    this.workspaceClient = new WorkspaceClient(databricksConfig);
+    OAuthAuthenticator authenticator = new OAuthAuthenticator(connectionContext);
+    this.workspaceClient = authenticator.getWorkspaceClient();
   }
 
   public DatabricksSdkClient(
