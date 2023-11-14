@@ -158,6 +158,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public AuthFlow getAuthFlow() {
     String authFlow = getParameter(DatabricksJdbcConstants.AUTH_FLOW);
+    if (authFlow == null) return AuthFlow.TOKEN_PASSTHROUGH;
     return AuthFlow.values()[Integer.parseInt(authFlow)];
   }
 
