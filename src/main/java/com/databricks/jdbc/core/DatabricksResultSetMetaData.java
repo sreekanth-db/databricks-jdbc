@@ -1,5 +1,8 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.commons.util.WrapperUtil;
+import com.databricks.jdbc.core.types.AccessType;
+import com.databricks.jdbc.core.types.Nullable;
 import com.databricks.sdk.service.sql.ColumnInfo;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 import com.databricks.sdk.service.sql.ResultManifest;
@@ -7,7 +10,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.List;
 
 public class DatabricksResultSetMetaData implements ResultSetMetaData {
@@ -16,27 +18,30 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
   private final ImmutableList<ImmutableDatabricksColumn> columns;
   private final ImmutableMap<String, Integer> columnNameIndex;
   private final long totalRows;
+  private static final String DEFAULT_CATALOGUE_NAME = "Spark";
 
   // TODO: Add handling for Arrow stream results
-  public DatabricksResultSetMetaData(String statementId, ResultManifest resultManifest) {
+
+  public DatabricksResultSetMetaData(
+      String statementId, ResultManifest resultManifest, IDatabricksSession session) {
     this.statementId = statementId;
 
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
     ImmutableMap.Builder<String, Integer> columnIndexBuilder = ImmutableMap.builder();
     int currIndex = 0;
     for (ColumnInfo columnInfo : resultManifest.getSchema().getColumns()) {
-      ImmutableDatabricksColumn.Builder columnBuilder =
-          ImmutableDatabricksColumn.builder()
-              .columnName(columnInfo.getName())
-              .columnType(getColumnType(columnInfo.getTypeName()))
-              .columnTypeText(columnInfo.getTypeText());
-      if (columnInfo.getTypePrecision() != null) {
-        columnBuilder.typePrecision(columnInfo.getTypePrecision().intValue());
-      } else if (columnInfo.getTypeName().equals(ColumnInfoTypeName.STRING)) {
-        columnBuilder.typePrecision(255);
-      } else {
-        columnBuilder.typePrecision(0);
-      }
+      ColumnInfoTypeName columnTypeName = columnInfo.getTypeName();
+      int precision = DatabricksTypeUtil.getPrecision(columnTypeName);
+      ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
+      columnBuilder
+          .columnName(columnInfo.getName())
+          .columnTypeClassName(DatabricksTypeUtil.getColumnTypeClassName(columnTypeName))
+          .columnType(DatabricksTypeUtil.getColumnType(columnTypeName))
+          .columnTypeText(columnInfo.getTypeText())
+          .typePrecision(precision)
+          .displaySize(DatabricksTypeUtil.getDisplaySize(columnTypeName, precision))
+          .isSigned(DatabricksTypeUtil.isSigned(columnTypeName));
+
       columnsBuilder.add(columnBuilder.build());
       // Keep index starting from 1, to be consistent with JDBC convention
       columnIndexBuilder.put(columnInfo.getName(), ++currIndex);
@@ -53,18 +58,24 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
       List<Integer> columnTypes,
       List<Integer> columnTypePrecisions,
       long totalRows) {
-    // TODO: instead of passing precisions, maybe it can be set by default?
     this.statementId = statementId;
 
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
     ImmutableMap.Builder<String, Integer> columnIndexBuilder = ImmutableMap.builder();
     for (int i = 0; i < columnNames.size(); i++) {
-      ImmutableDatabricksColumn.Builder columnBuilder =
-          ImmutableDatabricksColumn.builder()
-              .columnName(columnNames.get(i))
-              .columnType(columnTypes.get(i))
-              .columnTypeText(columnTypeText.get(i))
-              .typePrecision(columnTypePrecisions.get(i));
+      ColumnInfoTypeName columnTypeName =
+          ColumnInfoTypeName.valueOf(
+              DatabricksTypeUtil.getDatabricksTypeFromSQLType(columnTypes.get(i)));
+      ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
+      columnBuilder
+          .columnName(columnNames.get(i))
+          .columnType(columnTypes.get(i))
+          .columnTypeText(columnTypeText.get(i))
+          .typePrecision(columnTypePrecisions.get(i))
+          .columnTypeClassName(DatabricksTypeUtil.getColumnTypeClassName(columnTypeName))
+          .displaySize(
+              DatabricksTypeUtil.getDisplaySize(columnTypeName, columnTypePrecisions.get(i)))
+          .isSigned(DatabricksTypeUtil.isSigned(columnTypeName));
       columnsBuilder.add(columnBuilder.build());
       // Keep index starting from 1, to be consistent with JDBC convention
       columnIndexBuilder.put(columnNames.get(i), i + 1);
@@ -81,39 +92,37 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   @Override
   public boolean isAutoIncrement(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).isAutoIncrement();
   }
 
   @Override
   public boolean isCaseSensitive(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).isCaseSensitive();
   }
 
   @Override
   public boolean isSearchable(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).isSearchable();
   }
 
   @Override
   public boolean isCurrency(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).isCurrency();
   }
 
   @Override
   public int isNullable(int column) throws SQLException {
-    // TODO: implement
-    return ResultSetMetaData.columnNullable;
+    return columns.get(getEffectiveIndex(column)).nullable().getValue();
   }
 
   @Override
   public boolean isSigned(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).isSigned();
   }
 
   @Override
   public int getColumnDisplaySize(int column) throws SQLException {
-    // TODO: to be fixed
-    return 10;
+    return columns.get(getEffectiveIndex(column)).displaySize();
   }
 
   @Override
@@ -128,7 +137,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   @Override
   public String getSchemaName(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).schemaName();
   }
 
   @Override
@@ -138,17 +147,17 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   @Override
   public int getScale(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).typeScale();
   }
 
   @Override
   public String getTableName(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).tableName();
   }
 
   @Override
   public String getCatalogName(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).catalogName();
   }
 
   @Override
@@ -163,71 +172,34 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   @Override
   public boolean isReadOnly(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    AccessType columnAccessType = columns.get(getEffectiveIndex(column)).accessType();
+    return columnAccessType.equals(AccessType.READ_ONLY)
+        || columnAccessType.equals(AccessType.UNKNOWN);
   }
 
   @Override
   public boolean isWritable(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).accessType().equals(AccessType.WRITE);
   }
 
   @Override
   public boolean isDefinitelyWritable(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).isDefinitelyWritable();
   }
 
   @Override
   public String getColumnClassName(int column) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return columns.get(getEffectiveIndex(column)).columnTypeClassName();
   }
 
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    return WrapperUtil.unwrap(iface, this);
   }
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
-  }
-
-  private int getColumnType(ColumnInfoTypeName typeName) {
-    switch (typeName) {
-      case BYTE:
-        return Types.TINYINT;
-      case SHORT:
-        return Types.SMALLINT;
-      case INT:
-        return Types.INTEGER;
-      case LONG:
-        return Types.BIGINT;
-      case FLOAT:
-        return Types.FLOAT;
-      case DOUBLE:
-        return Types.DOUBLE;
-      case DECIMAL:
-        return Types.DECIMAL;
-      case BINARY:
-        return Types.BINARY;
-      case BOOLEAN:
-        return Types.BOOLEAN;
-      case CHAR:
-        return Types.CHAR;
-      case STRING:
-        return Types.VARCHAR;
-      case TIMESTAMP:
-        return Types.TIMESTAMP;
-      case DATE:
-        return Types.DATE;
-      case STRUCT:
-        return Types.STRUCT;
-      case ARRAY:
-        return Types.ARRAY;
-      case NULL:
-        return Types.NULL;
-      default:
-        throw new IllegalStateException("Unknown column type: " + typeName);
-    }
+    return WrapperUtil.isWrapperFor(iface, this);
   }
 
   private int getEffectiveIndex(int columnIndex) {
@@ -250,5 +222,20 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   public long getTotalRows() {
     return totalRows;
+  }
+
+  private ImmutableDatabricksColumn.Builder getColumnBuilder() {
+    return ImmutableDatabricksColumn.builder()
+        .isAutoIncrement(false)
+        .isSearchable(true)
+        .nullable(Nullable.NULLABLE)
+        .accessType(AccessType.READ_ONLY)
+        .isDefinitelyWritable(false)
+        .schemaName(null)
+        .tableName(null)
+        .catalogName(DEFAULT_CATALOGUE_NAME)
+        .isCurrency(false)
+        .typeScale(0)
+        .isCaseSensitive(false);
   }
 }

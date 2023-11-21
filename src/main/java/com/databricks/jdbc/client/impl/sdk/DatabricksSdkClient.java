@@ -1,4 +1,4 @@
-package com.databricks.jdbc.client.impl;
+package com.databricks.jdbc.client.impl.sdk;
 
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.StatementType;
@@ -7,12 +7,7 @@ import com.databricks.jdbc.client.sqlexec.CloseStatementRequest;
 import com.databricks.jdbc.client.sqlexec.CreateSessionRequest;
 import com.databricks.jdbc.client.sqlexec.DeleteSessionRequest;
 import com.databricks.jdbc.client.sqlexec.Session;
-import com.databricks.jdbc.core.DatabricksResultSet;
-import com.databricks.jdbc.core.DatabricksSQLException;
-import com.databricks.jdbc.core.IDatabricksSession;
-import com.databricks.jdbc.core.IDatabricksStatement;
-import com.databricks.jdbc.core.ImmutableSessionInfo;
-import com.databricks.jdbc.core.ImmutableSqlParameter;
+import com.databricks.jdbc.core.*;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.ApiClient;
@@ -30,8 +25,8 @@ import org.slf4j.LoggerFactory;
 /** Implementation of DatabricksClient interface using Databricks Java SDK. */
 public class DatabricksSdkClient implements DatabricksClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksSdkClient.class);
-  private static final String ASYNC_TIMEOUT_VALUE = "0s";
   private static final String SYNC_TIMEOUT_VALUE = "10s";
+  private static final String ASYNC_TIMEOUT_VALUE = "0s";
   private static final int STATEMENT_RESULT_POLL_INTERVAL_MILLIS = 200;
 
   private final IDatabricksConnectionContext connectionContext;
@@ -46,7 +41,8 @@ public class DatabricksSdkClient implements DatabricksClient {
             .setHost(connectionContext.getHostUrl())
             .setToken(connectionContext.getToken());
 
-    this.workspaceClient = new WorkspaceClient(databricksConfig);
+    OAuthAuthenticator authenticator = new OAuthAuthenticator(connectionContext);
+    this.workspaceClient = authenticator.getWorkspaceClient();
   }
 
   public DatabricksSdkClient(
@@ -73,8 +69,7 @@ public class DatabricksSdkClient implements DatabricksClient {
     Map<String, String> headers = new HashMap<>();
     headers.put("Accept", "application/json");
     headers.put("Content-Type", "application/json");
-    Session session =
-        (Session) workspaceClient.apiClient().POST(path, request, Session.class, headers);
+    Session session = workspaceClient.apiClient().POST(path, request, Session.class, headers);
     return ImmutableSessionInfo.builder()
         .warehouseId(session.getWarehouseId())
         .sessionId(session.getSessionId())
@@ -105,46 +100,21 @@ public class DatabricksSdkClient implements DatabricksClient {
         sql,
         warehouseId,
         statementType);
-    Format format = useCloudFetchForResult(statementType) ? Format.ARROW_STREAM : Format.JSON_ARRAY;
-    Disposition disposition =
-        useCloudFetchForResult(statementType) ? Disposition.EXTERNAL_LINKS : Disposition.INLINE;
-    ExecuteStatementRequestWithSession request =
-        (ExecuteStatementRequestWithSession)
-            new ExecuteStatementRequestWithSession()
-                .setSessionId(session.getSessionId())
-                .setStatement(sql)
-                .setWarehouseId(warehouseId)
-                .setDisposition(disposition)
-                .setFormat(format)
-                .setWaitTimeout(SYNC_TIMEOUT_VALUE)
-                .setOnWaitTimeout(TimeoutAction.CONTINUE)
-                .setParameters(
-                    parameters.values().stream()
-                        .map(
-                            param ->
-                                new PositionalStatementParameterListItem()
-                                    .setOrdinal(param.cardinal())
-                                    .setType(param.type())
-                                    .setValue(param.value().toString()))
-                        .collect(Collectors.toList()));
 
     long pollCount = 0;
     long executionStartTime = Instant.now().toEpochMilli();
+    ExecuteStatementRequest request =
+        getRequest(statementType, sql, warehouseId, session, parameters);
     ExecuteStatementResponse response =
         workspaceClient.statementExecution().executeStatement(request);
     String statementId = response.getStatementId();
     StatementState responseState = response.getStatus().getState();
-
-    // TODO: Add timeout
     while (responseState == StatementState.PENDING || responseState == StatementState.RUNNING) {
-      // First poll happens without a delay
-      if (pollCount > 0) {
+      if (pollCount > 0) { // First poll happens without a delay
         try {
-          // TODO: make this configurable
-          Thread.sleep(STATEMENT_RESULT_POLL_INTERVAL_MILLIS);
+          Thread.sleep(STATEMENT_RESULT_POLL_INTERVAL_MILLIS); // TODO: make this configurable
         } catch (InterruptedException e) {
-          // TODO: Handle gracefully
-          throw new DatabricksSQLException("Statement execution fetch interrupted");
+          throw new DatabricksTimeoutException("Thread interrupted due to statement timeout");
         }
       }
       response =
@@ -192,6 +162,38 @@ public class DatabricksSdkClient implements DatabricksClient {
         .statementExecution()
         .getStatementResultChunkN(statementId, chunkIndex)
         .getExternalLinks();
+  }
+
+  private ExecuteStatementRequestWithSession getRequest(
+      StatementType statementType,
+      String sql,
+      String warehouseId,
+      IDatabricksSession session,
+      Map<Integer, ImmutableSqlParameter> parameters) {
+    Format format = useCloudFetchForResult(statementType) ? Format.ARROW_STREAM : Format.JSON_ARRAY;
+    Disposition disposition =
+        useCloudFetchForResult(statementType) ? Disposition.EXTERNAL_LINKS : Disposition.INLINE;
+
+    return (ExecuteStatementRequestWithSession)
+        new ExecuteStatementRequestWithSession()
+            .setSessionId(session.getSessionId())
+            .setStatement(sql)
+            .setWarehouseId(warehouseId)
+            .setDisposition(disposition)
+            .setFormat(format)
+            .setWaitTimeout(SYNC_TIMEOUT_VALUE)
+            .setOnWaitTimeout(ExecuteStatementRequestOnWaitTimeout.CONTINUE)
+            .setParameters(
+                parameters.values().stream()
+                    .map(this::mapToParameterListItem)
+                    .collect(Collectors.toList()));
+  }
+
+  private StatementParameterListItem mapToParameterListItem(ImmutableSqlParameter parameter) {
+    return new PositionalStatementParameterListItem()
+        .setOrdinal(parameter.cardinal())
+        .setType(parameter.type())
+        .setValue(parameter.value().toString());
   }
 
   /** Handles a failed execution and throws appropriate exception */
