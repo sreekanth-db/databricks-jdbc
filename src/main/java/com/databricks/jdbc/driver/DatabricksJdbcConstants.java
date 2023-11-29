@@ -28,6 +28,14 @@ public final class DatabricksJdbcConstants {
 
   static final String AUTH_FLOW = "auth_flow";
 
+  // Only used when AUTH_FLOW = 11
+  static final String AUTH_ACCESSTOKEN = "auth_accesstoken";
+
+  // Only used when AUTH_FLOW = 3
+  static final String UID = "uid";
+  static final String PWD = "pwd";
+
+
   static final String AWS_CLIENT_ID = "databricks-sql-jdbc";
 
   static final String AAD_CLIENT_ID = "96eecda7-19ea-49cc-abb5-240097d554f5";
