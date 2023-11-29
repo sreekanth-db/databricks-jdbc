@@ -35,7 +35,6 @@ public final class DatabricksJdbcConstants {
   static final String UID = "uid";
   static final String PWD = "pwd";
 
-
   static final String AWS_CLIENT_ID = "databricks-sql-jdbc";
 
   static final String AAD_CLIENT_ID = "96eecda7-19ea-49cc-abb5-240097d554f5";
@@ -43,11 +42,16 @@ public final class DatabricksJdbcConstants {
   static final String HTTP_PATH = "httppath";
   static final String HTTPS_SCHEMA = "https://";
 
-  public static final String U2M_AUTH_TYPE = "databricks-cli";
-
+  public static final String U2M_AUTH_TYPE = "external-browser";
   public static final String M2M_AUTH_TYPE = "oauth-m2m";
-
   public static final String ACCESS_TOKEN_AUTH_TYPE = "pat";
+
+  public static final String U2M_AUTH_REDIRECT_URL = "http://localhost:8020";
+
+  public static final String SQL_SCOPE = "sql";
+  public static final String OFFLINE_ACCESS_SCOPE = "offline_access";
+  public static final String AAD_SQL_SCOPE =
+      "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d/user_impersonation";
 
   public static final String FULL_STOP = ".";
   public static final String EMPTY_STRING = "";
