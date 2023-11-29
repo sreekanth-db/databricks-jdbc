@@ -28,10 +28,10 @@ public final class DatabricksJdbcConstants {
 
   static final String AUTH_FLOW = "auth_flow";
 
-  // Only used when AUTH_FLOW = 11
+  // Only used when AUTH_MECH = 11
   static final String AUTH_ACCESSTOKEN = "auth_accesstoken";
 
-  // Only used when AUTH_FLOW = 3
+  // Only used when AUTH_MECH = 3
   static final String UID = "uid";
   static final String PWD = "pwd";
 
