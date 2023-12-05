@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 public class DatabricksDriver implements Driver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksDriver.class);
-  private static final DatabricksDriver INSTANCE;
+  public static final DatabricksDriver INSTANCE;
 
   private static int majorVersion = 0;
   private static int minorVersion = 0;

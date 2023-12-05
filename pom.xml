@@ -147,6 +147,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
+          <version>3.3.0</version>
           <executions>
             <execution>
               <goals>
@@ -205,8 +206,6 @@
             </execution>
           </executions>
           <configuration>
-            <sourceDirectory>src/</sourceDirectory>
-            <targetDirectory>src/</targetDirectory>
             <java>
               <googleJavaFormat>
                 <version>1.18.1</version>
