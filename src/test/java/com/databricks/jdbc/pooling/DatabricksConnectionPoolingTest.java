@@ -8,19 +8,20 @@ import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.core.ApiClient;
 import com.databricks.sdk.service.sql.StatementExecutionService;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.*;
-import javax.sql.ConnectionEvent;
-import javax.sql.ConnectionEventListener;
-import javax.sql.PooledConnection;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import javax.sql.ConnectionEvent;
+import javax.sql.ConnectionEventListener;
+import javax.sql.PooledConnection;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.*;
 
 @ExtendWith(MockitoExtension.class)
 public class DatabricksConnectionPoolingTest {
@@ -108,7 +109,9 @@ public class DatabricksConnectionPoolingTest {
     Connection pc2 = pooledConnection.getPhysicalConnection();
     Assertions.assertEquals(pc1, pc2);
     Assertions.assertFalse(pc1.isClosed());
+    Assertions.assertEquals(listener.getConnectionClosedEvents().size(), 1);
     c2.close();
+    Assertions.assertEquals(listener.getConnectionClosedEvents().size(), 2);
     pooledConnection.close();
   }
 }

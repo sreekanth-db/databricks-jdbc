@@ -2,34 +2,38 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.driver.DatabricksDriver;
 import com.databricks.jdbc.driver.DatabricksJdbcConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
-import java.util.logging.Logger;
-import javax.sql.DataSource;
 
 public class DatabricksDataSource implements DataSource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksDataSource.class);
   private String host;
   private int port;
-  private String url;
   private Properties properties = new Properties();
 
   @Override
   public Connection getConnection() {
+    LOGGER.debug("public Connection getConnection()");
     return getConnection(this.getUsername(), this.getPassword());
   }
 
   @Override
   public Connection getConnection(String username, String password) {
+    LOGGER.debug("public Connection getConnection(String username = {}, String password = {})", username, password);
     if (username != null) {
       setUsername(username);
     }
     if (password != null) {
       setPassword(password);
     }
-    return DatabricksDriver.INSTANCE.connect(getUrl(), properties);
+    return DatabricksDriver.getInstance().connect(getUrl(), properties);
   }
 
   @Override
@@ -44,6 +48,7 @@ public class DatabricksDataSource implements DataSource {
 
   @Override
   public void setLoginTimeout(int seconds) {
+    LOGGER.debug("public void setLoginTimeout(int seconds = {})", seconds);
     this.properties.put(DatabricksJdbcConstants.LOGIN_TIMEOUT, seconds);
   }
 
@@ -53,7 +58,7 @@ public class DatabricksDataSource implements DataSource {
   }
 
   @Override
-  public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+  public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
     throw new SQLFeatureNotSupportedException("public Logger getParentLogger()");
   }
 
@@ -68,17 +73,17 @@ public class DatabricksDataSource implements DataSource {
   }
 
   public String getUrl() {
-    if (url != null) {
-      return url;
-    }
+    LOGGER.debug("public String getUrl()");
     StringBuilder urlBuilder = new StringBuilder();
     urlBuilder.append(DatabricksJdbcConstants.JDBC_SCHEMA);
+    if (host == null) {
+      throw new IllegalStateException("Host is required");
+    }
     urlBuilder.append(host);
     if (port != 0) {
       urlBuilder.append(":").append(port);
     }
-    this.url = urlBuilder.toString();
-    return this.url;
+    return urlBuilder.toString();
   }
 
   public String getUsername() {

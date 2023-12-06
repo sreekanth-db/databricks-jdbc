@@ -1,17 +1,14 @@
 package com.databricks.jdbc.driver;
 
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.SYSTEM_LOG_FILE_CONFIG;
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.SYSTEM_LOG_LEVEL_CONFIG;
-
 import com.databricks.jdbc.core.DatabricksConnection;
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.*;
+import java.util.Properties;
+
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.SYSTEM_LOG_FILE_CONFIG;
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.SYSTEM_LOG_LEVEL_CONFIG;
 
 /**
  * Databricks JDBC driver. TODO: Add implementation to accept Urls in format:
@@ -20,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public class DatabricksDriver implements Driver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksDriver.class);
-  public static final DatabricksDriver INSTANCE;
+  private static final DatabricksDriver INSTANCE;
 
   private static int majorVersion = 0;
   private static int minorVersion = 0;
@@ -74,6 +71,10 @@ public class DatabricksDriver implements Driver {
   @Override
   public java.util.logging.Logger getParentLogger() {
     return null;
+  }
+
+  public static DatabricksDriver getInstance() {
+    return INSTANCE;
   }
 
   public static void main(String[] args) {
