@@ -2,14 +2,6 @@ package com.databricks.jdbc.pooling;
 
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.core.DatabricksStatement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import javax.sql.ConnectionEvent;
-import javax.sql.ConnectionEventListener;
-import javax.sql.PooledConnection;
-import javax.sql.StatementEventListener;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -17,6 +9,13 @@ import java.lang.reflect.Proxy;
 import java.sql.*;
 import java.util.HashSet;
 import java.util.Set;
+import javax.annotation.Nullable;
+import javax.sql.ConnectionEvent;
+import javax.sql.ConnectionEventListener;
+import javax.sql.PooledConnection;
+import javax.sql.StatementEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatabricksPooledConnection implements PooledConnection {
 
@@ -127,21 +126,31 @@ public class DatabricksPooledConnection implements PooledConnection {
    * through the Connection interface.
    */
   private class ConnectionHandler implements InvocationHandler {
-    private final Logger CONNECTION_HANDLER_LOGGER = LoggerFactory.getLogger(ConnectionHandler.class);
+    private final Logger CONNECTION_HANDLER_LOGGER =
+        LoggerFactory.getLogger(ConnectionHandler.class);
     private Connection physicalConnection;
-    private Connection virtualConnection; // the Connection the client is currently using, which is not a physical connection
+    private Connection
+        virtualConnection; // the Connection the client is currently using, which is not a physical
+
+    // connection
 
     ConnectionHandler(Connection physicalConnection) {
       this.physicalConnection = physicalConnection;
-      // Use a proxy connection object as a virtual connection, so that we do not close the physical connection
-      this.virtualConnection = (Connection)
+      // Use a proxy connection object as a virtual connection, so that we do not close the physical
+      // connection
+      this.virtualConnection =
+          (Connection)
               Proxy.newProxyInstance(
-                      getClass().getClassLoader(), new Class[]{Connection.class}, this);
+                  getClass().getClassLoader(), new Class[] {Connection.class}, this);
     }
 
     @Override
     public Object invoke(Object proxy, Method method, @Nullable Object[] args) throws Throwable {
-      CONNECTION_HANDLER_LOGGER.debug("public Object invoke(Object proxy = {}, Method method = {}, Object[] args = {})", proxy, method, args);
+      CONNECTION_HANDLER_LOGGER.debug(
+          "public Object invoke(Object proxy = {}, Method method = {}, Object[] args = {})",
+          proxy,
+          method,
+          args);
       final String methodName = method.getName();
       if (method.getDeclaringClass() == Object.class) {
         if (methodName.equals("toString")) {
@@ -245,7 +254,11 @@ public class DatabricksPooledConnection implements PooledConnection {
 
     @Override
     public Object invoke(Object proxy, Method method, @Nullable Object[] args) throws Throwable {
-      STATEMENT_HANDLER_LOGGER.debug("public Object invoke(Object proxy = {}, Method method = {}, Object[] args = {})", proxy, method, args);
+      STATEMENT_HANDLER_LOGGER.debug(
+          "public Object invoke(Object proxy = {}, Method method = {}, Object[] args = {})",
+          proxy,
+          method,
+          args);
       final String methodName = method.getName();
       if (method.getDeclaringClass() == Object.class) {
         if (methodName.equals("toString")) {

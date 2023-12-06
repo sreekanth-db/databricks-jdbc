@@ -2,15 +2,14 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.driver.DatabricksDriver;
 import com.databricks.jdbc.driver.DatabricksJdbcConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatabricksDataSource implements DataSource {
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksDataSource.class);
@@ -26,7 +25,10 @@ public class DatabricksDataSource implements DataSource {
 
   @Override
   public Connection getConnection(String username, String password) {
-    LOGGER.debug("public Connection getConnection(String username = {}, String password = {})", username, password);
+    LOGGER.debug(
+        "public Connection getConnection(String username = {}, String password = {})",
+        username,
+        password);
     if (username != null) {
       setUsername(username);
     }

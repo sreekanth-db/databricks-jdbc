@@ -1,15 +1,15 @@
 package com.databricks.jdbc.pooling;
 
 import com.databricks.jdbc.core.DatabricksDataSource;
+import javax.sql.ConnectionPoolDataSource;
+import javax.sql.PooledConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.ConnectionPoolDataSource;
-import javax.sql.PooledConnection;
-
 public class DatabricksConnectionPoolDataSource extends DatabricksDataSource
     implements ConnectionPoolDataSource {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksConnectionPoolDataSource.class);
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(DatabricksConnectionPoolDataSource.class);
 
   @Override
   public PooledConnection getPooledConnection() {
@@ -19,7 +19,10 @@ public class DatabricksConnectionPoolDataSource extends DatabricksDataSource
 
   @Override
   public PooledConnection getPooledConnection(String user, String password) {
-    LOGGER.debug("public PooledConnection getPooledConnection(String user = {}, String password = {})", user, password);
+    LOGGER.debug(
+        "public PooledConnection getPooledConnection(String user = {}, String password = {})",
+        user,
+        password);
     return new DatabricksPooledConnection(super.getConnection(user, password));
   }
 }

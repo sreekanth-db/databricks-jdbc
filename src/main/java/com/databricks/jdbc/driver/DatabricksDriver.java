@@ -1,14 +1,13 @@
 package com.databricks.jdbc.driver;
 
-import com.databricks.jdbc.core.DatabricksConnection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.sql.*;
-import java.util.Properties;
-
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.SYSTEM_LOG_FILE_CONFIG;
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.SYSTEM_LOG_LEVEL_CONFIG;
+
+import com.databricks.jdbc.core.DatabricksConnection;
+import java.sql.*;
+import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Databricks JDBC driver. TODO: Add implementation to accept Urls in format:
