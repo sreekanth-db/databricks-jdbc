@@ -35,7 +35,6 @@ public final class DatabricksJdbcConstants {
   static final String UID = "uid";
   static final String PWD = "pwd";
 
-
   static final String AWS_CLIENT_ID = "databricks-sql-jdbc";
 
   static final String AAD_CLIENT_ID = "96eecda7-19ea-49cc-abb5-240097d554f5";
@@ -57,4 +56,7 @@ public final class DatabricksJdbcConstants {
   public static final String SCHEMA = "schema";
   public static final String USER_NAME = "User";
   static final int DEFAULT_PORT = 443;
+
+  static final String USER_AGENT_ENTRY = "useragententry";
+  static final String DEFAULT_USER_AGENT = "databricks_jdbc_oss";
 }

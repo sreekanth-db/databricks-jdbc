@@ -4,6 +4,7 @@ import static com.databricks.jdbc.driver.DatabricksJdbcConstants.SYSTEM_LOG_FILE
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.SYSTEM_LOG_LEVEL_CONFIG;
 
 import com.databricks.jdbc.core.DatabricksConnection;
+import com.databricks.sdk.core.UserAgent;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -48,6 +49,8 @@ public class DatabricksDriver implements Driver {
     if (logFileConfig != null) {
       System.setProperty(SYSTEM_LOG_FILE_CONFIG, logFileConfig);
     }
+    UserAgent.withProduct(
+        connectionContext.getUserAgent(), getMajorVersion() + "." + getMinorVersion());
     return new DatabricksConnection(connectionContext);
   }
 
