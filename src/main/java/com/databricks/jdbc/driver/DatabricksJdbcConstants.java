@@ -5,10 +5,9 @@ import java.util.regex.Pattern;
 public final class DatabricksJdbcConstants {
 
   static final Pattern JDBC_URL_PATTERN =
-      Pattern.compile("jdbc:databricks:\\/\\/([^/]*)(?::\\d+)?\\/(.*)");
+      Pattern.compile("jdbc:databricks:\\/\\/([^/]*)(?::\\d+)?\\/*(.*)");
   static final Pattern HTTP_PATH_PATTERN = Pattern.compile(".*\\/warehouses\\/(.*)");
   static final Pattern HTTP_PATH_SQL_PATTERN = Pattern.compile("sql\\/(.*)");
-  static final String JDBC_SCHEMA = "jdbc:databricks://";
   static final String DEFAULT_LOG_LEVEL = "INFO";
   static final String LOG_LEVEL = "loglevel";
   static final String LOG_PATH = "logpath";
@@ -34,7 +33,6 @@ public final class DatabricksJdbcConstants {
   // Only used when AUTH_MECH = 3
   static final String UID = "uid";
   static final String PWD = "pwd";
-
 
   static final String AWS_CLIENT_ID = "databricks-sql-jdbc";
 
