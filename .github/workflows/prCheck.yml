@@ -5,16 +5,21 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - '**'
+      - main
 
 jobs:
   formatting-check:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        java-version: [20]  # For formatting, we don't need to run across multiple versions. Only sanity testing is required here, rest is taken care in the build.
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Set up JDK 8
+      - name: Set up JDK
         uses: actions/setup-java@v1
         with:
-          java-version: 8
+          java-version: ${{ matrix.java-version }}
 
       - name: Checkout
         uses: actions/checkout@v2
