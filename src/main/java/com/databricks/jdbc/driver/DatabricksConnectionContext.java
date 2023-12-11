@@ -5,6 +5,8 @@ import static com.databricks.jdbc.driver.DatabricksJdbcConstants.JDBC_URL_PATTER
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -148,6 +150,19 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       }
     }
     return clientId;
+  }
+
+  @Override
+  public List<String> getOAuthScopesForU2M() {
+    if (getCloud().equals("AWS")) {
+      return Arrays.asList(
+          DatabricksJdbcConstants.SQL_SCOPE, DatabricksJdbcConstants.OFFLINE_ACCESS_SCOPE);
+    } else if (getCloud().equals("AAD")) {
+      return Arrays.asList(
+          DatabricksJdbcConstants.AAD_SQL_SCOPE, DatabricksJdbcConstants.OFFLINE_ACCESS_SCOPE);
+    } else {
+      return null;
+    }
   }
 
   @Override
