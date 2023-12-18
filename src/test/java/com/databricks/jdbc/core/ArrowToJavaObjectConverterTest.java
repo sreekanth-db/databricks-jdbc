@@ -25,7 +25,7 @@ public class ArrowToJavaObjectConverterTest {
   public void testNullObjectConversion() throws SQLException {
     Object unconvertedObject = null;
     Object convertedObject =
-            ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.BYTE);
+        ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.BYTE);
 
     assertEquals(convertedObject, null);
   }
