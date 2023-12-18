@@ -84,6 +84,8 @@ public class ArrowResultChunk {
 
   private RootAllocator rootAllocator;
 
+  private boolean isDataInitialized;
+
   ArrowResultChunk(BaseChunkInfo chunkInfo, RootAllocator rootAllocator, String statementId) {
     this.chunkIndex = chunkInfo.getChunkIndex();
     this.numRows = chunkInfo.getRowCount();
@@ -95,6 +97,7 @@ public class ArrowResultChunk {
     this.downloadStartTime = null;
     this.downloadFinishTime = null;
     this.statementId = statementId;
+    isDataInitialized = false;
   }
 
   public static class ArrowResultChunkIterator {
@@ -197,6 +200,7 @@ public class ArrowResultChunk {
       getArrowDataFromInputStream(entity.getContent());
       this.downloadFinishTime = Instant.now().toEpochMilli();
       this.setStatus(DownloadStatus.DOWNLOAD_SUCCEEDED);
+      this.isDataInitialized = true;
     } catch (IOException e) {
       String errMsg =
           String.format(
@@ -274,7 +278,7 @@ public class ArrowResultChunk {
     if (status == DownloadStatus.CHUNK_RELEASED) {
       return false;
     }
-    this.recordBatchList.clear();
+    if (isDataInitialized) this.recordBatchList.clear();
     this.setStatus(DownloadStatus.CHUNK_RELEASED);
     return true;
   }
