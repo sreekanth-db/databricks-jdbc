@@ -11,6 +11,9 @@ public class ArrowToJavaObjectConverter {
   // TODO (Madhav): Check Arrow to JSON conversion
   public static Object convert(Object object, ColumnInfoTypeName requiredType)
       throws DatabricksSQLException {
+    if (object == null) {
+      return null;
+    }
     switch (requiredType) {
       case BYTE:
         return convertToByte(object);
