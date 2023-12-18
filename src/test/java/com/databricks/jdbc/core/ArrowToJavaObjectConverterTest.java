@@ -22,6 +22,15 @@ public class ArrowToJavaObjectConverterTest {
   }
 
   @Test
+  public void testNullObjectConversion() throws SQLException {
+    Object unconvertedObject = null;
+    Object convertedObject =
+        ArrowToJavaObjectConverter.convert(unconvertedObject, ColumnInfoTypeName.BYTE);
+
+    assertEquals(convertedObject, null);
+  }
+
+  @Test
   public void testByteConversion() throws SQLException {
     TinyIntVector tinyIntVector = new TinyIntVector("tinyIntVector", this.bufferAllocator);
     tinyIntVector.allocateNew(1);
