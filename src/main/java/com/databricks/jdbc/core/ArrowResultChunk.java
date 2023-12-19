@@ -289,7 +289,7 @@ public class ArrowResultChunk {
    * @return
    */
   int getRecordBatchCountInChunk() {
-    return this.recordBatchList.size();
+    return this.isDataInitialized ? this.recordBatchList.size() : 0;
   }
 
   public ArrowResultChunkIterator getChunkIterator() {
