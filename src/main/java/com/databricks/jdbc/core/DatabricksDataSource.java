@@ -18,13 +18,13 @@ public class DatabricksDataSource implements DataSource {
   private Properties properties = new Properties();
 
   @Override
-  public Connection getConnection() {
+  public Connection getConnection() throws DatabricksSQLException {
     LOGGER.debug("public Connection getConnection()");
     return getConnection(this.getUsername(), this.getPassword());
   }
 
   @Override
-  public Connection getConnection(String username, String password) {
+  public Connection getConnection(String username, String password) throws DatabricksSQLException {
     LOGGER.debug(
         "public Connection getConnection(String username = {}, String password = {})",
         username,
