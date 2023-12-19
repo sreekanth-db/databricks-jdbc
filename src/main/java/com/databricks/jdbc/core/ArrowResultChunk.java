@@ -200,7 +200,6 @@ public class ArrowResultChunk {
       getArrowDataFromInputStream(entity.getContent());
       this.downloadFinishTime = Instant.now().toEpochMilli();
       this.setStatus(DownloadStatus.DOWNLOAD_SUCCEEDED);
-      this.isDataInitialized = true;
     } catch (IOException e) {
       String errMsg =
           String.format(
@@ -230,6 +229,7 @@ public class ArrowResultChunk {
     LOGGER.atDebug().log(
         "Parsing data for chunk index [%d] and statement [%s]",
         this.getChunkIndex(), this.statementId);
+    this.isDataInitialized = true;
     this.recordBatchList = new ArrayList<>();
     // add check to see if input stream has been populated
     ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputStream, this.rootAllocator);
