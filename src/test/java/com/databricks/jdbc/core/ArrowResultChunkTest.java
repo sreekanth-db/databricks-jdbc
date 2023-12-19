@@ -37,16 +37,16 @@ public class ArrowResultChunkTest {
   public void testReleaseUnusedChunk() throws Exception {
     // Arrange
     BaseChunkInfo chunkInfo =
-            new BaseChunkInfo()
-                    .setChunkIndex(0L)
-                    .setByteCount(200L)
-                    .setRowOffset(0L)
-                    .setRowCount(totalRows);
+        new BaseChunkInfo()
+            .setChunkIndex(0L)
+            .setByteCount(200L)
+            .setRowOffset(0L)
+            .setRowCount(totalRows);
     ArrowResultChunk arrowResultChunk =
-            new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
+        new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
 
     // Assert
-    assert(arrowResultChunk.getRecordBatchCountInChunk() == 0);
+    assert (arrowResultChunk.getRecordBatchCountInChunk() == 0);
     arrowResultChunk.releaseChunk();
   }
 
