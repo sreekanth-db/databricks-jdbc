@@ -34,6 +34,23 @@ public class ArrowResultChunkTest {
   private long totalRows = 110;
 
   @Test
+  public void testReleaseUnusedChunk() throws Exception {
+    // Arrange
+    BaseChunkInfo chunkInfo =
+        new BaseChunkInfo()
+            .setChunkIndex(0L)
+            .setByteCount(200L)
+            .setRowOffset(0L)
+            .setRowCount(totalRows);
+    ArrowResultChunk arrowResultChunk =
+        new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
+
+    // Assert
+    assert (arrowResultChunk.getRecordBatchCountInChunk() == 0);
+    arrowResultChunk.releaseChunk();
+  }
+
+  @Test
   public void testGetArrowDataFromInputStream() throws Exception {
     // Arrange
     BaseChunkInfo chunkInfo =
@@ -55,6 +72,7 @@ public class ArrowResultChunkTest {
     // Assert
     int totalRecordBatches = (int) ((totalRows + rowsInRecordBatch) / rowsInRecordBatch);
     assertEquals(arrowResultChunk.getRecordBatchCountInChunk(), totalRecordBatches);
+    arrowResultChunk.releaseChunk();
   }
 
   private File createTestArrowFile(

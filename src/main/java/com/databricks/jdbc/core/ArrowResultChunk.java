@@ -84,6 +84,8 @@ public class ArrowResultChunk {
 
   private RootAllocator rootAllocator;
 
+  private boolean isDataInitialized;
+
   ArrowResultChunk(BaseChunkInfo chunkInfo, RootAllocator rootAllocator, String statementId) {
     this.chunkIndex = chunkInfo.getChunkIndex();
     this.numRows = chunkInfo.getRowCount();
@@ -95,6 +97,7 @@ public class ArrowResultChunk {
     this.downloadStartTime = null;
     this.downloadFinishTime = null;
     this.statementId = statementId;
+    isDataInitialized = false;
   }
 
   public static class ArrowResultChunkIterator {
@@ -226,6 +229,7 @@ public class ArrowResultChunk {
     LOGGER.atDebug().log(
         "Parsing data for chunk index [%d] and statement [%s]",
         this.getChunkIndex(), this.statementId);
+    this.isDataInitialized = true;
     this.recordBatchList = new ArrayList<>();
     // add check to see if input stream has been populated
     ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputStream, this.rootAllocator);
@@ -274,7 +278,7 @@ public class ArrowResultChunk {
     if (status == DownloadStatus.CHUNK_RELEASED) {
       return false;
     }
-    this.recordBatchList.clear();
+    if (isDataInitialized) this.recordBatchList.clear();
     this.setStatus(DownloadStatus.CHUNK_RELEASED);
     return true;
   }
@@ -285,7 +289,7 @@ public class ArrowResultChunk {
    * @return
    */
   int getRecordBatchCountInChunk() {
-    return this.recordBatchList.size();
+    return this.isDataInitialized ? this.recordBatchList.size() : 0;
   }
 
   public ArrowResultChunkIterator getChunkIterator() {
