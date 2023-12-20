@@ -1415,7 +1415,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   }
 
   private void checkIfClosed() throws SQLException {
-    if(this.isClosed) {
+    if (this.isClosed) {
       throw new DatabricksSQLException("Operation not allowed - ResultSet is closed");
     }
   }
