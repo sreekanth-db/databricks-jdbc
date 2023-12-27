@@ -50,7 +50,7 @@ public class DatabricksDriver implements Driver {
       return new DatabricksConnection(connectionContext);
     } catch (DatabricksError e) {
       throw new DatabricksSQLException(
-          "Invalid or unknown hostname provided :" + connectionContext.getHostUrl());
+          "Invalid or unknown hostname provided :" + connectionContext.getHostUrl(), e);
     }
   }
 
