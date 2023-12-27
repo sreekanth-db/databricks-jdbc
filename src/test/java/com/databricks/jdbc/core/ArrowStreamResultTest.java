@@ -1,8 +1,7 @@
 package com.databricks.jdbc.core;
 
 import static java.lang.Math.min;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -66,6 +65,16 @@ public class ArrowStreamResultTest {
   @BeforeEach
   public void setup() throws Exception {
     setupChunks();
+  }
+
+  @Test
+  public void testInitEmptyArrowStreamResult() throws Exception {
+    ResultManifest resultManifest =
+        new ResultManifest()
+            .setTotalChunkCount(0L)
+            .setSchema(new ResultSchema().setColumns(new ArrayList<>()));
+    ResultData resultData = new ResultData().setExternalLinks(new ArrayList<>());
+    assertDoesNotThrow(() -> new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, null));
   }
 
   @Test
