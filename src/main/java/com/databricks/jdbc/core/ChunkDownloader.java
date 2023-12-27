@@ -75,7 +75,7 @@ public class ChunkDownloader {
   private static ConcurrentHashMap<Long, ArrowResultChunk> initializeChunksMap(
       ResultManifest resultManifest, ResultData resultData, String statementId) {
     ConcurrentHashMap<Long, ArrowResultChunk> chunkIndexMap = new ConcurrentHashMap<>();
-    if (resultManifest.getChunks() == null) {
+    if (resultManifest.getTotalChunkCount() == 0) {
       return chunkIndexMap;
     }
     for (BaseChunkInfo chunkInfo : resultManifest.getChunks()) {
