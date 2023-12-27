@@ -75,6 +75,9 @@ public class ChunkDownloader {
   private static ConcurrentHashMap<Long, ArrowResultChunk> initializeChunksMap(
       ResultManifest resultManifest, ResultData resultData, String statementId) {
     ConcurrentHashMap<Long, ArrowResultChunk> chunkIndexMap = new ConcurrentHashMap<>();
+    if (resultManifest.getChunks() == null) {
+      return chunkIndexMap;
+    }
     for (BaseChunkInfo chunkInfo : resultManifest.getChunks()) {
       // TODO: Add logging to check data (in bytes) from server and in root allocator.
       //  If they are close, we can directly assign the number of bytes as the limit with a small
