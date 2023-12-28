@@ -1,20 +1,20 @@
 package com.databricks.jdbc.driver;
 
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
+
 import com.databricks.jdbc.core.DatabricksConnection;
+import com.databricks.jdbc.core.DatabricksSQLException;
+import com.databricks.sdk.core.DatabricksError;
 import com.databricks.sdk.core.UserAgent;
+import java.sql.*;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
-import com.databricks.jdbc.core.DatabricksSQLException;
-import com.databricks.sdk.core.DatabricksError;
-import java.sql.*;
 import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
 
 /**
  * Databricks JDBC driver. TODO: Add implementation to accept Urls in format:
@@ -52,19 +52,13 @@ public class DatabricksDriver implements Driver {
     if (logFileConfig != null) {
       System.setProperty(SYSTEM_LOG_FILE_CONFIG, logFileConfig);
     }
-<<<<<<< HEAD
-    UserAgent.withProduct(
-        DatabricksJdbcConstants.DEFAULT_USER_AGENT, getVersion());
-    UserAgent.withOtherInfo(USER_AGENT_PREFIX, connectionContext.getUserAgent());
-    return new DatabricksConnection(connectionContext);
-=======
+    setUserAgent(connectionContext);
     try {
       return new DatabricksConnection(connectionContext);
     } catch (DatabricksError e) {
       throw new DatabricksSQLException(
           "Invalid or unknown hostname provided :" + connectionContext.getHostUrl(), e);
     }
->>>>>>> main
   }
 
   @Override
@@ -102,5 +96,10 @@ public class DatabricksDriver implements Driver {
 
   private String getVersion() {
     return String.format("%d.%d.%d", getMajorVersion(), getMinorVersion(), buildVersion);
+  }
+
+  public void setUserAgent(IDatabricksConnectionContext connectionContext) {
+    UserAgent.withProduct(DatabricksJdbcConstants.DEFAULT_USER_AGENT, getVersion());
+    UserAgent.withOtherInfo(CLIENT_USER_AGENT_PREFIX, connectionContext.getClientUserAgent());
   }
 }
