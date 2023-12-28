@@ -39,7 +39,12 @@ public class OAuthAuthenticator {
             .setAuthType(DatabricksJdbcConstants.U2M_AUTH_TYPE)
             .setHost(this.connectionContext.getHostForOAuth())
             .setClientId(this.connectionContext.getClientId())
-            .setClientSecret(this.connectionContext.getClientSecret());
+            .setClientSecret(this.connectionContext.getClientSecret())
+            .setOAuthRedirectUrl(DatabricksJdbcConstants.U2M_AUTH_REDIRECT_URL);
+    if (!config.isAzure()) {
+      // Default scope is already being set for Azure in databricks-sdk.
+      config.setScopes(this.connectionContext.getOAuthScopesForU2M());
+    }
     return new WorkspaceClient(config);
   }
 

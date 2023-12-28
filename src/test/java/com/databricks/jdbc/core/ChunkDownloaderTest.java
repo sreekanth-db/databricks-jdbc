@@ -35,6 +35,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -63,6 +64,17 @@ public class ChunkDownloaderTest {
   @Mock HttpEntity httpEntity;
 
   @Mock ApiClient apiClient;
+
+  @Test
+  public void testInitEmptyChunkDownloader() throws Exception {
+    ResultManifest resultManifest =
+        new ResultManifest()
+            .setTotalChunkCount(0L)
+            .setSchema(new ResultSchema().setColumns(new ArrayList<>()));
+    ResultData resultData = new ResultData().setExternalLinks(new ArrayList<>());
+    assertDoesNotThrow(
+        () -> new ChunkDownloader(STATEMENT_ID, resultManifest, resultData, null, null));
+  }
 
   // @Test
   public void testInitChunkDownloader() throws Exception {

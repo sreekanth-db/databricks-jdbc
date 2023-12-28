@@ -10,6 +10,9 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
+import com.databricks.jdbc.core.DatabricksSQLException;
+import com.databricks.sdk.core.DatabricksError;
+import java.sql.*;
 import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +44,7 @@ public class DatabricksDriver implements Driver {
   }
 
   @Override
-  public Connection connect(String url, Properties info) {
+  public Connection connect(String url, Properties info) throws DatabricksSQLException {
     LOGGER.debug("public Connection connect(String url = {}, Properties info)", url);
     IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(url, info);
     System.setProperty(SYSTEM_LOG_LEVEL_CONFIG, connectionContext.getLogLevelString());
@@ -49,9 +52,18 @@ public class DatabricksDriver implements Driver {
     if (logFileConfig != null) {
       System.setProperty(SYSTEM_LOG_FILE_CONFIG, logFileConfig);
     }
+<<<<<<< HEAD
     UserAgent.withProduct(
         connectionContext.getUserAgent(), getMajorVersion() + "." + getMinorVersion());
     return new DatabricksConnection(connectionContext);
+=======
+    try {
+      return new DatabricksConnection(connectionContext);
+    } catch (DatabricksError e) {
+      throw new DatabricksSQLException(
+          "Invalid or unknown hostname provided :" + connectionContext.getHostUrl(), e);
+    }
+>>>>>>> main
   }
 
   @Override
@@ -77,6 +89,10 @@ public class DatabricksDriver implements Driver {
   @Override
   public java.util.logging.Logger getParentLogger() {
     return null;
+  }
+
+  public static DatabricksDriver getInstance() {
+    return INSTANCE;
   }
 
   public static void main(String[] args) {
