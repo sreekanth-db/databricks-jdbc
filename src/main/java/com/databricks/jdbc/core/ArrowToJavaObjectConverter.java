@@ -11,6 +11,9 @@ public class ArrowToJavaObjectConverter {
   // TODO (Madhav): Check Arrow to JSON conversion
   public static Object convert(Object object, ColumnInfoTypeName requiredType)
       throws DatabricksSQLException {
+    if (object == null) {
+      return null;
+    }
     switch (requiredType) {
       case BYTE:
         return convertToByte(object);
@@ -49,9 +52,10 @@ public class ArrowToJavaObjectConverter {
   }
 
   private static Object convertToTimestamp(Object object) throws DatabricksSQLException {
-
+    // Divide by 1000 since we need to convert from microseconds to milliseconds.
     Instant instant =
-        Instant.ofEpochMilli(object instanceof Integer ? (int) object : (long) object);
+        Instant.ofEpochMilli(
+            object instanceof Integer ? ((int) object) / 1000 : ((long) object) / 1000);
     return Timestamp.from(instant);
   }
 

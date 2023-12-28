@@ -63,6 +63,9 @@ class ArrowStreamResult implements IExecutionResult {
 
   private static ImmutableMap<Long, BaseChunkInfo> getRowOffsetMap(ResultManifest resultManifest) {
     ImmutableMap.Builder<Long, BaseChunkInfo> rowOffsetMapBuilder = ImmutableMap.builder();
+    if (resultManifest.getTotalChunkCount() == 0) {
+      return rowOffsetMapBuilder.build();
+    }
     for (BaseChunkInfo chunk : resultManifest.getChunks()) {
       rowOffsetMapBuilder.put(chunk.getRowOffset(), chunk);
     }

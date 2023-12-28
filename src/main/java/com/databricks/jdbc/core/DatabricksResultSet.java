@@ -15,17 +15,14 @@ import java.util.List;
 import java.util.Map;
 
 public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
-
   private static final String DECIMAL = ".";
   private static final String AFFECTED_ROWS_COUNT = "num_affected_rows";
-
   private final StatementStatus statementStatus;
   private final String statementId;
   private final IExecutionResult executionResult;
   private final DatabricksResultSetMetaData resultSetMetaData;
   private final StatementType statementType;
   private final IDatabricksStatement parentStatement;
-
   private Long updateCount;
   private boolean isClosed;
 
@@ -102,9 +99,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public boolean next() throws SQLException {
-    if (isClosed()) {
-      return false;
-    }
+    checkIfClosed();
     return this.executionResult.next();
   }
 
@@ -119,6 +114,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public boolean wasNull() throws SQLException {
+    checkIfClosed();
     // TODO: fix implementation
     return this == null;
   }
@@ -127,6 +123,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   // out and to reuse converter objects.
   @Override
   public String getString(int columnIndex) throws SQLException {
+    checkIfClosed();
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return null;
@@ -149,11 +146,11 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public byte getByte(int columnIndex) throws SQLException {
+    checkIfClosed();
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return 0;
     }
-
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     AbstractObjectConverter converter = getObjectConverter(obj, columnType);
     return converter.convertToByte();
@@ -161,6 +158,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public short getShort(int columnIndex) throws SQLException {
+    checkIfClosed();
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return 0;
@@ -172,6 +170,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public int getInt(int columnIndex) throws SQLException {
+    checkIfClosed();
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return 0;
@@ -183,6 +182,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public long getLong(int columnIndex) throws SQLException {
+    checkIfClosed();
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return 0;
@@ -194,6 +194,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public float getFloat(int columnIndex) throws SQLException {
+    checkIfClosed();
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return 0f;
@@ -205,6 +206,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public double getDouble(int columnIndex) throws SQLException {
+    checkIfClosed();
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return 0;
@@ -217,6 +219,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
   // TODO (Madhav): Handle case when scale is not provided when getScale is implemented.
   @Override
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
+    checkIfClosed();
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return BigDecimal.ZERO;
@@ -228,6 +231,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public byte[] getBytes(int columnIndex) throws SQLException {
+    checkIfClosed();
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return null;
@@ -239,6 +243,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public Date getDate(int columnIndex) throws SQLException {
+    checkIfClosed();
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return null;
@@ -250,113 +255,133 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public Time getTime(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
-  // TODO (Madhav): Handle case when scale is not provided when getScale is implemented.
   @Override
   public Timestamp getTimestamp(int columnIndex) throws SQLException {
+    checkIfClosed();
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return null;
     }
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     AbstractObjectConverter converter = getObjectConverter(obj, columnType);
-    return converter.convertToTimestamp(resultSetMetaData.getScale(columnIndex));
+    return converter.convertToTimestamp();
   }
 
   @Override
   public InputStream getAsciiStream(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public InputStream getUnicodeStream(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public InputStream getBinaryStream(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public String getString(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getString(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public boolean getBoolean(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getBoolean(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public byte getByte(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getByte(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public short getShort(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getShort(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public int getInt(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getInt(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public long getLong(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getLong(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public float getFloat(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getFloat(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public double getDouble(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getDouble(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
+    checkIfClosed();
     return getBigDecimal(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public byte[] getBytes(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getBytes(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public Date getDate(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    return getDate(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public Time getTime(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Timestamp getTimestamp(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    return getTimestamp(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public InputStream getAsciiStream(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public InputStream getUnicodeStream(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public InputStream getBinaryStream(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
@@ -372,6 +397,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public String getCursorName() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
@@ -382,103 +408,123 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public Object getObject(int columnIndex) throws SQLException {
+    checkIfClosed();
     return getObjectInternal(columnIndex);
   }
 
   @Override
   public Object getObject(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    return getObject(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public int findColumn(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Reader getCharacterStream(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Reader getCharacterStream(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    return getBigDecimal(columnIndex, resultSetMetaData.getScale(columnIndex));
   }
 
   @Override
   public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
-    throw new UnsupportedOperationException("Not implemented");
+    checkIfClosed();
+    return getBigDecimal(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public boolean isBeforeFirst() throws SQLException {
+    checkIfClosed();
     // TODO: Madhav to check the best way to implement this, below is not correct
     return !executionResult.hasNext();
   }
 
   @Override
   public boolean isAfterLast() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public boolean isFirst() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public boolean isLast() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void beforeFirst() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void afterLast() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public boolean first() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public boolean last() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public int getRow() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public boolean absolute(int row) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public boolean relative(int rows) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public boolean previous() throws SQLException {
+    checkIfClosed();
     // We only support forward direction
     throw new SQLFeatureNotSupportedException();
   }
 
   @Override
   public void setFetchDirection(int direction) throws SQLException {
+    checkIfClosed();
     // Only allow forward direction
     if (direction != ResultSet.FETCH_FORWARD) {
       throw new SQLFeatureNotSupportedException();
@@ -487,16 +533,19 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public int getFetchDirection() throws SQLException {
+    checkIfClosed();
     return ResultSet.FETCH_FORWARD;
   }
 
   @Override
   public void setFetchSize(int rows) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public int getFetchSize() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
@@ -512,378 +561,453 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public boolean rowUpdated() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public boolean rowInserted() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public boolean rowDeleted() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNull(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBoolean(int columnIndex, boolean x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateByte(int columnIndex, byte x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateShort(int columnIndex, short x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateInt(int columnIndex, int x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateLong(int columnIndex, long x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateFloat(int columnIndex, float x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateDouble(int columnIndex, double x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateString(int columnIndex, String x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBytes(int columnIndex, byte[] x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateDate(int columnIndex, Date x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateTime(int columnIndex, Time x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateObject(int columnIndex, Object x, int scaleOrLength) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateObject(int columnIndex, Object x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNull(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBoolean(String columnLabel, boolean x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateByte(String columnLabel, byte x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateShort(String columnLabel, short x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateInt(String columnLabel, int x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateLong(String columnLabel, long x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateFloat(String columnLabel, float x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateDouble(String columnLabel, double x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBigDecimal(String columnLabel, BigDecimal x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateString(String columnLabel, String x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBytes(String columnLabel, byte[] x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateDate(String columnLabel, Date x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateTime(String columnLabel, Time x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateTimestamp(String columnLabel, Timestamp x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateAsciiStream(String columnLabel, InputStream x, int length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBinaryStream(String columnLabel, InputStream x, int length)
       throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateCharacterStream(String columnLabel, Reader reader, int length)
       throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateObject(String columnLabel, Object x, int scaleOrLength) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateObject(String columnLabel, Object x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void insertRow() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateRow() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void deleteRow() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void refreshRow() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void cancelRowUpdates() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void moveToInsertRow() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void moveToCurrentRow() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Statement getStatement() throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Object getObject(int columnIndex, Map<String, Class<?>> map) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Ref getRef(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Blob getBlob(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Clob getClob(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Array getArray(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Ref getRef(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getRef(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public Blob getBlob(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getBlob(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public Clob getClob(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getClob(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public Array getArray(String columnLabel) throws SQLException {
+    checkIfClosed();
     return getArray(getColumnNameIndex(columnLabel));
   }
 
   @Override
   public Date getDate(int columnIndex, Calendar cal) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Date getDate(String columnLabel, Calendar cal) throws SQLException {
+    checkIfClosed();
     return getDate(getColumnNameIndex(columnLabel), cal);
   }
 
   @Override
   public Time getTime(int columnIndex, Calendar cal) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Time getTime(String columnLabel, Calendar cal) throws SQLException {
+    checkIfClosed();
     return getTime(getColumnNameIndex(columnLabel), cal);
   }
 
   @Override
   public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public URL getURL(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public URL getURL(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateRef(int columnIndex, Ref x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateRef(String columnLabel, Ref x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBlob(int columnIndex, Blob x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBlob(String columnLabel, Blob x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateClob(int columnIndex, Clob x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateClob(String columnLabel, Clob x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateArray(int columnIndex, Array x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateArray(String columnLabel, Array x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
@@ -899,11 +1023,13 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public void updateRowId(int columnIndex, RowId x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateRowId(String columnLabel, RowId x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
@@ -919,227 +1045,271 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public void updateNString(int columnIndex, String nString) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNString(String columnLabel, String nString) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNClob(int columnIndex, NClob nClob) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNClob(String columnLabel, NClob nClob) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public NClob getNClob(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public NClob getNClob(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public SQLXML getSQLXML(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public SQLXML getSQLXML(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateSQLXML(int columnIndex, SQLXML xmlObject) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateSQLXML(String columnLabel, SQLXML xmlObject) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public String getNString(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public String getNString(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Reader getNCharacterStream(int columnIndex) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public Reader getNCharacterStream(String columnLabel) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNCharacterStream(String columnLabel, Reader reader, long length)
       throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateAsciiStream(String columnLabel, InputStream x, long length)
       throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBinaryStream(String columnLabel, InputStream x, long length)
       throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateCharacterStream(String columnLabel, Reader reader, long length)
       throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBlob(int columnIndex, InputStream inputStream, long length)
       throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBlob(String columnLabel, InputStream inputStream, long length)
       throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateClob(int columnIndex, Reader reader, long length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateClob(String columnLabel, Reader reader, long length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNClob(int columnIndex, Reader reader, long length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNClob(String columnLabel, Reader reader, long length) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNCharacterStream(String columnLabel, Reader reader) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateAsciiStream(int columnIndex, InputStream x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateCharacterStream(int columnIndex, Reader x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateAsciiStream(String columnLabel, InputStream x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBinaryStream(String columnLabel, InputStream x) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateCharacterStream(String columnLabel, Reader reader) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateBlob(String columnLabel, InputStream inputStream) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateClob(int columnIndex, Reader reader) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateClob(String columnLabel, Reader reader) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNClob(int columnIndex, Reader reader) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public void updateNClob(String columnLabel, Reader reader) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+    checkIfClosed();
     throw new UnsupportedOperationException("Not implemented");
   }
 
@@ -1165,6 +1335,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public long getUpdateCount() throws SQLException {
+    checkIfClosed();
     if (updateCount != null) {
       return updateCount;
     }
@@ -1184,6 +1355,7 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public boolean hasUpdateCount() throws SQLException {
+    checkIfClosed();
     if (this.statementType == StatementType.UPDATE) {
       return true;
     }
@@ -1240,5 +1412,11 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   private int getColumnNameIndex(String columnName) {
     return this.resultSetMetaData.getColumnNameIndex(columnName);
+  }
+
+  private void checkIfClosed() throws SQLException {
+    if (this.isClosed) {
+      throw new DatabricksSQLException("Operation not allowed - ResultSet is closed");
+    }
   }
 }

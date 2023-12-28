@@ -5,10 +5,10 @@ import java.util.regex.Pattern;
 public final class DatabricksJdbcConstants {
 
   static final Pattern JDBC_URL_PATTERN =
-      Pattern.compile("jdbc:databricks:\\/\\/([^/]*)(?::\\d+)?\\/(.*)");
+      Pattern.compile("jdbc:databricks:\\/\\/([^/]*)(?::\\d+)?\\/*(.*)");
   static final Pattern HTTP_PATH_PATTERN = Pattern.compile(".*\\/warehouses\\/(.*)");
   static final Pattern HTTP_PATH_SQL_PATTERN = Pattern.compile("sql\\/(.*)");
-  static final String JDBC_SCHEMA = "jdbc:databricks://";
+  public static final String JDBC_SCHEMA = "jdbc:databricks://";
   static final String DEFAULT_LOG_LEVEL = "INFO";
   static final String LOG_LEVEL = "loglevel";
   static final String LOG_PATH = "logpath";
@@ -18,7 +18,8 @@ public final class DatabricksJdbcConstants {
   static final String PORT_DELIMITER = ":";
   static final String PAIR_DELIMITER = "=";
   static final String TOKEN = "token";
-  static final String PASSWORD = "password";
+  public static final String USER = "user";
+  public static final String PASSWORD = "password";
 
   static final String CLIENT_ID = "databricks_client_id";
 
@@ -41,13 +42,16 @@ public final class DatabricksJdbcConstants {
 
   static final String HTTP_PATH = "httppath";
   static final String HTTPS_SCHEMA = "https://";
+  public static final String LOGIN_TIMEOUT = "loginTimeout";
 
-  public static final String U2M_AUTH_TYPE = "databricks-cli";
-
+  public static final String U2M_AUTH_TYPE = "external-browser";
   public static final String M2M_AUTH_TYPE = "oauth-m2m";
-
   public static final String ACCESS_TOKEN_AUTH_TYPE = "pat";
 
+  public static final String U2M_AUTH_REDIRECT_URL = "http://localhost:8020";
+
+  public static final String SQL_SCOPE = "sql";
+  public static final String OFFLINE_ACCESS_SCOPE = "offline_access";
   public static final String FULL_STOP = ".";
   public static final String EMPTY_STRING = "";
   public static final String IDENTIFIER_QUOTE_STRING = "`";
