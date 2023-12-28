@@ -1,8 +1,5 @@
 package com.databricks.jdbc.driver;
 
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.SYSTEM_LOG_FILE_CONFIG;
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.SYSTEM_LOG_LEVEL_CONFIG;
-
 import com.databricks.jdbc.core.DatabricksConnection;
 import com.databricks.sdk.core.UserAgent;
 import java.sql.Connection;
@@ -13,6 +10,8 @@ import java.sql.SQLException;
 import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
 
 /**
  * Databricks JDBC driver. TODO: Add implementation to accept Urls in format:
@@ -25,6 +24,7 @@ public class DatabricksDriver implements Driver {
 
   private static int majorVersion = 0;
   private static int minorVersion = 0;
+  private static int buildVersion = 0;
 
   static {
     try {
@@ -50,7 +50,8 @@ public class DatabricksDriver implements Driver {
       System.setProperty(SYSTEM_LOG_FILE_CONFIG, logFileConfig);
     }
     UserAgent.withProduct(
-        connectionContext.getUserAgent(), getMajorVersion() + "." + getMinorVersion());
+        DatabricksJdbcConstants.DEFAULT_USER_AGENT, getVersion());
+    UserAgent.withOtherInfo(USER_AGENT_PREFIX, connectionContext.getUserAgent());
     return new DatabricksConnection(connectionContext);
   }
 
@@ -81,5 +82,9 @@ public class DatabricksDriver implements Driver {
 
   public static void main(String[] args) {
     LOGGER.info("The driver {} has been initialized.", DatabricksDriver.class);
+  }
+
+  private String getVersion() {
+    return String.format("%d.%d.%d", getMajorVersion(), getMinorVersion(), buildVersion);
   }
 }
