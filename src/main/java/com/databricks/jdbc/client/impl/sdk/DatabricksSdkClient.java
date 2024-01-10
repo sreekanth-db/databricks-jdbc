@@ -151,7 +151,7 @@ public class DatabricksSdkClient implements DatabricksClient {
     CloseStatementRequest request = new CloseStatementRequest().setStatementId(statementId);
     String path = String.format("/api/2.0/sql/statements/%s", request.getStatementId());
     Map<String, String> headers = new HashMap<>();
-    workspaceClient.apiClient().DELETE(path, request, Void.class, headers);
+    //  workspaceClient.apiClient().DELETE(path, request, Void.class, headers);
   }
 
   @Override
