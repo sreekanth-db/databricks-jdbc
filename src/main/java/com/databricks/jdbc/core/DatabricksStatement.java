@@ -63,10 +63,12 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   public void close(boolean removeFromSession) throws SQLException {
     LOGGER.debug("public void close(boolean removeFromSession)");
     this.isClosed = true;
-    this.connection.getSession().getDatabricksClient().closeStatement(statementId);
-    if (resultSet != null) {
-      this.resultSet.close();
-      this.resultSet = null;
+    if (statementId != null) {
+      this.connection.getSession().getDatabricksClient().closeStatement(statementId);
+      if (resultSet != null) {
+        this.resultSet.close();
+        this.resultSet = null;
+      }
     }
     if (removeFromSession) {
       this.connection.closeStatement(this);
@@ -423,5 +425,15 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
     if (isClosed) {
       throw new DatabricksSQLException("Statement is closed");
     }
+  }
+
+  @Override
+  public void setStatementId(String statementId) {
+    this.statementId = statementId;
+  }
+
+  @Override
+  public String getStatementId() {
+    return this.statementId;
   }
 }

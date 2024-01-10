@@ -110,6 +110,9 @@ public class DatabricksSdkClient implements DatabricksClient {
     ExecuteStatementResponse response =
         workspaceClient.statementExecution().executeStatement(request);
     String statementId = response.getStatementId();
+    if (parentStatement != null) {
+      parentStatement.setStatementId(statementId);
+    }
     StatementState responseState = response.getStatus().getState();
     while (responseState == StatementState.PENDING || responseState == StatementState.RUNNING) {
       if (pollCount > 0) { // First poll happens without a delay
