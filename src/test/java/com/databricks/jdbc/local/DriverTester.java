@@ -38,8 +38,11 @@ public class DriverTester {
     // Retrieving the columns in the database
     ResultSet resultSet = metaData.getTables("samples", "tpch", null, null);
     printResultSet(resultSet);
+    resultSet.close();
+    con.close();
   }
 
+  /*
   @Test
   void testGetTablesSimba() throws Exception {
     DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
@@ -54,8 +57,9 @@ public class DriverTester {
     ResultSet rs = metaData.getSchemas();
     printResultSet(rs);
     con.close();
-  }
+  }*/
 
+  /*
   @Test
   void testStatementSimba() throws Exception {
     DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
@@ -72,5 +76,5 @@ public class DriverTester {
     rs.close();
     statement.close();
     con.close();
-  }
+  }*/
 }

@@ -1,20 +1,16 @@
 package com.databricks.jdbc.driver;
 
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
-
 import com.databricks.jdbc.core.DatabricksConnection;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.sdk.core.DatabricksError;
 import com.databricks.sdk.core.UserAgent;
-import java.sql.*;
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.*;
+import java.util.Properties;
+
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
 
 /**
  * Databricks JDBC driver. TODO: Add implementation to accept Urls in format:
@@ -25,9 +21,9 @@ public class DatabricksDriver implements Driver {
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksDriver.class);
   private static final DatabricksDriver INSTANCE;
 
-  private static int majorVersion = 0;
-  private static int minorVersion = 0;
-  private static int buildVersion = 0;
+  private static final int majorVersion = 0;
+  private static final int minorVersion = 0;
+  private static final int buildVersion = 0;
 
   static {
     try {
