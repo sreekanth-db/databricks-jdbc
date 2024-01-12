@@ -1,7 +1,6 @@
 package com.databricks.jdbc.core;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
@@ -40,10 +39,10 @@ public class DatabricksSessionTest {
     assertEquals(SESSION_ID, session.getSessionId());
 
     // TODO(PECO-1327): Add back when session closing is fixed.
-//    doNothing().when(client).deleteSession(SESSION_ID, WAREHOUSE_ID);
-//    session.close();
-//    assertFalse(session.isOpen());
-//    assertNull(session.getSessionId());
+    //    doNothing().when(client).deleteSession(SESSION_ID, WAREHOUSE_ID);
+    //    session.close();
+    //    assertFalse(session.isOpen());
+    //    assertNull(session.getSessionId());
   }
 
   @Test
