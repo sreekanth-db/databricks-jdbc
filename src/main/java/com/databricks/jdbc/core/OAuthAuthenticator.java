@@ -53,7 +53,10 @@ public class OAuthAuthenticator {
         new DatabricksConfig()
             .setAuthType(DatabricksJdbcConstants.ACCESS_TOKEN_AUTH_TYPE)
             .setHost(this.connectionContext.getHostUrl())
-            .setToken(this.connectionContext.getToken());
+            .setToken(
+                this.connectionContext.getToken() == null
+                    ? this.connectionContext.getPwdToken()
+                    : this.connectionContext.getToken());
     return new WorkspaceClient(config);
   }
 
