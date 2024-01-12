@@ -233,7 +233,8 @@ public class ArrowResultChunk {
 
   public void getArrowDataFromInputStream(InputStream inputStream)
       throws DatabricksParsingException {
-    LOGGER.debug("Parsing data for chunk index [{}] and statement [{}]", this.chunkIndex, this.statementId);
+    LOGGER.debug(
+        "Parsing data for chunk index [{}] and statement [{}]", this.chunkIndex, this.statementId);
     this.isDataInitialized = true;
     this.recordBatchList = new ArrayList<>();
     // add check to see if input stream has been populated
@@ -254,7 +255,8 @@ public class ArrowResultChunk {
         this.recordBatchList.add(vectors);
         vectorSchemaRoot.clear();
       }
-      LOGGER.debug("Data parsed for chunk index [{}] and statement [{}]", this.chunkIndex, this.statementId);
+      LOGGER.debug(
+          "Data parsed for chunk index [{}] and statement [{}]", this.chunkIndex, this.statementId);
     } catch (IOException e) {
       String errMsg =
           String.format(
