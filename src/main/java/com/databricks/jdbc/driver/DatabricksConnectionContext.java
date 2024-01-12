@@ -125,12 +125,9 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public String getToken() {
     // TODO: decide on token/password from published specs
-    return getParameter(DatabricksJdbcConstants.PASSWORD);
-  }
-
-  @Override
-  public String getPwdToken() {
-    return getParameter(DatabricksJdbcConstants.PWD);
+    return getParameter(DatabricksJdbcConstants.PASSWORD) == null
+        ? getParameter(DatabricksJdbcConstants.PWD)
+        : getParameter(DatabricksJdbcConstants.PASSWORD);
   }
 
   public String getCloud() {

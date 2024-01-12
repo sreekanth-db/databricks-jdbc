@@ -50,8 +50,6 @@ public interface IDatabricksConnectionContext {
    */
   String getToken();
 
-  String getPwdToken();
-
   String getHostForOAuth();
 
   String getClientId();
