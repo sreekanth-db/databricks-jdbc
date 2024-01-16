@@ -6,7 +6,6 @@ import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.sdk.service.sql.BaseChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.ClosedByInterruptException;
 import java.time.Instant;
@@ -262,14 +261,13 @@ public class ArrowResultChunk {
       }
       LOGGER.debug(
           "Data parsed for chunk index [{}] and statement [{}]", this.chunkIndex, this.statementId);
-    }
-    catch (ClosedByInterruptException e) {
+    } catch (ClosedByInterruptException e) {
       LOGGER.debug("Data parsing interrupted when loading Arrow Result", e);
       vectors.forEach(ValueVector::close);
       purgeArrowData();
-      // no need to throw an exception here, this is expected if statement is closed when loading data
-    }
-    catch (Exception e) {
+      // no need to throw an exception here, this is expected if statement is closed when loading
+      // data
+    } catch (Exception e) {
       String errMsg =
           String.format(
               "Data parsing failed for chunk index [%d] and statement [%s]",
@@ -283,14 +281,12 @@ public class ArrowResultChunk {
   }
 
   void purgeArrowData() {
-    this.recordBatchList.forEach(
-        vectors -> vectors.forEach(ValueVector::close));
+    this.recordBatchList.forEach(vectors -> vectors.forEach(ValueVector::close));
     this.recordBatchList.clear();
-    if(this.vectorSchemaRoot != null) {
+    if (this.vectorSchemaRoot != null) {
       this.vectorSchemaRoot.clear();
       this.vectorSchemaRoot = null;
     }
-
   }
 
   void refreshChunkLink(IDatabricksSession session) {
