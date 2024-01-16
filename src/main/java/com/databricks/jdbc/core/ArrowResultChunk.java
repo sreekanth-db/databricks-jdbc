@@ -1,12 +1,13 @@
 package com.databricks.jdbc.core;
 
+import static com.databricks.jdbc.commons.util.ValidationUtil.checkHTTPError;
+
 import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.sdk.service.sql.BaseChunkInfo;
 import com.databricks.sdk.service.sql.ExternalLink;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
+import java.nio.channels.ClosedByInterruptException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -83,8 +84,11 @@ public class ArrowResultChunk {
   public List<List<ValueVector>> recordBatchList;
 
   private RootAllocator rootAllocator;
+  private String errorMessage;
 
   private boolean isDataInitialized;
+
+  private VectorSchemaRoot vectorSchemaRoot;
 
   ArrowResultChunk(BaseChunkInfo chunkInfo, RootAllocator rootAllocator, String statementId) {
     this.chunkIndex = chunkInfo.getChunkIndex();
@@ -98,6 +102,8 @@ public class ArrowResultChunk {
     this.downloadFinishTime = null;
     this.statementId = statementId;
     isDataInitialized = false;
+    this.errorMessage = null;
+    this.vectorSchemaRoot = null;
   }
 
   public static class ArrowResultChunkIterator {
@@ -186,8 +192,12 @@ public class ArrowResultChunk {
     return this.status;
   }
 
+  public String getErrorMessage() {
+    return this.errorMessage;
+  }
+
   void downloadData(IDatabricksHttpClient httpClient)
-      throws URISyntaxException, DatabricksHttpException, DatabricksParsingException {
+      throws DatabricksHttpException, DatabricksParsingException {
     try {
       this.downloadStartTime = Instant.now().toEpochMilli();
       URIBuilder uriBuilder = new URIBuilder(chunkUrl);
@@ -195,19 +205,19 @@ public class ArrowResultChunk {
       // TODO: add appropriate headers
       // Retry would be done in http client, we should not bother about that here
       HttpResponse response = httpClient.execute(getRequest);
-      // TODO: handle error code
+      checkHTTPError(response);
       HttpEntity entity = response.getEntity();
       getArrowDataFromInputStream(entity.getContent());
       this.downloadFinishTime = Instant.now().toEpochMilli();
       this.setStatus(DownloadStatus.DOWNLOAD_SUCCEEDED);
-    } catch (IOException e) {
-      String errMsg =
+    } catch (Exception e) {
+      this.errorMessage =
           String.format(
-              "Data fetch failed for chunk index [%d] and statement [%s]",
-              this.chunkIndex, this.statementId);
-      LOGGER.atError().setCause(e).log(errMsg);
+              "Data fetch failed for chunk index [%d] and statement [%s]. Error message [%s]",
+              this.chunkIndex, this.statementId, e.getMessage());
+      LOGGER.error(errorMessage, e);
       this.setStatus(DownloadStatus.DOWNLOAD_FAILED);
-      throw new DatabricksHttpException(errMsg, e);
+      throw new DatabricksHttpException(errorMessage, e);
     }
   }
 
@@ -226,17 +236,17 @@ public class ArrowResultChunk {
 
   public void getArrowDataFromInputStream(InputStream inputStream)
       throws DatabricksParsingException {
-    LOGGER.atDebug().log(
-        "Parsing data for chunk index [%d] and statement [%s]",
-        this.getChunkIndex(), this.statementId);
+    LOGGER.debug(
+        "Parsing data for chunk index [{}] and statement [{}]", this.chunkIndex, this.statementId);
     this.isDataInitialized = true;
     this.recordBatchList = new ArrayList<>();
     // add check to see if input stream has been populated
     ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputStream, this.rootAllocator);
+    List<ValueVector> vectors = new ArrayList<>();
     try {
-      VectorSchemaRoot vectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
+      this.vectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
       while (arrowStreamReader.loadNextBatch()) {
-        List<ValueVector> vectors =
+        vectors =
             vectorSchemaRoot.getFieldVectors().stream()
                 .map(
                     fieldVector -> {
@@ -249,17 +259,33 @@ public class ArrowResultChunk {
         this.recordBatchList.add(vectors);
         vectorSchemaRoot.clear();
       }
-      LOGGER.atDebug().log(
-          "Data parsed for chunk index [%d] and statement [%s]",
-          this.getChunkIndex(), this.statementId);
-    } catch (IOException e) {
+      LOGGER.debug(
+          "Data parsed for chunk index [{}] and statement [{}]", this.chunkIndex, this.statementId);
+    } catch (ClosedByInterruptException e) {
+      LOGGER.debug("Data parsing interrupted when loading Arrow Result", e);
+      vectors.forEach(ValueVector::close);
+      purgeArrowData();
+      // no need to throw an exception here, this is expected if statement is closed when loading
+      // data
+    } catch (Exception e) {
       String errMsg =
           String.format(
               "Data parsing failed for chunk index [%d] and statement [%s]",
               this.chunkIndex, this.statementId);
-      LOGGER.atError().setCause(e).log(errMsg);
+      LOGGER.error(errMsg, e);
       this.setStatus(DownloadStatus.DOWNLOAD_FAILED);
+      vectors.forEach(ValueVector::close);
+      purgeArrowData();
       throw new DatabricksParsingException(errMsg, e);
+    }
+  }
+
+  void purgeArrowData() {
+    this.recordBatchList.forEach(vectors -> vectors.forEach(ValueVector::close));
+    this.recordBatchList.clear();
+    if (this.vectorSchemaRoot != null) {
+      this.vectorSchemaRoot.clear();
+      this.vectorSchemaRoot = null;
     }
   }
 

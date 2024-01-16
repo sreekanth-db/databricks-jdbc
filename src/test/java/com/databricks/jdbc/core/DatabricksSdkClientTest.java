@@ -143,6 +143,7 @@ public class DatabricksSdkClientTest {
             StatementType.QUERY,
             connection.getSession(),
             statement);
+    assertEquals(STATEMENT_ID, statement.getStatementId());
   }
 
   private StatementParameterListItem getParam(String type, String value, int ordinal) {
