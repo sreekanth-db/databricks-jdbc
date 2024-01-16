@@ -19,7 +19,7 @@ class SingleChunkDownloader implements Callable<Void> {
   }
 
   @Override
-  public Void call() throws Exception {
+  public Void call() {
     if (chunk.isChunkLinkInvalid()) {
       chunkDownloader.downloadLinks(chunk.getChunkIndex());
     }

@@ -7,9 +7,10 @@ import static org.mockito.Mockito.when;
 
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
+import com.databricks.jdbc.client.sqlexec.ExternalLink;
+import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
-import com.databricks.sdk.core.ApiClient;
 import com.databricks.sdk.service.sql.*;
 import com.google.common.collect.ImmutableList;
 import java.io.*;
@@ -57,8 +58,7 @@ public class ArrowStreamResultTest {
   private static final String CHUNK_URL_PREFIX = "chunk.databricks.com/";
   private static final String STATEMENT_ID = "statement_id";
 
-  @Mock StatementExecutionService statementExecutionService;
-  @Mock ApiClient apiClient;
+  @Mock DatabricksSdkClient mockedSdkClient;
   @Mock IDatabricksHttpClient mockHttpClient;
   @Mock CloseableHttpResponse httpResponse;
   @Mock HttpEntity httpEntity;
@@ -94,22 +94,9 @@ public class ArrowStreamResultTest {
 
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
-    DatabricksSession session =
-        new DatabricksSession(
-            connectionContext,
-            new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient));
-
-    setupMockLinks(1, false);
-    setupMockLinks(2, false);
-    setupMockLinks(3, false);
-    setupMockLinks(4, false);
-    setupMockLinks(5, false);
-    setupMockLinks(6, false);
-    setupMockLinks(7, false);
-    setupMockLinks(8, false);
-    setupMockLinks(9, true);
-
+    DatabricksSession session = new DatabricksSession(connectionContext, mockedSdkClient);
     setupMockResponse();
+    setupResultChunkMocks();
     when(mockHttpClient.execute(isA(HttpUriRequest.class))).thenReturn(httpResponse);
 
     ArrowStreamResult result =
@@ -125,7 +112,6 @@ public class ArrowStreamResultTest {
     }
     assertFalse(result.hasNext());
     assertFalse(result.next());
-    //      mocked.close();
   }
 
   @Test
@@ -148,10 +134,7 @@ public class ArrowStreamResultTest {
 
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
-    DatabricksSession session =
-        new DatabricksSession(
-            connectionContext,
-            new DatabricksSdkClient(connectionContext, statementExecutionService, null));
+    DatabricksSession session = new DatabricksSession(connectionContext, mockedSdkClient);
 
     setupMockResponse();
     when(mockHttpClient.execute(isA(HttpUriRequest.class))).thenReturn(httpResponse);
@@ -165,11 +148,6 @@ public class ArrowStreamResultTest {
 
     assertTrue(objectInFirstColumn instanceof Integer);
     assertTrue(objectInSecondColumn instanceof Double);
-  }
-
-  private void setupMockLinks(long chunkIndex, boolean isLast) {
-    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(chunkIndex)))
-        .thenReturn(new ResultData().setExternalLinks(getChunkLinks(chunkIndex, isLast)));
   }
 
   private List<ExternalLink> getChunkLinks(long chunkIndex, boolean isLast) {
@@ -208,6 +186,14 @@ public class ArrowStreamResultTest {
     when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
     when(mockedStatusLine.getStatusCode()).thenReturn(200);
     when(httpEntity.getContent()).thenAnswer(invocation -> new FileInputStream(arrowFile));
+  }
+
+  private void setupResultChunkMocks() {
+    for (int chunkIndex = 1; chunkIndex < numberOfChunks; chunkIndex++) {
+      boolean isLastChunk = (chunkIndex == (numberOfChunks - 1));
+      when(mockedSdkClient.getResultChunks(STATEMENT_ID, chunkIndex))
+          .thenReturn(getChunkLinks(chunkIndex, isLastChunk));
+    }
   }
 
   private File createTestArrowFile(
@@ -275,11 +261,5 @@ public class ArrowStreamResultTest {
       }
     }
     return data;
-  }
-
-  private GetStatementResultChunkNRequest getChunkNRequest(long chunkIndex) {
-    return new GetStatementResultChunkNRequest()
-        .setStatementId(STATEMENT_ID)
-        .setChunkIndex(chunkIndex);
   }
 }

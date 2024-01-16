@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
+import com.databricks.jdbc.client.sqlexec.ExternalLink;
+import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.core.ArrowResultChunk.DownloadStatus;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
@@ -58,11 +60,10 @@ public class ChunkDownloaderTest {
   private Random random = new Random();
 
   @Mock StatementExecutionService statementExecutionService;
-
+  @Mock DatabricksSdkClient mockedSdkClient;
   @Mock IDatabricksHttpClient mockHttpClient;
   @Mock CloseableHttpResponse httpResponse;
   @Mock HttpEntity httpEntity;
-
   @Mock ApiClient apiClient;
 
   @Test
@@ -87,16 +88,6 @@ public class ChunkDownloaderTest {
         new DatabricksSession(
             connectionContext,
             new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient));
-
-    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(1L)))
-        .thenReturn(new ResultData().setExternalLinks(getChunkLinks(1L, false)));
-    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(2L)))
-        .thenReturn(new ResultData().setExternalLinks(getChunkLinks(2L, false)));
-    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(3L)))
-        .thenReturn(new ResultData().setExternalLinks(getChunkLinks(3L, false)));
-    when(statementExecutionService.getStatementResultChunkN(getChunkNRequest(4L)))
-        .thenReturn(new ResultData().setExternalLinks(getChunkLinks(4L, true)));
-
     setupMockResponse();
     when(mockHttpClient.execute(isA(HttpUriRequest.class))).thenReturn(httpResponse);
 
@@ -165,12 +156,6 @@ public class ChunkDownloaderTest {
     }
     chunkLinks.add(chunkLink);
     return chunkLinks;
-  }
-
-  private GetStatementResultChunkNRequest getChunkNRequest(long chunkIndex) {
-    return new GetStatementResultChunkNRequest()
-        .setStatementId(STATEMENT_ID)
-        .setChunkIndex(chunkIndex);
   }
 
   private void assertChunkResult(ArrowResultChunk chunk, long chunkIndex) {
