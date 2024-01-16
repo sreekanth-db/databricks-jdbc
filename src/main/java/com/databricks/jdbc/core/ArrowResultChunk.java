@@ -4,13 +4,14 @@ import static com.databricks.jdbc.commons.util.ValidationUtil.checkHTTPError;
 
 import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
+import com.databricks.jdbc.client.sqlexec.ExternalLink;
 import com.databricks.sdk.service.sql.BaseChunkInfo;
-import com.databricks.sdk.service.sql.ExternalLink;
 import java.io.InputStream;
 import java.nio.channels.ClosedByInterruptException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.ValueVector;
@@ -73,7 +74,7 @@ public class ArrowResultChunk {
   final long rowOffset;
   final long byteCount;
 
-  private String chunkUrl;
+  private ExternalLink chunkLink;
   private final String statementId;
   private Long nextChunkIndex;
   private Instant expiryTime;
@@ -97,7 +98,7 @@ public class ArrowResultChunk {
     this.byteCount = chunkInfo.getByteCount();
     this.status = DownloadStatus.PENDING;
     this.rootAllocator = rootAllocator;
-    this.chunkUrl = null;
+    this.chunkLink = null;
     this.downloadStartTime = null;
     this.downloadFinishTime = null;
     this.statementId = statementId;
@@ -169,8 +170,8 @@ public class ArrowResultChunk {
   }
 
   /** Sets link details for the given chunk. */
-  void setChunkUrl(ExternalLink chunk) {
-    this.chunkUrl = chunk.getExternalLink();
+  void setChunkLink(ExternalLink chunk) {
+    this.chunkLink = chunk;
     this.nextChunkIndex = chunk.getNextChunkIndex();
     this.expiryTime = Instant.parse(chunk.getExpiration());
     this.status = DownloadStatus.URL_FETCHED;
@@ -192,6 +193,17 @@ public class ArrowResultChunk {
     return this.status;
   }
 
+  void addHeaders(HttpGet getRequest, Map<String, String> headers) {
+    if (headers != null) {
+      headers.forEach(getRequest::addHeader);
+    } else {
+      LOGGER.debug(
+          "No encryption headers present for chunk index [{}] and statement [{}]",
+          chunkIndex,
+          statementId);
+    }
+  }
+
   public String getErrorMessage() {
     return this.errorMessage;
   }
@@ -200,9 +212,9 @@ public class ArrowResultChunk {
       throws DatabricksHttpException, DatabricksParsingException {
     try {
       this.downloadStartTime = Instant.now().toEpochMilli();
-      URIBuilder uriBuilder = new URIBuilder(chunkUrl);
+      URIBuilder uriBuilder = new URIBuilder(chunkLink.getExternalLink());
       HttpGet getRequest = new HttpGet(uriBuilder.build());
-      // TODO: add appropriate headers
+      addHeaders(getRequest, chunkLink.getHttpHeaders());
       // Retry would be done in http client, we should not bother about that here
       HttpResponse response = httpClient.execute(getRequest);
       checkHTTPError(response);
@@ -227,7 +239,7 @@ public class ArrowResultChunk {
     if (status == DownloadStatus.PENDING) {
       LOGGER.debug(
           "Next index called for pending state chunk. chunkUrl = {}, nextChunkIndex = {}",
-          chunkUrl,
+          chunkLink.getExternalLink(),
           nextChunkIndex);
       throw new IllegalStateException("Next index called for pending state chunk");
     }
@@ -292,7 +304,7 @@ public class ArrowResultChunk {
   void refreshChunkLink(IDatabricksSession session) {
     session.getDatabricksClient().getResultChunks(statementId, chunkIndex).stream()
         .findFirst()
-        .ifPresent(chunk -> setChunkUrl(chunk));
+        .ifPresent(this::setChunkLink);
   }
 
   /**
@@ -328,7 +340,11 @@ public class ArrowResultChunk {
 
   /** Returns the chunk download link */
   String getChunkUrl() {
-    return chunkUrl;
+    return chunkLink.getExternalLink();
+  }
+
+  public ExternalLink getChunkLink() {
+    return chunkLink;
   }
 
   /** Returns index for current chunk */

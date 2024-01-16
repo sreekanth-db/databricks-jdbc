@@ -1,14 +1,18 @@
 package com.databricks.jdbc.core;
 
+import static com.databricks.jdbc.client.impl.sdk.PathConstants.SESSION_PATH;
+import static com.databricks.jdbc.client.impl.sdk.PathConstants.STATEMENT_PATH;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.databricks.jdbc.client.StatementType;
 import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
-import com.databricks.jdbc.client.sqlexec.CreateSessionRequest;
-import com.databricks.jdbc.client.sqlexec.ExecuteStatementRequestWithSession;
-import com.databricks.jdbc.client.sqlexec.PositionalStatementParameterListItem;
-import com.databricks.jdbc.client.sqlexec.Session;
+import com.databricks.jdbc.client.sqlexec.*;
+import com.databricks.jdbc.client.sqlexec.ExecuteStatementRequest;
+import com.databricks.jdbc.client.sqlexec.ExecuteStatementResponse;
+import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.core.ApiClient;
@@ -24,6 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class DatabricksSdkClientTest {
   @Mock StatementExecutionService statementExecutionService;
   @Mock ApiClient apiClient;
+  @Mock ResultData resultData;
 
   private static final String WAREHOUSE_ID = "erg6767gg";
   private static final String SESSION_ID = "session_id";
@@ -40,20 +45,74 @@ public class DatabricksSdkClientTest {
         }
       };
 
-  private static final String CLIENT_PATH = "/api/2.0/sql/statements/sessions";
+  private void setupSessionMocks() {
+    Session session = new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID);
+    CreateSessionRequest createSessionRequest =
+        new CreateSessionRequest().setWarehouseId(WAREHOUSE_ID);
+    when(apiClient.POST(SESSION_PATH, createSessionRequest, Session.class, headers))
+        .thenReturn(session);
+  }
+
+  private void setupClientMocks() {
+    List<StatementParameterListItem> params =
+        new ArrayList<>() {
+          {
+            add(getParam("BIGINT", "100", 1));
+            add(getParam("SHORT", "10", 2));
+            add(getParam("TINYINT", "15", 3));
+            add(getParam("STRING", "value", 4));
+          }
+        };
+
+    StatementStatus statementStatus = new StatementStatus().setState(StatementState.SUCCEEDED);
+    ExecuteStatementRequest executeStatementRequest =
+        new ExecuteStatementRequest()
+            .setSessionId(SESSION_ID)
+            .setWarehouseId(WAREHOUSE_ID)
+            .setStatement(STATEMENT)
+            .setDisposition(Disposition.EXTERNAL_LINKS)
+            .setFormat(Format.ARROW_STREAM)
+            .setWaitTimeout("10s")
+            .setRowLimit(100L)
+            .setOnWaitTimeout(ExecuteStatementRequestOnWaitTimeout.CONTINUE)
+            .setParameters(params);
+    ExecuteStatementResponse response =
+        new ExecuteStatementResponse()
+            .setStatementId(STATEMENT_ID)
+            .setStatus(statementStatus)
+            .setResult(resultData)
+            .setManifest(
+                new ResultManifest()
+                    .setFormat(Format.JSON_ARRAY)
+                    .setSchema(new ResultSchema().setColumns(new ArrayList<>()))
+                    .setTotalRowCount(0L));
+
+    when(apiClient.POST(anyString(), any(), any(), any()))
+        .thenAnswer(
+            invocationOnMock -> {
+              String path = (String) invocationOnMock.getArguments()[0];
+              if (path.equals(STATEMENT_PATH)) {
+                ExecuteStatementRequest request =
+                    (ExecuteStatementRequest) invocationOnMock.getArguments()[1];
+                assertTrue(request.equals(executeStatementRequest));
+                return response;
+              } else if (path.equals(SESSION_PATH)) {
+                CreateSessionRequest request =
+                    (CreateSessionRequest) invocationOnMock.getArguments()[1];
+                assertEquals(request.getWarehouseId(), WAREHOUSE_ID);
+                return new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID);
+              }
+              return null;
+            });
+  }
 
   @Test
   public void testCreateSession() {
+    setupSessionMocks();
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
-    CreateSessionRequest createSessionRequest =
-        new CreateSessionRequest().setWarehouseId(WAREHOUSE_ID);
-    Session session = new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID);
     DatabricksSdkClient databricksSdkClient =
         new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient);
-    when(apiClient.POST(CLIENT_PATH, createSessionRequest, Session.class, headers))
-        .thenReturn(session);
-
     ImmutableSessionInfo sessionInfo = databricksSdkClient.createSession(WAREHOUSE_ID);
     assertEquals(sessionInfo.sessionId(), SESSION_ID);
     assertEquals(sessionInfo.warehouseId(), WAREHOUSE_ID);
@@ -61,69 +120,13 @@ public class DatabricksSdkClientTest {
 
   @Test
   public void testExecuteStatement() throws Exception {
-    List<StatementParameterListItem> params =
-        new ArrayList<>() {
-          {
-            add(getParam("BIGINT", "100", 1));
-            add(getParam("SMALLINT", "10", 2));
-            add(getParam("TINYINT", "15", 3));
-            add(getParam("STRING", "value", 4));
-          }
-        };
-
-    GetStatementResponse getResponsePending =
-        new GetStatementResponse()
-            .setStatementId(STATEMENT_ID)
-            .setStatus(new StatementStatus().setState(StatementState.PENDING));
-    GetStatementResponse getResponseSuccessful =
-        new GetStatementResponse()
-            .setStatementId(STATEMENT_ID)
-            .setStatus(new StatementStatus().setState(StatementState.SUCCEEDED))
-            .setManifest(
-                new ResultManifest()
-                    .setFormat(Format.ARROW_STREAM)
-                    .setTotalRowCount(0L)
-                    .setTotalChunkCount(0L)
-                    .setChunks(new ArrayList<>())
-                    .setSchema(new ResultSchema().setColumns(new ArrayList<>()).setColumnCount(0L)))
-            .setResult(new ResultData().setExternalLinks(new ArrayList<>()));
-    GetStatementRequest getStatementRequest =
-        new GetStatementRequest().setStatementId(STATEMENT_ID);
-
-    when(statementExecutionService.getStatement(getStatementRequest))
-        .thenReturn(getResponsePending, getResponseSuccessful);
-
+    setupClientMocks();
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     DatabricksSdkClient databricksSdkClient =
         new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient);
-    CreateSessionRequest createSessionRequest =
-        new CreateSessionRequest().setWarehouseId(WAREHOUSE_ID);
-    Session session = new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID);
-    when(apiClient.POST(CLIENT_PATH, createSessionRequest, Session.class, headers))
-        .thenReturn(session);
-
     DatabricksConnection connection =
         new DatabricksConnection(connectionContext, databricksSdkClient);
-    ExecuteStatementRequestWithSession executeStatementRequest =
-        (ExecuteStatementRequestWithSession)
-            new ExecuteStatementRequestWithSession()
-                .setSessionId(connection.getSession().getSessionId())
-                .setWarehouseId(WAREHOUSE_ID)
-                .setStatement(STATEMENT)
-                .setDisposition(Disposition.EXTERNAL_LINKS)
-                .setFormat(Format.ARROW_STREAM)
-                .setWaitTimeout("10s")
-                .setRowLimit(100L)
-                .setOnWaitTimeout(ExecuteStatementRequestOnWaitTimeout.CONTINUE)
-                .setParameters(params);
-
-    when(statementExecutionService.executeStatement(executeStatementRequest))
-        .thenReturn(
-            new ExecuteStatementResponse()
-                .setStatementId(STATEMENT_ID)
-                .setStatus(new StatementStatus().setState(StatementState.PENDING)));
-
     DatabricksStatement statement = new DatabricksStatement(connection);
     statement.setMaxRows(100);
     HashMap<Integer, ImmutableSqlParameter> sqlParams =
@@ -135,6 +138,7 @@ public class DatabricksSdkClientTest {
             put(4, getSqlParam(4, "value", DatabricksTypeUtil.STRING));
           }
         };
+
     DatabricksResultSet resultSet =
         databricksSdkClient.executeStatement(
             STATEMENT,
