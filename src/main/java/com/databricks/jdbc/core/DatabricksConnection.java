@@ -140,6 +140,8 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   public void setCatalog(String catalog) throws SQLException {
     LOGGER.debug("public void setCatalog(String catalog + {})", catalog);
     this.session.setCatalog(catalog);
+    Statement statement = this.createStatement();
+    statement.execute("SET CATALOG " + catalog);
   }
 
   @Override
@@ -368,8 +370,14 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   @Override
   public boolean isValid(int timeout) throws SQLException {
     LOGGER.debug("public boolean isValid(int timeout = {})", timeout);
-    throw new UnsupportedOperationException(
-        "Not implemented in DatabricksConnection - isValid(int timeout)");
+    try {
+      DatabricksStatement statement = new DatabricksStatement(this);
+      // simple query to check whether connection is working
+      statement.execute("SELECT 1");
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   @Override
@@ -418,6 +426,8 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   public void setSchema(String schema) throws SQLException {
     LOGGER.debug("public void setSchema(String schema = {})", schema);
     session.setSchema(schema);
+    Statement statement = this.createStatement();
+    statement.execute("USE SCHEMA " + schema);
   }
 
   @Override
