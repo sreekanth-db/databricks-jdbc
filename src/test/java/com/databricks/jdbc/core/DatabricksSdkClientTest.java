@@ -85,7 +85,7 @@ public class DatabricksSdkClientTest {
                     .setTotalRowCount(0L)
                     .setTotalChunkCount(0L)
                     .setChunks(new ArrayList<>())
-                    .setSchema(new ResultSchema().setColumns(new ArrayList<>())))
+                    .setSchema(new ResultSchema().setColumns(new ArrayList<>()).setColumnCount(0L)))
             .setResult(new ResultData().setExternalLinks(new ArrayList<>()));
     GetStatementRequest getStatementRequest =
         new GetStatementRequest().setStatementId(STATEMENT_ID);

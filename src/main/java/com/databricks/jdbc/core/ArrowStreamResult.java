@@ -51,7 +51,10 @@ class ArrowStreamResult implements IExecutionResult {
     this.rowOffsetToChunkMap = getRowOffsetMap(resultManifest);
     this.session = session;
     this.chunkDownloader = chunkDownloader;
-    this.columnInfos = new ArrayList(resultManifest.getSchema().getColumns());
+    this.columnInfos =
+        resultManifest.getSchema().getColumnCount() == 0
+            ? new ArrayList<>()
+            : new ArrayList(resultManifest.getSchema().getColumns());
     this.currentRowIndex = -1;
     this.isClosed = false;
     this.chunkIterator = null;
