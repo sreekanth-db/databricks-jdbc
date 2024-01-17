@@ -370,7 +370,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   @Override
   public boolean isValid(int timeout) throws SQLException {
     LOGGER.debug("public boolean isValid(int timeout = {})", timeout);
-    if(timeout < 0) {
+    if (timeout < 0) {
       throw new DatabricksSQLException("Timeout value cannot be negative");
     }
     try {
