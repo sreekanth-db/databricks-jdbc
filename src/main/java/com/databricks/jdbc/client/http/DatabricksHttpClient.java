@@ -25,6 +25,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksHttpClient.class);
 
+  // TODO(PECO-1373): Revisit number of connections and connections per route.
   private static final int DEFAULT_MAX_HTTP_CONNECTIONS = 1000;
   private static final int DEFAULT_MAX_HTTP_CONNECTIONS_PER_ROUTE = 1000;
   private static final int DEFAULT_HTTP_CONNECTION_TIMEOUT = 60 * 1000; // ms
