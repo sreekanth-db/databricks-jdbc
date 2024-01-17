@@ -74,7 +74,7 @@ public class ArrowStreamResultTest {
     ResultManifest resultManifest =
         new ResultManifest()
             .setTotalChunkCount(0L)
-            .setSchema(new ResultSchema().setColumns(new ArrayList<>()));
+            .setSchema(new ResultSchema().setColumns(new ArrayList<>()).setColumnCount(0L));
     ResultData resultData = new ResultData().setExternalLinks(new ArrayList<>());
     assertDoesNotThrow(() -> new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, null));
   }
@@ -88,7 +88,7 @@ public class ArrowStreamResultTest {
             .setTotalRowCount(this.numberOfChunks * 110L)
             .setTotalByteCount(1000L)
             .setChunks(this.chunkInfos)
-            .setSchema(new ResultSchema().setColumns(new ArrayList<>()));
+            .setSchema(new ResultSchema().setColumns(new ArrayList<>()).setColumnCount(0L));
 
     ResultData resultData = new ResultData().setExternalLinks(getChunkLinks(0L, false));
 
@@ -128,7 +128,8 @@ public class ArrowStreamResultTest {
                     .setColumns(
                         ImmutableList.of(
                             new ColumnInfo().setTypeName(ColumnInfoTypeName.INT),
-                            new ColumnInfo().setTypeName(ColumnInfoTypeName.DOUBLE))));
+                            new ColumnInfo().setTypeName(ColumnInfoTypeName.DOUBLE)))
+                    .setColumnCount(2L));
 
     ResultData resultData = new ResultData().setExternalLinks(getChunkLinks(0L, false));
 

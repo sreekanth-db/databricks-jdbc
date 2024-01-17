@@ -84,7 +84,7 @@ public class DatabricksSdkClientTest {
             .setManifest(
                 new ResultManifest()
                     .setFormat(Format.JSON_ARRAY)
-                    .setSchema(new ResultSchema().setColumns(new ArrayList<>()))
+                    .setSchema(new ResultSchema().setColumns(new ArrayList<>()).setColumnCount(0L))
                     .setTotalRowCount(0L));
 
     when(apiClient.POST(anyString(), any(), any(), any()))
