@@ -1,8 +1,8 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksClient;
-import com.databricks.jdbc.driver.DatabricksDriver;
 import com.databricks.jdbc.commons.util.ValidationUtil;
+import com.databricks.jdbc.driver.DatabricksDriver;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.*;
