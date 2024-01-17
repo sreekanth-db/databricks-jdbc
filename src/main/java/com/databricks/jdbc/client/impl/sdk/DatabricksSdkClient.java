@@ -1,5 +1,6 @@
 package com.databricks.jdbc.client.impl.sdk;
 
+import static com.databricks.jdbc.client.impl.sdk.PathConstants.*;
 import static com.databricks.jdbc.commons.EnvironmentVariables.DEFAULT_ROW_LIMIT;
 
 import com.databricks.jdbc.client.DatabricksClient;
@@ -8,6 +9,11 @@ import com.databricks.jdbc.client.sqlexec.*;
 import com.databricks.jdbc.client.sqlexec.CloseStatementRequest;
 import com.databricks.jdbc.client.sqlexec.CreateSessionRequest;
 import com.databricks.jdbc.client.sqlexec.DeleteSessionRequest;
+import com.databricks.jdbc.client.sqlexec.ExecuteStatementRequest;
+import com.databricks.jdbc.client.sqlexec.ExecuteStatementResponse;
+import com.databricks.jdbc.client.sqlexec.ExternalLink;
+import com.databricks.jdbc.client.sqlexec.GetStatementResponse;
+import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.client.sqlexec.Session;
 import com.databricks.jdbc.core.*;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
@@ -19,6 +25,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -34,6 +41,12 @@ public class DatabricksSdkClient implements DatabricksClient {
   private final IDatabricksConnectionContext connectionContext;
   private final DatabricksConfig databricksConfig;
   private final WorkspaceClient workspaceClient;
+
+  private static Map<String, String> getHeaders() {
+    return Map.of(
+        "Accept", "application/json",
+        "Content-Type", "application/json");
+  }
 
   public DatabricksSdkClient(IDatabricksConnectionContext connectionContext) {
     this.connectionContext = connectionContext;
@@ -67,11 +80,8 @@ public class DatabricksSdkClient implements DatabricksClient {
   public ImmutableSessionInfo createSession(String warehouseId) {
     LOGGER.debug("public Session createSession(String warehouseId = {})", warehouseId);
     CreateSessionRequest request = new CreateSessionRequest().setWarehouseId(warehouseId);
-    String path = "/api/2.0/sql/statements/sessions";
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Accept", "application/json");
-    headers.put("Content-Type", "application/json");
-    Session session = workspaceClient.apiClient().POST(path, request, Session.class, headers);
+    Session session =
+        workspaceClient.apiClient().POST(SESSION_PATH, request, Session.class, getHeaders());
     return ImmutableSessionInfo.builder()
         .warehouseId(session.getWarehouseId())
         .sessionId(session.getSessionId())
@@ -83,7 +93,7 @@ public class DatabricksSdkClient implements DatabricksClient {
     LOGGER.debug("public void deleteSession(String sessionId = {})", sessionId);
     DeleteSessionRequest request =
         new DeleteSessionRequest().setSessionId(sessionId).setWarehouseId(warehouseId);
-    String path = String.format("/api/2.0/sql/statements/sessions/%s", request.getSessionId());
+    String path = String.format(SESSION_PATH_WITH_ID, request.getSessionId());
     Map<String, String> headers = new HashMap<>();
     workspaceClient.apiClient().DELETE(path, request, Void.class, headers);
   }
@@ -108,7 +118,10 @@ public class DatabricksSdkClient implements DatabricksClient {
     ExecuteStatementRequest request =
         getRequest(statementType, sql, warehouseId, session, parameters, parentStatement);
     ExecuteStatementResponse response =
-        workspaceClient.statementExecution().executeStatement(request);
+        workspaceClient
+            .apiClient()
+            .POST(STATEMENT_PATH, request, ExecuteStatementResponse.class, getHeaders());
+
     String statementId = response.getStatementId();
     if (parentStatement != null) {
       parentStatement.setStatementId(statementId);
@@ -122,8 +135,12 @@ public class DatabricksSdkClient implements DatabricksClient {
           throw new DatabricksTimeoutException("Thread interrupted due to statement timeout");
         }
       }
+      String getStatusPath = String.format(STATEMENT_PATH_WITH_ID, statementId);
       response =
-          wrapGetStatementResponse(workspaceClient.statementExecution().getStatement(statementId));
+          wrapGetStatementResponse(
+              workspaceClient
+                  .apiClient()
+                  .GET(getStatusPath, request, GetStatementResponse.class, getHeaders()));
       responseState = response.getStatus().getState();
       pollCount++;
     }
@@ -155,9 +172,8 @@ public class DatabricksSdkClient implements DatabricksClient {
   public void closeStatement(String statementId) {
     LOGGER.debug("public void closeStatement(String statementId = {})", statementId);
     CloseStatementRequest request = new CloseStatementRequest().setStatementId(statementId);
-    String path = String.format("/api/2.0/sql/statements/%s", request.getStatementId());
-    Map<String, String> headers = new HashMap<>();
-    workspaceClient.apiClient().DELETE(path, request, Void.class, headers);
+    String path = String.format(STATEMENT_PATH_WITH_ID, request.getStatementId());
+    workspaceClient.apiClient().DELETE(path, request, Void.class, getHeaders());
   }
 
   @Override
@@ -166,13 +182,16 @@ public class DatabricksSdkClient implements DatabricksClient {
         "public Optional<ExternalLink> getResultChunk(String statementId = {}, long chunkIndex = {})",
         statementId,
         chunkIndex);
+    GetStatementResultChunkNRequest request =
+        new GetStatementResultChunkNRequest().setStatementId(statementId).setChunkIndex(chunkIndex);
+    String path = String.format(RESULT_CHUNK_PATH, statementId, chunkIndex);
     return workspaceClient
-        .statementExecution()
-        .getStatementResultChunkN(statementId, chunkIndex)
+        .apiClient()
+        .GET(path, request, ResultData.class, getHeaders())
         .getExternalLinks();
   }
 
-  private ExecuteStatementRequestWithSession getRequest(
+  private ExecuteStatementRequest getRequest(
       StatementType statementType,
       String sql,
       String warehouseId,
@@ -184,20 +203,19 @@ public class DatabricksSdkClient implements DatabricksClient {
     Disposition disposition =
         useCloudFetchForResult(statementType) ? Disposition.EXTERNAL_LINKS : Disposition.INLINE;
     long maxRows = (parentStatement == null) ? DEFAULT_ROW_LIMIT : parentStatement.getMaxRows();
-    ExecuteStatementRequestWithSession request =
-        (ExecuteStatementRequestWithSession)
-            new ExecuteStatementRequestWithSession()
-                .setSessionId(session.getSessionId())
-                .setStatement(sql)
-                .setWarehouseId(warehouseId)
-                .setDisposition(disposition)
-                .setFormat(format)
-                .setWaitTimeout(SYNC_TIMEOUT_VALUE)
-                .setOnWaitTimeout(ExecuteStatementRequestOnWaitTimeout.CONTINUE)
-                .setParameters(
-                    parameters.values().stream()
-                        .map(this::mapToParameterListItem)
-                        .collect(Collectors.toList()));
+
+    List<StatementParameterListItem> collect =
+        parameters.values().stream().map(this::mapToParameterListItem).collect(Collectors.toList());
+    ExecuteStatementRequest request =
+        new ExecuteStatementRequest()
+            .setSessionId(session.getSessionId())
+            .setStatement(sql)
+            .setWarehouseId(warehouseId)
+            .setDisposition(disposition)
+            .setFormat(format)
+            .setWaitTimeout(SYNC_TIMEOUT_VALUE)
+            .setOnWaitTimeout(ExecuteStatementRequestOnWaitTimeout.CONTINUE)
+            .setParameters(collect);
     if (maxRows != DEFAULT_ROW_LIMIT) {
       request.setRowLimit(maxRows);
     }
