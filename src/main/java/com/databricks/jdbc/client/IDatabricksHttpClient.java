@@ -13,4 +13,6 @@ public interface IDatabricksHttpClient {
    * @return http response
    */
   HttpResponse execute(HttpUriRequest request) throws DatabricksHttpException;
+
+  void closeExpiredAndIdleConnections();
 }

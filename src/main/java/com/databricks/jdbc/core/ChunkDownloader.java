@@ -120,6 +120,7 @@ public class ChunkDownloader {
       return null;
     }
     ArrowResultChunk chunk = chunkIndexToChunksMap.get(currentChunkIndex);
+    httpClient.closeExpiredAndIdleConnections();
     synchronized (chunk) {
       try {
         while (!isDownloadComplete(chunk.getStatus())) {
@@ -211,6 +212,7 @@ public class ChunkDownloader {
     this.isClosed = true;
     this.chunkDownloaderExecutorService.shutdownNow();
     this.chunkIndexToChunksMap.values().forEach(chunk -> chunk.releaseChunk());
+    httpClient.closeExpiredAndIdleConnections();
   }
 
   void downloadNextChunks() {
