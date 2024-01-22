@@ -30,22 +30,24 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
     ImmutableMap.Builder<String, Integer> columnIndexBuilder = ImmutableMap.builder();
     int currIndex = 0;
-    for (ColumnInfo columnInfo : resultManifest.getSchema().getColumns()) {
-      ColumnInfoTypeName columnTypeName = columnInfo.getTypeName();
-      int precision = DatabricksTypeUtil.getPrecision(columnTypeName);
-      ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
-      columnBuilder
-          .columnName(columnInfo.getName())
-          .columnTypeClassName(DatabricksTypeUtil.getColumnTypeClassName(columnTypeName))
-          .columnType(DatabricksTypeUtil.getColumnType(columnTypeName))
-          .columnTypeText(columnInfo.getTypeText())
-          .typePrecision(precision)
-          .displaySize(DatabricksTypeUtil.getDisplaySize(columnTypeName, precision))
-          .isSigned(DatabricksTypeUtil.isSigned(columnTypeName));
+    if (resultManifest.getSchema().getColumnCount() > 0) {
+      for (ColumnInfo columnInfo : resultManifest.getSchema().getColumns()) {
+        ColumnInfoTypeName columnTypeName = columnInfo.getTypeName();
+        int precision = DatabricksTypeUtil.getPrecision(columnTypeName);
+        ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
+        columnBuilder
+            .columnName(columnInfo.getName())
+            .columnTypeClassName(DatabricksTypeUtil.getColumnTypeClassName(columnTypeName))
+            .columnType(DatabricksTypeUtil.getColumnType(columnTypeName))
+            .columnTypeText(columnInfo.getTypeText())
+            .typePrecision(precision)
+            .displaySize(DatabricksTypeUtil.getDisplaySize(columnTypeName, precision))
+            .isSigned(DatabricksTypeUtil.isSigned(columnTypeName));
 
-      columnsBuilder.add(columnBuilder.build());
-      // Keep index starting from 1, to be consistent with JDBC convention
-      columnIndexBuilder.put(columnInfo.getName(), ++currIndex);
+        columnsBuilder.add(columnBuilder.build());
+        // Keep index starting from 1, to be consistent with JDBC convention
+        columnIndexBuilder.put(columnInfo.getName(), ++currIndex);
+      }
     }
     this.columns = columnsBuilder.build();
     this.columnNameIndex = columnIndexBuilder.build();

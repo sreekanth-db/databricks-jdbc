@@ -1,7 +1,11 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.IDatabricksHttpClient;
-import com.databricks.sdk.service.sql.*;
+import com.databricks.jdbc.client.sqlexec.ResultData;
+import com.databricks.sdk.service.sql.BaseChunkInfo;
+import com.databricks.sdk.service.sql.ColumnInfo;
+import com.databricks.sdk.service.sql.ColumnInfoTypeName;
+import com.databricks.sdk.service.sql.ResultManifest;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import java.sql.SQLException;
@@ -51,7 +55,10 @@ class ArrowStreamResult implements IExecutionResult {
     this.rowOffsetToChunkMap = getRowOffsetMap(resultManifest);
     this.session = session;
     this.chunkDownloader = chunkDownloader;
-    this.columnInfos = new ArrayList(resultManifest.getSchema().getColumns());
+    this.columnInfos =
+        resultManifest.getSchema().getColumnCount() == 0
+            ? new ArrayList<>()
+            : new ArrayList(resultManifest.getSchema().getColumns());
     this.currentRowIndex = -1;
     this.isClosed = false;
     this.chunkIterator = null;
@@ -89,7 +96,7 @@ class ArrowStreamResult implements IExecutionResult {
   }
 
   @Override
-  public boolean next() {
+  public boolean next() throws DatabricksSQLException {
     if (!hasNext()) {
       return false;
     }

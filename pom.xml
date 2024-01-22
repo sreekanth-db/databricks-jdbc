@@ -34,9 +34,11 @@
     <httpclient.version>4.5.14</httpclient.version>
     <log4japi.version>2.21.1</log4japi.version>
     <log4jcore.version>2.21.1</log4jcore.version>
+    <spotless.version>2.41.1</spotless.version>
     <commons-io.version>2.13.0</commons-io.version>
     <databricks-sdk.version>0.13.0</databricks-sdk.version>
     <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
+    <slf4j-reload4j.version>2.1.0-alpha1</slf4j-reload4j.version>
   </properties>
   <dependencies>
     <dependency>
@@ -57,7 +59,7 @@
     <dependency>
       <groupId>com.diffplug.spotless</groupId>
       <artifactId>spotless-maven-plugin</artifactId>
-      <version>2.39.0</version>
+      <version>${spotless.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
@@ -132,6 +134,12 @@
       <artifactId>value</artifactId>
       <version>${immutables.value.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-reload4j</artifactId>
+      <version>${slf4j-reload4j.version}</version>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
 
@@ -226,6 +234,13 @@
               </goals>
             </execution>
           </executions>
+          <configuration>
+            <excludes>
+              <exclude>*EnvironmentVariables.java</exclude>
+              <exclude>*Exception.java</exclude>
+              <exclude>*/core/types/*</exclude>
+            </excludes>
+          </configuration>
         </plugin>
       </plugins>
     </build>

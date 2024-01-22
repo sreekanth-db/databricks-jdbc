@@ -2,9 +2,9 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.http.DatabricksHttpClient;
+import com.databricks.jdbc.client.sqlexec.ExternalLink;
+import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.sdk.service.sql.BaseChunkInfo;
-import com.databricks.sdk.service.sql.ExternalLink;
-import com.databricks.sdk.service.sql.ResultData;
 import com.databricks.sdk.service.sql.ResultManifest;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
@@ -33,7 +33,6 @@ public class ChunkDownloader {
   private long nextChunkToDownload;
   private Long totalChunksInMemory;
   private long allowedChunksInMemory;
-  private long totalBytesInUse;
   private boolean isClosed;
 
   ConcurrentHashMap<Long, ArrowResultChunk> chunkIndexToChunksMap;
@@ -89,7 +88,7 @@ public class ChunkDownloader {
     }
 
     for (ExternalLink externalLink : resultData.getExternalLinks()) {
-      chunkIndexMap.get(externalLink.getChunkIndex()).setChunkUrl(externalLink);
+      chunkIndexMap.get(externalLink.getChunkIndex()).setChunkLink(externalLink);
     }
     return chunkIndexMap;
   }
@@ -116,15 +115,19 @@ public class ChunkDownloader {
    * @param chunkIndex index of chunk
    * @return the chunk at given index
    */
-  public ArrowResultChunk getChunk() {
+  public ArrowResultChunk getChunk() throws DatabricksSQLException {
     if (currentChunkIndex < 0) {
       return null;
     }
     ArrowResultChunk chunk = chunkIndexToChunksMap.get(currentChunkIndex);
+    httpClient.closeExpiredAndIdleConnections();
     synchronized (chunk) {
       try {
         while (!isDownloadComplete(chunk.getStatus())) {
           chunk.wait();
+        }
+        if (chunk.getStatus() != ArrowResultChunk.DownloadStatus.DOWNLOAD_SUCCEEDED) {
+          throw new DatabricksSQLException(chunk.getErrorMessage());
         }
       } catch (InterruptedException e) {
         logger
@@ -135,7 +138,7 @@ public class ChunkDownloader {
                 chunk.getChunkIndex(), statementId);
       }
     }
-    // TODO: check for errors
+
     return chunk;
   }
 
@@ -196,7 +199,7 @@ public class ChunkDownloader {
    * @param chunkLink external link details for chunk
    */
   void setChunkLink(ExternalLink chunkLink) {
-    chunkIndexToChunksMap.get(chunkLink.getChunkIndex()).setChunkUrl(chunkLink);
+    chunkIndexToChunksMap.get(chunkLink.getChunkIndex()).setChunkLink(chunkLink);
   }
 
   /** Fetches total chunks that we have in memory */
@@ -209,6 +212,7 @@ public class ChunkDownloader {
     this.isClosed = true;
     this.chunkDownloaderExecutorService.shutdownNow();
     this.chunkIndexToChunksMap.values().forEach(chunk -> chunk.releaseChunk());
+    httpClient.closeExpiredAndIdleConnections();
   }
 
   void downloadNextChunks() {

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
@@ -24,8 +25,9 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksHttpClient.class);
 
-  private static final int DEFAULT_MAX_HTTP_CONNECTIONS = 300;
-  private static final int DEFAULT_MAX_HTTP_CONNECTIONS_PER_ROUTE = 300;
+  // TODO(PECO-1373): Revisit number of connections and connections per route.
+  private static final int DEFAULT_MAX_HTTP_CONNECTIONS = 1000;
+  private static final int DEFAULT_MAX_HTTP_CONNECTIONS_PER_ROUTE = 1000;
   private static final int DEFAULT_HTTP_CONNECTION_TIMEOUT = 60 * 1000; // ms
   private static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300 * 1000; // ms
   private static final int DEFAULT_BACKOFF_FACTOR = 2; // Exponential factor
@@ -34,10 +36,11 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   private static final int DEFAULT_RETRY_COUNT = 5;
   private static final String HTTP_GET = "GET";
   private static final Set<Integer> RETRYABLE_HTTP_CODES = getRetryableHttpCodes();
+  private static final long DEFAULT_IDLE_CONNECTION_TIMEOUT = 5;
 
   private static DatabricksHttpClient instance = new DatabricksHttpClient();
 
-  private final PoolingHttpClientConnectionManager connectionManager;
+  private static PoolingHttpClientConnectionManager connectionManager;
 
   private final CloseableHttpClient httpClient;
 
@@ -121,7 +124,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
   @Override
   public HttpResponse execute(HttpUriRequest request) throws DatabricksHttpException {
-    LOGGER.atDebug().log("Executing HTTP request [%s]", RequestSanitizer.sanitizeRequest(request));
+    LOGGER.debug("Executing HTTP request [{}]", RequestSanitizer.sanitizeRequest(request));
     // TODO: add retries and error handling
     try {
       return httpClient.execute(request);
@@ -130,8 +133,19 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
           String.format(
               "Caught error while executing http request: [%s]",
               RequestSanitizer.sanitizeRequest(request));
-      LOGGER.atError().setCause(e).log(errorMsg);
+      LOGGER.error(errorMsg, e);
       throw new DatabricksHttpException(errorMsg, e);
+    }
+  }
+
+  @Override
+  public void closeExpiredAndIdleConnections() {
+    if (connectionManager != null) {
+      synchronized (connectionManager) {
+        LOGGER.debug("connection pool stats: {}", connectionManager.getTotalStats());
+        connectionManager.closeExpiredConnections();
+        connectionManager.closeIdleConnections(DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
+      }
     }
   }
 }
