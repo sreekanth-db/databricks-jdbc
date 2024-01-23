@@ -1,7 +1,9 @@
 package com.databricks.jdbc.core;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -9,6 +11,7 @@ import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.core.UserAgent;
+import java.sql.ResultSet;
 import java.util.Properties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,5 +44,40 @@ public class DatabricksConnectionTest {
     String userAgent = UserAgent.asString();
     assertTrue(userAgent.contains("DatabricksJDBCDriverOSS/0.0.0"));
     assertTrue(userAgent.contains("Java/SQLExecHttpClient/HC MyApp"));
+  }
+
+  @Test
+  public void testStatement() throws Exception {
+    ImmutableSessionInfo session =
+        ImmutableSessionInfo.builder().warehouseId(WAREHOUSE_ID).sessionId(SESSION_ID).build();
+
+    when(databricksClient.createSession(WAREHOUSE_ID)).thenReturn(session);
+    IDatabricksConnectionContext connectionContext =
+        DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+    DatabricksConnection connection = new DatabricksConnection(connectionContext, databricksClient);
+
+    assertThrows(
+        DatabricksSQLFeatureNotSupportedException.class,
+        () -> {
+          connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+        });
+
+    assertThrows(
+        DatabricksSQLFeatureNotSupportedException.class,
+        () -> {
+          connection.prepareStatement(
+              "sql", ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+        });
+
+    assertDoesNotThrow(
+        () -> {
+          connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        });
+
+    assertDoesNotThrow(
+        () -> {
+          connection.prepareStatement(
+              "sql", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        });
   }
 }
