@@ -79,7 +79,23 @@ public class DatabricksSdkClient implements DatabricksClient {
   @Override
   public ImmutableSessionInfo createSession(String warehouseId) {
     LOGGER.debug("public Session createSession(String warehouseId = {})", warehouseId);
+    return createSession(warehouseId, null, null);
+  }
+
+  @Override
+  public ImmutableSessionInfo createSession(String warehouseId, String catalog, String schema) {
+    LOGGER.debug(
+        "public Session createSession(String warehouseId = {}, String catalog = {}, String schema = {})",
+        warehouseId,
+        catalog,
+        schema);
     CreateSessionRequest request = new CreateSessionRequest().setWarehouseId(warehouseId);
+    if (catalog != null) {
+      request.setCatalog(catalog);
+    }
+    if (schema != null) {
+      request.setSchema(schema);
+    }
     Session session =
         workspaceClient.apiClient().POST(SESSION_PATH, request, Session.class, getHeaders());
     return ImmutableSessionInfo.builder()
@@ -152,7 +168,7 @@ public class DatabricksSdkClient implements DatabricksClient {
         (executionEndTime - executionStartTime),
         pollCount);
     if (responseState != StatementState.SUCCEEDED) {
-      handleFailedExecution(responseState, statementId, sql);
+      handleFailedExecution(response, statementId, sql);
     }
     return new DatabricksResultSet(
         response.getStatus(),
@@ -231,19 +247,25 @@ public class DatabricksSdkClient implements DatabricksClient {
 
   /** Handles a failed execution and throws appropriate exception */
   private void handleFailedExecution(
-      StatementState statementState, String statementId, String statement) throws SQLException {
+      ExecuteStatementResponse response, String statementId, String statement) throws SQLException {
     LOGGER.debug(
-        "private void handleFailedExecution(StatementState statementState = {}, String statementId = {}, String statement = {})",
-        statementState,
+        "private void handleFailedExecution(ExecuteStatementResponse response = {}, String statementId = {}, String statement = {})",
+        response,
         statementId,
         statement);
+    StatementState statementState = response.getStatus().getState();
     switch (statementState) {
       case FAILED:
       case CLOSED:
       case CANCELED:
         // TODO: Handle differently for failed, closed and cancelled with proper error codes
         throw new DatabricksSQLException(
-            "Statement execution failed " + statementId + " -> " + statement);
+            "Statement execution failed "
+                + statementId
+                + " -> "
+                + statement
+                + "\n"
+                + response.getStatus().getError().getMessage());
       default:
         throw new IllegalStateException("Invalid state for error");
     }

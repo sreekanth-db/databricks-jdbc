@@ -29,7 +29,7 @@ public class DatabricksSessionTest {
   public void testOpenAndCloseSession() {
     ImmutableSessionInfo sessionInfo =
         ImmutableSessionInfo.builder().sessionId(SESSION_ID).warehouseId(WAREHOUSE_ID).build();
-    when(client.createSession(WAREHOUSE_ID)).thenReturn(sessionInfo);
+    when(client.createSession(WAREHOUSE_ID, null, null)).thenReturn(sessionInfo);
     when(connectionContext.getWarehouse()).thenReturn(WAREHOUSE_ID);
 
     DatabricksSession session = new DatabricksSession(connectionContext, client);

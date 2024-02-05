@@ -16,6 +16,11 @@ public class DatabricksThriftClient implements DatabricksClient, DatabricksMetad
   }
 
   @Override
+  public ImmutableSessionInfo createSession(String warehouseId, String catalog, String schema) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public void deleteSession(String sessionId, String warehouseId) {
     throw new UnsupportedOperationException();
   }

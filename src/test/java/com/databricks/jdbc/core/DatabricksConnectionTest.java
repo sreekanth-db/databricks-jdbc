@@ -33,7 +33,7 @@ public class DatabricksConnectionTest {
     ImmutableSessionInfo session =
         ImmutableSessionInfo.builder().warehouseId(WAREHOUSE_ID).sessionId(SESSION_ID).build();
 
-    when(databricksClient.createSession(WAREHOUSE_ID)).thenReturn(session);
+    when(databricksClient.createSession(WAREHOUSE_ID, null, null)).thenReturn(session);
 
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
@@ -51,7 +51,7 @@ public class DatabricksConnectionTest {
     ImmutableSessionInfo session =
         ImmutableSessionInfo.builder().warehouseId(WAREHOUSE_ID).sessionId(SESSION_ID).build();
 
-    when(databricksClient.createSession(WAREHOUSE_ID)).thenReturn(session);
+    when(databricksClient.createSession(WAREHOUSE_ID, null, null)).thenReturn(session);
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     DatabricksConnection connection = new DatabricksConnection(connectionContext, databricksClient);

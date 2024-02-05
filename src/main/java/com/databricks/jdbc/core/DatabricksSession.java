@@ -38,6 +38,8 @@ public class DatabricksSession implements IDatabricksSession {
     this.isSessionOpen = false;
     this.session = null;
     this.warehouseId = connectionContext.getWarehouse();
+    this.catalog = connectionContext.getCatalog();
+    this.schema = connectionContext.getSchema();
   }
 
   /** Construct method to be used for mocking in a test case. */
@@ -50,6 +52,8 @@ public class DatabricksSession implements IDatabricksSession {
     this.isSessionOpen = false;
     this.session = null;
     this.warehouseId = connectionContext.getWarehouse();
+    this.catalog = connectionContext.getCatalog();
+    this.schema = connectionContext.getSchema();
   }
 
   @Override
@@ -79,7 +83,7 @@ public class DatabricksSession implements IDatabricksSession {
     synchronized (this) {
       if (!isSessionOpen) {
         // TODO: handle errors
-        this.session = databricksClient.createSession(this.warehouseId);
+        this.session = databricksClient.createSession(this.warehouseId, this.catalog, this.schema);
         this.isSessionOpen = true;
       }
     }

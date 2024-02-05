@@ -70,4 +70,8 @@ public interface IDatabricksConnectionContext {
   String getClientUserAgent();
 
   CompressionType getCompressionType();
+
+  String getCatalog();
+
+  String getSchema();
 }

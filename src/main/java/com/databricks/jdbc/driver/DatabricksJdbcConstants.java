@@ -27,6 +27,10 @@ public final class DatabricksJdbcConstants {
 
   static final String AUTH_MECH = "authmech";
 
+  static final String CONN_CATALOG = "conncatalog";
+
+  static final String CONN_SCHEMA = "connschema";
+
   static final String AUTH_FLOW = "auth_flow";
 
   // Only used when AUTH_MECH = 11

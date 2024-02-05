@@ -410,7 +410,8 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
       throw new DatabricksTimeoutException(
           "Statement execution timed-out. " + stackTraceMessage, e);
     } catch (InterruptedException | ExecutionException e) {
-      throw new DatabricksSQLException("Error occurred during statement execution: " + sql, e);
+      throw new DatabricksSQLException(
+          "Error occurred during statement execution: " + sql + "\n" + e, e);
     }
     LOGGER.debug("Result retrieved successfully" + resultSet.toString());
     return resultSet;

@@ -22,6 +22,16 @@ public interface DatabricksClient {
   ImmutableSessionInfo createSession(String warehouseId);
 
   /**
+   * Creates a new session for given warehouse-Id, catalog and session.
+   *
+   * @param warehouseId for which a session should be created
+   * @param catalog for the session
+   * @param schema for the session
+   * @return created session
+   */
+  ImmutableSessionInfo createSession(String warehouseId, String catalog, String schema);
+
+  /**
    * Deletes a session for given session-Id
    *
    * @param sessionId for which the session should be deleted

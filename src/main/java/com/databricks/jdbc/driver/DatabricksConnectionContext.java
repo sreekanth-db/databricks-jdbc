@@ -237,4 +237,14 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   private static boolean nullOrEmptyString(String s) {
     return s == null || s.isEmpty();
   }
+
+  @Override
+  public String getCatalog() {
+    return getParameter(DatabricksJdbcConstants.CONN_CATALOG);
+  }
+
+  @Override
+  public String getSchema() {
+    return getParameter(DatabricksJdbcConstants.CONN_SCHEMA);
+  }
 }
