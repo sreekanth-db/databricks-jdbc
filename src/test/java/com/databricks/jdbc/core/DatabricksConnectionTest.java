@@ -21,10 +21,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class DatabricksConnectionTest {
 
+  private static final String WAREHOUSE_ID = "erg6767gg";
+  private static final String CATALOG = "field_demos";
+  private static final String SCHEMA = "ossjdbc";
+  private static final String SESSION_ID = "session_id";
   private static final String JDBC_URL =
       "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;UserAgentEntry=MyApp";
-  private static final String WAREHOUSE_ID = "erg6767gg";
-  private static final String SESSION_ID = "session_id";
+  private static final String CATALOG_SCHEMA_JDBC_URL =
+      String.format(
+          "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;ConnCatalog=%s;ConnSchema=%s",
+          CATALOG, SCHEMA);
 
   @Mock DatabricksSdkClient databricksClient;
 
@@ -44,6 +50,14 @@ public class DatabricksConnectionTest {
     String userAgent = UserAgent.asString();
     assertTrue(userAgent.contains("DatabricksJDBCDriverOSS/0.0.0"));
     assertTrue(userAgent.contains("Java/SQLExecHttpClient/HC MyApp"));
+
+    when(databricksClient.createSession(WAREHOUSE_ID, CATALOG, SCHEMA)).thenReturn(session);
+    connectionContext =
+        DatabricksConnectionContext.parse(CATALOG_SCHEMA_JDBC_URL, new Properties());
+    connection = new DatabricksConnection(connectionContext, databricksClient);
+    assertFalse(connection.isClosed());
+    assertEquals(connection.getSession().getCatalog(), CATALOG);
+    assertEquals(connection.getSession().getSchema(), SCHEMA);
   }
 
   @Test

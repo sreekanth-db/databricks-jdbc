@@ -260,12 +260,9 @@ public class DatabricksSdkClient implements DatabricksClient {
       case CANCELED:
         // TODO: Handle differently for failed, closed and cancelled with proper error codes
         throw new DatabricksSQLException(
-            "Statement execution failed "
-                + statementId
-                + " -> "
-                + statement
-                + "\n"
-                + response.getStatus().getError().getMessage());
+            String.format(
+                "Statement execution failed %s -> %s\n%s",
+                statementId, statement, response.getStatus().getError().getMessage()));
       default:
         throw new IllegalStateException("Invalid state for error");
     }
