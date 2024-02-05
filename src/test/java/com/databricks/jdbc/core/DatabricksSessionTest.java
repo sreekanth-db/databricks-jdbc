@@ -20,7 +20,7 @@ public class DatabricksSessionTest {
       "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehou/erg6767gg;";
   private static final String WAREHOUSE_ID = "erg6767gg";
   private static final String CATALOG = "field_demos";
-  private static final String SCHEMA = "oss_jdbc";
+  private static final String SCHEMA = "ossjdbc";
   private static final String SESSION_ID = "session_id";
 
   @Mock DatabricksConnectionContext connectionContext;
