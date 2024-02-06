@@ -155,6 +155,7 @@ public class ArrowResultChunk {
 
     /** Returns whether the next row in the chunk exists. */
     public boolean hasNextRow() {
+      if (resultChunk.chunkIndex >= resultChunk.numRows) return false;
       // If there are more rows in record batch
       return (rowCursorInRecordBatch < rowsInRecordBatch - 1)
           // or there are more record batches to be processed
