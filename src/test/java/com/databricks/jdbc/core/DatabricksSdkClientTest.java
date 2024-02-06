@@ -112,7 +112,8 @@ public class DatabricksSdkClientTest {
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     DatabricksSdkClient databricksSdkClient =
         new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient);
-    ImmutableSessionInfo sessionInfo = databricksSdkClient.createSession(WAREHOUSE_ID);
+    ImmutableSessionInfo sessionInfo =
+        databricksSdkClient.createSession(WAREHOUSE_ID, null, null, null);
     assertEquals(sessionInfo.sessionId(), SESSION_ID);
     assertEquals(sessionInfo.warehouseId(), WAREHOUSE_ID);
   }

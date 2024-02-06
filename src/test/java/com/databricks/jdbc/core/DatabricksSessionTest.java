@@ -1,6 +1,7 @@
 package com.databricks.jdbc.core;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
@@ -31,7 +32,7 @@ public class DatabricksSessionTest {
   public void testOpenAndCloseSession() {
     ImmutableSessionInfo sessionInfo =
         ImmutableSessionInfo.builder().sessionId(SESSION_ID).warehouseId(WAREHOUSE_ID).build();
-    when(client.createSession(WAREHOUSE_ID, null, null)).thenReturn(sessionInfo);
+    when(client.createSession(WAREHOUSE_ID, null, null, null)).thenReturn(sessionInfo);
     when(connectionContext.getWarehouse()).thenReturn(WAREHOUSE_ID);
     DatabricksSession session = new DatabricksSession(connectionContext, client);
     assertFalse(session.isOpen());
@@ -41,7 +42,7 @@ public class DatabricksSessionTest {
 
     sessionInfo =
         ImmutableSessionInfo.builder().sessionId(SESSION_ID).warehouseId(WAREHOUSE_ID).build();
-    when(client.createSession(WAREHOUSE_ID, CATALOG, SCHEMA)).thenReturn(sessionInfo);
+    when(client.createSession(WAREHOUSE_ID, CATALOG, SCHEMA, null)).thenReturn(sessionInfo);
     when(connectionContext.getWarehouse()).thenReturn(WAREHOUSE_ID);
     when(connectionContext.getCatalog()).thenReturn(CATALOG);
     when(connectionContext.getSchema()).thenReturn(SCHEMA);
@@ -52,11 +53,10 @@ public class DatabricksSessionTest {
     assertEquals(session.getCatalog(), CATALOG);
     assertEquals(session.getSchema(), SCHEMA);
 
-    // TODO(PECO-1327): Add back when session closing is fixed.
-    //    doNothing().when(client).deleteSession(SESSION_ID, WAREHOUSE_ID);
-    //    session.close();
-    //    assertFalse(session.isOpen());
-    //    assertNull(session.getSessionId());
+    doNothing().when(client).deleteSession(SESSION_ID, WAREHOUSE_ID);
+    session.close();
+    assertFalse(session.isOpen());
+    assertNull(session.getSessionId());
   }
 
   @Test

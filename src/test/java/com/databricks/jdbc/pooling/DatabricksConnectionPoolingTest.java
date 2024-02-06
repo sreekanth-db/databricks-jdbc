@@ -43,7 +43,7 @@ public class DatabricksConnectionPoolingTest {
         Mockito.mock(DatabricksConnectionPoolDataSource.class);
     ImmutableSessionInfo session =
         ImmutableSessionInfo.builder().warehouseId(WAREHOUSE_ID).sessionId(SESSION_ID).build();
-    when(databricksClient.createSession(WAREHOUSE_ID, null, null)).thenReturn(session);
+    when(databricksClient.createSession(WAREHOUSE_ID, null, null, null)).thenReturn(session);
 
     DatabricksConnection databricksConnection =
         new DatabricksConnection(connectionContext, databricksClient);
@@ -56,10 +56,9 @@ public class DatabricksConnectionPoolingTest {
 
     Connection connection = pooledConnection.getConnection();
 
-    // TODO(PECO-1328): Add back when connection closing is fixed.
-    //    connection.close();
-    //    List<ConnectionEvent> connectionClosedEvents = listener.getConnectionClosedEvents();
-    //    Assertions.assertEquals(connectionClosedEvents.size(), 1);
+    connection.close();
+    List<ConnectionEvent> connectionClosedEvents = listener.getConnectionClosedEvents();
+    Assertions.assertEquals(connectionClosedEvents.size(), 1);
     Connection actualConnection =
         ((DatabricksPooledConnection) pooledConnection).getPhysicalConnection();
     Assertions.assertFalse(actualConnection.isClosed());
@@ -75,7 +74,7 @@ public class DatabricksConnectionPoolingTest {
         Mockito.mock(DatabricksConnectionPoolDataSource.class);
     ImmutableSessionInfo session =
         ImmutableSessionInfo.builder().warehouseId(WAREHOUSE_ID).sessionId(SESSION_ID).build();
-    when(databricksClient.createSession(WAREHOUSE_ID, null, null)).thenReturn(session);
+    when(databricksClient.createSession(WAREHOUSE_ID, null, null, null)).thenReturn(session);
 
     DatabricksConnection databricksConnection =
         new DatabricksConnection(connectionContext, databricksClient);

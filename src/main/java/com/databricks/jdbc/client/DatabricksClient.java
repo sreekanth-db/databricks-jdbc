@@ -14,22 +14,16 @@ import java.util.Map;
 public interface DatabricksClient {
 
   /**
-   * Creates a new session for given warehouse-Id.
-   *
-   * @param warehouseId for which a session should be created
-   * @return created session
-   */
-  ImmutableSessionInfo createSession(String warehouseId);
-
-  /**
    * Creates a new session for given warehouse-Id, catalog and session.
    *
    * @param warehouseId for which a session should be created
    * @param catalog for the session
    * @param schema for the session
+   * @param sessionConf session configuration
    * @return created session
    */
-  ImmutableSessionInfo createSession(String warehouseId, String catalog, String schema);
+  ImmutableSessionInfo createSession(
+      String warehouseId, String catalog, String schema, Map<String, String> sessionConf);
 
   /**
    * Deletes a session for given session-Id

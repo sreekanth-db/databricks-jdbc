@@ -77,18 +77,15 @@ public class DatabricksSdkClient implements DatabricksClient {
   }
 
   @Override
-  public ImmutableSessionInfo createSession(String warehouseId) {
-    LOGGER.debug("public Session createSession(String warehouseId = {})", warehouseId);
-    return createSession(warehouseId, null, null);
-  }
-
-  @Override
-  public ImmutableSessionInfo createSession(String warehouseId, String catalog, String schema) {
+  public ImmutableSessionInfo createSession(
+      String warehouseId, String catalog, String schema, Map<String, String> sessionConf) {
     LOGGER.debug(
-        "public Session createSession(String warehouseId = {}, String catalog = {}, String schema = {})",
+        "public Session createSession(String warehouseId = {}, String catalog = {}, String schema = {}, Map<String, String> sessionConf = {})",
         warehouseId,
         catalog,
-        schema);
+        schema,
+        sessionConf);
+    // TODO: [PECO-1460] Handle sessionConf in public session API
     CreateSessionRequest request = new CreateSessionRequest().setWarehouseId(warehouseId);
     if (catalog != null) {
       request.setCatalog(catalog);
@@ -249,8 +246,7 @@ public class DatabricksSdkClient implements DatabricksClient {
   private void handleFailedExecution(
       ExecuteStatementResponse response, String statementId, String statement) throws SQLException {
     LOGGER.debug(
-        "private void handleFailedExecution(ExecuteStatementResponse response = {}, String statementId = {}, String statement = {})",
-        response,
+        "private void handleFailedExecution(ExecuteStatementResponse response, String statementId = {}, String statement = {})",
         statementId,
         statement);
     StatementState statementState = response.getStatus().getState();
@@ -261,8 +257,11 @@ public class DatabricksSdkClient implements DatabricksClient {
         // TODO: Handle differently for failed, closed and cancelled with proper error codes
         throw new DatabricksSQLException(
             String.format(
-                "Statement execution failed %s -> %s\n%s",
-                statementId, statement, response.getStatus().getError().getMessage()));
+                "Statement execution failed %s -> %s\n%s: %s",
+                statementId,
+                statement,
+                statementState,
+                response.getStatus().getError().getMessage()));
       default:
         throw new IllegalStateException("Invalid state for error");
     }
