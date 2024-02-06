@@ -1,7 +1,7 @@
 package com.databricks.jdbc.core;
 
 import static java.lang.Math.min;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.databricks.sdk.service.sql.BaseChunkInfo;
 import java.io.File;
@@ -12,10 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.FieldVector;
-import org.apache.arrow.vector.Float8Vector;
-import org.apache.arrow.vector.IntVector;
-import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.dictionary.DictionaryProvider;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.ipc.ArrowWriter;
@@ -139,5 +136,34 @@ public class ArrowResultChunkTest {
       }
     }
     return data;
+  }
+
+  @Test
+  public void testHasNextRow() {
+    BaseChunkInfo emptyChunkInfo =
+        new BaseChunkInfo()
+            .setChunkIndex(0L)
+            .setByteCount(200L)
+            .setRowOffset(0L)
+            .setRowCount(0L);
+    ArrowResultChunk arrowResultChunk =
+        new ArrowResultChunk(emptyChunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
+    arrowResultChunk.setIsDataInitialized(true);
+    arrowResultChunk.recordBatchList = new ArrayList<>(new ArrayList<>());
+    assertFalse(arrowResultChunk.getChunkIterator().hasNextRow());
+
+    BaseChunkInfo chunkInfo =
+            new BaseChunkInfo()
+                    .setChunkIndex(8L)
+                    .setByteCount(200L)
+                    .setRowOffset(0L)
+                    .setRowCount(10L);
+    arrowResultChunk =
+            new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
+    arrowResultChunk.setIsDataInitialized(true);
+    ValueVector dummyVector = new Float8Vector("dummy_vector", new RootAllocator());
+    dummyVector.allocateNew();
+    arrowResultChunk.recordBatchList = List.of(List.of(dummyVector));
+    assertTrue(arrowResultChunk.getChunkIterator().hasNextRow());
   }
 }

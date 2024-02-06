@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -168,6 +170,11 @@ public class ArrowResultChunk {
           .getColumnVector(this.recordBatchCursorInChunk, columnIndex)
           .getObject(this.rowCursorInRecordBatch);
     }
+  }
+
+  @VisibleForTesting
+  void setIsDataInitialized(boolean isDataInitialized) {
+    this.isDataInitialized = isDataInitialized;
   }
 
   /** Sets link details for the given chunk. */
