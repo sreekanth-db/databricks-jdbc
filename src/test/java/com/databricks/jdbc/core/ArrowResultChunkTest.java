@@ -141,11 +141,7 @@ public class ArrowResultChunkTest {
   @Test
   public void testHasNextRow() {
     BaseChunkInfo emptyChunkInfo =
-        new BaseChunkInfo()
-            .setChunkIndex(0L)
-            .setByteCount(200L)
-            .setRowOffset(0L)
-            .setRowCount(0L);
+        new BaseChunkInfo().setChunkIndex(0L).setByteCount(200L).setRowOffset(0L).setRowCount(0L);
     ArrowResultChunk arrowResultChunk =
         new ArrowResultChunk(emptyChunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
     arrowResultChunk.setIsDataInitialized(true);
@@ -153,13 +149,9 @@ public class ArrowResultChunkTest {
     assertFalse(arrowResultChunk.getChunkIterator().hasNextRow());
 
     BaseChunkInfo chunkInfo =
-            new BaseChunkInfo()
-                    .setChunkIndex(8L)
-                    .setByteCount(200L)
-                    .setRowOffset(0L)
-                    .setRowCount(10L);
+        new BaseChunkInfo().setChunkIndex(8L).setByteCount(200L).setRowOffset(0L).setRowCount(10L);
     arrowResultChunk =
-            new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
+        new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
     arrowResultChunk.setIsDataInitialized(true);
     ValueVector dummyVector = new Float8Vector("dummy_vector", new RootAllocator());
     dummyVector.allocateNew();

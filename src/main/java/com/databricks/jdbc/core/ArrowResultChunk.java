@@ -6,6 +6,7 @@ import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.sqlexec.ExternalLink;
 import com.databricks.sdk.service.sql.BaseChunkInfo;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.InputStream;
 import java.nio.channels.ClosedByInterruptException;
 import java.time.Instant;
@@ -13,8 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -124,6 +123,9 @@ public class ArrowResultChunk {
     // current row index in current record batch
     private int rowCursorInRecordBatch;
 
+    // total number of rows read
+    private int rowsRead;
+
     ArrowResultChunkIterator(ArrowResultChunk resultChunk) {
       this.resultChunk = resultChunk;
       this.recordBatchesInChunk = resultChunk.getRecordBatchCountInChunk();
@@ -152,12 +154,13 @@ public class ArrowResultChunk {
         rowsInRecordBatch =
             resultChunk.recordBatchList.get(++recordBatchCursorInChunk).get(0).getValueCount();
       }
+      rowsRead++;
       return true;
     }
 
     /** Returns whether the next row in the chunk exists. */
     public boolean hasNextRow() {
-      if (resultChunk.chunkIndex >= resultChunk.numRows) return false;
+      if (rowsRead >= resultChunk.numRows) return false;
       // If there are more rows in record batch
       return (rowCursorInRecordBatch < rowsInRecordBatch - 1)
           // or there are more record batches to be processed
