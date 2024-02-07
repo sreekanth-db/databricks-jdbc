@@ -124,7 +124,7 @@ public class ArrowResultChunk {
     private int rowCursorInRecordBatch;
 
     // total number of rows read
-    private int rowsRead;
+    private int rowsReadByIterator;
 
     ArrowResultChunkIterator(ArrowResultChunk resultChunk) {
       this.resultChunk = resultChunk;
@@ -135,6 +135,8 @@ public class ArrowResultChunk {
       this.rowsInRecordBatch = -1;
       // start before first row
       this.rowCursorInRecordBatch = -1;
+      // initialize rows read to 0
+      this.rowsReadByIterator = 0;
     }
 
     /**
@@ -154,13 +156,13 @@ public class ArrowResultChunk {
         rowsInRecordBatch =
             resultChunk.recordBatchList.get(++recordBatchCursorInChunk).get(0).getValueCount();
       }
-      rowsRead++;
+      rowsReadByIterator++;
       return true;
     }
 
     /** Returns whether the next row in the chunk exists. */
     public boolean hasNextRow() {
-      if (rowsRead >= resultChunk.numRows) return false;
+      if (rowsReadByIterator >= resultChunk.numRows) return false;
       // If there are more rows in record batch
       return (rowCursorInRecordBatch < rowsInRecordBatch - 1)
           // or there are more record batches to be processed
