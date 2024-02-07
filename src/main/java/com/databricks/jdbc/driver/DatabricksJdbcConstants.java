@@ -62,6 +62,7 @@ public final class DatabricksJdbcConstants {
   public static final String CATALOG = "catalog";
   public static final String PROCEDURE = "procedure";
   public static final String SCHEMA = "schema";
+  public static final String TABLE = "table";
   public static final String USER_NAME = "User";
   static final int DEFAULT_PORT = 443;
 
