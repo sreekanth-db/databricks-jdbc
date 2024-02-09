@@ -25,8 +25,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   // TODO: Add handling for Arrow stream results
 
-  public DatabricksResultSetMetaData(
-      String statementId, ResultManifest resultManifest, IDatabricksSession session) {
+  public DatabricksResultSetMetaData(String statementId, ResultManifest resultManifest) {
     this.statementId = statementId;
     Map<String, Integer> columnNameToIndexMap = new HashMap<>();
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
