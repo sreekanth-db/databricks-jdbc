@@ -182,9 +182,9 @@ public class ArrowResultChunkTest {
   @Test
   public void testEmptyRecordBatches() {
     BaseChunkInfo chunkInfo =
-            new BaseChunkInfo().setChunkIndex(18L).setByteCount(200L).setRowOffset(0L).setRowCount(4L);
+        new BaseChunkInfo().setChunkIndex(18L).setByteCount(200L).setRowOffset(0L).setRowCount(4L);
     ArrowResultChunk arrowResultChunk =
-            new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
+        new ArrowResultChunk(chunkInfo, new RootAllocator(Integer.MAX_VALUE), STATEMENT_ID);
     arrowResultChunk.setIsDataInitialized(true);
     int size = 2;
     IntVector dummyVector = new IntVector("dummy_vector", new RootAllocator());
@@ -197,7 +197,7 @@ public class ArrowResultChunkTest {
     emptyVector.allocateNew(0);
     emptyVector.setValueCount(0);
     arrowResultChunk.recordBatchList =
-            List.of(List.of(dummyVector), List.of(emptyVector), List.of(dummyVector));
+        List.of(List.of(dummyVector), List.of(emptyVector), List.of(dummyVector));
     ArrowResultChunk.ArrowResultChunkIterator iterator = arrowResultChunk.getChunkIterator();
     assertTrue(iterator.hasNextRow());
     iterator.nextRow();
