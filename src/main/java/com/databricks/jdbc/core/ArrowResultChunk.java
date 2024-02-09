@@ -153,8 +153,13 @@ public class ArrowResultChunk {
         rowCursorInRecordBatch = 0;
         // Fetches number of rows in the record batch using the number of values in the first column
         // vector
+        recordBatchCursorInChunk++;
+        while (resultChunk.recordBatchList.get(recordBatchCursorInChunk).get(0).getValueCount()
+            == 0) {
+          recordBatchCursorInChunk++;
+        }
         rowsInRecordBatch =
-            resultChunk.recordBatchList.get(++recordBatchCursorInChunk).get(0).getValueCount();
+            resultChunk.recordBatchList.get(recordBatchCursorInChunk).get(0).getValueCount();
       }
       rowsReadByIterator++;
       return true;
