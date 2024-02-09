@@ -6,8 +6,8 @@ import com.databricks.sdk.service.sql.ResultManifest;
 import com.databricks.sdk.service.sql.ResultSchema;
 import java.sql.SQLException;
 import java.util.List;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class DatabricksResultSetMetaDataTest {
   private static final String STATEMENT_ID = "statementId";
