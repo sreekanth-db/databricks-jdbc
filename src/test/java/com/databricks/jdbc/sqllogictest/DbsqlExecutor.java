@@ -29,6 +29,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
 import net.hydromatic.sqllogictest.*;
 import net.hydromatic.sqllogictest.executors.JdbcExecutor;
 
@@ -45,12 +47,12 @@ public class DbsqlExecutor extends JdbcExecutor {
    *
    * @param options Execution options.
    */
-  public DbsqlExecutor(OptionsParser.SuppliedOptions options) {
+  public DbsqlExecutor(OptionsParser.SuppliedOptions options, String token) {
     super(
         options,
         dbsqlUrl,
-        "vikrant.puppala@databricks.com",
-        "dapi432644d0bc9aa690de4270671774099f");
+        "",
+        token);
   }
 
   /**
@@ -59,10 +61,16 @@ public class DbsqlExecutor extends JdbcExecutor {
    * @param optionsParser Options that will guide the execution.
    */
   public static void register(OptionsParser optionsParser) {
+    AtomicReference<String> pat = new AtomicReference<>();
+    optionsParser.registerOption("-p", "PAT", "PAT for the env in the jdbc url", o -> {
+      pat.set(o);
+      return true;
+    });
+
     optionsParser.registerExecutor(
         "dbsql",
         () -> {
-          DbsqlExecutor result = new DbsqlExecutor(optionsParser.getOptions());
+          DbsqlExecutor result = new DbsqlExecutor(optionsParser.getOptions(), pat.get());
           try {
             DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
           } catch (SQLException e) {
