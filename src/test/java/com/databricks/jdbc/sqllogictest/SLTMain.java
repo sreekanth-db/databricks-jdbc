@@ -1,4 +1,5 @@
-// This file is a copy of the file from the sqllogictest project (net/hydromatic/sqllogictest/Main.java)
+// This file is a copy of the file from the sqllogictest project
+// (net/hydromatic/sqllogictest/Main.java)
 package com.databricks.jdbc.sqllogictest;
 
 import java.io.IOException;
@@ -56,5 +57,3 @@ public class SLTMain {
     return loader.statistics;
   }
 }
-
-// End Main.java

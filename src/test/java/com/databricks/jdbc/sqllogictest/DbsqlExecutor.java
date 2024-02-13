@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-
 import net.hydromatic.sqllogictest.*;
 import net.hydromatic.sqllogictest.executors.JdbcExecutor;
 
@@ -25,11 +24,7 @@ public class DbsqlExecutor extends JdbcExecutor {
    * @param options Execution options.
    */
   public DbsqlExecutor(OptionsParser.SuppliedOptions options, String token) {
-    super(
-        options,
-        dbsqlUrl,
-        "",
-        token);
+    super(options, dbsqlUrl, "", token);
   }
 
   /**
@@ -39,10 +34,14 @@ public class DbsqlExecutor extends JdbcExecutor {
    */
   public static void register(OptionsParser optionsParser) {
     AtomicReference<String> pat = new AtomicReference<>();
-    optionsParser.registerOption("-p", "PAT", "PAT for the env in the jdbc url", o -> {
-      pat.set(o);
-      return true;
-    });
+    optionsParser.registerOption(
+        "-p",
+        "PAT",
+        "PAT for the env in the jdbc url",
+        o -> {
+          pat.set(o);
+          return true;
+        });
 
     optionsParser.registerExecutor(
         "dbsql",
