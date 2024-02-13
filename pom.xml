@@ -141,6 +141,12 @@
       <version>${slf4j-reload4j.version}</version>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+      <groupId>net.hydromatic</groupId>
+      <artifactId>sql-logic-test</artifactId>
+      <version>0.3</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
