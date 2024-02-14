@@ -1,3 +1,11 @@
+/*
+This class holds the dbsql executor for the SQL Logic Tests.
+
+We intend to run these tests periodically from a github workflow.
+It also hits the actual Databricks staging environment given in the connection string below so we ensure that
+it can be run only by providing a secret for that environment.
+ */
+
 package com.databricks.jdbc.sqllogictest;
 
 import java.io.IOException;
@@ -124,6 +132,7 @@ public class DbsqlExecutor extends JdbcExecutor {
     TestStatistics result = new TestStatistics(options.stopAtFirstError, options.verbosity);
     result.incFiles();
     // Changed super function here to only run the first few commands from each file
+    // TODO: change this from 20 from each file to a subset of tests
     for (int i = 0; i < 20; i++) {
       ISqlTestOperation operation = file.fileContents.get(i);
       SltSqlStatement stat = operation.as(SltSqlStatement.class);
