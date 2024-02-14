@@ -132,7 +132,7 @@ public class DbsqlExecutor extends JdbcExecutor {
     TestStatistics result = new TestStatistics(options.stopAtFirstError, options.verbosity);
     result.incFiles();
     // Changed super function here to only run the first few commands from each file
-    for (ISqlTestOperation operation: file.fileContents) {
+    for (ISqlTestOperation operation : file.fileContents) {
       SltSqlStatement stat = operation.as(SltSqlStatement.class);
       if (stat != null) {
         try {
@@ -206,7 +206,12 @@ public class DbsqlExecutor extends JdbcExecutor {
   List<String> getTableList() throws SQLException {
     List<String> result = new ArrayList<>();
     DatabaseMetaData md = this.getConnection().getMetaData();
-    ResultSet rs = md.getTables(this.getConnection().getCatalog(), this.getConnection().getSchema(), "%", new String[] {"TABLE"});
+    ResultSet rs =
+        md.getTables(
+            this.getConnection().getCatalog(),
+            this.getConnection().getSchema(),
+            "%",
+            new String[] {"TABLE"});
     while (rs.next()) {
       String tableName = rs.getString(3);
       result.add(tableName);
