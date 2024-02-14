@@ -132,17 +132,11 @@ public class DbsqlExecutor extends JdbcExecutor {
     TestStatistics result = new TestStatistics(options.stopAtFirstError, options.verbosity);
     result.incFiles();
     // Changed super function here to only run the first few commands from each file
-    // TODO: change this from 20 from each file to a subset of tests
-    for (int i = 0; i < 20; i++) {
-      ISqlTestOperation operation = file.fileContents.get(i);
+    for (ISqlTestOperation operation: file.fileContents) {
       SltSqlStatement stat = operation.as(SltSqlStatement.class);
       if (stat != null) {
         try {
           options.out.println(stat.statement);
-          if (stat.statement.contains("CREATE TABLE") && stat.statement.contains("TEXT")) {
-            // DBSQL does not support TEXT datatype so skip these tests
-            return result;
-          }
           this.statement(stat);
           if (!stat.shouldPass) {
             options.err.println("Statement should have failed: " + operation);
@@ -205,13 +199,14 @@ public class DbsqlExecutor extends JdbcExecutor {
 
   List<String> getViewList() {
     List<String> result = new ArrayList<>();
+    // TODO: Add implementation once getTables allows fetching VIEWS
     return result;
   }
 
   List<String> getTableList() throws SQLException {
     List<String> result = new ArrayList<>();
     DatabaseMetaData md = this.getConnection().getMetaData();
-    ResultSet rs = md.getTables(null, null, "%", new String[] {"TABLE"});
+    ResultSet rs = md.getTables(this.getConnection().getCatalog(), this.getConnection().getSchema(), "%", new String[] {"TABLE"});
     while (rs.next()) {
       String tableName = rs.getString(3);
       result.add(tableName);
