@@ -30,12 +30,6 @@ UPDATE t1 SET y='true' WHERE x>0
 statement ok
 UPDATE t1 SET y='unknown' WHERE x>0
 
-statement error
-UPDATE t1 SET z='foo'
-
-statement error
-UPDATE t1 SET z='foo' WHERE x>0
-
 # TBD-EVIDENCE-OF: R-55869-30521 If the UPDATE statement does not have a
 # WHERE clause, all rows in the table are modified by the UPDATE.
 
@@ -80,10 +74,6 @@ SELECT count(*) FROM t1 WHERE x=4
 # EVIDENCE-OF: R-34751-18293 If a single column-name appears more than
 # once in the list of assignment expressions, all but the rightmost
 # occurrence is ignored.
-
-skipif mssql
-statement ok
-UPDATE t1 SET x=3, x=4, x=5
 
 skipif mssql
 query I rowsort

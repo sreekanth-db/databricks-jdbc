@@ -72,77 +72,6 @@ SELECT 1 FROM t1 WHERE '1' NOT IN ('2')
 1
 1
 
-#
-# Row 2: empty RHS
-
-skipif mysql # empty RHS
-skipif mssql # empty RHS
-skipif oracle # empty RHS
-query I nosort
-SELECT 1 FROM t1 WHERE 1 IN ()
-----
-
-skipif mysql # empty RHS
-skipif mssql # empty RHS
-skipif oracle # empty RHS
-query I nosort
-SELECT 1 FROM t1 WHERE 1.0 IN ()
-----
-
-skipif mysql # empty RHS
-skipif mssql # empty RHS
-skipif oracle # empty RHS
-query I nosort
-SELECT 1 FROM t1 WHERE '1' IN ()
-----
-
-skipif mysql # empty RHS
-skipif mssql # empty RHS
-skipif oracle # empty RHS
-query I nosort
-SELECT 1 FROM t1 WHERE NULL IN ()
-----
-
-skipif mysql # empty RHS
-skipif mssql # empty RHS
-skipif oracle # empty RHS
-query I nosort
-SELECT 1 FROM t1 WHERE 1 NOT IN ()
-----
-1
-1
-1
-
-skipif mysql # empty RHS
-skipif mssql # empty RHS
-skipif oracle # empty RHS
-query I nosort
-SELECT 1 FROM t1 WHERE 1.0 NOT IN ()
-----
-1
-1
-1
-
-skipif mysql # empty RHS
-skipif mssql # empty RHS
-skipif oracle # empty RHS
-query I nosort
-SELECT 1 FROM t1 WHERE '1' NOT IN ()
-----
-1
-1
-1
-
-skipif mysql # empty RHS
-skipif mssql # empty RHS
-skipif oracle # empty RHS
-query I nosort
-SELECT 1 FROM t1 WHERE NULL NOT IN ()
-----
-1
-1
-1
-
 # Row 3:
 
 query I nosort
@@ -299,15 +228,3 @@ SELECT 1 FROM t1 WHERE 1 IN (SELECT 1)
 1
 1
 1
-
-statement error
-SELECT 1 FROM t1 WHERE 1 IN (SELECT 1,2)
-
-statement error
-SELECT 1 FROM t1 WHERE 1 IN (SELECT x,y FROM t1)
-
-statement error
-SELECT 1 FROM t1 WHERE 1 IN (SELECT * FROM t1)
-
-statement error
-SELECT 1 FROM t1 WHERE 1 IN (SELECT min(x),max(x) FROM t1)

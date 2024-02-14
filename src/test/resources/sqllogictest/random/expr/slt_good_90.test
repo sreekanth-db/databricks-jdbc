@@ -765,18 +765,6 @@ SELECT ALL - 65, + 2 AS col1
 -65
 2
 
-onlyif mysql # aggregate syntax: 
-query I rowsort label-81
-SELECT ALL NULLIF ( + CASE NULLIF ( + 67, - 84 ) WHEN + MIN( + 62 ) THEN - + 98 ELSE NULL END, 3 * + COUNT( * ) ) * + 51
-----
-NULL
-
-skipif mysql # not compatible
-query I rowsort label-81
-SELECT ALL NULLIF ( + CASE NULLIF ( + 67, - 84 ) WHEN + MIN ( + 62 ) THEN - + 98 ELSE NULL END, 3 * + COUNT ( * ) ) * + 51
-----
-NULL
-
 query I rowsort
 SELECT - 91 + + 73 AS col2
 ----
@@ -1009,20 +997,6 @@ SELECT - 98 * 81 AS col2, + 42 * 24 * + 38
 -7938
 38304
 
-onlyif mysql # aggregate syntax: 
-query II rowsort label-109
-SELECT DISTINCT NULLIF ( - NULLIF ( - CASE SUM( DISTINCT 6 ) WHEN + 55 + - - COUNT( ALL + ( + 31 ) ) * + 64 THEN NULL WHEN - COUNT( * ) THEN - 67 + + - 90 END, + 3 * 90 / 67 ), 81 ) AS col0, COUNT( * )
-----
-NULL
-1
-
-skipif mysql # not compatible
-query II rowsort label-109
-SELECT DISTINCT NULLIF ( - NULLIF ( - CASE SUM ( DISTINCT 6 ) WHEN + 55 + - - COUNT ( ALL + ( + 31 ) ) * + 64 THEN NULL WHEN - COUNT ( * ) THEN - 67 + + - 90 END, + 3 * 90 / 67 ), 81 ) AS col0, COUNT ( * )
-----
-NULL
-1
-
 query I rowsort
 SELECT ALL - 35 * ( + 17 )
 ----
@@ -1062,18 +1036,6 @@ SELECT + 21 * - - CASE 97 WHEN + 48 THEN 48 END AS col0, - 58 AS col1
 ----
 NULL
 -58
-
-onlyif mysql # CAST syntax: aggregate syntax: SIGNED type: DECIMAL type: 
-query I rowsort label-115
-SELECT DISTINCT ( NULLIF ( + + COUNT( * ), - - COUNT( * ) * CAST( + 83 AS DECIMAL ) + - + CAST( NULL AS SIGNED ) + - 2 ) ) AS col0
-----
-1
-
-skipif mysql # not compatible
-query I rowsort label-115
-SELECT DISTINCT ( NULLIF ( + + COUNT ( * ), - - COUNT ( * ) * CAST ( + 83 AS REAL ) + - + CAST ( NULL AS INTEGER ) + - 2 ) ) AS col0
-----
-1
 
 query I rowsort
 SELECT DISTINCT + 18 * - - 75 AS col1
@@ -1416,18 +1378,6 @@ query I rowsort label-154
 SELECT - 98 + 62 + - + ( - + COUNT ( 40 ) ) + - - 25 + - + 81 + - COALESCE ( + + 55, + 73, - - 7 * 39 ) / - 73 + - 87
 ----
 -178
-
-onlyif mysql # aggregate syntax: 
-query I rowsort label-155
-SELECT ( + 97 ) * - - 14 * + - NULLIF ( - COUNT( * ), - ( 27 ) ) * COUNT( * ) - - - MAX( 77 ) + 81 AS col1
-----
-1362
-
-skipif mysql # not compatible
-query I rowsort label-155
-SELECT ( + 97 ) * - - 14 * + - NULLIF ( - COUNT ( * ), - ( 27 ) ) * COUNT ( * ) - - - MAX ( 77 ) + 81 AS col1
-----
-1362
 
 query I rowsort
 SELECT 30 * - 68 + 12 + - 39

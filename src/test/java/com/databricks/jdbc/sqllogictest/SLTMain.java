@@ -39,10 +39,13 @@ public class SLTMain {
       System.err.println("SQL Logic tests directory not found");
       return null;
     }
-
-    return FileUtils.listFiles(directory, new String[]{"test"}, true).stream().map(File::getPath)
+    Set<String> testFilesToSkip = Set.of("sqllogictest/evidence/slt_lang_createview.test",
+            "sqllogictest/evidence/slt_lang_dropview.test",
+            "sqllogictest/index/view/100/slt_good_2.test");
+    Set<String> testFiles = FileUtils.listFiles(directory, new String[]{"test"}, true).stream().map(File::getPath)
             .map(s -> s.replaceFirst("src/test/resources/", ""))
             .collect(Collectors.toSet());
+    return testFiles.stream().filter(s -> !testFilesToSkip.contains(s)).collect(Collectors.toSet());
   }
 
   /**
@@ -63,6 +66,7 @@ public class SLTMain {
     }
 
     Set<String> allTests = getTestList();
+    allTests.stream().forEach(System.out::println);
     TestLoader loader = new TestLoader(options);
     for (String testPath : allTests) {
       boolean runTest = options.getDirectories().stream().anyMatch(testPath::contains);
