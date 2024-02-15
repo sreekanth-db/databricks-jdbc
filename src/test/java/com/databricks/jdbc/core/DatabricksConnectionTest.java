@@ -14,7 +14,9 @@ import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.core.UserAgent;
 import java.sql.ResultSet;
+import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -27,12 +29,20 @@ public class DatabricksConnectionTest {
   private static final String CATALOG = "field_demos";
   private static final String SCHEMA = "ossjdbc";
   private static final String SESSION_ID = "session_id";
+  private static final Map<String, String> SESSION_CONFIGS =
+      Map.of("spark.sql.crossJoin.enabled", "true", "SSP_databricks.catalog", "field_demos");
   private static final String JDBC_URL =
       "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;UserAgentEntry=MyApp";
   private static final String CATALOG_SCHEMA_JDBC_URL =
       String.format(
           "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;ConnCatalog=%s;ConnSchema=%s",
           CATALOG, SCHEMA);
+  private static final String SESSION_CONF_JDBC_URL =
+      String.format(
+          "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;%s",
+          SESSION_CONFIGS.entrySet().stream()
+              .map(e -> e.getKey() + "=" + e.getValue())
+              .collect(Collectors.joining(";")));
 
   @Mock DatabricksSdkClient databricksClient;
 
@@ -61,6 +71,18 @@ public class DatabricksConnectionTest {
     assertFalse(connection.isClosed());
     assertEquals(connection.getSession().getCatalog(), CATALOG);
     assertEquals(connection.getSession().getSchema(), SCHEMA);
+
+    Map<String, String> lowercaseSessionConfigs =
+        SESSION_CONFIGS.entrySet().stream()
+            .collect(
+                Collectors.toMap(e -> e.getKey().toLowerCase(), e -> e.getValue().toLowerCase()));
+    when(databricksClient.createSession(
+            eq(WAREHOUSE_ID), eq(null), eq(null), eq(lowercaseSessionConfigs)))
+        .thenReturn(session);
+    connectionContext = DatabricksConnectionContext.parse(SESSION_CONF_JDBC_URL, new Properties());
+    connection = new DatabricksConnection(connectionContext, databricksClient);
+    assertFalse(connection.isClosed());
+    assertEquals(connection.getSession().getSessionConfigs(), lowercaseSessionConfigs);
   }
 
   @Test
