@@ -1,4 +1,4 @@
-//TODO: Remove these classes when available in the sdk
+// TODO: Remove these classes when available in the sdk
 package com.databricks.jdbc.client.sqlexec;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
