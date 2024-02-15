@@ -14,6 +14,7 @@ import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.core.UserAgent;
 import java.sql.ResultSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -51,7 +52,8 @@ public class DatabricksConnectionTest {
     ImmutableSessionInfo session =
         ImmutableSessionInfo.builder().warehouseId(WAREHOUSE_ID).sessionId(SESSION_ID).build();
 
-    when(databricksClient.createSession(eq(WAREHOUSE_ID), any(), any(), any())).thenReturn(session);
+    when(databricksClient.createSession(WAREHOUSE_ID, null, null, new HashMap<>()))
+        .thenReturn(session);
 
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
@@ -63,7 +65,8 @@ public class DatabricksConnectionTest {
     assertTrue(userAgent.contains("DatabricksJDBCDriverOSS/0.0.0"));
     assertTrue(userAgent.contains("Java/SQLExecHttpClient/HC MyApp"));
 
-    when(databricksClient.createSession(eq(WAREHOUSE_ID), eq(CATALOG), eq(SCHEMA), any()))
+    when(databricksClient.createSession(
+            eq(WAREHOUSE_ID), eq(CATALOG), eq(SCHEMA), eq(new HashMap<>())))
         .thenReturn(session);
     connectionContext =
         DatabricksConnectionContext.parse(CATALOG_SCHEMA_JDBC_URL, new Properties());
