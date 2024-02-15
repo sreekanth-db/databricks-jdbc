@@ -92,7 +92,7 @@ public class DatabricksSdkClient implements DatabricksClient {
     if (schema != null) {
       request.setSchema(schema);
     }
-    if (sessionConf != null) {
+    if (sessionConf != null && !sessionConf.isEmpty()) {
       request.setSessionConfigs(sessionConf);
     }
     CreateSessionResponse createSessionResponse =

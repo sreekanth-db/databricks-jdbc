@@ -251,7 +251,11 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public Map<String, String> getSessionConfigs() {
     return this.parameters.entrySet().stream()
-        .filter(e -> ALLOWED_SESSION_CONFIGS.contains(e.getKey()))
+        .filter(
+            e ->
+                ALLOWED_SESSION_CONFIGS.stream()
+                    .map(String::toLowerCase)
+                    .anyMatch(allowedConf -> allowedConf.equals(e.getKey())))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 }
