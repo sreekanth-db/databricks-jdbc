@@ -1,5 +1,6 @@
 package com.databricks.jdbc.driver;
 
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public final class DatabricksJdbcConstants {
@@ -74,4 +75,20 @@ public final class DatabricksJdbcConstants {
   static final String CLIENT_USER_AGENT_PREFIX = "Java";
   static final String USER_AGENT_SEA_CLIENT = "SQLExecHttpClient/HC";
   static final String USER_AGENT_THRIFT_CLIENT = "THttpClient/HC";
+  static final Set<String> ALLOWED_SESSION_CONFIGS =
+      Set.of(
+          "spark.databricks.sqlgateway.useCreateViewCommandWithResult",
+          "spark.sql.thriftserver.metadata.column.singleschema",
+          "spark.sql.thriftserver.metadata.table.singleschema",
+          "spark.sql.crossJoin.enabled",
+          // ES-52047: Tableau Online uses the Simba ODBC 2.6.4 driver
+          // which incorrectly converts SSP properties to uppercase.
+          "SPARK.SQL.CROSSJOIN.ENABLED",
+          "spark.thriftserver.cloudStoreBasedRowSet.enabled",
+          "spark.thriftserver.cloudfetch.enabled",
+          // Deprecated, but still being set in the Tableau connector
+          "SSP_databricks.catalog",
+          "databricks.catalog",
+          "spark.databricks.sql.readOnly",
+          "spark.thriftserver.arrowBasedRowSet.timestampAsString");
 }

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
@@ -39,7 +41,7 @@ public class DatabricksConnectionTest {
     ImmutableSessionInfo session =
         ImmutableSessionInfo.builder().warehouseId(WAREHOUSE_ID).sessionId(SESSION_ID).build();
 
-    when(databricksClient.createSession(WAREHOUSE_ID, null, null, null)).thenReturn(session);
+    when(databricksClient.createSession(eq(WAREHOUSE_ID), any(), any(), any())).thenReturn(session);
 
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
@@ -51,7 +53,8 @@ public class DatabricksConnectionTest {
     assertTrue(userAgent.contains("DatabricksJDBCDriverOSS/0.0.0"));
     assertTrue(userAgent.contains("Java/SQLExecHttpClient/HC MyApp"));
 
-    when(databricksClient.createSession(WAREHOUSE_ID, CATALOG, SCHEMA, null)).thenReturn(session);
+    when(databricksClient.createSession(eq(WAREHOUSE_ID), eq(CATALOG), eq(SCHEMA), any()))
+        .thenReturn(session);
     connectionContext =
         DatabricksConnectionContext.parse(CATALOG_SCHEMA_JDBC_URL, new Properties());
     connection = new DatabricksConnection(connectionContext, databricksClient);
@@ -65,7 +68,7 @@ public class DatabricksConnectionTest {
     ImmutableSessionInfo session =
         ImmutableSessionInfo.builder().warehouseId(WAREHOUSE_ID).sessionId(SESSION_ID).build();
 
-    when(databricksClient.createSession(WAREHOUSE_ID, null, null, null)).thenReturn(session);
+    when(databricksClient.createSession(eq(WAREHOUSE_ID), any(), any(), any())).thenReturn(session);
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     DatabricksConnection connection = new DatabricksConnection(connectionContext, databricksClient);
