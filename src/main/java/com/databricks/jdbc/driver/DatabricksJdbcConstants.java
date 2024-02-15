@@ -77,18 +77,14 @@ public final class DatabricksJdbcConstants {
   static final String USER_AGENT_THRIFT_CLIENT = "THttpClient/HC";
   static final Set<String> ALLOWED_SESSION_CONFIGS =
       Set.of(
-          "spark.databricks.sqlgateway.useCreateViewCommandWithResult",
-          "spark.sql.thriftserver.metadata.column.singleschema",
-          "spark.sql.thriftserver.metadata.table.singleschema",
-          "spark.sql.crossJoin.enabled",
-          // ES-52047: Tableau Online uses the Simba ODBC 2.6.4 driver
-          // which incorrectly converts SSP properties to uppercase.
-          "SPARK.SQL.CROSSJOIN.ENABLED",
-          "spark.thriftserver.cloudStoreBasedRowSet.enabled",
-          "spark.thriftserver.cloudfetch.enabled",
-          // Deprecated, but still being set in the Tableau connector
-          "SSP_databricks.catalog",
-          "databricks.catalog",
-          "spark.databricks.sql.readOnly",
-          "spark.thriftserver.arrowBasedRowSet.timestampAsString");
+          // This list comes from
+          // https://docs.databricks.com/en/sql/language-manual/sql-ref-parameters.html
+          "ANSI_MODE",
+          "ENABLE_PHOTON",
+          "LEGACY_TIME_PARSER_POLICY",
+          "MAX_FILE_PARTITION_BYTES",
+          "READ_ONLY_EXTERNAL_METASTORE",
+          "STATEMENT_TIMEOUT",
+          "TIMEZONE",
+          "USE_CACHED_RESULT");
 }

@@ -31,7 +31,7 @@ public class DatabricksConnectionTest {
   private static final String SCHEMA = "ossjdbc";
   private static final String SESSION_ID = "session_id";
   private static final Map<String, String> SESSION_CONFIGS =
-      Map.of("spark.sql.crossJoin.enabled", "true", "SSP_databricks.catalog", "field_demos");
+      Map.of("ANSI_MODE", "TRUE", "TIMEZONE", "UTC", "MAX_FILE_PARTITION_BYTES", "64m");
   private static final String JDBC_URL =
       "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;UserAgentEntry=MyApp";
   private static final String CATALOG_SCHEMA_JDBC_URL =
@@ -65,8 +65,7 @@ public class DatabricksConnectionTest {
     assertTrue(userAgent.contains("DatabricksJDBCDriverOSS/0.0.0"));
     assertTrue(userAgent.contains("Java/SQLExecHttpClient/HC MyApp"));
 
-    when(databricksClient.createSession(
-            eq(WAREHOUSE_ID), eq(CATALOG), eq(SCHEMA), eq(new HashMap<>())))
+    when(databricksClient.createSession(WAREHOUSE_ID, CATALOG, SCHEMA, new HashMap<>()))
         .thenReturn(session);
     connectionContext =
         DatabricksConnectionContext.parse(CATALOG_SCHEMA_JDBC_URL, new Properties());
@@ -77,10 +76,8 @@ public class DatabricksConnectionTest {
 
     Map<String, String> lowercaseSessionConfigs =
         SESSION_CONFIGS.entrySet().stream()
-            .collect(
-                Collectors.toMap(e -> e.getKey().toLowerCase(), e -> e.getValue().toLowerCase()));
-    when(databricksClient.createSession(
-            eq(WAREHOUSE_ID), eq(null), eq(null), eq(lowercaseSessionConfigs)))
+            .collect(Collectors.toMap(e -> e.getKey().toLowerCase(), Map.Entry::getValue));
+    when(databricksClient.createSession(WAREHOUSE_ID, null, null, lowercaseSessionConfigs))
         .thenReturn(session);
     connectionContext = DatabricksConnectionContext.parse(SESSION_CONF_JDBC_URL, new Properties());
     connection = new DatabricksConnection(connectionContext, databricksClient);
