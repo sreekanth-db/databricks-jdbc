@@ -6,6 +6,7 @@ import com.databricks.jdbc.client.impl.sdk.DatabricksMetadataSdkClient;
 import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.google.common.annotations.VisibleForTesting;
+import java.util.Map;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,8 @@ public class DatabricksSession implements IDatabricksSession {
 
   private String schema;
 
+  private Map<String, String> sessionConfigs;
+
   /**
    * Creates an instance of Databricks session for given connection context
    *
@@ -40,6 +43,7 @@ public class DatabricksSession implements IDatabricksSession {
     this.warehouseId = connectionContext.getWarehouse();
     this.catalog = connectionContext.getCatalog();
     this.schema = connectionContext.getSchema();
+    this.sessionConfigs = connectionContext.getSessionConfigs();
   }
 
   /** Construct method to be used for mocking in a test case. */
@@ -54,6 +58,7 @@ public class DatabricksSession implements IDatabricksSession {
     this.warehouseId = connectionContext.getWarehouse();
     this.catalog = connectionContext.getCatalog();
     this.schema = connectionContext.getSchema();
+    this.sessionConfigs = connectionContext.getSessionConfigs();
   }
 
   @Override
@@ -84,7 +89,8 @@ public class DatabricksSession implements IDatabricksSession {
       if (!isSessionOpen) {
         // TODO: handle errors
         this.session =
-            databricksClient.createSession(this.warehouseId, this.catalog, this.schema, null);
+            databricksClient.createSession(
+                this.warehouseId, this.catalog, this.schema, this.sessionConfigs);
         this.isSessionOpen = true;
       }
     }
@@ -138,5 +144,11 @@ public class DatabricksSession implements IDatabricksSession {
   public void setSchema(String schema) {
     LOGGER.debug("public void setSchema(String schema = {})", schema);
     this.schema = schema;
+  }
+
+  @Override
+  public Map<String, String> getSessionConfigs() {
+    LOGGER.debug("public Map<String, String> getSessionConfigs()");
+    return sessionConfigs;
   }
 }

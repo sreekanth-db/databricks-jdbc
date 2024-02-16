@@ -2,6 +2,7 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.DatabricksMetadataClient;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 /** Session interface to represent an open connection to Databricks server. */
@@ -52,4 +53,7 @@ public interface IDatabricksSession {
 
   /** Sets the default schema */
   void setSchema(String schema);
+
+  /** Returns the session configs */
+  Map<String, String> getSessionConfigs();
 }
