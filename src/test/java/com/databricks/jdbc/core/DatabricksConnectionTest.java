@@ -136,12 +136,17 @@ public class DatabricksConnectionTest {
     Mockito.doReturn(statement).when(connection).createStatement();
     Mockito.doReturn(true).when(statement).execute(any());
     connection.setClientInfo(properties);
+    Properties clientInfoProperties = connection.getClientInfo();
     // Check valid session confs are set
     assertEquals(connection.getClientInfo("ENABLE_PHOTON"), "TRUE");
     assertEquals(connection.getClientInfo("TIMEZONE"), "UTC");
+    assertEquals(clientInfoProperties.get("ENABLE_PHOTON"), "TRUE");
+    assertEquals(clientInfoProperties.get("TIMEZONE"), "UTC");
     // Check conf not supplied returns default value
     assertEquals(connection.getClientInfo("MAX_FILE_PARTITION_BYTES"), "128m");
+    assertEquals(clientInfoProperties.get("MAX_FILE_PARTITION_BYTES"), "128m");
     // Check if an unknown conf returns null
     assertNull(connection.getClientInfo("RANDOM_CONF"));
+    assertNull(clientInfoProperties.get("RANDOM_CONF"));
   }
 }
