@@ -3,6 +3,7 @@ package com.databricks.jdbc.core;
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.commons.util.ValidationUtil;
 import com.databricks.jdbc.driver.DatabricksDriver;
+import com.databricks.jdbc.driver.DatabricksJdbcConstants;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.*;
@@ -392,32 +393,54 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
     }
   }
 
+  public void setSessionConfig(String key, String value) throws SQLException {
+    LOGGER.debug("public void setSessionConfig(String key = {}, String value = {})", key, value);
+    this.createStatement().execute(String.format("SET %s = %s", key, value));
+    this.session.setSessionConfig(key, value);
+  }
+
   @Override
   public void setClientInfo(String name, String value) throws SQLClientInfoException {
     LOGGER.debug("public void setClientInfo(String name = {}, String value = {})", name, value);
-    throw new UnsupportedOperationException(
-        "Not implemented in DatabricksConnection - setClientInfo(String name, String value)");
+    try {
+      if (ValidationUtil.isValidSessionConfig(name)) {
+        setSessionConfig(name, value);
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException(
+          String.format("Unable to set client info: (%s, %s)", name, value), e);
+    }
   }
 
   @Override
   public void setClientInfo(Properties properties) throws SQLClientInfoException {
     LOGGER.debug("public void setClientInfo(Properties properties)");
-    throw new UnsupportedOperationException(
-        "Not implemented in DatabricksConnection - setClientInfo(Properties properties)");
+    for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+      setClientInfo((String) entry.getKey(), (String) entry.getValue());
+    }
   }
 
   @Override
   public String getClientInfo(String name) throws SQLException {
     LOGGER.debug("public String getClientInfo(String name = {})", name);
-    throw new UnsupportedOperationException(
-        "Not implemented in DatabricksConnection - getClientInfo(String name)");
+    // Return session conf if set
+    if (this.session.getSessionConfigs().containsKey(name)) {
+      return this.session.getSessionConfigs().get(name);
+    }
+    // Else return default value or null if the conf name is invalid
+    return DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.getOrDefault(
+        name, null);
   }
 
   @Override
   public Properties getClientInfo() throws SQLException {
     LOGGER.debug("public Properties getClientInfo()");
-    throw new UnsupportedOperationException(
-        "Not implemented in DatabricksConnection - getClientInfo()");
+    Properties properties = new Properties();
+    // Put in default values first
+    properties.putAll(DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP);
+    // Then override with session confs
+    properties.putAll(this.session.getSessionConfigs());
+    return properties;
   }
 
   @Override

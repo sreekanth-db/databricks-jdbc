@@ -3,6 +3,7 @@ package com.databricks.jdbc.commons.util;
 import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.core.DatabricksSQLFeatureNotSupportedException;
+import com.databricks.jdbc.driver.DatabricksJdbcConstants;
 import java.util.Map;
 import org.apache.http.HttpResponse;
 import org.slf4j.Logger;
@@ -52,5 +53,9 @@ public class ValidationUtil {
         String.format("HTTP request failed by code: %d, status line: %s", statusCode, statusLine);
     throw new DatabricksHttpException(
         "Unable to fetch HTTP response successfully. " + errorMessage);
+  }
+
+  public static boolean isValidSessionConfig(String key) {
+    return DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.containsKey(key);
   }
 }

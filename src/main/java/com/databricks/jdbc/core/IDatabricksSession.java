@@ -56,4 +56,7 @@ public interface IDatabricksSession {
 
   /** Returns the session configs */
   Map<String, String> getSessionConfigs();
+
+  /** Sets the session config */
+  void setSessionConfig(String name, String value);
 }
