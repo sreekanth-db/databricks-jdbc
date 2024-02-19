@@ -192,15 +192,6 @@ public class ResultSetIntegrationTests {
           e.printStackTrace(); // Log or handle the exception as needed
         }
       }
-      // Drop the table after the test
-      String dropTableSQL =
-          "DROP TABLE IF EXISTS "
-              + getDatabricksCatalog()
-              + "."
-              + getDatabricksSchema()
-              + "."
-              + tableName;
-      executeSQL(dropTableSQL);
     }
 
     assertEquals(
