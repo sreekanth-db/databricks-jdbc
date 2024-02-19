@@ -37,12 +37,14 @@ jobs:
           DATABRICKS_USER: ${{ secrets.DATABRICKS_USER }}
           DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
           DATABRICKS_CATALOG: ${{ secrets.DATABRICKS_CATALOG }}
+          DATABRICKS_SCHEMA: ${{ secrets.DATABRICKS_SCHEMA }}
         run: |
           echo "DATABRICKS_HOST=${DATABRICKS_HOST}" >> $GITHUB_ENV
           echo "DATABRICKS_TOKEN=${DATABRICKS_TOKEN}" >> $GITHUB_ENV
           echo "DATABRICKS_USER=${DATABRICKS_USER}" >> $GITHUB_ENV
           echo "DATABRICKS_HTTP_PATH=${DATABRICKS_HTTP_PATH}" >> $GITHUB_ENV
           echo "DATABRICKS_CATALOG=${DATABRICKS_CATALOG}" >> $GITHUB_ENV
+          echo "DATABRICKS_SCHEMA=${DATABRICKS_SCHEMA}" >> $GITHUB_ENV
 
       - name: Build with Maven
         run: mvn -B package --file pom.xml
@@ -55,3 +57,4 @@ jobs:
           DATABRICKS_USER: ${{ env.DATABRICKS_USER }}
           DATABRICKS_HTTP_PATH: ${{ env.DATABRICKS_HTTP_PATH }}
           DATABRICKS_CATALOG: ${{ env.DATABRICKS_CATALOG }}
+          DATABRICKS_SCHEMA: ${{ env.DATABRICKS_SCHEMA }}
