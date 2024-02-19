@@ -49,7 +49,7 @@ public class ResultSetIntegrationTests {
     while (resultSet.next()) {
       assertTrue(resultSet.getInt("id") == 1, "ID should be of type Integer and value 1");
       assertTrue(
-          resultSet.getString("col1") == "value1",
+          resultSet.getString("col1").equals("value1"),
           "col1 should be of type String and value value1");
     }
   }
