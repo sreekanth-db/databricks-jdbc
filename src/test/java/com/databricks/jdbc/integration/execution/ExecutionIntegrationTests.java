@@ -1,6 +1,6 @@
-package com.databricks.jdbcintegrationtests.execution;
+package com.databricks.jdbc.integration.execution;
 
-import static com.databricks.jdbcintegrationtests.IntegrationTestUtil.*;
+import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.ResultSet;
