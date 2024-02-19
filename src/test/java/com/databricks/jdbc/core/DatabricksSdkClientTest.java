@@ -47,9 +47,9 @@ public class DatabricksSdkClientTest {
       };
 
   private void setupSessionMocks() {
-    Session session = new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID);
-    when(apiClient.POST(eq(SESSION_PATH), any(), eq(Session.class), eq(headers)))
-        .thenReturn(session);
+    CreateSessionResponse response = new CreateSessionResponse().setSessionId(SESSION_ID);
+    when(apiClient.POST(eq(SESSION_PATH), any(), eq(CreateSessionResponse.class), eq(headers)))
+        .thenReturn(response);
   }
 
   private void setupClientMocks() {
@@ -99,7 +99,7 @@ public class DatabricksSdkClientTest {
                 CreateSessionRequest request =
                     (CreateSessionRequest) invocationOnMock.getArguments()[1];
                 assertEquals(request.getWarehouseId(), WAREHOUSE_ID);
-                return new Session().setWarehouseId(WAREHOUSE_ID).setSessionId(SESSION_ID);
+                return new CreateSessionResponse().setSessionId(SESSION_ID);
               }
               return null;
             });
