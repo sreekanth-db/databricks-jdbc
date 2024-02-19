@@ -1,0 +1,211 @@
+package com.databricks.jdbc.integration.resultset;
+
+import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+public class ResultSetIntegrationTests {
+
+  private static String tableName = "test_table";
+
+  @AfterEach
+  void cleanUp() throws SQLException {
+    String SQL =
+        "DROP TABLE IF EXISTS "
+            + getDatabricksCatalog()
+            + "."
+            + getDatabricksSchema()
+            + "."
+            + tableName;
+    executeSQL(SQL);
+  }
+
+  @Test
+  void testRetrievalOfBasicDataTypes() throws SQLException {
+    setUpDatabaseSchema(tableName);
+    String insertSQL =
+        "INSERT INTO "
+            + getDatabricksCatalog()
+            + "."
+            + getDatabricksSchema()
+            + "."
+            + tableName
+            + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
+    executeSQL(insertSQL);
+
+    String query =
+        "SELECT id, col1 FROM "
+            + getDatabricksCatalog()
+            + "."
+            + getDatabricksSchema()
+            + "."
+            + tableName;
+    ResultSet resultSet = executeQuery(query);
+
+    while (resultSet.next()) {
+      assertTrue(resultSet.getInt("id") == 1, "ID should be of type Integer and value 1");
+      assertTrue(
+          resultSet.getString("col1") == "value1",
+          "col1 should be of type String and value value1");
+    }
+  }
+
+  @Test
+  void testRetrievalOfComplexDataTypes() throws SQLException {
+    String createTableSQL =
+        "CREATE TABLE IF NOT EXISTS "
+            + getDatabricksCatalog()
+            + "."
+            + getDatabricksSchema()
+            + "."
+            + tableName
+            + " ("
+            + "id INT PRIMARY KEY, "
+            + "datetime_col TIMESTAMP, "
+            + "decimal_col DECIMAL(10, 2), "
+            + "date_col DATE"
+            + ");";
+    setUpDatabaseSchema(tableName, createTableSQL);
+
+    String insertSQL =
+        "INSERT INTO "
+            + getDatabricksCatalog()
+            + "."
+            + getDatabricksSchema()
+            + "."
+            + tableName
+            + " (id, datetime_col, decimal_col, date_col) VALUES "
+            + "(1, '2021-01-01 00:00:00', 123.45, '2021-01-01')";
+    executeSQL(insertSQL);
+
+    String query =
+        "SELECT datetime_col, decimal_col, date_col FROM "
+            + getDatabricksCatalog()
+            + "."
+            + getDatabricksSchema()
+            + "."
+            + tableName;
+    ResultSet resultSet = executeQuery(query);
+
+    while (resultSet.next()) {
+      assertTrue(
+          resultSet.getTimestamp("datetime_col") instanceof java.sql.Timestamp,
+          "datetime_col should be of type Timestamp");
+      assertTrue(
+          resultSet.getBigDecimal("decimal_col") instanceof java.math.BigDecimal,
+          "decimal_col should be of type BigDecimal");
+      assertTrue(
+          resultSet.getDate("date_col") instanceof java.sql.Date,
+          "date_col should be of type Date");
+    }
+  }
+
+  @Test
+  void testHandlingNullValues() throws SQLException {
+    String createTableSQL =
+        "CREATE TABLE IF NOT EXISTS "
+            + getDatabricksCatalog()
+            + "."
+            + getDatabricksSchema()
+            + "."
+            + tableName
+            + " ("
+            + "id INT PRIMARY KEY, "
+            + "nullable_col VARCHAR(255)"
+            + ");";
+    setUpDatabaseSchema(tableName, createTableSQL);
+
+    String insertSQL =
+        "INSERT INTO "
+            + getDatabricksCatalog()
+            + "."
+            + getDatabricksSchema()
+            + "."
+            + tableName
+            + " (id) VALUES (1)";
+    executeSQL(insertSQL);
+
+    String query =
+        "SELECT nullable_col FROM "
+            + getDatabricksCatalog()
+            + "."
+            + getDatabricksSchema()
+            + "."
+            + tableName;
+    ResultSet resultSet = executeQuery(query);
+
+    while (resultSet.next()) {
+      String field = resultSet.getString("nullable_col");
+      assertTrue(
+          field == null || field instanceof String, "Field should be null or of type String");
+    }
+  }
+
+  @Test
+  void testNavigationInsideResultSet() throws SQLException {
+    int numRows = 10; // Number of rows to insert and navigate through
+
+    String createTableSQL =
+        "CREATE TABLE IF NOT EXISTS "
+            + getDatabricksCatalog()
+            + "."
+            + getDatabricksSchema()
+            + "."
+            + tableName
+            + " ("
+            + "id INT PRIMARY KEY"
+            + ");";
+    setUpDatabaseSchema(tableName, createTableSQL);
+
+    for (int i = 1; i <= numRows; i++) {
+      String insertSQL =
+          "INSERT INTO "
+              + getDatabricksCatalog()
+              + "."
+              + getDatabricksSchema()
+              + "."
+              + tableName
+              + " (id) VALUES ("
+              + i
+              + ")";
+      executeSQL(insertSQL);
+    }
+
+    String query =
+        "SELECT id FROM " + getDatabricksCatalog() + "." + getDatabricksSchema() + "." + tableName;
+    ResultSet resultSet = executeQuery(query);
+
+    int count = 0;
+    try {
+      while (resultSet.next()) {
+        count++;
+      }
+    } finally {
+      if (resultSet != null) {
+        try {
+          resultSet.close();
+        } catch (SQLException e) {
+          e.printStackTrace(); // Log or handle the exception as needed
+        }
+      }
+      // Drop the table after the test
+      String dropTableSQL =
+          "DROP TABLE IF EXISTS "
+              + getDatabricksCatalog()
+              + "."
+              + getDatabricksSchema()
+              + "."
+              + tableName;
+      executeSQL(dropTableSQL);
+    }
+
+    assertEquals(
+        numRows,
+        count,
+        "Should have navigated through " + numRows + " rows, but navigated through " + count);
+  }
+}

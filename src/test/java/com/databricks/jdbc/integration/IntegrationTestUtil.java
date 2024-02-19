@@ -93,4 +93,17 @@ public class IntegrationTestUtil {
 
     executeSQL(tableCreationSQL);
   }
+
+  public static void setUpDatabaseSchema(String tableName, String tableCreationSQL) {
+    String tableDeletionSQL =
+        "DROP TABLE IF EXISTS "
+            + getDatabricksCatalog()
+            + "."
+            + getDatabricksSchema()
+            + "."
+            + tableName;
+
+    executeSQL(tableDeletionSQL);
+    executeSQL(tableCreationSQL);
+  }
 }
