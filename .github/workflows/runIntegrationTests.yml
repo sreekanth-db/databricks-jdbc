@@ -48,7 +48,6 @@ jobs:
         run: mvn -B package --file pom.xml
 
       - name: Run Integration Tests
-        # Modify this to run tests
         run: mvn -B test -Dtest=*IntegrationTests
         env:
           DATABRICKS_HOST: ${{ env.DATABRICKS_HOST }}

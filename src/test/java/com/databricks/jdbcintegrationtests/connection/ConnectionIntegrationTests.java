@@ -1,7 +1,9 @@
-package com.databricks.jdbcintegrationtests.integration;
+package com.databricks.jdbcintegrationtests.connection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+
+import com.databricks.jdbcintegrationtests.IntegrationTestUtil;
 import org.junit.jupiter.api.Test;
 
 public class ConnectionIntegrationTests {

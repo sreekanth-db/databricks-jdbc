@@ -1,4 +1,4 @@
-package com.databricks.jdbcintegrationtests.integration;
+package com.databricks.jdbcintegrationtests;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
