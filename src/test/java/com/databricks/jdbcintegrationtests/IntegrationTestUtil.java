@@ -25,6 +25,10 @@ public class IntegrationTestUtil {
     return System.getenv("DATABRICKS_CATALOG");
   }
 
+  public static String getDatabricksSchema() {
+    return System.getenv("DATABRICKS_SCHEMA");
+  }
+
   public static String getDatabricksUser() {
     return System.getenv("DATABRICKS_USER");
   }
