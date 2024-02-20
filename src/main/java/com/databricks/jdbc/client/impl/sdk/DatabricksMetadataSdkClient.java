@@ -148,7 +148,8 @@ public class DatabricksMetadataSdkClient implements DatabricksMetadataClient {
     }
     // TODO: Limit to 15 pairs to run quickly, remove after demo/find workaround
     while (catalogSchemaPairs.size() > 15) catalogSchemaPairs.poll();
-    String tableWithContext = tableNamePattern == null ? "*" : tableNamePattern;
+    String tableWithContext =
+        tableNamePattern == null || tableNamePattern.equals("%") ? "*" : tableNamePattern;
 
     List<List<Object>> rows = new CopyOnWriteArrayList<>();
     ExecutorService executorService = Executors.newFixedThreadPool(150);
