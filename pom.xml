@@ -40,6 +40,8 @@
     <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
     <slf4j-reload4j.version>2.1.0-alpha1</slf4j-reload4j.version>
     <sql-logic-test.version>0.3</sql-logic-test.version>
+    <slt.executor>dbsql</slt.executor>
+    <slt.token>dummy-token</slt.token>
   </properties>
   <dependencies>
     <dependency>
@@ -175,6 +177,25 @@
               --add-opens=java.base/java.nio=ALL-UNNAMED
               -Dnet.bytebuddy.experimental=true
             </argLine>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>1.2.1</version>
+          <configuration>
+            <executable>java</executable>
+            <arguments>
+              <argument>--add-opens=java.base/java.nio=ALL-UNNAMED</argument>
+              <argument>-classpath</argument>
+              <classpath />
+              <argument>com.databricks.jdbc.sqllogictest.SLTMain</argument>
+              <argument>-e</argument>
+              <argument>${slt.executor}</argument>
+              <argument>-p</argument>
+              <argument>${slt.token}</argument>
+            </arguments>
+            <classpathScope>test</classpathScope>
           </configuration>
         </plugin>
         <plugin>
