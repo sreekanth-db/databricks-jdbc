@@ -10,18 +10,9 @@ import org.junit.jupiter.api.Test;
 
 public class ResultSetIntegrationTests {
 
-  private static String tableName = "test_table";
-
-  @AfterEach
-  void cleanUp() throws SQLException {
-    String SQL =
-        "DROP TABLE IF EXISTS "
-            + getFullyQualifiedTableName(tableName);
-    executeSQL(SQL);
-  }
-
   @Test
   void testRetrievalOfBasicDataTypes() throws SQLException {
+    String tableName = "basic_data_types_table";
     setupDatabaseTable(tableName);
     String insertSQL =
         "INSERT INTO "
@@ -40,10 +31,12 @@ public class ResultSetIntegrationTests {
           resultSet.getString("col1").equals("value1"),
           "col1 should be of type String and value value1");
     }
+    deleteTable(tableName);
   }
 
   @Test
   void testRetrievalOfComplexDataTypes() throws SQLException {
+    String tableName = "complex_data_types_table";
     String createTableSQL =
         "CREATE TABLE IF NOT EXISTS "
             + getFullyQualifiedTableName(tableName)
@@ -78,10 +71,12 @@ public class ResultSetIntegrationTests {
           resultSet.getDate("date_col") instanceof java.sql.Date,
           "date_col should be of type Date");
     }
+    deleteTable(tableName);
   }
 
   @Test
   void testHandlingNullValues() throws SQLException {
+    String tableName = "null_values_table";
     String createTableSQL =
         "CREATE TABLE IF NOT EXISTS "
             + getFullyQualifiedTableName(tableName)
@@ -107,10 +102,12 @@ public class ResultSetIntegrationTests {
       assertTrue(
           field == null || field instanceof String, "Field should be null or of type String");
     }
+    deleteTable(tableName);
   }
 
   @Test
   void testNavigationInsideResultSet() throws SQLException {
+    String tableName = "navigation_table";
     int numRows = 10; // Number of rows to insert and navigate through
 
     String createTableSQL =
@@ -154,5 +151,6 @@ public class ResultSetIntegrationTests {
         numRows,
         count,
         "Should have navigated through " + numRows + " rows, but navigated through " + count);
+    deleteTable(tableName);
   }
 }
