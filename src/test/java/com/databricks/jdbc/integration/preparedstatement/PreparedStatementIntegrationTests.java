@@ -40,10 +40,7 @@ public class PreparedStatementIntegrationTests {
     String tableName = "prepared_statement_test_table";
     setupDatabaseTable(tableName);
     insertTestData(tableName);
-    String sql =
-        "SELECT * FROM "
-            + getFullyQualifiedTableName(tableName)
-            + " WHERE id = ?";
+    String sql = "SELECT * FROM " + getFullyQualifiedTableName(tableName) + " WHERE id = ?";
     try (PreparedStatement statement = connection.prepareStatement(sql)) {
       statement.setInt(1, 1); // Assuming 'id' is an integer
       try (ResultSet resultSet = statement.executeQuery()) {
@@ -76,10 +73,7 @@ public class PreparedStatementIntegrationTests {
     String tableName = "prepared_statement_complex_query_test_table";
     setupDatabaseTable(tableName);
     insertTestData(tableName);
-    String sql =
-        "UPDATE "
-            + getFullyQualifiedTableName(tableName)
-            + " SET col1 = ? WHERE id = ?";
+    String sql = "UPDATE " + getFullyQualifiedTableName(tableName) + " SET col1 = ? WHERE id = ?";
     try (PreparedStatement statement = connection.prepareStatement(sql)) {
       statement.setString(1, "Updated value");
       statement.setInt(2, 1);
