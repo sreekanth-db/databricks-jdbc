@@ -14,12 +14,10 @@ import org.junit.jupiter.api.Test;
 public class PreparedStatementIntegrationTests {
 
   private Connection connection;
-  private static String tableName = "test_table";
 
   @BeforeEach
   void setUp() throws SQLException {
     connection = getValidJDBCConnection();
-    setUpDatabaseSchema(tableName);
   }
 
   @AfterEach
@@ -29,28 +27,22 @@ public class PreparedStatementIntegrationTests {
     }
   }
 
-  private static void insertTestData() throws SQLException {
+  private static void insertTestData(String tableName) throws SQLException {
     String insertSQL =
         "INSERT INTO "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
     executeSQL(insertSQL);
   }
 
   @Test
   void testPreparedStatementExecution() throws SQLException {
-    insertTestData();
+    String tableName = "prepared_statement_test_table";
+    setupDatabaseTable(tableName);
+    insertTestData(tableName);
     String sql =
         "SELECT * FROM "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " WHERE id = ?";
     try (PreparedStatement statement = connection.prepareStatement(sql)) {
       statement.setInt(1, 1); // Assuming 'id' is an integer
@@ -58,17 +50,16 @@ public class PreparedStatementIntegrationTests {
         assertTrue(resultSet.next(), "Should return at least one result");
       }
     }
+    deleteTable(tableName);
   }
 
   @Test
   void testParameterBindingInPreparedStatement() throws SQLException {
+    String tableName = "parameter_binding_test_table";
+    setupDatabaseTable(tableName);
     String sql =
         "INSERT INTO "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + "(id, col1, col2) VALUES (?, ?, ?)";
     try (PreparedStatement statement = connection.prepareStatement(sql)) {
       statement.setInt(1, 2);
@@ -77,18 +68,17 @@ public class PreparedStatementIntegrationTests {
       int affectedRows = statement.executeUpdate();
       assertEquals(1, affectedRows, "One row should be inserted");
     }
+    deleteTable(tableName);
   }
 
   @Test
   void testPreparedStatementComplexQueryExecution() throws SQLException {
-    insertTestData();
+    String tableName = "prepared_statement_complex_query_test_table";
+    setupDatabaseTable(tableName);
+    insertTestData(tableName);
     String sql =
         "UPDATE "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " SET col1 = ? WHERE id = ?";
     try (PreparedStatement statement = connection.prepareStatement(sql)) {
       statement.setString(1, "Updated value");
@@ -96,17 +86,16 @@ public class PreparedStatementIntegrationTests {
       int affectedRows = statement.executeUpdate();
       assertEquals(1, affectedRows, "One row should be updated");
     }
+    deleteTable(tableName);
   }
 
   @Test
   void testHandlingNullValuesWithPreparedStatement() throws SQLException {
+    String tableName = "prepared_statement_null_handling_test_table";
+    setupDatabaseTable(tableName);
     String sql =
         "INSERT INTO "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + "(id, col1, col2) VALUES (?, ?, ?)";
     try (PreparedStatement statement = connection.prepareStatement(sql)) {
       statement.setInt(1, 6);
@@ -115,5 +104,6 @@ public class PreparedStatementIntegrationTests {
       int affectedRows = statement.executeUpdate();
       assertEquals(1, affectedRows, "One row should be inserted with a null col1");
     }
+    deleteTable(tableName);
   }
 }
