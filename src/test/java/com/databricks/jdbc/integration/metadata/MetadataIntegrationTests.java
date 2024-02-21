@@ -73,9 +73,7 @@ public class MetadataIntegrationTests {
             + " (id, name, age) VALUES (1, 'Madhav', 24)";
     executeSQL(insertSQL);
 
-    String query =
-        "SELECT id, name, age FROM "
-            + getFullyQualifiedTableName(tableName);
+    String query = "SELECT id, name, age FROM " + getFullyQualifiedTableName(tableName);
 
     ResultSet resultSet = executeQuery(query);
     ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -111,9 +109,7 @@ public class MetadataIntegrationTests {
           resultSetMetaData.isNullable(i),
           "Column " + i + " should be nullable");
     }
-    String SQL =
-            "DROP TABLE IF EXISTS "
-                    + getFullyQualifiedTableName(tableName);
+    String SQL = "DROP TABLE IF EXISTS " + getFullyQualifiedTableName(tableName);
     executeSQL(SQL);
   }
 }
