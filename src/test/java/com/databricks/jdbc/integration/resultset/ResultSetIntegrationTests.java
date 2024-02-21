@@ -16,34 +16,22 @@ public class ResultSetIntegrationTests {
   void cleanUp() throws SQLException {
     String SQL =
         "DROP TABLE IF EXISTS "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName;
+            + getFullyQualifiedTableName(tableName);
     executeSQL(SQL);
   }
 
   @Test
   void testRetrievalOfBasicDataTypes() throws SQLException {
-    setUpDatabaseSchema(tableName);
+    setupDatabaseTable(tableName);
     String insertSQL =
         "INSERT INTO "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
     executeSQL(insertSQL);
 
     String query =
         "SELECT id, col1 FROM "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName;
+            + getFullyQualifiedTableName(tableName);
     ResultSet resultSet = executeQuery(query);
 
     while (resultSet.next()) {
@@ -58,37 +46,25 @@ public class ResultSetIntegrationTests {
   void testRetrievalOfComplexDataTypes() throws SQLException {
     String createTableSQL =
         "CREATE TABLE IF NOT EXISTS "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " ("
             + "id INT PRIMARY KEY, "
             + "datetime_col TIMESTAMP, "
             + "decimal_col DECIMAL(10, 2), "
             + "date_col DATE"
             + ");";
-    setUpDatabaseSchema(tableName, createTableSQL);
+    setupDatabaseTable(tableName, createTableSQL);
 
     String insertSQL =
         "INSERT INTO "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " (id, datetime_col, decimal_col, date_col) VALUES "
             + "(1, '2021-01-01 00:00:00', 123.45, '2021-01-01')";
     executeSQL(insertSQL);
 
     String query =
         "SELECT datetime_col, decimal_col, date_col FROM "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName;
+            + getFullyQualifiedTableName(tableName);
     ResultSet resultSet = executeQuery(query);
 
     while (resultSet.next()) {
@@ -108,34 +84,22 @@ public class ResultSetIntegrationTests {
   void testHandlingNullValues() throws SQLException {
     String createTableSQL =
         "CREATE TABLE IF NOT EXISTS "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " ("
             + "id INT PRIMARY KEY, "
             + "nullable_col VARCHAR(255)"
             + ");";
-    setUpDatabaseSchema(tableName, createTableSQL);
+    setupDatabaseTable(tableName, createTableSQL);
 
     String insertSQL =
         "INSERT INTO "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " (id) VALUES (1)";
     executeSQL(insertSQL);
 
     String query =
         "SELECT nullable_col FROM "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName;
+            + getFullyQualifiedTableName(tableName);
     ResultSet resultSet = executeQuery(query);
 
     while (resultSet.next()) {
@@ -151,24 +115,16 @@ public class ResultSetIntegrationTests {
 
     String createTableSQL =
         "CREATE TABLE IF NOT EXISTS "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " ("
             + "id INT PRIMARY KEY"
             + ");";
-    setUpDatabaseSchema(tableName, createTableSQL);
+    setupDatabaseTable(tableName, createTableSQL);
 
     for (int i = 1; i <= numRows; i++) {
       String insertSQL =
           "INSERT INTO "
-              + getDatabricksCatalog()
-              + "."
-              + getDatabricksSchema()
-              + "."
-              + tableName
+              + getFullyQualifiedTableName(tableName)
               + " (id) VALUES ("
               + i
               + ")";
