@@ -285,7 +285,7 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   @Override
   public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
     LOGGER.debug("public void setNull(int parameterIndex, int sqlType, String typeName)");
-    setObject(parameterIndex, null, VOID);
+    setObject(parameterIndex, null, DatabricksTypeUtil.VOID);
   }
 
   @Override
