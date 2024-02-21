@@ -71,39 +71,32 @@ public class IntegrationTestUtil {
     }
   }
 
-  public static void setUpDatabaseSchema(String tableName) {
-    String tableDeletionSQL =
-        "DROP TABLE IF EXISTS "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName;
+  public static void setupDatabaseTable(String tableName) {
+    String tableDeletionSQL = "DROP TABLE IF EXISTS " + getFullyQualifiedTableName(tableName);
 
     executeSQL(tableDeletionSQL);
 
     String tableCreationSQL =
         "CREATE TABLE IF NOT EXISTS "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " (id INT PRIMARY KEY, col1 VARCHAR(255), col2 VARCHAR(255))";
 
     executeSQL(tableCreationSQL);
   }
 
-  public static void setUpDatabaseSchema(String tableName, String tableCreationSQL) {
-    String tableDeletionSQL =
-        "DROP TABLE IF EXISTS "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName;
+  public static void setupDatabaseTable(String tableName, String tableCreationSQL) {
+    String tableDeletionSQL = "DROP TABLE IF EXISTS " + getFullyQualifiedTableName(tableName);
 
     executeSQL(tableDeletionSQL);
     executeSQL(tableCreationSQL);
+  }
+
+  public static void deleteTable(String tableName) {
+    String SQL = "DROP TABLE IF EXISTS " + getFullyQualifiedTableName(tableName);
+    executeSQL(SQL);
+  }
+
+  public static String getFullyQualifiedTableName(String tableName) {
+    return getDatabricksCatalog() + "." + getDatabricksSchema() + "." + tableName;
   }
 }

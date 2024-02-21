@@ -4,25 +4,9 @@ import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.*;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 public class ErrorHandlingIntegrationTests {
-
-  String tableName = "test_table";
-
-  @AfterEach
-  void cleanUp() throws SQLException {
-    String SQL =
-        "DROP TABLE IF EXISTS "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName;
-    executeSQL(SQL);
-  }
-
   @Test
   void testFailureToLoadDriver() {
     Exception exception =
@@ -61,7 +45,8 @@ public class ErrorHandlingIntegrationTests {
 
   @Test
   void testQuerySyntaxError() {
-    setUpDatabaseSchema(tableName);
+    String tableName = "query_syntax_error_test_table";
+    setupDatabaseTable(tableName);
     assertThrows(
         SQLException.class,
         () -> {
@@ -69,61 +54,45 @@ public class ErrorHandlingIntegrationTests {
           Statement statement = connection.createStatement();
           String sql =
               "INSER INTO "
-                  + getDatabricksCatalog()
-                  + "."
-                  + getDatabricksSchema()
-                  + "."
-                  + tableName
+                  + getFullyQualifiedTableName(tableName)
                   + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
           statement.executeQuery(sql);
         });
+    deleteTable(tableName);
   }
 
   @Test
   void testAccessingClosedResultSet() {
-    setUpDatabaseSchema(tableName);
+    String tableName = "access_closed_result_set_test_table";
+    setupDatabaseTable(tableName);
     executeSQL(
         "INSERT INTO "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " (id, col1, col2) VALUES (1, 'value1', 'value2')");
-    ResultSet resultSet =
-        executeQuery(
-            "SELECT * FROM "
-                + getDatabricksCatalog()
-                + "."
-                + getDatabricksSchema()
-                + "."
-                + tableName);
+    ResultSet resultSet = executeQuery("SELECT * FROM " + getFullyQualifiedTableName(tableName));
     try {
       resultSet.close();
       assertThrows(SQLException.class, resultSet::next);
     } catch (SQLException e) {
       fail("Unexpected exception: " + e.getMessage());
     }
+    deleteTable(tableName);
   }
 
   @Test
   void testCallingUnsupportedSQLFeature() {
-    setUpDatabaseSchema(tableName);
+    String tableName = "unsupported_sql_feature_test_table";
+    setupDatabaseTable(tableName);
     assertThrows(
         SQLFeatureNotSupportedException.class,
         () -> {
           Connection connection = getValidJDBCConnection();
           Statement statement = connection.createStatement();
-          String sql =
-              "SELECT * FROM "
-                  + getDatabricksCatalog()
-                  + "."
-                  + getDatabricksSchema()
-                  + "."
-                  + tableName;
+          String sql = "SELECT * FROM " + getFullyQualifiedTableName(tableName);
           ResultSet resultSet = statement.executeQuery(sql);
           resultSet.first(); // Currently unsupported method
         });
+    deleteTable(tableName);
   }
 
   private Connection getConnection(String url, String username, String password)

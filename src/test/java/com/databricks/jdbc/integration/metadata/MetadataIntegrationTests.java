@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 public class MetadataIntegrationTests {
 
   private Connection connection;
-  String tableName = "test_table";
 
   @BeforeEach
   void setUp() throws SQLException {
@@ -24,14 +23,6 @@ public class MetadataIntegrationTests {
 
   @AfterEach
   void cleanUp() throws SQLException {
-    String SQL =
-        "DROP TABLE IF EXISTS "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName;
-    executeSQL(SQL);
     if (connection != null) {
       connection.close();
     }
@@ -65,38 +56,24 @@ public class MetadataIntegrationTests {
 
   @Test
   void testResultSetMetadataRetrieval() throws SQLException {
-
+    String tableName = "resultset_metadata_test_table";
     String createTableSQL =
         "CREATE TABLE IF NOT EXISTS "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " ("
             + "id INT PRIMARY KEY, "
             + "name VARCHAR(255), "
             + "age INT"
             + ");";
-    setUpDatabaseSchema(tableName, createTableSQL);
+    setupDatabaseTable(tableName, createTableSQL);
 
     String insertSQL =
         "INSERT INTO "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " (id, name, age) VALUES (1, 'Madhav', 24)";
     executeSQL(insertSQL);
 
-    String query =
-        "SELECT id, name, age FROM "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName;
+    String query = "SELECT id, name, age FROM " + getFullyQualifiedTableName(tableName);
 
     ResultSet resultSet = executeQuery(query);
     ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -132,5 +109,7 @@ public class MetadataIntegrationTests {
           resultSetMetaData.isNullable(i),
           "Column " + i + " should be nullable");
     }
+    String SQL = "DROP TABLE IF EXISTS " + getFullyQualifiedTableName(tableName);
+    executeSQL(SQL);
   }
 }
