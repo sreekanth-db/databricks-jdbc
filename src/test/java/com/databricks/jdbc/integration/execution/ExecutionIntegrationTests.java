@@ -97,9 +97,9 @@ public class ExecutionIntegrationTests {
 
   private static void insertTestData(String tableName) throws SQLException {
     String insertSQL =
-            "INSERT INTO "
-                    + getFullyQualifiedTableName(tableName)
-                    + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
+        "INSERT INTO "
+            + getFullyQualifiedTableName(tableName)
+            + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
     executeSQL(insertSQL);
   }
 }
