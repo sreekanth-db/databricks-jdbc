@@ -1,13 +1,13 @@
 package com.databricks.jdbc.core;
 
-import org.immutables.value.Value;
-
 import javax.annotation.Nullable;
+import org.immutables.value.Value;
 
 @Value.Immutable
 public interface SqlParameter {
 
-  @Nullable Object value();
+  @Nullable
+  Object value();
 
   String type();
 
