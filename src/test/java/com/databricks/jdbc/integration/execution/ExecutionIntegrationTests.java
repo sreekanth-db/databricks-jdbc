@@ -13,29 +13,19 @@ public class ExecutionIntegrationTests {
 
   @BeforeEach
   void setUp() throws SQLException {
-    setUpDatabaseSchema(tableName);
+    setupDatabaseTable(tableName);
   }
 
   @AfterEach
   void cleanUp() throws SQLException {
-    String SQL =
-        "DROP TABLE IF EXISTS "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName;
+    String SQL = "DROP TABLE IF EXISTS " + getFullyQualifiedTableName(tableName);
     executeSQL(SQL);
   }
 
   private static void insertTestData() throws SQLException {
     String insertSQL =
         "INSERT INTO "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
     executeSQL(insertSQL);
   }
@@ -44,22 +34,11 @@ public class ExecutionIntegrationTests {
   void testInsertStatement() throws SQLException {
     String SQL =
         "INSERT INTO "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
     assertDoesNotThrow(() -> executeSQL(SQL), "Error executing SQL");
 
-    ResultSet rs =
-        executeQuery(
-            "SELECT * FROM "
-                + getDatabricksCatalog()
-                + "."
-                + getDatabricksSchema()
-                + "."
-                + tableName);
+    ResultSet rs = executeQuery("SELECT * FROM " + getFullyQualifiedTableName(tableName));
     int rows = 0;
     while (rs != null && rs.next()) {
       rows++;
@@ -74,23 +53,12 @@ public class ExecutionIntegrationTests {
 
     String updateSQL =
         "UPDATE "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " SET col1 = 'updatedValue1' WHERE id = 1";
     executeSQL(updateSQL);
 
     ResultSet rs =
-        executeQuery(
-            "SELECT col1 FROM "
-                + getDatabricksCatalog()
-                + "."
-                + getDatabricksSchema()
-                + "."
-                + tableName
-                + " WHERE id = 1");
+        executeQuery("SELECT col1 FROM " + getFullyQualifiedTableName(tableName) + " WHERE id = 1");
     assertTrue(
         rs.next() && "updatedValue1".equals(rs.getString("col1")),
         "Expected 'updatedValue1', got " + rs.getString("col1"));
@@ -101,24 +69,10 @@ public class ExecutionIntegrationTests {
     // Insert initial test data
     insertTestData();
 
-    String deleteSQL =
-        "DELETE FROM "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
-            + " WHERE id = 1";
+    String deleteSQL = "DELETE FROM " + getFullyQualifiedTableName(tableName) + " WHERE id = 1";
     executeSQL(deleteSQL);
 
-    ResultSet rs =
-        executeQuery(
-            "SELECT * FROM "
-                + getDatabricksCatalog()
-                + "."
-                + getDatabricksSchema()
-                + "."
-                + tableName);
+    ResultSet rs = executeQuery("SELECT * FROM " + getFullyQualifiedTableName(tableName));
     assertFalse(rs.next(), "Expected no rows after delete");
   }
 
@@ -130,48 +84,23 @@ public class ExecutionIntegrationTests {
     // Update operation as part of compound test
     String updateSQL =
         "UPDATE "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
+            + getFullyQualifiedTableName(tableName)
             + " SET col2 = 'updatedValue2' WHERE id = 1";
     executeSQL(updateSQL);
 
     // Verify update operation
     ResultSet rs =
-        executeQuery(
-            "SELECT col2 FROM "
-                + getDatabricksCatalog()
-                + "."
-                + getDatabricksSchema()
-                + "."
-                + tableName
-                + " WHERE id = 1");
+        executeQuery("SELECT col2 FROM " + getFullyQualifiedTableName(tableName) + " WHERE id = 1");
     assertTrue(
         rs.next() && "updatedValue2".equals(rs.getString("col2")),
         "Expected 'updatedValue2', got " + rs.getString("col2"));
 
     // Delete operation as part of compound test
-    String deleteSQL =
-        "DELETE FROM "
-            + getDatabricksCatalog()
-            + "."
-            + getDatabricksSchema()
-            + "."
-            + tableName
-            + " WHERE id = 1";
+    String deleteSQL = "DELETE FROM " + getFullyQualifiedTableName(tableName) + " WHERE id = 1";
     executeSQL(deleteSQL);
 
     // Verify delete operation
-    rs =
-        executeQuery(
-            "SELECT * FROM "
-                + getDatabricksCatalog()
-                + "."
-                + getDatabricksSchema()
-                + "."
-                + tableName);
+    rs = executeQuery("SELECT * FROM " + getFullyQualifiedTableName(tableName));
     assertFalse(rs.next(), "Expected no rows after delete");
   }
 }
