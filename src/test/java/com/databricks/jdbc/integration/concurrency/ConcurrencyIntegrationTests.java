@@ -1,4 +1,4 @@
-package com.databricks.jdbc.integration.errorhandling;
+package com.databricks.jdbc.integration.concurrency;
 
 import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
