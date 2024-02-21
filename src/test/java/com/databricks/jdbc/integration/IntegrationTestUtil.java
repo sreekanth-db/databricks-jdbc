@@ -85,9 +85,7 @@ public class IntegrationTestUtil {
   }
 
   public static void setupDatabaseTable(String tableName, String tableCreationSQL) {
-    String tableDeletionSQL =
-        "DROP TABLE IF EXISTS "
-            + getFullyQualifiedTableName(tableName);
+    String tableDeletionSQL = "DROP TABLE IF EXISTS " + getFullyQualifiedTableName(tableName);
 
     executeSQL(tableDeletionSQL);
     executeSQL(tableCreationSQL);

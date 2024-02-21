@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 public class ResultSetIntegrationTests {
@@ -20,9 +19,7 @@ public class ResultSetIntegrationTests {
             + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
     executeSQL(insertSQL);
 
-    String query =
-        "SELECT id, col1 FROM "
-            + getFullyQualifiedTableName(tableName);
+    String query = "SELECT id, col1 FROM " + getFullyQualifiedTableName(tableName);
     ResultSet resultSet = executeQuery(query);
 
     while (resultSet.next()) {
@@ -56,8 +53,7 @@ public class ResultSetIntegrationTests {
     executeSQL(insertSQL);
 
     String query =
-        "SELECT datetime_col, decimal_col, date_col FROM "
-            + getFullyQualifiedTableName(tableName);
+        "SELECT datetime_col, decimal_col, date_col FROM " + getFullyQualifiedTableName(tableName);
     ResultSet resultSet = executeQuery(query);
 
     while (resultSet.next()) {
@@ -86,15 +82,10 @@ public class ResultSetIntegrationTests {
             + ");";
     setupDatabaseTable(tableName, createTableSQL);
 
-    String insertSQL =
-        "INSERT INTO "
-            + getFullyQualifiedTableName(tableName)
-            + " (id) VALUES (1)";
+    String insertSQL = "INSERT INTO " + getFullyQualifiedTableName(tableName) + " (id) VALUES (1)";
     executeSQL(insertSQL);
 
-    String query =
-        "SELECT nullable_col FROM "
-            + getFullyQualifiedTableName(tableName);
+    String query = "SELECT nullable_col FROM " + getFullyQualifiedTableName(tableName);
     ResultSet resultSet = executeQuery(query);
 
     while (resultSet.next()) {
@@ -120,11 +111,7 @@ public class ResultSetIntegrationTests {
 
     for (int i = 1; i <= numRows; i++) {
       String insertSQL =
-          "INSERT INTO "
-              + getFullyQualifiedTableName(tableName)
-              + " (id) VALUES ("
-              + i
-              + ")";
+          "INSERT INTO " + getFullyQualifiedTableName(tableName) + " (id) VALUES (" + i + ")";
       executeSQL(insertSQL);
     }
 
