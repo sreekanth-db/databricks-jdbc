@@ -4,6 +4,8 @@ import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.*;
+
+import com.databricks.jdbc.core.DatabricksSQLException;
 import org.junit.jupiter.api.Test;
 
 public class ErrorHandlingIntegrationTests {
@@ -47,8 +49,8 @@ public class ErrorHandlingIntegrationTests {
   void testQuerySyntaxError() {
     String tableName = "query_syntax_error_test_table";
     setupDatabaseTable(tableName);
-    assertThrows(
-        SQLException.class,
+    DatabricksSQLException e = assertThrows(
+        DatabricksSQLException.class,
         () -> {
           Connection connection = getValidJDBCConnection();
           Statement statement = connection.createStatement();
@@ -58,6 +60,7 @@ public class ErrorHandlingIntegrationTests {
                   + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
           statement.executeQuery(sql);
         });
+    assertTrue(e.getMessage().contains("Error occurred during statement execution"));
     deleteTable(tableName);
   }
 
