@@ -395,6 +395,12 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
     }
   }
 
+  /**
+   * This function creates the exception message for the failed setClientInfo command
+   *
+   * @param failedProperties contains the map for the failed properties
+   * @return the exception message
+   */
   public static String getFailedPropertiesExceptionMessage(
       Map<String, ClientInfoStatus> failedProperties) {
     return failedProperties.entrySet().stream()
@@ -402,6 +408,14 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
         .collect(Collectors.joining("\n"));
   }
 
+  /**
+   * This function determines the reason for the failure of setting a session config form the exception message
+   *
+   * @param key for which set command failed
+   * @param value for which set command failed
+   * @param e exception thrown by the set command
+   * @return the reason for the failure in ClientInfoStatus
+   */
   public static ClientInfoStatus determineClientInfoStatus(String key, String value, Throwable e) {
     String invalidConfigMessage = String.format("Configuration %s is not available", key);
     String invalidValueMessage = String.format("Unsupported configuration %s=%s", key, value);
@@ -413,6 +427,14 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
     return ClientInfoStatus.REASON_UNKNOWN;
   }
 
+  /**
+   * This function sets the session config for the given key and value. If the setting fails, the
+   * key and the reason for failure are added to the failedProperties map.
+   *
+   * @param key for the session conf
+   * @param value for the session conf
+   * @param failedProperties to add the key to, if the set command fails
+   */
   public void setSessionConfig(
       String key, String value, Map<String, ClientInfoStatus> failedProperties) {
     LOGGER.debug("public void setSessionConfig(String key = {}, String value = {})", key, value);
