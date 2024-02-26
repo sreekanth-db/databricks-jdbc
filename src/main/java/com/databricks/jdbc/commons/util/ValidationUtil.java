@@ -56,6 +56,7 @@ public class ValidationUtil {
   }
 
   public static boolean isValidSessionConfig(String key) {
-    return DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.containsKey(key);
+    return DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.keySet().stream()
+        .anyMatch(allowedKey -> allowedKey.equalsIgnoreCase(key));
   }
 }
