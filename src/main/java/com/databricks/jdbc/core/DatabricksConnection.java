@@ -409,7 +409,8 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   }
 
   /**
-   * This function determines the reason for the failure of setting a session config form the exception message
+   * This function determines the reason for the failure of setting a session config form the
+   * exception message
    *
    * @param key for which set command failed
    * @param value for which set command failed
