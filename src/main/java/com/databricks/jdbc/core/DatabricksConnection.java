@@ -468,7 +468,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
     }
     if (!failedProperties.isEmpty()) {
       throw new DatabricksSQLClientInfoException(
-              getFailedPropertiesExceptionMessage(failedProperties), failedProperties);
+          getFailedPropertiesExceptionMessage(failedProperties), failedProperties);
     }
   }
 
