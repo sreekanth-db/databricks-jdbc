@@ -10,6 +10,7 @@ import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.core.UserAgent;
 import java.sql.ResultSet;
+import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -123,7 +124,6 @@ public class DatabricksConnectionTest {
     Properties properties = new Properties();
     properties.put("ENABLE_PHOTON", "TRUE");
     properties.put("TIMEZONE", "UTC");
-    properties.put("RANDOM_CONF", "UNLIMITED");
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     ImmutableSessionInfo session =
@@ -134,7 +134,14 @@ public class DatabricksConnectionTest {
         Mockito.spy(new DatabricksConnection(connectionContext, databricksClient));
     DatabricksStatement statement = Mockito.spy(new DatabricksStatement(connection));
     Mockito.doReturn(statement).when(connection).createStatement();
-    Mockito.doReturn(true).when(statement).execute(any());
+    Mockito.doReturn(true).when(statement).execute("SET ENABLE_PHOTON = TRUE");
+    Mockito.doReturn(true).when(statement).execute("SET TIMEZONE = UTC");
+    Mockito.doThrow(
+            new SQLException(
+                "Unable to set property",
+                new SQLException("Configuration RANDOM_CONF is not available")))
+        .when(statement)
+        .execute("SET RANDOM_CONF = UNLIMITED");
     connection.setClientInfo(properties);
     Properties clientInfoProperties = connection.getClientInfo();
     // Check valid session confs are set
@@ -145,7 +152,9 @@ public class DatabricksConnectionTest {
     // Check conf not supplied returns default value
     assertEquals(connection.getClientInfo("MAX_FILE_PARTITION_BYTES"), "128m");
     assertEquals(clientInfoProperties.get("MAX_FILE_PARTITION_BYTES"), "128m");
-    // Check if an unknown conf returns null
+    // Checks for unknown conf
+    assertThrows(
+        SQLClientInfoException.class, () -> connection.setClientInfo("RANDOM_CONF", "UNLIMITED"));
     assertNull(connection.getClientInfo("RANDOM_CONF"));
     assertNull(clientInfoProperties.get("RANDOM_CONF"));
   }

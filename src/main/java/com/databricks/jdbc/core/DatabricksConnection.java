@@ -7,11 +7,13 @@ import com.databricks.jdbc.driver.DatabricksJdbcConstants;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.*;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -393,30 +395,56 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
     }
   }
 
-  public void setSessionConfig(String key, String value) throws SQLException {
+  public static String getFailedPropertiesExceptionMessage(
+      Map<String, ClientInfoStatus> failedProperties) {
+    return failedProperties.entrySet().stream()
+        .map(e -> String.format("Setting config %s failed with %s", e.getKey(), e.getValue()))
+        .collect(Collectors.joining("\n"));
+  }
+
+  public static ClientInfoStatus determineClientInfoStatus(String key, String value, Throwable e) {
+    String invalidConfigMessage = String.format("Configuration %s is not available", key);
+    String invalidValueMessage = String.format("Unsupported configuration %s=%s", key, value);
+    String errorMessage = e.getCause().getMessage();
+    if (errorMessage.contains(invalidConfigMessage))
+      return ClientInfoStatus.REASON_UNKNOWN_PROPERTY;
+    else if (errorMessage.contains(invalidValueMessage))
+      return ClientInfoStatus.REASON_VALUE_INVALID;
+    return ClientInfoStatus.REASON_UNKNOWN;
+  }
+
+  public void setSessionConfig(
+      String key, String value, Map<String, ClientInfoStatus> failedProperties) {
     LOGGER.debug("public void setSessionConfig(String key = {}, String value = {})", key, value);
-    this.createStatement().execute(String.format("SET %s = %s", key, value));
-    this.session.setSessionConfig(key, value);
+    try {
+      this.createStatement().execute(String.format("SET %s = %s", key, value));
+      this.session.setSessionConfig(key, value);
+    } catch (SQLException e) {
+      ClientInfoStatus status = determineClientInfoStatus(key, value, e);
+      failedProperties.put(key, status);
+    }
   }
 
   @Override
   public void setClientInfo(String name, String value) throws SQLClientInfoException {
     LOGGER.debug("public void setClientInfo(String name = {}, String value = {})", name, value);
-    try {
-      if (ValidationUtil.isValidSessionConfig(name)) {
-        setSessionConfig(name, value);
-      }
-    } catch (SQLException e) {
-      throw new RuntimeException(
-          String.format("Unable to set client info: (%s, %s)", name, value), e);
+    Map<String, ClientInfoStatus> failedProperties = new HashMap<>();
+    setSessionConfig(name, value, failedProperties);
+    if (!failedProperties.isEmpty()) {
+      throw new SQLClientInfoException(
+          getFailedPropertiesExceptionMessage(failedProperties), failedProperties);
     }
   }
 
   @Override
   public void setClientInfo(Properties properties) throws SQLClientInfoException {
     LOGGER.debug("public void setClientInfo(Properties properties)");
+    Map<String, ClientInfoStatus> failedProperties = new HashMap<>();
     for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-      setClientInfo((String) entry.getKey(), (String) entry.getValue());
+      setSessionConfig((String) entry.getKey(), (String) entry.getValue(), failedProperties);
+    }
+    if (!failedProperties.isEmpty()) {
+      throw new SQLClientInfoException(failedProperties);
     }
   }
 
