@@ -454,7 +454,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
     Map<String, ClientInfoStatus> failedProperties = new HashMap<>();
     setSessionConfig(name, value, failedProperties);
     if (!failedProperties.isEmpty()) {
-      throw new SQLClientInfoException(
+      throw new DatabricksSQLClientInfoException(
           getFailedPropertiesExceptionMessage(failedProperties), failedProperties);
     }
   }
@@ -467,7 +467,8 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
       setSessionConfig((String) entry.getKey(), (String) entry.getValue(), failedProperties);
     }
     if (!failedProperties.isEmpty()) {
-      throw new SQLClientInfoException(failedProperties);
+      throw new DatabricksSQLClientInfoException(
+              getFailedPropertiesExceptionMessage(failedProperties), failedProperties);
     }
   }
 
