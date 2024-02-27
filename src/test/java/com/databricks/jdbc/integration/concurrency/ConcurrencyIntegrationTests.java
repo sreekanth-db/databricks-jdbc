@@ -3,107 +3,118 @@ package com.databricks.jdbc.integration.concurrency;
 import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.sql.*;
-
-import com.databricks.jdbc.core.DatabricksSQLException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class ConcurrencyIntegrationTests {
 
-    static String tableName = "test_table";
+  private Connection connection;
+  private static final String tableName = "concurrency_test_table";
 
-    @AfterEach
-    void cleanUp() throws SQLException {
-        String SQL =
-                "DROP TABLE IF EXISTS "
-                        + getDatabricksCatalog()
-                        + "."
-                        + getDatabricksSchema()
-                        + "."
-                        + tableName;
-        executeSQL(SQL);
+  @BeforeEach
+  void setUp() throws SQLException {
+    connection = getValidJDBCConnection();
+    createTestTable();
+  }
+
+  @AfterEach
+  void cleanUp() throws SQLException {
+    dropTestTable();
+    if (connection != null) {
+      connection.close();
     }
+  }
 
-    @Test
-    void testConcurrencyOnMultipleThreads() throws SQLException {
-        setUpDatabaseSchema(tableName);
-        insertTestData();
-        Connection connection = getValidJDBCConnection();
-        Statement statement = connection.createStatement();
-        Thread thread1 =
-                new Thread(
-                        () -> {
-                            try {
-                                statement.executeUpdate(
-                                        "UPDATE "
-                                                + getDatabricksCatalog()
-                                                + "."
-                                                + getDatabricksSchema()
-                                                + "."
-                                                + tableName
-                                                + " SET col1 = 'value3' WHERE id = 1");
-                            } catch (SQLException e) {
-                                e.printStackTrace(); // Handle exception appropriately
-                            }
-                        });
-
-        Thread thread2 =
-                new Thread(
-                        () -> {
-                            try {
-                                statement.executeUpdate(
-                                        "UPDATE "
-                                                + getDatabricksCatalog()
-                                                + "."
-                                                + getDatabricksSchema()
-                                                + "."
-                                                + tableName
-                                                + " SET col2 = 'value4' WHERE id = 1");
-                            } catch (SQLException e) {
-                                e.printStackTrace(); // Handle exception appropriately
-                            }
-                        });
-
-        thread1.start();
-        thread2.start();
-
-        DatabricksSQLException e = assertThrows(DatabricksSQLException.class, () -> {
-            thread1.join();
-            thread2.join();
-        });
-
-        assertTrue(e.getMessage().contains("Files were added to the root of the table by a concurrent update."));
-
-//    ResultSet rs =
-//        executeQuery(
-//            "SELECT * FROM "
-//                + getDatabricksCatalog()
-//                + "."
-//                + getDatabricksSchema()
-//                + "."
-//                + tableName
-//                + " WHERE id = 1");
-//    while (rs.next()) {
-//      assertTrue(rs.getString("col1").equals("value3"));
-//      assertTrue(rs.getString("col2").equals("value4"));
-//    }
+  private void createTestTable() throws SQLException {
+    String sql =
+        "CREATE TABLE IF NOT EXISTS "
+            + getFullyQualifiedTableName(tableName)
+            + " ("
+            + "id INT PRIMARY KEY, "
+            + "counter INT"
+            + ");";
+    try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+      preparedStatement.execute();
     }
+    String insertSQL =
+        "INSERT INTO " + getFullyQualifiedTableName(tableName) + " (id, counter) VALUES (1, 0)";
+    executeSQL(insertSQL);
+  }
 
-    private static void insertTestData() throws SQLException {
-        String insertSQL =
-                "INSERT INTO "
-                        + getDatabricksCatalog()
-                        + "."
-                        + getDatabricksSchema()
-                        + "."
-                        + tableName
-                        + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
-        executeSQL(insertSQL);
+  private void dropTestTable() throws SQLException {
+    String sql = "DROP TABLE IF EXISTS " + getFullyQualifiedTableName(tableName);
+    try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+      preparedStatement.execute();
     }
+  }
 
-    private Connection getConnection(String url, String username, String password)
-            throws SQLException {
-        return DriverManager.getConnection(url, username, password);
-    }
+  @Test
+  void testConcurrentUpdates() throws InterruptedException, SQLException {
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+
+    AtomicInteger counter = new AtomicInteger();
+
+    Runnable updateTask =
+        () -> {
+          String sql =
+              "UPDATE "
+                  + getFullyQualifiedTableName(tableName)
+                  + " SET counter = counter + 1 WHERE id = 1";
+          try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.executeUpdate();
+          } catch (SQLException e) {
+            counter.getAndIncrement();
+            System.out.println("Expected exception on concurrent update: " + e.getMessage());
+          }
+        };
+
+    // Execute concurrent updates
+    executor.submit(updateTask);
+    executor.submit(updateTask);
+    executor.shutdown();
+    executor.awaitTermination(1, TimeUnit.MINUTES);
+
+    assertEquals(counter.get(), 1);
+
+    String selectSQL =
+        "SELECT counter FROM " + getFullyQualifiedTableName(tableName) + " WHERE id = 1";
+    ResultSet rs = executeQuery(selectSQL);
+    rs.next();
+    String r = rs.getString("counter");
+    assertEquals(r, "1");
+  }
+
+  @Test
+  void testConcurrentReads() throws InterruptedException, SQLException {
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+
+    Runnable readTask =
+        () -> {
+          String sql =
+              "SELECT counter FROM " + getFullyQualifiedTableName(tableName) + " WHERE id = 1";
+          try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
+              ResultSet resultSet = preparedStatement.executeQuery()) {
+            if (resultSet.next()) {
+              System.out.println("Read counter: " + resultSet.getInt("counter"));
+            }
+          } catch (SQLException e) {
+            fail("Read operation should not fail.");
+          }
+        };
+
+    // Execute concurrent reads
+    executor.submit(readTask);
+    executor.submit(readTask);
+    executor.shutdown();
+    executor.awaitTermination(1, TimeUnit.MINUTES);
+  }
 }
