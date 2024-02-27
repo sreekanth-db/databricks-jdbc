@@ -3,9 +3,8 @@ package com.databricks.jdbc.integration.errorhandling;
 import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.sql.*;
-
 import com.databricks.jdbc.core.DatabricksSQLException;
+import java.sql.*;
 import org.junit.jupiter.api.Test;
 
 public class ErrorHandlingIntegrationTests {
@@ -34,32 +33,35 @@ public class ErrorHandlingIntegrationTests {
 
   @Test
   void testInvalidHostname() {
-    assertThrows(
-        SQLException.class,
-        () -> {
-          Connection connection =
-              getConnection(
-                  "jdbc:databricks://e2-wrongfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;",
-                  "username",
-                  "password");
-        });
+    SQLException e =
+        assertThrows(
+            SQLException.class,
+            () -> {
+              Connection connection =
+                  getConnection(
+                      "jdbc:databricks://e2-wrongfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;",
+                      "username",
+                      "password");
+            });
+    assertTrue(e.getMessage().contains("Invalid or unknown hostname provided"));
   }
 
   @Test
   void testQuerySyntaxError() {
     String tableName = "query_syntax_error_test_table";
     setupDatabaseTable(tableName);
-    DatabricksSQLException e = assertThrows(
-        DatabricksSQLException.class,
-        () -> {
-          Connection connection = getValidJDBCConnection();
-          Statement statement = connection.createStatement();
-          String sql =
-              "INSER INTO "
-                  + getFullyQualifiedTableName(tableName)
-                  + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
-          statement.executeQuery(sql);
-        });
+    DatabricksSQLException e =
+        assertThrows(
+            DatabricksSQLException.class,
+            () -> {
+              Connection connection = getValidJDBCConnection();
+              Statement statement = connection.createStatement();
+              String sql =
+                  "INSER INTO "
+                      + getFullyQualifiedTableName(tableName)
+                      + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
+              statement.executeQuery(sql);
+            });
     assertTrue(e.getMessage().contains("Error occurred during statement execution"));
     deleteTable(tableName);
   }
