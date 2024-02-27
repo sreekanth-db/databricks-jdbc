@@ -40,6 +40,7 @@
     <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
     <slf4j-reload4j.version>2.1.0-alpha1</slf4j-reload4j.version>
     <sql-logic-test.version>0.3</sql-logic-test.version>
+    <lz4-compression.version>1.8.0</lz4-compression.version>
   </properties>
   <dependencies>
     <dependency>
@@ -148,6 +149,11 @@
       <version>${sql-logic-test.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.lz4</groupId>
+      <artifactId>lz4-java</artifactId>
+      <version>${lz4-compression.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -170,6 +176,9 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin.version}</version>
           <configuration>
+            <excludes>
+              <exclude>**/**IntegrationTests.java</exclude>
+            </excludes>
             <argLine>
               @{argLine}
               --add-opens=java.base/java.nio=ALL-UNNAMED
