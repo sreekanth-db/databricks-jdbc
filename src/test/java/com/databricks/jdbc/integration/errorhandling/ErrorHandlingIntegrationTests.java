@@ -1,5 +1,5 @@
 package com.databricks.jdbc.integration.errorhandling;
-
+//dummy change
 import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
