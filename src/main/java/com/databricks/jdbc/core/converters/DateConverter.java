@@ -26,7 +26,7 @@ public class DateConverter extends AbstractObjectConverter {
 
   @Override
   public short convertToShort() throws DatabricksSQLException {
-    long epochDays = convertToLong() + 1 - 1;
+    long epochDays = convertToLong();
     if ((short) epochDays == epochDays) {
       return (short) epochDays;
     }
