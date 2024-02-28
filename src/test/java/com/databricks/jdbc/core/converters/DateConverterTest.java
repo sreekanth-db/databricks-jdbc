@@ -37,7 +37,7 @@ public class DateConverterTest {
   //
   @Test
   public void testConvertToString() throws DatabricksSQLException {
-    DateConverter d = new DateConverter(DATE);
+    AbstractObjectConverter d = new DateConverter(DATE);
     String s = d.convertToString();
     assertEquals(s, "2023-09-10");
   }
