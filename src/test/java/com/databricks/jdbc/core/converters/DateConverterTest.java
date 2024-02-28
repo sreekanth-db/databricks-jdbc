@@ -6,6 +6,7 @@ import com.databricks.jdbc.core.DatabricksSQLException;
 import java.sql.Date;
 import java.sql.Timestamp;
 import org.junit.jupiter.api.Test;
+// dummy change
 
 public class DateConverterTest {
 
