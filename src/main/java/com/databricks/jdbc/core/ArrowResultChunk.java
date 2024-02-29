@@ -9,6 +9,7 @@ import com.databricks.jdbc.commons.util.DecompressionUtil;
 import com.databricks.jdbc.core.types.CompressionType;
 import com.databricks.sdk.service.sql.BaseChunkInfo;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.ClosedByInterruptException;
 import java.time.Instant;
@@ -274,7 +275,7 @@ public class ArrowResultChunk {
     return this.nextChunkIndex;
   }
 
-  public void getArrowDataFromInputStream(InputStream inputStream) throws DatabricksSQLException {
+  public void getArrowDataFromInputStream(InputStream inputStream) throws DatabricksSQLException, IOException {
     LOGGER.debug(
         "Parsing data for chunk index [{}] and statement [{}]", this.chunkIndex, this.statementId);
     InputStream decompressedStream =
@@ -324,6 +325,8 @@ public class ArrowResultChunk {
       vectors.forEach(ValueVector::close);
       purgeArrowData();
       throw new DatabricksParsingException(errMsg, e);
+    } finally {
+      inputStream.close();
     }
   }
 

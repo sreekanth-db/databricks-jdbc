@@ -6,7 +6,6 @@ import com.databricks.jdbc.client.sqlexec.ExternalLink;
 import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import com.databricks.sdk.service.sql.BaseChunkInfo;
-import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -45,7 +44,6 @@ public class ChunkDownloader {
     this(statementId, resultManifest, resultData, session, DatabricksHttpClient.getInstance());
   }
 
-  @VisibleForTesting
   ChunkDownloader(
       String statementId,
       ResultManifest resultManifest,
