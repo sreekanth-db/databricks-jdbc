@@ -3,6 +3,7 @@ package com.databricks.jdbc.core;
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.DatabricksMetadataClient;
 import com.databricks.jdbc.core.types.CompressionType;
+import com.databricks.jdbc.core.types.ComputeResource;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -22,7 +23,7 @@ public interface IDatabricksSession {
    *
    * @return warehouse-Id
    */
-  String getWarehouseId();
+  ComputeResource getComputeResource() throws DatabricksSQLException;
 
   /**
    * Checks if session is open and valid.

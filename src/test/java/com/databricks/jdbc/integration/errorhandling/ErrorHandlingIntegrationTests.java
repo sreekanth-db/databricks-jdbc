@@ -3,6 +3,7 @@ package com.databricks.jdbc.integration.errorhandling;
 import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.databricks.jdbc.core.DatabricksParsingException;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import java.sql.*;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ public class ErrorHandlingIntegrationTests {
   void testInvalidURL() {
     Exception exception =
         assertThrows(
-            IllegalArgumentException.class,
+            DatabricksParsingException.class,
             () -> {
               Connection connection =
                   getConnection("jdbc:abcde://invalidhost:0000/db", "username", "password");
