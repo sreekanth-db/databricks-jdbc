@@ -1,14 +1,15 @@
 package com.databricks.jdbc.driver;
 
-import java.util.Set;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public final class DatabricksJdbcConstants {
 
   static final Pattern JDBC_URL_PATTERN =
       Pattern.compile("jdbc:databricks://([^/;]*)(?::\\d+)?/*(.*)");
-  static final Pattern HTTP_PATH_PATTERN = Pattern.compile(".*/warehouses/(.*)");
-  static final Pattern HTTP_PATH_SQL_PATTERN = Pattern.compile("sql/(.*)");
+  static final Pattern HTTP_WAREHOUSE_PATH_PATTERN = Pattern.compile(".*/warehouses/(.+)");
+  static final Pattern TEST_PATH_PATTERN = Pattern.compile("jdbc:databricks://test");
+  static final Pattern HTTP_CLUSTER_PATH_PATTERN = Pattern.compile(".*/o/(.+)/(.+)");
   public static final String JDBC_SCHEMA = "jdbc:databricks://";
   static final String DEFAULT_LOG_LEVEL = "INFO";
   static final String LOG_LEVEL = "loglevel";
@@ -33,9 +34,6 @@ public final class DatabricksJdbcConstants {
   static final String CONN_SCHEMA = "connschema";
 
   static final String AUTH_FLOW = "auth_flow";
-
-  // Only used when AUTH_MECH = 11
-  static final String AUTH_ACCESSTOKEN = "auth_accesstoken";
 
   // Only used when AUTH_MECH = 3
   static final String UID = "uid";
@@ -75,16 +73,16 @@ public final class DatabricksJdbcConstants {
   static final String CLIENT_USER_AGENT_PREFIX = "Java";
   static final String USER_AGENT_SEA_CLIENT = "SQLExecHttpClient/HC";
   static final String USER_AGENT_THRIFT_CLIENT = "THttpClient/HC";
-  static final Set<String> ALLOWED_SESSION_CONFIGS =
-      Set.of(
-          // This list comes from
-          // https://docs.databricks.com/en/sql/language-manual/sql-ref-parameters.html
-          "ANSI_MODE",
-          "ENABLE_PHOTON",
-          "LEGACY_TIME_PARSER_POLICY",
-          "MAX_FILE_PARTITION_BYTES",
-          "READ_ONLY_EXTERNAL_METASTORE",
-          "STATEMENT_TIMEOUT",
-          "TIMEZONE",
-          "USE_CACHED_RESULT");
+  public static final Map<String, String> ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP =
+      // This map comes from
+      // https://docs.databricks.com/en/sql/language-manual/sql-ref-parameters.html
+      Map.of(
+          "ANSI_MODE", "TRUE",
+          "ENABLE_PHOTON", "TRUE",
+          "LEGACY_TIME_PARSER_POLICY", "EXCEPTION",
+          "MAX_FILE_PARTITION_BYTES", "128m",
+          "READ_ONLY_EXTERNAL_METASTORE", "FALSE",
+          "STATEMENT_TIMEOUT", "172800",
+          "TIMEZONE", "UTC",
+          "USE_CACHED_RESULT", "TRUE");
 }

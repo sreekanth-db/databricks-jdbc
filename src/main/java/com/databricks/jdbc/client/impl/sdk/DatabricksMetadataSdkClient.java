@@ -38,12 +38,12 @@ public class DatabricksMetadataSdkClient implements DatabricksMetadataClient {
   @Override
   public DatabricksResultSet listCatalogs(IDatabricksSession session) throws SQLException {
     String showCatalogsSQL = "show catalogs";
-    LOGGER.debug("SQL command to fetch catalogs: {}" + showCatalogsSQL);
+    LOGGER.debug("SQL command to fetch catalogs: {}", showCatalogsSQL);
 
     ResultSet rs =
         sdkClient.executeStatement(
             showCatalogsSQL,
-            session.getWarehouseId(),
+            session.getComputeResource(),
             new HashMap<Integer, ImmutableSqlParameter>(),
             StatementType.METADATA,
             session,
@@ -95,12 +95,12 @@ public class DatabricksMetadataSdkClient implements DatabricksMetadataClient {
               if (!WildcardUtil.isMatchAnything(schemaNamePattern)) {
                 showSchemaSQL += " like '" + schemaNamePattern + "'";
               }
-              LOGGER.debug("SQL command to fetch schemas: {}" + showSchemaSQL);
+              LOGGER.debug("SQL command to fetch schemas: {}", showSchemaSQL);
               try {
                 ResultSet rs =
                     sdkClient.executeStatement(
                         showSchemaSQL,
-                        session.getWarehouseId(),
+                        session.getComputeResource(),
                         new HashMap<Integer, ImmutableSqlParameter>(),
                         StatementType.METADATA,
                         session,
@@ -164,12 +164,12 @@ public class DatabricksMetadataSdkClient implements DatabricksMetadataClient {
               if (!WildcardUtil.isMatchAnything(tableWithContext)) {
                 showTablesSQL += " like '" + tableWithContext + "'";
               }
-              LOGGER.debug("SQL command to fetch tables: {}" + showTablesSQL);
+              LOGGER.debug("SQL command to fetch tables: {}", showTablesSQL);
               try {
                 ResultSet rs =
                     sdkClient.executeStatement(
                         showTablesSQL,
-                        session.getWarehouseId(),
+                        session.getComputeResource(),
                         new HashMap<Integer, ImmutableSqlParameter>(),
                         StatementType.METADATA,
                         session,
@@ -266,12 +266,12 @@ public class DatabricksMetadataSdkClient implements DatabricksMetadataClient {
               String[] combination = catalogSchemaTableCombinations.poll();
               String showColumnsSQL =
                   "show columns in " + combination[0] + "." + combination[1] + "." + combination[2];
-              LOGGER.debug("SQL command to fetch columns: {}" + showColumnsSQL);
+              LOGGER.debug("SQL command to fetch columns: {}", showColumnsSQL);
               try {
                 ResultSet rs =
                     sdkClient.executeStatement(
                         showColumnsSQL,
-                        session.getWarehouseId(),
+                        session.getComputeResource(),
                         new HashMap<Integer, ImmutableSqlParameter>(),
                         StatementType.METADATA,
                         session,

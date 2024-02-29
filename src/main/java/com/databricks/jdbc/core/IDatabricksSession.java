@@ -2,6 +2,8 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.DatabricksMetadataClient;
+import com.databricks.jdbc.core.types.CompressionType;
+import com.databricks.jdbc.core.types.ComputeResource;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -21,7 +23,7 @@ public interface IDatabricksSession {
    *
    * @return warehouse-Id
    */
-  String getWarehouseId();
+  ComputeResource getComputeResource() throws DatabricksSQLException;
 
   /**
    * Checks if session is open and valid.
@@ -45,6 +47,9 @@ public interface IDatabricksSession {
   /** Returns default catalog associated with the session */
   String getCatalog();
 
+  /** Returns the compression algorithm used on results data */
+  CompressionType getCompressionType();
+
   /** Returns default schema associated with the session */
   String getSchema();
 
@@ -54,6 +59,12 @@ public interface IDatabricksSession {
   /** Sets the default schema */
   void setSchema(String schema);
 
+  /** Extracts session to a string */
+  String toString();
+
   /** Returns the session configs */
   Map<String, String> getSessionConfigs();
+
+  /** Sets the session config */
+  void setSessionConfig(String name, String value);
 }
