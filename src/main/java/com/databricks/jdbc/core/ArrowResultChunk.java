@@ -275,7 +275,8 @@ public class ArrowResultChunk {
     return this.nextChunkIndex;
   }
 
-  public void getArrowDataFromInputStream(InputStream inputStream) throws DatabricksSQLException, IOException {
+  public void getArrowDataFromInputStream(InputStream inputStream)
+      throws DatabricksSQLException, IOException {
     LOGGER.debug(
         "Parsing data for chunk index [{}] and statement [{}]", this.chunkIndex, this.statementId);
     InputStream decompressedStream =
