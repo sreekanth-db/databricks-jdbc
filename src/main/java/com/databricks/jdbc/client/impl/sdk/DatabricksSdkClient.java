@@ -116,7 +116,7 @@ public class DatabricksSdkClient implements DatabricksClient {
         new DeleteSessionRequest()
             .setSessionId(sessionId)
             .setWarehouseId(((Warehouse) warehouse).getWarehouseId());
-    String path = String.format(SESSION_PATH_WITH_ID, request.getSessionId());
+    String path = String.format(DELETE_SESSION_PATH_WITH_ID, request.getSessionId());
     Map<String, String> headers = new HashMap<>();
     workspaceClient.apiClient().DELETE(path, request, Void.class, headers);
   }
