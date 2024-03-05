@@ -81,4 +81,30 @@ public interface IDatabricksConnectionContext {
   Map<String, String> getSessionConfigs();
 
   boolean isAllPurposeCluster();
+
+  String getProxyHost();
+
+  int getProxyPort();
+
+  String getProxyUser();
+
+  String getProxyPassword();
+
+  Boolean getUseProxy();
+
+  Boolean getUseProxyAuth();
+
+  Boolean getUseSystemProxy();
+
+  Boolean getUseCloudFetchProxy();
+
+  String getCloudFetchProxyHost();
+
+  int getCloudFetchProxyPort();
+
+  String getCloudFetchProxyUser();
+
+  String getCloudFetchProxyPassword();
+
+  Boolean getUseCloudFetchProxyAuth();
 }

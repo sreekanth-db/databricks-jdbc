@@ -51,6 +51,7 @@ public class DatabricksSdkClient implements DatabricksClient {
 
   public DatabricksSdkClient(IDatabricksConnectionContext connectionContext) {
     this.connectionContext = connectionContext;
+    // TODO: [PECO-1486] pass on proxy settings to SDK once changes are merged in SDK
     // Handle more auth types
     this.databricksConfig =
         new DatabricksConfig()
