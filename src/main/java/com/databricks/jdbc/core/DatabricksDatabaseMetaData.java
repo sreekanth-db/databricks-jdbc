@@ -1922,19 +1922,9 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
 
   private Map.Entry<String, String> applyContext(String catalog, String schema)
       throws SQLException {
-    LOGGER.debug(
-        "private Map.Entry<String, String> applyContext(String catalog = {}, String schema = {})",
-        catalog,
-        schema);
-    if (catalog == null) {
-      catalog = connection.getConnection().getCatalog();
-    }
     // If catalog is not set in context, look at all catalogs
     if (catalog == null) {
-      catalog = "*";
-    }
-    if (schema == null) {
-      schema = connection.getConnection().getSchema();
+      catalog = "";
     }
     // If schema is not set in context, look at all schemas
     if (schema == null) {
