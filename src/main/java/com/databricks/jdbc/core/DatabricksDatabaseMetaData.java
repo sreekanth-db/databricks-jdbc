@@ -1790,9 +1790,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
         schemaPattern);
     throwExceptionIfConnectionIsClosed();
 
-    return session
-        .getDatabricksMetadataClient()
-        .listSchemas(session, catalog, schemaPattern);
+    return session.getDatabricksMetadataClient().listSchemas(session, catalog, schemaPattern);
   }
 
   @Override
