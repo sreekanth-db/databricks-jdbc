@@ -1926,10 +1926,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
         "private Map.Entry<String, String> applyContext(String catalog = {}, String schema = {})",
         catalog,
         schema);
-    // If catalog is not set in context, look at all catalogs
-    if (catalog == null) {
-      catalog = "";
-    }
+    // Note: The default catalog and schema are not applicable to metadata operations
     // If schema is not set in context, look at all schemas
     if (schema == null) {
       schema = "*";
