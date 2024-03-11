@@ -35,6 +35,8 @@ public class DatabricksSession implements IDatabricksSession {
   private Map<String, String> sessionConfigs;
   private CompressionType compressionType;
 
+  private IDatabricksConnectionContext connectionContext;
+
   /**
    * Creates an instance of Databricks session for given connection context
    *
@@ -44,11 +46,12 @@ public class DatabricksSession implements IDatabricksSession {
       throws DatabricksSQLException {
     if (connectionContext.isAllPurposeCluster()) {
       this.databricksClient = new DatabricksThriftClient(connectionContext);
+      this.databricksMetadataClient = null;
     } else {
       this.databricksClient = new DatabricksSdkClient(connectionContext);
+      this.databricksMetadataClient =
+          new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
     }
-    this.databricksMetadataClient =
-        new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
     this.isSessionOpen = false;
     this.session = null;
     this.computeResource = connectionContext.getComputeResource();
@@ -56,6 +59,7 @@ public class DatabricksSession implements IDatabricksSession {
     this.schema = connectionContext.getSchema();
     this.sessionConfigs = connectionContext.getSessionConfigs();
     this.compressionType = connectionContext.getCompressionType();
+    this.connectionContext = connectionContext;
   }
 
   /** Construct method to be used for mocking in a test case. */
@@ -64,8 +68,12 @@ public class DatabricksSession implements IDatabricksSession {
       IDatabricksConnectionContext connectionContext, DatabricksClient databricksClient)
       throws DatabricksSQLException {
     this.databricksClient = databricksClient;
-    this.databricksMetadataClient =
-        new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
+    if (databricksClient instanceof DatabricksSdkClient) {
+      this.databricksMetadataClient =
+          new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
+    } else {
+      this.databricksMetadataClient = null;
+    }
     this.isSessionOpen = false;
     this.session = null;
     this.computeResource = connectionContext.getComputeResource();
@@ -73,6 +81,7 @@ public class DatabricksSession implements IDatabricksSession {
     this.schema = connectionContext.getSchema();
     this.sessionConfigs = connectionContext.getSessionConfigs();
     this.compressionType = connectionContext.getCompressionType();
+    this.connectionContext = connectionContext;
   }
 
   @Override
@@ -102,7 +111,7 @@ public class DatabricksSession implements IDatabricksSession {
   }
 
   @Override
-  public void open() {
+  public void open() throws DatabricksSQLException {
     LOGGER.debug("public void open()");
     // TODO: check for expired sessions
     synchronized (this) {
@@ -190,5 +199,10 @@ public class DatabricksSession implements IDatabricksSession {
   public void setSessionConfig(String name, String value) {
     LOGGER.debug("public void setSessionConfig(String name = {}, String value = {})", name, value);
     sessionConfigs.put(name, value);
+  }
+
+  @Override
+  public IDatabricksConnectionContext getConnectionContext() {
+    return this.connectionContext;
   }
 }

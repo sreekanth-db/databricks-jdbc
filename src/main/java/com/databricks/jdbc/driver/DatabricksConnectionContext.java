@@ -129,7 +129,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     throw new DatabricksParsingException("Invalid HTTP Path provided " + this.getHttpPath());
   }
 
-  String getHttpPath() {
+  public String getHttpPath() {
     LOGGER.debug("String getHttpPath()");
     return getParameter(DatabricksJdbcConstants.HTTP_PATH);
   }
@@ -281,5 +281,70 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public boolean isAllPurposeCluster() {
     return this.computeResource instanceof AllPurposeCluster;
+  }
+
+  @Override
+  public String getProxyHost() {
+    return getParameter(DatabricksJdbcConstants.PROXY_HOST);
+  }
+
+  @Override
+  public int getProxyPort() {
+    return Integer.parseInt(getParameter(DatabricksJdbcConstants.PROXY_PORT));
+  }
+
+  @Override
+  public String getProxyUser() {
+    return getParameter(DatabricksJdbcConstants.PROXY_USER);
+  }
+
+  @Override
+  public String getProxyPassword() {
+    return getParameter(DatabricksJdbcConstants.PROXY_PWD);
+  }
+
+  @Override
+  public Boolean getUseProxy() {
+    return Objects.equals(getParameter(USE_PROXY), "1");
+  }
+
+  @Override
+  public Boolean getUseProxyAuth() {
+    return Objects.equals(getParameter(USE_PROXY_AUTH), "1");
+  }
+
+  @Override
+  public Boolean getUseSystemProxy() {
+    return Objects.equals(getParameter(USE_SYSTEM_PROXY), "1");
+  }
+
+  @Override
+  public Boolean getUseCloudFetchProxy() {
+    return Objects.equals(getParameter(USE_CF_PROXY), "1");
+  }
+
+  @Override
+  public String getCloudFetchProxyHost() {
+    return getParameter(CF_PROXY_HOST);
+  }
+
+  @Override
+  public int getCloudFetchProxyPort() {
+    return Integer.parseInt(getParameter(CF_PROXY_PORT));
+  }
+
+  @Override
+  public String getCloudFetchProxyUser() {
+    return getParameter(CF_PROXY_USER);
+  }
+
+  @Override
+  public String getCloudFetchProxyPassword() {
+    return getParameter(CF_PROXY_PWD);
+  }
+
+  @Override
+  public Boolean getUseCloudFetchProxyAuth() {
+    return Objects.equals(getParameter(USE_CF_PROXY_AUTH), "1");
   }
 }
