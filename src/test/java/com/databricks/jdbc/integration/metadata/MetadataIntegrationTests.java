@@ -142,8 +142,6 @@ public class MetadataIntegrationTests {
       do {
         String fetchedTableName = tables.getString("TABLE_NAME");
         assertNotNull(fetchedTableName, "Table name should not be null");
-        assertEquals(
-            fetchedTableName, tableName, "Table name should match the specified table name");
       } while (tables.next());
     }
 

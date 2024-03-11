@@ -936,12 +936,9 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
         tableNamePattern,
         types);
     throwExceptionIfConnectionIsClosed();
-    Map.Entry<String, String> pair = applyContext(catalog, schemaPattern);
-    String catalogWithContext = pair.getKey();
-    String schemaWithContext = pair.getValue();
     return session
         .getDatabricksMetadataClient()
-        .listTables(session, catalogWithContext, schemaWithContext, tableNamePattern);
+        .listTables(session, catalog, schemaPattern, tableNamePattern);
   }
 
   @Override
@@ -1792,13 +1789,10 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
         catalog,
         schemaPattern);
     throwExceptionIfConnectionIsClosed();
-    Map.Entry<String, String> pair = applyContext(catalog, schemaPattern);
-    String catalogWithContext = pair.getKey();
-    String schemaWithContext = pair.getValue();
 
     return session
         .getDatabricksMetadataClient()
-        .listSchemas(session, catalogWithContext, schemaWithContext);
+        .listSchemas(session, catalog, schemaPattern);
   }
 
   @Override
@@ -1918,19 +1912,5 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
     if (!connection.getSession().isOpen()) {
       throw new DatabricksSQLException("Connection closed!");
     }
-  }
-
-  private Map.Entry<String, String> applyContext(String catalog, String schema)
-      throws SQLException {
-    LOGGER.debug(
-        "private Map.Entry<String, String> applyContext(String catalog = {}, String schema = {})",
-        catalog,
-        schema);
-    // Note: The default catalog and schema are not applicable to metadata operations
-    // If schema is not set in context, look at all schemas
-    if (schema == null) {
-      schema = "*";
-    }
-    return Map.entry(catalog, schema);
   }
 }
