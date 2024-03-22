@@ -1,6 +1,9 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -12,6 +15,8 @@ import java.util.Arrays;
  * https://docs.databricks.com/en/sql/language-manual/sql-ref-datatypes.html
  */
 public class DatabricksTypeUtil {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksTypeUtil.class);
 
   public static final String BIGINT = "BIGINT";
   public static final String BINARY = "BINARY";
@@ -45,6 +50,10 @@ public class DatabricksTypeUtil {
       new ArrayList<>(Arrays.asList(ColumnInfoTypeName.CHAR, ColumnInfoTypeName.STRING));
 
   public static int getColumnType(ColumnInfoTypeName typeName) {
+    if (typeName == null) {
+      return Types.VARCHAR;
+    }
+
     switch (typeName) {
       case BYTE:
         return Types.TINYINT;
@@ -67,6 +76,9 @@ public class DatabricksTypeUtil {
       case CHAR:
         return Types.CHAR;
       case STRING:
+        // TODO: Handle complex data types
+      case MAP:
+      case INTERVAL:
         return Types.VARCHAR;
       case TIMESTAMP:
         return Types.TIMESTAMP;
@@ -78,12 +90,19 @@ public class DatabricksTypeUtil {
         return Types.ARRAY;
       case NULL:
         return Types.NULL;
+      case USER_DEFINED_TYPE:
+        return Types.OTHER;
       default:
+        LOGGER.error("Unknown column type: {}", typeName);
         throw new IllegalStateException("Unknown column type: " + typeName);
     }
   }
 
   public static String getColumnTypeClassName(ColumnInfoTypeName typeName) {
+    if (typeName == null) {
+      return "";
+    }
+
     switch (typeName) {
       case BYTE:
       case SHORT:
@@ -102,6 +121,9 @@ public class DatabricksTypeUtil {
         return "java.lang.Boolean";
       case CHAR:
       case STRING:
+        // TODO: Handle complex data types
+      case INTERVAL:
+      case USER_DEFINED_TYPE:
         return "java.lang.String";
       case TIMESTAMP:
         return "java.sql.Timestamp";
@@ -113,12 +135,19 @@ public class DatabricksTypeUtil {
         return "java.sql.Array";
       case NULL:
         return "null";
+      case MAP:
+        return "java.util.Map";
       default:
+        LOGGER.error("Unknown column type: {}", typeName);
         throw new IllegalStateException("Unknown column type: " + typeName);
     }
   }
 
   public static int getDisplaySize(ColumnInfoTypeName typeName, int precision) {
+    if (typeName == null) {
+      return 255;
+    }
+
     switch (typeName) {
       case BYTE:
       case SHORT:
@@ -150,6 +179,10 @@ public class DatabricksTypeUtil {
   }
 
   public static int getPrecision(ColumnInfoTypeName typeName) {
+    if (typeName == null) {
+      return 0;
+    }
+
     switch (typeName) {
       case BYTE:
       case SHORT:

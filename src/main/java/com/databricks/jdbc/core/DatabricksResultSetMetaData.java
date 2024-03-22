@@ -8,6 +8,9 @@ import com.databricks.sdk.service.sql.ColumnInfo;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -16,6 +19,7 @@ import java.util.Map;
 
 public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksResultSetMetaData.class);
   private final String statementId;
   private final ImmutableList<ImmutableDatabricksColumn> columns;
   private final ImmutableMap<String, Integer> columnNameIndex;
@@ -30,6 +34,8 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     Map<String, Integer> columnNameToIndexMap = new HashMap<>();
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
     int currIndex = 0;
+    LOGGER.debug("Result manifest for statement {} has schema: {}",
+            statementId, resultManifest.getSchema());
     if (resultManifest.getSchema().getColumnCount() > 0) {
       for (ColumnInfo columnInfo : resultManifest.getSchema().getColumns()) {
         ColumnInfoTypeName columnTypeName = columnInfo.getTypeName();
