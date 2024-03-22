@@ -53,7 +53,8 @@ public class DatabricksTypeUtil {
     if (typeName == null) {
       return Types.VARCHAR;
     }
-
+      return Types.OTHER;
+    }
     switch (typeName) {
       case BYTE:
         return Types.TINYINT;
@@ -102,7 +103,8 @@ public class DatabricksTypeUtil {
     if (typeName == null) {
       return "";
     }
-
+      return "null";
+    }
     switch (typeName) {
       case BYTE:
       case SHORT:
@@ -182,7 +184,6 @@ public class DatabricksTypeUtil {
     if (typeName == null) {
       return 0;
     }
-
     switch (typeName) {
       case BYTE:
       case SHORT:
