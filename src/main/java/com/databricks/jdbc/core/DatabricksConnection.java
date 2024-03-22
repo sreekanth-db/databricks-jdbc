@@ -452,24 +452,24 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   @Override
   public void setClientInfo(String name, String value) throws SQLClientInfoException {
     LOGGER.debug("public void setClientInfo(String name = {}, String value = {})", name, value);
-    Map<String, ClientInfoStatus> failedProperties = new HashMap<>();
-    setSessionConfig(name, value, failedProperties);
-    if (!failedProperties.isEmpty()) {
-      throw new DatabricksSQLClientInfoException(
-          getFailedPropertiesExceptionMessage(failedProperties), failedProperties);
+    if (DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.keySet().stream()
+            .map(String::toLowerCase).anyMatch(s -> s.equalsIgnoreCase(name))) {
+      Map<String, ClientInfoStatus> failedProperties = new HashMap<>();
+      setSessionConfig(name, value, failedProperties);
+      if (!failedProperties.isEmpty()) {
+        throw new DatabricksSQLClientInfoException(
+                getFailedPropertiesExceptionMessage(failedProperties), failedProperties);
+      }
+    } else {
+      this.session.setClientInfoProperty(name.toLowerCase(), value);
     }
   }
 
   @Override
   public void setClientInfo(Properties properties) throws SQLClientInfoException {
     LOGGER.debug("public void setClientInfo(Properties properties)");
-    Map<String, ClientInfoStatus> failedProperties = new HashMap<>();
     for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-      setSessionConfig((String) entry.getKey(), (String) entry.getValue(), failedProperties);
-    }
-    if (!failedProperties.isEmpty()) {
-      throw new DatabricksSQLClientInfoException(
-          getFailedPropertiesExceptionMessage(failedProperties), failedProperties);
+      setClientInfo((String) entry.getKey(), (String) entry.getValue());
     }
   }
 
@@ -479,7 +479,10 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
     // Return session conf if set
     if (this.session.getSessionConfigs().containsKey(name)) {
       return this.session.getSessionConfigs().get(name);
+    } else if (this.session.getClientInfoProperties().containsKey(name.toLowerCase())) {
+        return this.session.getClientInfoProperties().get(name.toLowerCase());
     }
+
     // Else return default value or null if the conf name is invalid
     return DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.getOrDefault(
         name, null);
@@ -493,6 +496,8 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
     properties.putAll(DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP);
     // Then override with session confs
     properties.putAll(this.session.getSessionConfigs());
+    // Add all client info properties
+    properties.putAll(this.session.getClientInfoProperties());
     return properties;
   }
 
