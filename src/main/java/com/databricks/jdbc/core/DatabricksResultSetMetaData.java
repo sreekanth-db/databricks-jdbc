@@ -8,7 +8,6 @@ import com.databricks.sdk.service.sql.ColumnInfo;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;

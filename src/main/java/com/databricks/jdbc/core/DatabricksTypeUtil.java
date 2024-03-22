@@ -1,7 +1,6 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
-
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.sql.Types;
