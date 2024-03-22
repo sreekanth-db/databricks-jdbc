@@ -1,14 +1,14 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Databricks types as supported in
