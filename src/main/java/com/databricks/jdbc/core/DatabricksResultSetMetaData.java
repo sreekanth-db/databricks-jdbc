@@ -16,7 +16,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksResultSetMetaData.class);
@@ -34,8 +33,8 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     Map<String, Integer> columnNameToIndexMap = new HashMap<>();
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
     int currIndex = 0;
-    LOGGER.debug("Result manifest for statement {} has schema: {}",
-            statementId, resultManifest.getSchema());
+    LOGGER.debug(
+        "Result manifest for statement {} has schema: {}", statementId, resultManifest.getSchema());
     if (resultManifest.getSchema().getColumnCount() > 0) {
       for (ColumnInfo columnInfo : resultManifest.getSchema().getColumns()) {
         ColumnInfoTypeName columnTypeName = columnInfo.getTypeName();
