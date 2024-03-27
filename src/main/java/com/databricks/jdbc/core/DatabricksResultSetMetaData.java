@@ -37,17 +37,17 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
         "Result manifest for statement {} has schema: {}", statementId, resultManifest.getSchema());
 
     int currIndex = 0;
-    if (resultManifest.getIsVolumeOperation()) {
+    if (resultManifest.getIsVolumeOperation() != null && resultManifest.getIsVolumeOperation()) {
       ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
       columnBuilder
-              .columnName("operationStatus")
-              .columnType(Types.VARCHAR)
-              .columnTypeText(ColumnInfoTypeName.STRING.name())
-              .typePrecision(0)
-              .columnTypeClassName(DatabricksTypeUtil.getColumnTypeClassName(ColumnInfoTypeName.STRING))
-              .displaySize(DatabricksTypeUtil.getDisplaySize(ColumnInfoTypeName.STRING, 0))
-              .isSigned(DatabricksTypeUtil.isSigned(ColumnInfoTypeName.STRING));
-      this.columns = ImmutableList.of(columnBuilder.build());
+          .columnName("operationStatus")
+          .columnType(Types.VARCHAR)
+          .columnTypeText(ColumnInfoTypeName.STRING.name())
+          .typePrecision(0)
+          .columnTypeClassName(DatabricksTypeUtil.getColumnTypeClassName(ColumnInfoTypeName.STRING))
+          .displaySize(DatabricksTypeUtil.getDisplaySize(ColumnInfoTypeName.STRING, 0))
+          .isSigned(DatabricksTypeUtil.isSigned(ColumnInfoTypeName.STRING));
+      columnsBuilder.add(columnBuilder.build());
       columnNameToIndexMap.putIfAbsent("operationStatus", ++currIndex);
     } else {
       if (resultManifest.getSchema().getColumnCount() > 0) {
