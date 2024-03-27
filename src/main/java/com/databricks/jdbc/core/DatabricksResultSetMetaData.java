@@ -13,9 +13,12 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksResultSetMetaData.class);
   private final String statementId;
   private final ImmutableList<ImmutableDatabricksColumn> columns;
   private final ImmutableMap<String, Integer> columnNameIndex;
@@ -29,8 +32,11 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     this.statementId = statementId;
     Map<String, Integer> columnNameToIndexMap = new HashMap<>();
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
+    LOGGER.debug(
+        "Result manifest for statement {} has schema: {}", statementId, resultManifest.getSchema());
+
     int currIndex = 0;
-    /*    if (resultManifest.getSchema().isVolumeOperation()) {
+    if (resultManifest.getIsVolumeOperation()) {
       ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
       columnBuilder
               .columnName("operationStatus")
@@ -42,28 +48,27 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
               .isSigned(DatabricksTypeUtil.isSigned(ColumnInfoTypeName.STRING));
       this.columns = ImmutableList.of(columnBuilder.build());
       columnNameToIndexMap.putIfAbsent("operationStatus", ++currIndex);
-    } else { */
+    } else {
+      if (resultManifest.getSchema().getColumnCount() > 0) {
+        for (ColumnInfo columnInfo : resultManifest.getSchema().getColumns()) {
+          ColumnInfoTypeName columnTypeName = columnInfo.getTypeName();
+          int precision = DatabricksTypeUtil.getPrecision(columnTypeName);
+          ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
+          columnBuilder
+              .columnName(columnInfo.getName())
+              .columnTypeClassName(DatabricksTypeUtil.getColumnTypeClassName(columnTypeName))
+              .columnType(DatabricksTypeUtil.getColumnType(columnTypeName))
+              .columnTypeText(columnInfo.getTypeText())
+              .typePrecision(precision)
+              .displaySize(DatabricksTypeUtil.getDisplaySize(columnTypeName, precision))
+              .isSigned(DatabricksTypeUtil.isSigned(columnTypeName));
 
-    if (resultManifest.getSchema().getColumnCount() > 0) {
-      for (ColumnInfo columnInfo : resultManifest.getSchema().getColumns()) {
-        ColumnInfoTypeName columnTypeName = columnInfo.getTypeName();
-        int precision = DatabricksTypeUtil.getPrecision(columnTypeName);
-        ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
-        columnBuilder
-            .columnName(columnInfo.getName())
-            .columnTypeClassName(DatabricksTypeUtil.getColumnTypeClassName(columnTypeName))
-            .columnType(DatabricksTypeUtil.getColumnType(columnTypeName))
-            .columnTypeText(columnInfo.getTypeText())
-            .typePrecision(precision)
-            .displaySize(DatabricksTypeUtil.getDisplaySize(columnTypeName, precision))
-            .isSigned(DatabricksTypeUtil.isSigned(columnTypeName));
-
-        columnsBuilder.add(columnBuilder.build());
-        // Keep index starting from 1, to be consistent with JDBC convention
-        columnNameToIndexMap.putIfAbsent(columnInfo.getName(), ++currIndex);
+          columnsBuilder.add(columnBuilder.build());
+          // Keep index starting from 1, to be consistent with JDBC convention
+          columnNameToIndexMap.putIfAbsent(columnInfo.getName(), ++currIndex);
+        }
       }
     }
-    //    }
     this.columns = columnsBuilder.build();
     this.columnNameIndex = ImmutableMap.copyOf(columnNameToIndexMap);
     this.totalRows = resultManifest.getTotalRowCount();
