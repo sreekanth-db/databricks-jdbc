@@ -154,12 +154,7 @@ public class DatabricksConnectionTest {
     Mockito.doReturn(statement).when(connection).createStatement();
     Mockito.doReturn(true).when(statement).execute("SET ENABLE_PHOTON = TRUE");
     Mockito.doReturn(true).when(statement).execute("SET TIMEZONE = UTC");
-    Mockito.doThrow(
-            new SQLException(
-                "Unable to set property",
-                new SQLException("Configuration RANDOM_CONF is not available")))
-        .when(statement)
-        .execute("SET RANDOM_CONF = UNLIMITED");
+
     connection.setClientInfo(properties);
     Properties clientInfoProperties = connection.getClientInfo();
     // Check valid session confs are set

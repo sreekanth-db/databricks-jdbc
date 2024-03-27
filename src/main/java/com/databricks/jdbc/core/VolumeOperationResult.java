@@ -1,60 +1,117 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.jdbc.client.sqlexec.ResultData;
-import com.databricks.jdbc.client.sqlexec.ResultManifest;
-import com.databricks.jdbc.driver.DatabricksJdbcConstants;
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.ALLOWED_VOLUME_INGESTION_PATHS;
 
+import com.databricks.jdbc.client.IDatabricksHttpClient;
+import com.databricks.jdbc.client.http.DatabricksHttpClient;
+import com.databricks.jdbc.client.sqlexec.ResultData;
+import com.databricks.jdbc.client.sqlexec.VolumeOperationInfo;
+import com.databricks.jdbc.core.VolumeOperationExecutor.VolumeOperationStatus;
+import com.google.common.annotations.VisibleForTesting;
 import java.sql.SQLException;
 
+/** Class to handle the result of a volume operation */
 class VolumeOperationResult implements IExecutionResult {
 
-    private final IDatabricksSession session;
-    private final ResultManifest resultManifest;
-    private final ResultData resultData;
-    private final String statementId;
-    private VolumeOperationExecutor volumeOperationExecutor;
+  private final IDatabricksSession session;
+  private final String statementId;
+  private VolumeOperationExecutor volumeOperationExecutor;
+  private int currentRowIndex;
 
-    VolumeOperationResult(ResultManifest resultManifest, ResultData resultData, String statementId, IDatabricksSession session) throws DatabricksSQLException {
-        this.resultManifest = resultManifest;
-        this.resultData = resultData;
-        this.statementId = statementId;
-        this.session = session;
-        init();
+  VolumeOperationResult(ResultData resultData, String statementId, IDatabricksSession session) {
+    this.statementId = statementId;
+    this.session = session;
+    this.currentRowIndex = -1;
+    init(
+        resultData.getVolumeOperationInfo(),
+        DatabricksHttpClient.getInstance(session.getConnectionContext()));
+  }
+
+  @VisibleForTesting
+  VolumeOperationResult(
+      ResultData resultData,
+      String statementId,
+      IDatabricksSession session,
+      IDatabricksHttpClient httpClient) {
+    this.statementId = statementId;
+    this.session = session;
+    this.currentRowIndex = -1;
+    init(resultData.getVolumeOperationInfo(), httpClient);
+  }
+
+  private void init(VolumeOperationInfo volumeOperationInfo, IDatabricksHttpClient httpClient) {
+    this.volumeOperationExecutor =
+        new VolumeOperationExecutor(
+            volumeOperationInfo.getVolumeOperationType(),
+            volumeOperationInfo.getPresignedUrl().getExternalLink(),
+            volumeOperationInfo.getLocalFile(),
+            volumeOperationInfo.getPresignedUrl().getHttpHeaders(),
+            session
+                .getClientInfoProperties()
+                .getOrDefault(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ""),
+            httpClient);
+    Thread thread = new Thread(volumeOperationExecutor);
+    thread.setDaemon(true);
+    thread.setName("VolumeOperationExecutor " + statementId);
+    thread.start();
+  }
+
+  @Override
+  public Object getObject(int columnIndex) throws SQLException {
+    if (currentRowIndex < 0) {
+      throw new DatabricksSQLException("Invalid row access");
     }
-
-    void init() throws DatabricksSQLException {
-        if (!session.getClientInfoProperties().containsKey(DatabricksJdbcConstants.ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase())) {
-            throw new DatabricksSQLException("UC Volume Operation is not allowed");
-        }
-        this.volumeOperationExecutor = new VolumeOperationExecutor(null, null, null, null, session.getClientInfoProperties().get(DatabricksJdbcConstants.ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase()));
-        Thread thread = new Thread(volumeOperationExecutor);
-        thread.setDaemon(true);
-        thread.setName("VolumeOperationExecutor " + statementId);
-        thread.start();
+    if (columnIndex == 1) {
+      return volumeOperationExecutor.getStatus().name();
+    } else {
+      throw new DatabricksSQLException("Invalid column access");
     }
+  }
 
-    @Override
-    public Object getObject(int columnIndex) throws SQLException {
-        return null;
+  @Override
+  public long getCurrentRow() {
+    return currentRowIndex;
+  }
+
+  @Override
+  public boolean next() throws DatabricksSQLException {
+    if (hasNext()) {
+      poll();
+      currentRowIndex++;
+      return true;
+    } else {
+      return false;
     }
+  }
 
-    @Override
-    public long getCurrentRow() {
-        return 0;
+  private void poll() throws DatabricksSQLException {
+    // TODO: handle timeouts
+    while (volumeOperationExecutor.getStatus() == VolumeOperationStatus.PENDING
+        || volumeOperationExecutor.getStatus() == VolumeOperationStatus.RUNNING) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        throw new DatabricksSQLException(
+            "Thread interrupted while waiting for volume operation to complete", e);
+      }
     }
-
-    @Override
-    public boolean next() throws DatabricksSQLException {
-        return false;
+    if (volumeOperationExecutor.getStatus() == VolumeOperationStatus.FAILED) {
+      throw new DatabricksSQLException(
+          "Volume operation failed: " + volumeOperationExecutor.getErrorMessage());
     }
-
-    @Override
-    public boolean hasNext() {
-        return false;
+    if (volumeOperationExecutor.getStatus() == VolumeOperationStatus.ABORTED) {
+      throw new DatabricksSQLException(
+          "Volume operation aborted: " + volumeOperationExecutor.getErrorMessage());
     }
+  }
 
-    @Override
-    public void close() {
+  @Override
+  public boolean hasNext() {
+    return currentRowIndex < 0;
+  }
 
-    }
+  @Override
+  public void close() {
+    // TODO: handle close, shall we abort the operation?
+  }
 }

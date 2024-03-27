@@ -11,7 +11,6 @@ import com.databricks.jdbc.core.types.Warehouse;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.support.ToStringer;
 import com.google.common.annotations.VisibleForTesting;
-
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -215,7 +214,8 @@ public class DatabricksSession implements IDatabricksSession {
 
   @Override
   public void setClientInfoProperty(String name, String value) {
-    LOGGER.debug("public void setClientInfoProperty(String name = {}, String value = {})", name, value);
+    LOGGER.debug(
+        "public void setClientInfoProperty(String name = {}, String value = {})", name, value);
     clientInfoProperties.put(name, value);
   }
 

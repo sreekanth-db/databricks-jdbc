@@ -453,15 +453,26 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
   public void setClientInfo(String name, String value) throws SQLClientInfoException {
     LOGGER.debug("public void setClientInfo(String name = {}, String value = {})", name, value);
     if (DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.keySet().stream()
-            .map(String::toLowerCase).anyMatch(s -> s.equalsIgnoreCase(name))) {
+        .map(String::toLowerCase)
+        .anyMatch(s -> s.equalsIgnoreCase(name))) {
       Map<String, ClientInfoStatus> failedProperties = new HashMap<>();
       setSessionConfig(name, value, failedProperties);
       if (!failedProperties.isEmpty()) {
         throw new DatabricksSQLClientInfoException(
-                getFailedPropertiesExceptionMessage(failedProperties), failedProperties);
+            getFailedPropertiesExceptionMessage(failedProperties), failedProperties);
       }
     } else {
-      this.session.setClientInfoProperty(name.toLowerCase(), value);
+      if (DatabricksJdbcConstants.ALLOWED_CLIENT_INFO_PROPERTIES.stream()
+          .map(String::toLowerCase)
+          .anyMatch(s -> s.equalsIgnoreCase(name))) {
+        this.session.setClientInfoProperty(name.toLowerCase(), value);
+      } else {
+        throw new DatabricksSQLClientInfoException(
+            String.format(
+                "Setting client info for %s failed with %s",
+                name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY),
+            Map.of(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY));
+      }
     }
   }
 
@@ -480,7 +491,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
     if (this.session.getSessionConfigs().containsKey(name)) {
       return this.session.getSessionConfigs().get(name);
     } else if (this.session.getClientInfoProperties().containsKey(name.toLowerCase())) {
-        return this.session.getClientInfoProperties().get(name.toLowerCase());
+      return this.session.getClientInfoProperties().get(name.toLowerCase());
     }
 
     // Else return default value or null if the conf name is invalid

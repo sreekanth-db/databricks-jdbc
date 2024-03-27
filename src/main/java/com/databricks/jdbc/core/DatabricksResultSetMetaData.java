@@ -30,6 +30,20 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     Map<String, Integer> columnNameToIndexMap = new HashMap<>();
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
     int currIndex = 0;
+    /*    if (resultManifest.getSchema().isVolumeOperation()) {
+      ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
+      columnBuilder
+              .columnName("operationStatus")
+              .columnType(Types.VARCHAR)
+              .columnTypeText(ColumnInfoTypeName.STRING.name())
+              .typePrecision(0)
+              .columnTypeClassName(DatabricksTypeUtil.getColumnTypeClassName(ColumnInfoTypeName.STRING))
+              .displaySize(DatabricksTypeUtil.getDisplaySize(ColumnInfoTypeName.STRING, 0))
+              .isSigned(DatabricksTypeUtil.isSigned(ColumnInfoTypeName.STRING));
+      this.columns = ImmutableList.of(columnBuilder.build());
+      columnNameToIndexMap.putIfAbsent("operationStatus", ++currIndex);
+    } else { */
+
     if (resultManifest.getSchema().getColumnCount() > 0) {
       for (ColumnInfo columnInfo : resultManifest.getSchema().getColumns()) {
         ColumnInfoTypeName columnTypeName = columnInfo.getTypeName();
@@ -49,6 +63,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
         columnNameToIndexMap.putIfAbsent(columnInfo.getName(), ++currIndex);
       }
     }
+    //    }
     this.columns = columnsBuilder.build();
     this.columnNameIndex = ImmutableMap.copyOf(columnNameToIndexMap);
     this.totalRows = resultManifest.getTotalRowCount();

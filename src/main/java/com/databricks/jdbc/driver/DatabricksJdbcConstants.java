@@ -1,6 +1,7 @@
 package com.databricks.jdbc.driver;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public final class DatabricksJdbcConstants {
@@ -89,7 +90,8 @@ public final class DatabricksJdbcConstants {
   static final String CLIENT_USER_AGENT_PREFIX = "Java";
   static final String USER_AGENT_SEA_CLIENT = "SQLExecHttpClient/HC";
   static final String USER_AGENT_THRIFT_CLIENT = "THttpClient/HC";
-  public static final String ALLOWED_VOLUME_INGESTION_PATHS = "allowlistedVolumeOperationLocalFilePaths";
+  public static final String ALLOWED_VOLUME_INGESTION_PATHS =
+      "allowlistedVolumeOperationLocalFilePaths";
   public static final Map<String, String> ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP =
       // This map comes from
       // https://docs.databricks.com/en/sql/language-manual/sql-ref-parameters.html
@@ -102,4 +104,7 @@ public final class DatabricksJdbcConstants {
           "STATEMENT_TIMEOUT", "172800",
           "TIMEZONE", "UTC",
           "USE_CACHED_RESULT", "TRUE");
+
+  public static final Set<String> ALLOWED_CLIENT_INFO_PROPERTIES =
+      Set.of(ALLOWED_VOLUME_INGESTION_PATHS);
 }
