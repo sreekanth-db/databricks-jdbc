@@ -368,7 +368,7 @@ public class VolumeOperationResultTest {
                     .setLocalFile(LOCAL_FILE_PUT)
                     .setPresignedUrl(presignedUrl));
     VolumeOperationResult volumeOperationResult =
-        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
+        new VolumeOperationResult(resultData, STATEMENT_ID, session);
 
     assertTrue(volumeOperationResult.hasNext());
     assertEquals(-1, volumeOperationResult.getCurrentRow());
