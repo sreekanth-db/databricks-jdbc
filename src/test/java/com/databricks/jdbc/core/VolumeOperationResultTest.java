@@ -459,7 +459,7 @@ public class VolumeOperationResultTest {
                     .setLocalFile(LOCAL_FILE_GET)
                     .setPresignedUrl(presignedUrl));
     VolumeOperationResult volumeOperationResult =
-        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
+        new VolumeOperationResult(resultData, STATEMENT_ID, session);
 
     try {
       volumeOperationResult.getObject(2);
