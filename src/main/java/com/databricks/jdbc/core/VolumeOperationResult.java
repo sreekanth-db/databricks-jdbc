@@ -51,7 +51,6 @@ class VolumeOperationResult implements IExecutionResult {
                 .getOrDefault(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ""),
             httpClient);
     Thread thread = new Thread(volumeOperationExecutor);
-    thread.setDaemon(true);
     thread.setName("VolumeOperationExecutor " + statementId);
     thread.start();
   }

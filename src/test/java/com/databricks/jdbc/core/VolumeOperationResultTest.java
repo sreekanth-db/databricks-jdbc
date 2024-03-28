@@ -144,6 +144,33 @@ public class VolumeOperationResultTest {
   }
 
   @Test
+  public void testGetResult_Get_PathCaseSensitive() throws Exception {
+    when(session.getClientInfoProperties())
+        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
+
+    ExternalLink presignedUrl =
+        new ExternalLink().setHttpHeaders(HEADERS).setExternalLink(PRESIGNED_URL);
+    ResultData resultData =
+        new ResultData()
+            .setVolumeOperationInfo(
+                new VolumeOperationInfo()
+                    .setVolumeOperationType("GET")
+                    .setLocalFile("getvolfile.csv")
+                    .setPresignedUrl(presignedUrl));
+    VolumeOperationResult volumeOperationResult =
+        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
+
+    assertTrue(volumeOperationResult.hasNext());
+    assertEquals(-1, volumeOperationResult.getCurrentRow());
+    try {
+      volumeOperationResult.next();
+      fail("Should throw DatabricksSQLException");
+    } catch (DatabricksSQLException e) {
+      assertEquals("Volume operation aborted: Local file path is not allowed", e.getMessage());
+    }
+  }
+
+  @Test
   public void testGetResult_Get_PathInvalid() throws Exception {
     when(session.getClientInfoProperties())
         .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
@@ -231,6 +258,42 @@ public class VolumeOperationResultTest {
   }
 
   @Test
+  public void testGetResult_Put_failedHttpResponse() throws Exception {
+    when(mockHttpClient.execute(isA(HttpPut.class))).thenReturn(httpResponse);
+    when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
+    when(mockedStatusLine.getStatusCode()).thenReturn(403);
+    when(session.getClientInfoProperties())
+        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
+
+    File file = new File(LOCAL_FILE_PUT);
+    Files.writeString(file.toPath(), "test-put");
+
+    ExternalLink presignedUrl =
+        new ExternalLink().setHttpHeaders(HEADERS).setExternalLink(PRESIGNED_URL);
+    ResultData resultData =
+        new ResultData()
+            .setVolumeOperationInfo(
+                new VolumeOperationInfo()
+                    .setVolumeOperationType("PUT")
+                    .setLocalFile(LOCAL_FILE_PUT)
+                    .setPresignedUrl(presignedUrl));
+    VolumeOperationResult volumeOperationResult =
+        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
+
+    assertTrue(volumeOperationResult.hasNext());
+    assertEquals(-1, volumeOperationResult.getCurrentRow());
+    try {
+      volumeOperationResult.next();
+      fail("Should throw DatabricksSQLException");
+    } catch (DatabricksSQLException e) {
+      assertEquals(
+          "Volume operation failed: Failed to upload file with error code: 403", e.getMessage());
+    } finally {
+      file.delete();
+    }
+  }
+
+  @Test
   public void testGetResult_Put_emptyLocalFile() throws Exception {
     when(session.getClientInfoProperties())
         .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
@@ -291,6 +354,33 @@ public class VolumeOperationResultTest {
   }
 
   @Test
+  public void testGetResult_invalidOperationType() throws Exception {
+    when(session.getClientInfoProperties())
+        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
+
+    ExternalLink presignedUrl =
+        new ExternalLink().setHttpHeaders(HEADERS).setExternalLink(PRESIGNED_URL);
+    ResultData resultData =
+        new ResultData()
+            .setVolumeOperationInfo(
+                new VolumeOperationInfo()
+                    .setVolumeOperationType("FETCH")
+                    .setLocalFile(LOCAL_FILE_PUT)
+                    .setPresignedUrl(presignedUrl));
+    VolumeOperationResult volumeOperationResult =
+        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
+
+    assertTrue(volumeOperationResult.hasNext());
+    assertEquals(-1, volumeOperationResult.getCurrentRow());
+    try {
+      volumeOperationResult.next();
+      fail("Should throw DatabricksSQLException");
+    } catch (DatabricksSQLException e) {
+      assertEquals("Volume operation aborted: Invalid operation type", e.getMessage());
+    }
+  }
+
+  @Test
   public void testGetResult_Remove() throws Exception {
     when(mockHttpClient.execute(isA(HttpDelete.class))).thenReturn(httpResponse);
     when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
@@ -316,5 +406,35 @@ public class VolumeOperationResultTest {
     assertEquals("SUCCEEDED", volumeOperationResult.getObject(1));
     assertFalse(volumeOperationResult.hasNext());
     assertFalse(volumeOperationResult.next());
+  }
+
+  @Test
+  public void testGetResult_RemoveFailed() throws Exception {
+    when(mockHttpClient.execute(isA(HttpDelete.class))).thenReturn(httpResponse);
+    when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
+    when(mockedStatusLine.getStatusCode()).thenReturn(403);
+    when(session.getClientInfoProperties())
+        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
+
+    ExternalLink presignedUrl =
+        new ExternalLink().setHttpHeaders(HEADERS).setExternalLink(PRESIGNED_URL);
+    ResultData resultData =
+        new ResultData()
+            .setVolumeOperationInfo(
+                new VolumeOperationInfo()
+                    .setVolumeOperationType("REMOVE")
+                    .setPresignedUrl(presignedUrl));
+    VolumeOperationResult volumeOperationResult =
+        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
+
+    assertTrue(volumeOperationResult.hasNext());
+    assertEquals(-1, volumeOperationResult.getCurrentRow());
+
+    try {
+      volumeOperationResult.next();
+      fail("Should throw DatabricksSQLException");
+    } catch (DatabricksSQLException e) {
+      assertEquals("Volume operation failed: Failed to delete volume", e.getMessage());
+    }
   }
 }

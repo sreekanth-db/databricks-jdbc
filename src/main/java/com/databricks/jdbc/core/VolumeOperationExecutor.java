@@ -118,7 +118,7 @@ class VolumeOperationExecutor implements Runnable {
     HttpGet httpGet = new HttpGet(operationUrl);
     headers.forEach(httpGet::addHeader);
     try (CloseableHttpResponse response = databricksHttpClient.execute(httpGet)) {
-      if (response.getStatusLine().getStatusCode() != 200) {
+      if (!isSuccessfulHttpResponse(response)) {
         status = VolumeOperationStatus.FAILED;
         errorMessage = "Failed to download file";
         return;
@@ -183,11 +183,13 @@ class VolumeOperationExecutor implements Runnable {
     // Execute the request
     try (CloseableHttpResponse response = databricksHttpClient.execute(httpPut)) {
       // Process the response
-      int statusCode = response.getStatusLine().getStatusCode();
-      String statusLine = response.getStatusLine().toString();
-      if (statusCode >= 200 && statusCode < 300) {
+      if (isSuccessfulHttpResponse(response)) {
         status = VolumeOperationStatus.SUCCEEDED;
-        return;
+      } else {
+        // TODO: handle retries
+        status = VolumeOperationStatus.FAILED;
+        errorMessage =
+            "Failed to upload file with error code: " + response.getStatusLine().getStatusCode();
       }
     } catch (IOException | DatabricksHttpException e) {
       status = VolumeOperationStatus.FAILED;
@@ -200,17 +202,21 @@ class VolumeOperationExecutor implements Runnable {
     HttpDelete httpDelete = new HttpDelete(operationUrl);
     headers.forEach(httpDelete::addHeader);
     try (CloseableHttpResponse response = databricksHttpClient.execute(httpDelete)) {
-      if (response.getStatusLine().getStatusCode() != 200) {
+      if (isSuccessfulHttpResponse(response)) {
+        status = VolumeOperationStatus.SUCCEEDED;
+      } else {
         status = VolumeOperationStatus.FAILED;
         errorMessage = "Failed to delete volume";
-        return;
-      } else {
-        status = VolumeOperationStatus.SUCCEEDED;
       }
     } catch (DatabricksHttpException | IOException e) {
       status = VolumeOperationStatus.FAILED;
       errorMessage = "Failed to delete volume: " + e.getMessage();
     }
+  }
+
+  private boolean isSuccessfulHttpResponse(CloseableHttpResponse response) {
+    return response.getStatusLine().getStatusCode() >= 200
+        && response.getStatusLine().getStatusCode() < 300;
   }
 
   static enum VolumeOperationStatus {
