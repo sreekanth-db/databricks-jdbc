@@ -1,5 +1,7 @@
 package com.databricks.jdbc.core;
 
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.VOLUME_OPERATION_STATUS_COLUMN_NAME;
+
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import com.databricks.jdbc.commons.util.WrapperUtil;
 import com.databricks.jdbc.core.types.AccessType;
@@ -40,7 +42,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     if (resultManifest.getIsVolumeOperation() != null && resultManifest.getIsVolumeOperation()) {
       ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
       columnBuilder
-          .columnName("operationStatus")
+          .columnName(VOLUME_OPERATION_STATUS_COLUMN_NAME)
           .columnType(Types.VARCHAR)
           .columnTypeText(ColumnInfoTypeName.STRING.name())
           .typePrecision(0)
@@ -48,7 +50,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
           .displaySize(DatabricksTypeUtil.getDisplaySize(ColumnInfoTypeName.STRING, 0))
           .isSigned(DatabricksTypeUtil.isSigned(ColumnInfoTypeName.STRING));
       columnsBuilder.add(columnBuilder.build());
-      columnNameToIndexMap.putIfAbsent("operationStatus", ++currIndex);
+      columnNameToIndexMap.putIfAbsent(VOLUME_OPERATION_STATUS_COLUMN_NAME, ++currIndex);
     } else {
       if (resultManifest.getSchema().getColumnCount() > 0) {
         for (ColumnInfo columnInfo : resultManifest.getSchema().getColumns()) {
