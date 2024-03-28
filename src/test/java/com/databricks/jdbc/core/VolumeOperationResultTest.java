@@ -406,6 +406,12 @@ public class VolumeOperationResultTest {
     assertEquals("SUCCEEDED", volumeOperationResult.getObject(1));
     assertFalse(volumeOperationResult.hasNext());
     assertFalse(volumeOperationResult.next());
+    try {
+      volumeOperationResult.getObject(2);
+      fail("Should throw DatabricksSQLException");
+    } catch (DatabricksSQLException e) {
+      assertEquals("Invalid column access", e.getMessage());
+    }
   }
 
   @Test
@@ -435,6 +441,31 @@ public class VolumeOperationResultTest {
       fail("Should throw DatabricksSQLException");
     } catch (DatabricksSQLException e) {
       assertEquals("Volume operation failed: Failed to delete volume", e.getMessage());
+    }
+  }
+
+  @Test
+  public void getObject() throws Exception {
+    when(session.getClientInfoProperties())
+        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
+
+    ExternalLink presignedUrl =
+        new ExternalLink().setHttpHeaders(HEADERS).setExternalLink(PRESIGNED_URL);
+    ResultData resultData =
+        new ResultData()
+            .setVolumeOperationInfo(
+                new VolumeOperationInfo()
+                    .setVolumeOperationType("INVALID")
+                    .setLocalFile(LOCAL_FILE_GET)
+                    .setPresignedUrl(presignedUrl));
+    VolumeOperationResult volumeOperationResult =
+        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
+
+    try {
+      volumeOperationResult.getObject(2);
+      fail("Should throw DatabricksSQLException");
+    } catch (DatabricksSQLException e) {
+      assertEquals("Invalid row access", e.getMessage());
     }
   }
 }
