@@ -117,6 +117,14 @@ class VolumeOperationExecutor implements Runnable {
   private void executeGetOperation() {
     HttpGet httpGet = new HttpGet(operationUrl);
     headers.forEach(httpGet::addHeader);
+
+    File localFile = new File(localFilePath);
+    if (localFile.exists()) {
+      status = VolumeOperationStatus.ABORTED;
+      errorMessage = "Local file already exists";
+      return;
+    }
+
     try (CloseableHttpResponse response = databricksHttpClient.execute(httpGet)) {
       if (!isSuccessfulHttpResponse(response)) {
         status = VolumeOperationStatus.FAILED;
@@ -128,7 +136,7 @@ class VolumeOperationExecutor implements Runnable {
         // Get the content of the HttpEntity
         InputStream inputStream = entity.getContent();
         // Create a FileOutputStream to write the content to a file
-        try (FileOutputStream outputStream = new FileOutputStream(new File(localFilePath))) {
+        try (FileOutputStream outputStream = new FileOutputStream(localFile)) {
           // Copy the content of the InputStream to the FileOutputStream
           byte[] buffer = new byte[1024];
           int length;

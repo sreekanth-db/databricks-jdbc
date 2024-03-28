@@ -198,6 +198,38 @@ public class VolumeOperationResultTest {
   }
 
   @Test
+  public void testGetResult_Get_FileExists() throws Exception {
+    when(session.getClientInfoProperties())
+        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
+
+    File file = new File(LOCAL_FILE_GET);
+    Files.writeString(file.toPath(), "test-put");
+
+    ExternalLink presignedUrl =
+        new ExternalLink().setHttpHeaders(HEADERS).setExternalLink(PRESIGNED_URL);
+    ResultData resultData =
+        new ResultData()
+            .setVolumeOperationInfo(
+                new VolumeOperationInfo()
+                    .setVolumeOperationType("GET")
+                    .setLocalFile(LOCAL_FILE_GET)
+                    .setPresignedUrl(presignedUrl));
+    VolumeOperationResult volumeOperationResult =
+        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
+
+    assertTrue(volumeOperationResult.hasNext());
+    assertEquals(-1, volumeOperationResult.getCurrentRow());
+    try {
+      volumeOperationResult.next();
+      fail("Should throw DatabricksSQLException");
+    } catch (DatabricksSQLException e) {
+      assertEquals("Volume operation aborted: Local file already exists", e.getMessage());
+    } finally {
+      file.delete();
+    }
+  }
+
+  @Test
   public void testGetResult_Get_PathContainsParentDir() throws Exception {
     when(session.getClientInfoProperties())
         .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
