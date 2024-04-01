@@ -12,9 +12,13 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Executor for volume operations */
 class VolumeOperationExecutor implements Runnable {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(VolumeOperationExecutor.class);
 
   private static final String COMMA_SEPARATOR = ",";
   private static final String PARENT_DIRECTORY_REF = "..";
@@ -89,6 +93,7 @@ class VolumeOperationExecutor implements Runnable {
 
   private void validateLocalFilePath() {
     if (allowedVolumeIngestionPaths.isEmpty()) {
+      LOGGER.error("Volume ingestion paths are not set");
       status = VolumeOperationStatus.ABORTED;
       errorMessage = "Volume operation not supported";
       return;
@@ -99,6 +104,7 @@ class VolumeOperationExecutor implements Runnable {
     if (localFilePath == null
         || localFilePath.isEmpty()
         || localFilePath.contains(PARENT_DIRECTORY_REF)) {
+      LOGGER.error("Local file path is invalid {}", localFilePath);
       status = VolumeOperationStatus.ABORTED;
       errorMessage = "Local file path is invalid";
       return;
@@ -109,6 +115,7 @@ class VolumeOperationExecutor implements Runnable {
             .filter(x -> x)
             .findFirst();
     if (pathMatched.isEmpty() || !pathMatched.get()) {
+      LOGGER.error("Local file path is not allowed {}", localFilePath);
       status = VolumeOperationStatus.ABORTED;
       errorMessage = "Local file path is not allowed";
     }
@@ -120,6 +127,7 @@ class VolumeOperationExecutor implements Runnable {
 
     File localFile = new File(localFilePath);
     if (localFile.exists()) {
+      LOGGER.error("Local file already exists for GET operation {}", localFilePath);
       status = VolumeOperationStatus.ABORTED;
       errorMessage = "Local file already exists";
       return;
@@ -127,6 +135,10 @@ class VolumeOperationExecutor implements Runnable {
 
     try (CloseableHttpResponse response = databricksHttpClient.execute(httpGet)) {
       if (!isSuccessfulHttpResponse(response)) {
+        LOGGER.error(
+            "Failed to fetch content from volume with error {} for local file {}",
+            response.getStatusLine().getStatusCode(),
+            localFilePath);
         status = VolumeOperationStatus.FAILED;
         errorMessage = "Failed to download file";
         return;
@@ -145,10 +157,13 @@ class VolumeOperationExecutor implements Runnable {
           }
           status = VolumeOperationStatus.SUCCEEDED;
         } catch (FileNotFoundException e) {
+          LOGGER.error("Local file path is invalid or a directory {}", localFilePath);
           status = VolumeOperationStatus.FAILED;
           errorMessage = "Local file path is invalid or a directory";
         } catch (IOException e) {
           // TODO: handle retries
+          LOGGER.error(
+              "Failed to write to local file {} with error {}", localFilePath, e.getMessage());
           status = VolumeOperationStatus.FAILED;
           errorMessage = "Failed to write to local file: " + e.getMessage();
         } finally {
@@ -169,17 +184,20 @@ class VolumeOperationExecutor implements Runnable {
     // Set the FileEntity as the request body
     File file = new File(localFilePath);
     if (!file.exists() || file.isDirectory()) {
+      LOGGER.error("Local file does not exist or is a directory {}", localFilePath);
       status = VolumeOperationStatus.ABORTED;
       errorMessage = "Local file does not exist or is a directory";
       return;
     }
     if (file.length() == 0) {
+      LOGGER.error("Local file is empty {}", localFilePath);
       status = VolumeOperationStatus.ABORTED;
       errorMessage = "Local file is empty";
       return;
     }
 
     if (file.length() > PUT_SIZE_LIMITS) {
+      LOGGER.error("Local file too large {}", localFilePath);
       status = VolumeOperationStatus.ABORTED;
       errorMessage = "Local file too large";
       return;
@@ -194,12 +212,17 @@ class VolumeOperationExecutor implements Runnable {
       if (isSuccessfulHttpResponse(response)) {
         status = VolumeOperationStatus.SUCCEEDED;
       } else {
+        LOGGER.error(
+            "Failed to upload file {} with error code: {}",
+            localFilePath,
+            response.getStatusLine().getStatusCode());
         // TODO: handle retries
         status = VolumeOperationStatus.FAILED;
         errorMessage =
             "Failed to upload file with error code: " + response.getStatusLine().getStatusCode();
       }
     } catch (IOException | DatabricksHttpException e) {
+      LOGGER.error("Failed to upload file {} with error {}", localFilePath, e.getMessage());
       status = VolumeOperationStatus.FAILED;
       errorMessage = "Failed to upload file: " + e.getMessage();
     }
@@ -213,10 +236,14 @@ class VolumeOperationExecutor implements Runnable {
       if (isSuccessfulHttpResponse(response)) {
         status = VolumeOperationStatus.SUCCEEDED;
       } else {
+        LOGGER.error(
+            "Failed to delete volume with error code: {}",
+            response.getStatusLine().getStatusCode());
         status = VolumeOperationStatus.FAILED;
         errorMessage = "Failed to delete volume";
       }
     } catch (DatabricksHttpException | IOException e) {
+      LOGGER.error("Failed to delete volume with error {}", e.getMessage());
       status = VolumeOperationStatus.FAILED;
       errorMessage = "Failed to delete volume: " + e.getMessage();
     }
