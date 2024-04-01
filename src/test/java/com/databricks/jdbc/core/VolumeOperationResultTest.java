@@ -257,6 +257,36 @@ public class VolumeOperationResultTest {
   }
 
   @Test
+  public void testGetResult_Get_HttpError() throws Exception {
+    when(mockHttpClient.execute(isA(HttpGet.class))).thenReturn(httpResponse);
+    when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
+    when(mockedStatusLine.getStatusCode()).thenReturn(403);
+    when(session.getClientInfoProperties())
+        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
+
+    ExternalLink presignedUrl =
+        new ExternalLink().setHttpHeaders(HEADERS).setExternalLink(PRESIGNED_URL);
+    ResultData resultData =
+        new ResultData()
+            .setVolumeOperationInfo(
+                new VolumeOperationInfo()
+                    .setVolumeOperationType("GET")
+                    .setLocalFile(LOCAL_FILE_GET)
+                    .setPresignedUrl(presignedUrl));
+    VolumeOperationResult volumeOperationResult =
+        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
+
+    assertTrue(volumeOperationResult.hasNext());
+    assertEquals(-1, volumeOperationResult.getCurrentRow());
+    try {
+      volumeOperationResult.next();
+      fail("Should throw DatabricksSQLException");
+    } catch (DatabricksSQLException e) {
+      assertEquals("Volume operation failed: Failed to download file", e.getMessage());
+    }
+  }
+
+  @Test
   public void testGetResult_Put() throws Exception {
     when(mockHttpClient.execute(isA(HttpPut.class))).thenReturn(httpResponse);
     when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
