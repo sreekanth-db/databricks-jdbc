@@ -400,7 +400,7 @@ public class VolumeOperationResultTest {
                     .setLocalFile(LOCAL_FILE_PUT)
                     .setPresignedUrl(presignedUrl));
     VolumeOperationResult volumeOperationResult =
-        new VolumeOperationResult(resultData, STATEMENT_ID, session);
+        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
 
     assertTrue(volumeOperationResult.hasNext());
     assertEquals(-1, volumeOperationResult.getCurrentRow());
@@ -491,7 +491,7 @@ public class VolumeOperationResultTest {
                     .setLocalFile(LOCAL_FILE_GET)
                     .setPresignedUrl(presignedUrl));
     VolumeOperationResult volumeOperationResult =
-        new VolumeOperationResult(resultData, STATEMENT_ID, session);
+        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
 
     try {
       volumeOperationResult.getObject(2);
