@@ -62,7 +62,9 @@ class VolumeOperationExecutor implements Runnable {
 
   @Override
   public void run() {
-    LOGGER.debug("Running volume operation {} on local file {}", operationType,
+    LOGGER.debug(
+        "Running volume operation {} on local file {}",
+        operationType,
         localFilePath == null ? "" : localFilePath);
     validateLocalFilePath();
     if (status == VolumeOperationStatus.ABORTED) {
