@@ -1,19 +1,25 @@
 package com.databricks.jdbc.client.impl.thrift;
 
+import static com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftHelper.byteBufferToString;
+import static com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftHelper.verifySuccessStatus;
+import static com.databricks.jdbc.commons.EnvironmentVariables.DEFAULT_BYTE_LIMIT;
+import static com.databricks.jdbc.commons.EnvironmentVariables.JDBC_THRIFT_VERSION;
+
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.DatabricksMetadataClient;
 import com.databricks.jdbc.client.StatementType;
+import com.databricks.jdbc.client.impl.helper.MetadataResultSetBuilder;
+import com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftAccessor;
 import com.databricks.jdbc.client.impl.thrift.generated.*;
 import com.databricks.jdbc.client.sqlexec.ExternalLink;
 import com.databricks.jdbc.commons.CommandName;
 import com.databricks.jdbc.core.*;
 import com.databricks.jdbc.core.types.ComputeResource;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
-import java.nio.ByteBuffer;
+import com.google.common.annotations.VisibleForTesting;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,10 +29,15 @@ public class DatabricksThriftClient implements DatabricksClient, DatabricksMetad
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksThriftClient.class);
 
-  private final ThriftAccessor thriftAccessor;
+  private final DatabricksThriftAccessor thriftAccessor;
 
   public DatabricksThriftClient(IDatabricksConnectionContext connectionContext) {
-    this.thriftAccessor = new ThriftAccessor(connectionContext);
+    this.thriftAccessor = new DatabricksThriftAccessor(connectionContext);
+  }
+
+  @VisibleForTesting
+  DatabricksThriftClient(DatabricksThriftAccessor thriftAccessor) {
+    this.thriftAccessor = thriftAccessor;
   }
 
   private TNamespace getNamespace(String catalog, String schema) {
@@ -48,27 +59,33 @@ public class DatabricksThriftClient implements DatabricksClient, DatabricksMetad
             .setInitialNamespace(getNamespace(catalog, schema))
             .setConfiguration(sessionConf)
             .setCanUseMultipleCatalogs(true)
-            .setClient_protocol(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10);
+            .setClient_protocol(JDBC_THRIFT_VERSION);
     TOpenSessionResp response =
         (TOpenSessionResp)
-            thriftAccessor.getThriftResponse(openSessionReq, CommandName.OPEN_SESSION);
-    String sessionId = byteBufferToId(response.sessionHandle.getSessionId().guid);
+            thriftAccessor.getThriftResponse(openSessionReq, CommandName.OPEN_SESSION, null);
+    verifySuccessStatus(response.status.getStatusCode(), response.toString());
+    String sessionId = byteBufferToString(response.sessionHandle.getSessionId().guid);
     LOGGER.info("Session created with ID {}", sessionId);
-    return ImmutableSessionInfo.builder().sessionId(sessionId).computeResource(cluster).build();
-  }
-
-  private String byteBufferToId(ByteBuffer buffer) {
-    long sigBits = buffer.getLong();
-    return new UUID(sigBits, sigBits).toString();
+    return ImmutableSessionInfo.builder()
+        .sessionId(sessionId)
+        .sessionHandle(response.sessionHandle)
+        .computeResource(cluster)
+        .build();
   }
 
   @Override
-  public void deleteSession(String sessionId, ComputeResource cluster) {
+  public void deleteSession(IDatabricksSession session, ComputeResource cluster)
+      throws DatabricksSQLException {
     LOGGER.debug(
-        "public void deleteSession(Compute cluster = {}, String sessionId = {})",
-        cluster.toString(),
-        sessionId);
-    throw new UnsupportedOperationException();
+        "public void deleteSession(Session session = {}, Compute cluster = {})",
+        session.toString(),
+        cluster.toString());
+    TCloseSessionReq closeSessionReq =
+        new TCloseSessionReq().setSessionHandle(session.getSessionInfo().sessionHandle());
+    TCloseSessionResp response =
+        (TCloseSessionResp)
+            thriftAccessor.getThriftResponse(closeSessionReq, CommandName.CLOSE_SESSION, null);
+    verifySuccessStatus(response.status.getStatusCode(), response.toString());
   }
 
   @Override
@@ -81,11 +98,28 @@ public class DatabricksThriftClient implements DatabricksClient, DatabricksMetad
       IDatabricksStatement parentStatement)
       throws SQLException {
     LOGGER.debug(
-        "public DatabricksResultSet executeStatement(String sql = {}, Compute cluster = {}, Map<Integer, ImmutableSqlParameter> parameters, StatementType statementType = {}, IDatabricksSession session)",
+        "public DatabricksResultSet executeStatement(String sql = {}, Compute cluster = {}, Map<Integer, ImmutableSqlParameter> parameters = {}, StatementType statementType = {}, IDatabricksSession session)",
         sql,
         computeResource.toString(),
+        parameters.toString(),
         statementType);
-    throw new UnsupportedOperationException();
+    TExecuteStatementReq request =
+        new TExecuteStatementReq()
+            .setStatement(sql)
+            .setSessionHandle(session.getSessionInfo().sessionHandle())
+            .setResultByteLimit(DEFAULT_BYTE_LIMIT);
+    TFetchResultsResp response =
+        (TFetchResultsResp)
+            thriftAccessor.getThriftResponse(
+                request, CommandName.EXECUTE_STATEMENT, parentStatement);
+    return new DatabricksResultSet(
+        response.getStatus(),
+        session.getSessionId(),
+        response.getResults(),
+        response.getResultSetMetadata(),
+        statementType,
+        session,
+        parentStatement);
   }
 
   @Override
@@ -96,42 +130,71 @@ public class DatabricksThriftClient implements DatabricksClient, DatabricksMetad
   }
 
   @Override
-  public Collection<ExternalLink> getResultChunks(String statementId, long chunkIndex) {
+  public Collection<ExternalLink> getResultChunks(String statementId, long chunkIndex)
+      throws DatabricksSQLException {
+    // TODO : implement
     LOGGER.debug(
         "public Optional<ExternalLink> getResultChunk(String statementId = {}, long chunkIndex = {}) for all purpose cluster",
         statementId,
         chunkIndex);
-    throw new UnsupportedOperationException();
+    throw new DatabricksSQLFeatureNotImplementedException(
+        "getResultChunk in thrift is not implemented");
   }
 
   @Override
-  public DatabricksResultSet listTypeInfo(IDatabricksSession session) {
-    throw new UnsupportedOperationException();
+  public DatabricksResultSet listTypeInfo(IDatabricksSession session)
+      throws DatabricksSQLException {
+    // TODO : implement
+    String context =
+        String.format(
+            "Listing type info for all purpose cluster. Session {%s}", session.toString());
+    LOGGER.debug(context);
+    throw new DatabricksSQLFeatureNotImplementedException(
+        "listTypeInfo in cluster compute not implemented");
   }
 
   @Override
-  public DatabricksResultSet listCatalogs(IDatabricksSession session) {
-    throw new UnsupportedOperationException();
+  public DatabricksResultSet listCatalogs(IDatabricksSession session) throws SQLException {
+    // TODO : implement
+    String context =
+        String.format(
+            "Fetching catalogs for all purpose cluster. Session {%s}", session.toString());
+    LOGGER.debug(context);
+    throw new DatabricksSQLFeatureNotImplementedException(
+        "listCatalogs in cluster compute not implemented");
   }
 
   @Override
   public DatabricksResultSet listSchemas(
-      IDatabricksSession session, String catalog, String schemaNamePattern) {
-    throw new UnsupportedOperationException();
+      IDatabricksSession session, String catalog, String schemaNamePattern) throws SQLException {
+    // TODO : implement
+    String context =
+        String.format(
+            "Fetching schemas for all purpose cluster. Session {%s}, catalog {%s}, schemaNamePattern {%s}",
+            session.toString(), catalog, schemaNamePattern);
+    LOGGER.debug(context);
+    throw new DatabricksSQLFeatureNotImplementedException(
+        "listSchemas in cluster compute not implemented");
   }
 
   @Override
   public DatabricksResultSet listTables(
-      IDatabricksSession session,
-      String catalog,
-      String schemaNamePattern,
-      String tableNamePattern) {
-    throw new UnsupportedOperationException();
+      // TODO : implement
+      IDatabricksSession session, String catalog, String schemaNamePattern, String tableNamePattern)
+      throws SQLException {
+    String context =
+        String.format(
+            "Fetching tables for all purpose cluster. Session {%s}, catalog {%s}, schemaNamePattern {%s}, tableNamePattern {%s}",
+            session.toString(), catalog, schemaNamePattern, tableNamePattern);
+    LOGGER.debug(context);
+    throw new DatabricksSQLFeatureNotImplementedException(
+        "listTables in cluster compute not implemented");
   }
 
   @Override
   public DatabricksResultSet listTableTypes(IDatabricksSession session) {
-    throw new UnsupportedOperationException();
+    LOGGER.debug("Fetching table types for all purpose cluster. Session {}", session.toString());
+    return MetadataResultSetBuilder.getTableTypesResult();
   }
 
   @Override
@@ -140,8 +203,16 @@ public class DatabricksThriftClient implements DatabricksClient, DatabricksMetad
       String catalog,
       String schemaNamePattern,
       String tableNamePattern,
-      String columnNamePattern) {
-    throw new UnsupportedOperationException();
+      String columnNamePattern)
+      throws DatabricksSQLException {
+    // TODO : implement
+    String context =
+        String.format(
+            "Fetching columns for all purpose cluster. Session {%s}, catalog {%s}, schemaNamePattern {%s}, tableNamePattern {%s}, columnNamePattern {%s}",
+            session.toString(), catalog, schemaNamePattern, tableNamePattern, columnNamePattern);
+    LOGGER.debug(context);
+    throw new DatabricksSQLFeatureNotImplementedException(
+        "listColumns in cluster compute not implemented");
   }
 
   @Override
@@ -149,13 +220,28 @@ public class DatabricksThriftClient implements DatabricksClient, DatabricksMetad
       IDatabricksSession session,
       String catalog,
       String schemaNamePattern,
-      String functionNamePattern) {
-    throw new UnsupportedOperationException();
+      String functionNamePattern)
+      throws DatabricksSQLException {
+    // TODO : implement
+    String context =
+        String.format(
+            "Fetching functions for all purpose cluster. Session {%s}, catalog {%s}, schemaNamePattern {%s}, functionNamePattern {%s}.",
+            session.toString(), catalog, schemaNamePattern, functionNamePattern);
+    LOGGER.debug(context);
+    throw new DatabricksSQLFeatureNotImplementedException(
+        "listFunctions in cluster compute not implemented");
   }
 
   @Override
   public DatabricksResultSet listPrimaryKeys(
-      IDatabricksSession session, String catalog, String schema, String table) {
-    throw new UnsupportedOperationException();
+      IDatabricksSession session, String catalog, String schema, String table) throws SQLException {
+    // TODO : implement
+    String context =
+        String.format(
+            "Fetching primary keys for all purpose cluster. session {%s}, catalog {%s}, schema {%s}, table {%s}",
+            session.toString(), catalog, schema, table);
+    LOGGER.debug(context);
+    throw new DatabricksSQLFeatureNotImplementedException(
+        "listPrimaryKeys in cluster compute not implemented");
   }
 }

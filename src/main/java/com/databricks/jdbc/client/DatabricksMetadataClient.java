@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public interface DatabricksMetadataClient {
 
   /** Returns information about types supported by Databricks server */
-  DatabricksResultSet listTypeInfo(IDatabricksSession session);
+  DatabricksResultSet listTypeInfo(IDatabricksSession session) throws SQLException;
 
   /** Returns the list of catalogs */
   DatabricksResultSet listCatalogs(IDatabricksSession session) throws SQLException;

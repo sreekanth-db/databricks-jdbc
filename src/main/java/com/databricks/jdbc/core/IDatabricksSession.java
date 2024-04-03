@@ -19,6 +19,9 @@ public interface IDatabricksSession {
   @Nullable
   String getSessionId();
 
+  @Nullable
+  ImmutableSessionInfo getSessionInfo();
+
   /**
    * Get the warehouse associated with the session.
    *
@@ -37,7 +40,7 @@ public interface IDatabricksSession {
   void open() throws DatabricksSQLException;
 
   /** Closes the session. */
-  void close();
+  void close() throws DatabricksSQLException;
 
   /** Returns the client for connecting to Databricks server */
   DatabricksClient getDatabricksClient();

@@ -1,4 +1,4 @@
-package com.databricks.jdbc.client.impl.sdk.helper;
+package com.databricks.jdbc.client.impl.helper;
 
 public class CommandConstants {
   public static final String METADATA_STATEMENT_ID = "metadata-statement";

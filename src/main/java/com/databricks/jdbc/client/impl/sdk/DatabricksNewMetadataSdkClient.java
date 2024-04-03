@@ -1,14 +1,10 @@
 package com.databricks.jdbc.client.impl.sdk;
 
-import static com.databricks.jdbc.client.impl.sdk.helper.CommandConstants.*;
-import static com.databricks.jdbc.commons.util.ValidationUtil.*;
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
-
 import com.databricks.jdbc.client.DatabricksMetadataClient;
 import com.databricks.jdbc.client.StatementType;
-import com.databricks.jdbc.client.impl.sdk.helper.CommandBuilder;
-import com.databricks.jdbc.client.impl.sdk.helper.CommandName;
-import com.databricks.jdbc.client.impl.sdk.helper.MetadataResultSetBuilder;
+import com.databricks.jdbc.client.impl.helper.CommandBuilder;
+import com.databricks.jdbc.client.impl.helper.CommandName;
+import com.databricks.jdbc.client.impl.helper.MetadataResultSetBuilder;
 import com.databricks.jdbc.core.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -72,7 +68,6 @@ public class DatabricksNewMetadataSdkClient implements DatabricksMetadataClient 
   @Override
   public DatabricksResultSet listTableTypes(IDatabricksSession session) throws SQLException {
     LOGGER.debug("Returning list of table types.");
-    ;
     return MetadataResultSetBuilder.getTableTypesResult();
   }
 

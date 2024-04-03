@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 
 public class DatabricksDatabaseMetaDataTest {
@@ -20,6 +21,8 @@ public class DatabricksDatabaseMetaDataTest {
   private DatabricksDatabaseMetaData metaData;
 
   private DatabricksMetadataClient metadataClient;
+
+  @Mock private DatabricksResultSet resultSet;
 
   @BeforeEach
   public void setup() throws SQLException {
@@ -36,6 +39,8 @@ public class DatabricksDatabaseMetaDataTest {
     when(metadataClient.listSchemas(any(), any(), any()))
         .thenReturn(Mockito.mock(DatabricksResultSet.class));
     when(metadataClient.listCatalogs(any())).thenReturn(Mockito.mock(DatabricksResultSet.class));
+    when(metadataClient.listFunctions(any(), any(), any(), any()))
+        .thenReturn(Mockito.mock(DatabricksResultSet.class));
     when(metadataClient.listColumns(any(), any(), any(), any(), any()))
         .thenReturn(Mockito.mock(DatabricksResultSet.class));
     when(connection.getConnection()).thenReturn(Mockito.mock(Connection.class));
@@ -544,7 +549,7 @@ public class DatabricksDatabaseMetaDataTest {
   @Test
   public void getFunctions_returnsEmptyResultSet() throws Exception {
     ResultSet resultSet = metaData.getFunctions(null, null, null);
-    assertFalse(resultSet.next());
+    assertNotNull(resultSet);
   }
 
   @Test

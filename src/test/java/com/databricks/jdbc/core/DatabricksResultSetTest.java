@@ -4,12 +4,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 import com.databricks.jdbc.client.StatementType;
+import com.databricks.jdbc.client.impl.thrift.generated.*;
 import com.databricks.sdk.service.sql.StatementState;
 import com.databricks.sdk.service.sql.StatementStatus;
 import java.io.*;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class DatabricksResultSetTest {
   @Mock InlineJsonResult mockedExecutionResult;
   @Mock DatabricksResultSetMetaData mockedResultSetMetadata;
+  @Mock IDatabricksSession session;
 
   @Mock DatabricksStatement mockedDatabricksStatement;
   @Mock Statement mockedStatement;
@@ -35,11 +38,36 @@ public class DatabricksResultSetTest {
         mockedResultSetMetadata);
   }
 
+  private DatabricksResultSet getThriftResultSetMetadata() {
+    TColumnValue columnValue = new TColumnValue();
+    columnValue.setStringVal(new TStringValue().setValue("testString"));
+    TRow row = new TRow().setColVals(Collections.singletonList(columnValue));
+    TRowSet rowSet = new TRowSet().setRows(Collections.singletonList(row));
+    TGetResultSetMetadataResp metadataResp = new TGetResultSetMetadataResp();
+    TColumnDesc columnDesc = new TColumnDesc().setColumnName("testCol");
+    TTableSchema schema = new TTableSchema().setColumns(Collections.singletonList(columnDesc));
+    metadataResp.setSchema(schema);
+    return new DatabricksResultSet(
+        new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS),
+        "test-statementID",
+        rowSet,
+        metadataResp,
+        StatementType.METADATA,
+        session,
+        mockedDatabricksStatement);
+  }
+
   @Test
   void testNext() throws SQLException {
     when(mockedExecutionResult.next()).thenReturn(true);
     DatabricksResultSet resultSet = getResultSet(StatementState.SUCCEEDED, null);
     assertTrue(resultSet.next());
+  }
+
+  @Test
+  void testThriftResultSet() throws SQLException {
+    DatabricksResultSet resultSet = getThriftResultSetMetadata();
+    assertFalse(resultSet.next());
   }
 
   @Test

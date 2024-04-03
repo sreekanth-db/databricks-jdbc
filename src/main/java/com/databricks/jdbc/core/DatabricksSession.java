@@ -7,7 +7,6 @@ import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
 import com.databricks.jdbc.client.impl.thrift.DatabricksThriftClient;
 import com.databricks.jdbc.core.types.CompressionType;
 import com.databricks.jdbc.core.types.ComputeResource;
-import com.databricks.jdbc.core.types.Warehouse;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.support.ToStringer;
 import com.google.common.annotations.VisibleForTesting;
@@ -25,7 +24,7 @@ public class DatabricksSession implements IDatabricksSession {
   private final ComputeResource computeResource;
 
   private boolean isSessionOpen;
-  private ImmutableSessionInfo session;
+  private ImmutableSessionInfo sessionInfo;
 
   // For context based commands
   private String catalog;
@@ -53,7 +52,7 @@ public class DatabricksSession implements IDatabricksSession {
           new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
     }
     this.isSessionOpen = false;
-    this.session = null;
+    this.sessionInfo = null;
     this.computeResource = connectionContext.getComputeResource();
     this.catalog = connectionContext.getCatalog();
     this.schema = connectionContext.getSchema();
@@ -62,20 +61,20 @@ public class DatabricksSession implements IDatabricksSession {
     this.connectionContext = connectionContext;
   }
 
-  /** Construct method to be used for mocking in a test case. */
+  /** Constructor method to be used for mocking in a test case. */
   @VisibleForTesting
   DatabricksSession(
       IDatabricksConnectionContext connectionContext, DatabricksClient databricksClient)
       throws DatabricksSQLException {
     this.databricksClient = databricksClient;
-    if (databricksClient instanceof DatabricksSdkClient) {
+    if (databricksClient instanceof DatabricksThriftClient) {
+      this.databricksMetadataClient = null;
+    } else {
       this.databricksMetadataClient =
           new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
-    } else {
-      this.databricksMetadataClient = null;
     }
     this.isSessionOpen = false;
-    this.session = null;
+    this.sessionInfo = null;
     this.computeResource = connectionContext.getComputeResource();
     this.catalog = connectionContext.getCatalog();
     this.schema = connectionContext.getSchema();
@@ -84,15 +83,22 @@ public class DatabricksSession implements IDatabricksSession {
     this.connectionContext = connectionContext;
   }
 
-  @Override
   @Nullable
+  @Override
   public String getSessionId() {
     LOGGER.debug("public String getSessionId()");
-    return isSessionOpen ? session.sessionId() : null;
+    return (isSessionOpen) ? sessionInfo.sessionId() : null;
   }
 
   @Override
-  public ComputeResource getComputeResource() throws DatabricksSQLException {
+  @Nullable
+  public ImmutableSessionInfo getSessionInfo() {
+    LOGGER.debug("public String getSessionInfo()");
+    return sessionInfo;
+  }
+
+  @Override
+  public ComputeResource getComputeResource() {
     LOGGER.debug("public String getWarehouseId()");
     return this.computeResource;
   }
@@ -117,7 +123,7 @@ public class DatabricksSession implements IDatabricksSession {
     synchronized (this) {
       if (!isSessionOpen) {
         // TODO: handle errors
-        this.session =
+        this.sessionInfo =
             databricksClient.createSession(
                 this.computeResource, this.catalog, this.schema, this.sessionConfigs);
         this.isSessionOpen = true;
@@ -126,18 +132,14 @@ public class DatabricksSession implements IDatabricksSession {
   }
 
   @Override
-  public void close() {
+  public void close() throws DatabricksSQLException {
     LOGGER.debug("public void close()");
     // TODO: check for any pending query executions
     synchronized (this) {
       if (isSessionOpen) {
         // TODO: handle closed connections by server
-        if (computeResource instanceof Warehouse) {
-          databricksClient.deleteSession(this.session.sessionId(), computeResource);
-        } else {
-
-        }
-        this.session = null;
+        databricksClient.deleteSession(this, computeResource);
+        this.sessionInfo = null;
         this.isSessionOpen = false;
       }
     }
@@ -152,6 +154,9 @@ public class DatabricksSession implements IDatabricksSession {
   @Override
   public DatabricksMetadataClient getDatabricksMetadataClient() {
     LOGGER.debug("public DatabricksClient getDatabricksMetadataClient()");
+    if (this.connectionContext.isAllPurposeCluster()) {
+      return (DatabricksMetadataClient) databricksClient;
+    }
     return databricksMetadataClient;
   }
 
