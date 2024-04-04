@@ -1,12 +1,9 @@
 package com.databricks.jdbc.core;
 
-<<<<<<< HEAD
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.VOLUME_OPERATION_STATUS_COLUMN_NAME;
 
-=======
 import com.databricks.jdbc.client.impl.thrift.generated.TColumnDesc;
 import com.databricks.jdbc.client.impl.thrift.generated.TGetResultSetMetadataResp;
->>>>>>> main
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import com.databricks.jdbc.commons.util.WrapperUtil;
 import com.databricks.jdbc.core.types.AccessType;

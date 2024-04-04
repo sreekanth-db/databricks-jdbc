@@ -123,7 +123,7 @@ public class DatabricksSessionTest {
   public void testSetClientInfoProperty() throws DatabricksSQLException {
     DatabricksSession session =
         new DatabricksSession(
-            DatabricksConnectionContext.parse(VALID_WAREHOUSE_URL, new Properties()));
+            DatabricksConnectionContext.parse(VALID_CLUSTER_URL, new Properties()), sdkClient);
     session.setClientInfoProperty("key", "value");
     assertEquals("value", session.getClientInfoProperties().get("key"));
   }
