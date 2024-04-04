@@ -248,7 +248,6 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   private DatabricksClientType getClientType() {
-    // TODO: decide on client type from parsed JDBC Url
     return computeResource.getClientType();
   }
 
