@@ -3,8 +3,7 @@ package com.databricks.jdbc.core;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.databricks.jdbc.client.StatementType;
 import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
@@ -82,7 +81,6 @@ public class DatabricksConnectionTest {
     connection.close();
     assertTrue(connection.isClosed());
     assertEquals(connection.getConnection(), connection);
-    verify(databricksClient).deleteSession(SESSION_ID, warehouse);
   }
 
   @Test

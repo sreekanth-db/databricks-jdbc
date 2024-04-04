@@ -1,5 +1,7 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.impl.thrift.generated.TGetResultSetMetadataResp;
+import com.databricks.jdbc.client.impl.thrift.generated.TRowSet;
 import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import java.util.List;
@@ -21,6 +23,11 @@ class ExecutionResultFactory {
       default:
         throw new IllegalStateException("Invalid response format " + manifest.getFormat());
     }
+  }
+
+  static IExecutionResult getResultSet(
+      TRowSet data, TGetResultSetMetadataResp manifest, IDatabricksSession session) {
+    return new InlineJsonResult(manifest, data);
   }
 
   static IExecutionResult getResultSet(Object[][] rows) {

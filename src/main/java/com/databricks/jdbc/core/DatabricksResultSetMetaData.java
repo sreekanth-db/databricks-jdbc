@@ -1,7 +1,12 @@
 package com.databricks.jdbc.core;
 
+<<<<<<< HEAD
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.VOLUME_OPERATION_STATUS_COLUMN_NAME;
 
+=======
+import com.databricks.jdbc.client.impl.thrift.generated.TColumnDesc;
+import com.databricks.jdbc.client.impl.thrift.generated.TGetResultSetMetadataResp;
+>>>>>>> main
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import com.databricks.jdbc.commons.util.WrapperUtil;
 import com.databricks.jdbc.core.types.AccessType;
@@ -75,6 +80,34 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     this.columns = columnsBuilder.build();
     this.columnNameIndex = ImmutableMap.copyOf(columnNameToIndexMap);
     this.totalRows = resultManifest.getTotalRowCount();
+  }
+
+  public DatabricksResultSetMetaData(
+      String statementId, TGetResultSetMetadataResp resultManifest, int rows) {
+    this.statementId = statementId;
+    Map<String, Integer> columnNameToIndexMap = new HashMap<>();
+    ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
+    int currIndex = 0;
+    if (resultManifest.getSchema() != null && resultManifest.getSchema().getColumnsSize() > 0) {
+      for (TColumnDesc columnInfo : resultManifest.getSchema().getColumns()) {
+        ColumnInfoTypeName columnTypeName = ColumnInfoTypeName.STRING; // TODO : derive typeName
+        int precision = DatabricksTypeUtil.getPrecision(columnTypeName);
+        ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
+        columnBuilder
+            .columnName(columnInfo.getColumnName())
+            .columnTypeClassName(DatabricksTypeUtil.getColumnTypeClassName(columnTypeName))
+            .columnType(DatabricksTypeUtil.getColumnType(columnTypeName))
+            .columnTypeText("STRING")
+            .typePrecision(precision)
+            .displaySize(DatabricksTypeUtil.getDisplaySize(columnTypeName, precision))
+            .isSigned(DatabricksTypeUtil.isSigned(columnTypeName));
+        columnsBuilder.add(columnBuilder.build());
+        columnNameToIndexMap.putIfAbsent(columnInfo.getColumnName(), ++currIndex);
+      }
+    }
+    this.columns = columnsBuilder.build();
+    this.columnNameIndex = ImmutableMap.copyOf(columnNameToIndexMap);
+    this.totalRows = rows;
   }
 
   public DatabricksResultSetMetaData(

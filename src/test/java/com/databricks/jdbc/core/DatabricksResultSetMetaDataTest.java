@@ -1,11 +1,15 @@
 package com.databricks.jdbc.core;
 
+import com.databricks.jdbc.client.impl.thrift.generated.TColumnDesc;
+import com.databricks.jdbc.client.impl.thrift.generated.TGetResultSetMetadataResp;
+import com.databricks.jdbc.client.impl.thrift.generated.TTableSchema;
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import com.databricks.jdbc.driver.DatabricksJdbcConstants;
 import com.databricks.sdk.service.sql.ColumnInfo;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 import com.databricks.sdk.service.sql.ResultSchema;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -33,6 +37,14 @@ public class DatabricksResultSetMetaDataTest {
     schema.setColumns(List.of(col1, col2, col2dup, col3));
     manifest.setSchema(schema);
     return manifest;
+  }
+
+  public TGetResultSetMetadataResp getThriftResultManifest() {
+    TGetResultSetMetadataResp resultSetMetadataResp = new TGetResultSetMetadataResp();
+    TColumnDesc columnDesc = new TColumnDesc().setColumnName("testCol");
+    TTableSchema schema = new TTableSchema().setColumns(Collections.singletonList(columnDesc));
+    resultSetMetadataResp.setSchema(schema);
+    return resultSetMetadataResp;
   }
 
   @Test
@@ -77,5 +89,25 @@ public class DatabricksResultSetMetaDataTest {
     Assertions.assertEquals(
         1,
         metaData.getColumnNameIndex(DatabricksJdbcConstants.VOLUME_OPERATION_STATUS_COLUMN_NAME));
+  }
+
+  @Test
+  public void testThriftColumns() throws SQLException {
+    DatabricksResultSetMetaData metaData =
+        new DatabricksResultSetMetaData(STATEMENT_ID, getThriftResultManifest(), 10);
+    Assertions.assertEquals(10, metaData.getTotalRows());
+    Assertions.assertEquals(1, metaData.getColumnCount());
+    Assertions.assertEquals("testCol", metaData.getColumnName(1));
+  }
+
+  @Test
+  public void testEmptyAndNullThriftColumns() throws SQLException {
+    TGetResultSetMetadataResp resultSetMetadataResp = new TGetResultSetMetadataResp();
+    DatabricksResultSetMetaData metaData =
+        new DatabricksResultSetMetaData(STATEMENT_ID, resultSetMetadataResp, 0);
+    Assertions.assertEquals(0, metaData.getColumnCount());
+
+    resultSetMetadataResp.setSchema(new TTableSchema());
+    Assertions.assertEquals(0, metaData.getColumnCount());
   }
 }

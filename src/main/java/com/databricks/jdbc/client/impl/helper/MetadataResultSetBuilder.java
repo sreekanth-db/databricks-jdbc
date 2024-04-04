@@ -1,7 +1,7 @@
-package com.databricks.jdbc.client.impl.sdk.helper;
+package com.databricks.jdbc.client.impl.helper;
 
-import static com.databricks.jdbc.client.impl.sdk.helper.CommandConstants.*;
-import static com.databricks.jdbc.client.impl.sdk.helper.MetadataResultConstants.*;
+import static com.databricks.jdbc.client.impl.helper.CommandConstants.*;
+import static com.databricks.jdbc.client.impl.helper.MetadataResultConstants.*;
 
 import com.databricks.jdbc.client.StatementType;
 import com.databricks.jdbc.core.DatabricksResultSet;
