@@ -42,7 +42,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
       throws DatabricksSQLException {
     this.session = new DatabricksSession(connectionContext, databricksClient);
     this.session.open();
-    new DatabricksDriver().setUserAgent(connectionContext);
+    DatabricksDriver.setUserAgent(connectionContext);
   }
 
   @Override
