@@ -16,6 +16,8 @@ public class MetadataBenchmarkingTest {
   private static final int NUM_TABLES = 2;
   private static final int NUM_COLUMNS = 1;
 
+  private static final int ATTEMPTS = 20;
+
   private static final String BASE_SCHEMA_NAME = "jdbc_metadata_benchmark_schema";
 
   private static final String BASE_TABLE_NAME = "table";
@@ -27,6 +29,9 @@ public class MetadataBenchmarkingTest {
   private double[] avgTimePerTable = new double[2];
 
   private double[] avgTimePerSchema = new double[2];
+
+  long totalTimesForSection[][] = new long[2][6];
+  double avgTimesForSection[][] = new double[2][6];
 
   @BeforeEach
   void setUp() throws SQLException, ClassNotFoundException {
@@ -110,6 +115,64 @@ public class MetadataBenchmarkingTest {
 
   }
 
+  void measureMetadataPerformance2(int recording) throws SQLException {
+    DatabaseMetaData metaData = connection.getMetaData();
+
+    // SECTION 1: Get all schemas
+    long startTime = System.currentTimeMillis();
+    for(int i = 0; i < ATTEMPTS; i++) {
+      metaData.getSchemas(getDatabricksCatalog(), "%");
+    }
+    long endTime = System.currentTimeMillis();
+    totalTimesForSection[recording][0] = endTime - startTime;
+    avgTimesForSection[recording][0] = totalTimesForSection[recording][0] / ATTEMPTS;
+
+    // SECTION 2: Get all schemas matching a name
+    startTime = System.currentTimeMillis();
+    for(int i = 0; i < ATTEMPTS; i++) {
+      metaData.getSchemas(getDatabricksCatalog(), BASE_SCHEMA_NAME + "%");
+    }
+    endTime = System.currentTimeMillis();
+    totalTimesForSection[recording][1] = endTime - startTime;
+    avgTimesForSection[recording][1] = totalTimesForSection[recording][1] / ATTEMPTS;
+
+    // SECTION 3: Get all tables for all schema
+    startTime = System.currentTimeMillis();
+    for(int i = 0; i < ATTEMPTS; i++) {
+      metaData.getTables(getDatabricksCatalog(), "%", "%", null);
+    }
+    endTime = System.currentTimeMillis();
+    totalTimesForSection[recording][2] = endTime - startTime;
+    avgTimesForSection[recording][2] = totalTimesForSection[recording][2] / ATTEMPTS;
+
+    // SECTION 4: Get all tables for a schema
+    startTime = System.currentTimeMillis();
+    for(int i = 0; i < ATTEMPTS; i++) {
+      metaData.getTables(getDatabricksCatalog(), BASE_SCHEMA_NAME + "%", "%", null);
+    }
+    endTime = System.currentTimeMillis();
+    totalTimesForSection[recording][3] = endTime - startTime;
+    avgTimesForSection[recording][3] = totalTimesForSection[recording][3] / ATTEMPTS;
+
+    // SECTION 5: Get all columns for all tables
+    startTime = System.currentTimeMillis();
+    for(int i = 0; i < ATTEMPTS; i++) {
+      metaData.getColumns(getDatabricksCatalog(), BASE_SCHEMA_NAME + "%", "%", null);
+    }
+    endTime = System.currentTimeMillis();
+    totalTimesForSection[recording][4] = endTime - startTime;
+    avgTimesForSection[recording][4] = totalTimesForSection[recording][4] / ATTEMPTS;
+
+    // SECTION 6: Get all columns for a table
+    startTime = System.currentTimeMillis();
+    for(int i = 0; i < ATTEMPTS; i++) {
+      metaData.getColumns(getDatabricksCatalog(), BASE_SCHEMA_NAME + "%", BASE_TABLE_NAME + "%", null);
+    }
+    endTime = System.currentTimeMillis();
+    totalTimesForSection[recording][5] = endTime - startTime;
+    avgTimesForSection[recording][5] = totalTimesForSection[recording][5] / ATTEMPTS;
+  }
+
   @Test
   void benchmarkDrivers() throws SQLException {
     // Currently connection is held by OSS driver
@@ -141,5 +204,42 @@ public class MetadataBenchmarkingTest {
     System.out.println("Average time taken by Databricks JDBC per schema: " + avgTimePerSchema[1] + "ms");
     System.out.println("Average time taken by OSS JDBC per table: " + avgTimePerTable[0] + "ms");
     System.out.println("Average time taken by Databricks JDBC per table: " + avgTimePerTable[1] + "ms");
+  }
+
+  @Test
+  void benchmarkDrivers2() throws SQLException {
+    // Currently connection is held by OSS driver
+    long startTime = System.currentTimeMillis();
+    measureMetadataPerformance2(0);
+    long endTime = System.currentTimeMillis();
+    System.out.println("Time taken by OSS JDBC: " + (endTime - startTime) + "ms");
+
+    // Switching to Databricks JDBC
+    connection.close();
+    DriverManager.deregisterDriver(new com.databricks.jdbc.driver.DatabricksDriver());
+    connection = DriverManager.getConnection(getJDBCUrl(), "token", getDatabricksToken());
+
+    // Currently connection is held by Databricks driver
+    startTime = System.currentTimeMillis();
+    measureMetadataPerformance2(1);
+    endTime = System.currentTimeMillis();
+    System.out.println("Time taken by Databricks JDBC: " + (endTime - startTime) + "ms");
+    DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
+    DriverManager.deregisterDriver(new com.databricks.client.jdbc.Driver());
+
+    System.out.println("STATS");
+    System.out.println("Section Descriptions");
+    System.out.println("1. Get all schemas");
+    System.out.println("2. Get all schemas matching a name");
+    System.out.println("3. Get all tables for all schema");
+    System.out.println("4. Get all tables for a schema");
+    System.out.println("5. Get all columns for all tables");
+    System.out.println("6. Get all columns for a table");
+    for(int i = 0; i < 6; i++) {
+        System.out.println("Average time taken by OSS JDBC for section " + i + ": " + avgTimesForSection[0][i] + "ms");
+        System.out.println("Average time taken by Databricks JDBC for section " + i + ": " + avgTimesForSection[1][i] + "ms");
+        System.out.println("Total time taken by OSS JDBC for section " + i + ": " + totalTimesForSection[0][i] + "ms");
+        System.out.println("Total time taken by Databricks JDBC for section " + i + ": " + totalTimesForSection[1][i] + "ms");
+    }
   }
 }
