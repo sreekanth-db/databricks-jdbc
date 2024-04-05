@@ -1,12 +1,10 @@
 package com.databricks.jdbc.core;
 
-import static com.databricks.jdbc.client.impl.sdk.PathConstants.SESSION_PATH;
-import static com.databricks.jdbc.client.impl.sdk.PathConstants.STATEMENT_PATH;
+import static com.databricks.jdbc.client.impl.sdk.PathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.databricks.jdbc.client.StatementType;
 import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
@@ -33,6 +31,7 @@ public class DatabricksSdkClientTest {
   @Mock StatementExecutionService statementExecutionService;
   @Mock ApiClient apiClient;
   @Mock ResultData resultData;
+  @Mock DatabricksSession session;
 
   private static final String WAREHOUSE_ID = "erg6767gg";
   private static final ComputeResource warehouse = new Warehouse(WAREHOUSE_ID);
@@ -120,6 +119,20 @@ public class DatabricksSdkClientTest {
         databricksSdkClient.createSession(warehouse, null, null, null);
     assertEquals(sessionInfo.sessionId(), SESSION_ID);
     assertEquals(sessionInfo.computeResource(), warehouse);
+  }
+
+  @Test
+  public void testDeleteSession() throws DatabricksSQLException {
+    String path = String.format(DELETE_SESSION_PATH_WITH_ID, SESSION_ID);
+    IDatabricksConnectionContext connectionContext =
+        DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+    DatabricksSdkClient databricksSdkClient =
+        new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient);
+    when(session.getSessionId()).thenReturn(SESSION_ID);
+    databricksSdkClient.deleteSession(session, warehouse);
+    DeleteSessionRequest request =
+        new DeleteSessionRequest().setSessionId(SESSION_ID).setWarehouseId(WAREHOUSE_ID);
+    verify(apiClient).DELETE(eq(path), eq(request), eq(Void.class), eq(new HashMap<>()));
   }
 
   @Test

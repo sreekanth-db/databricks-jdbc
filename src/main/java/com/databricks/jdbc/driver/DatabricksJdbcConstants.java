@@ -1,6 +1,7 @@
 package com.databricks.jdbc.driver;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public final class DatabricksJdbcConstants {
@@ -16,11 +17,11 @@ public final class DatabricksJdbcConstants {
   static final String LOG_PATH = "logpath";
   static final String SYSTEM_LOG_LEVEL_CONFIG = "defaultLogLevel";
   static final String SYSTEM_LOG_FILE_CONFIG = "defaultLogFile";
-  static final String URL_DELIMITER = ";";
-  static final String PORT_DELIMITER = ":";
+  public static final String URL_DELIMITER = ";";
+  public static final String PORT_DELIMITER = ":";
   static final String DEFAULT_SCHEMA = "default";
   static final String DEFAULT_CATALOG = "SPARK";
-  static final String PAIR_DELIMITER = "=";
+  public static final String PAIR_DELIMITER = "=";
   static final String TOKEN = "token";
   public static final String USER = "user";
   public static final String PASSWORD = "password";
@@ -29,11 +30,25 @@ public final class DatabricksJdbcConstants {
 
   static final String CLIENT_SECRET = "databricks_client_secret";
 
-  static final String AUTH_MECH = "authmech";
+  public static final String AUTH_MECH = "authmech";
 
   static final String CONN_CATALOG = "conncatalog";
 
   static final String CONN_SCHEMA = "connschema";
+
+  static final String PROXY_HOST = "proxyhost";
+  static final String PROXY_PORT = "proxyport";
+  static final String PROXY_USER = "proxyuid";
+  static final String PROXY_PWD = "proxypwd";
+  static final String USE_PROXY = "useproxy";
+  static final String USE_PROXY_AUTH = "proxyauth";
+  static final String USE_SYSTEM_PROXY = "usesystemproxy";
+  static final String USE_CF_PROXY = "usecfproxy";
+  static final String CF_PROXY_HOST = "cfproxyhost";
+  static final String CF_PROXY_PORT = "cfproxyport";
+  static final String USE_CF_PROXY_AUTH = "cfproxyauth";
+  static final String CF_PROXY_USER = "cfproxyuid";
+  static final String CF_PROXY_PWD = "cfproxypwd";
 
   static final String AUTH_FLOW = "auth_flow";
 
@@ -45,7 +60,7 @@ public final class DatabricksJdbcConstants {
 
   static final String AAD_CLIENT_ID = "96eecda7-19ea-49cc-abb5-240097d554f5";
 
-  static final String HTTP_PATH = "httppath";
+  public static final String HTTP_PATH = "httppath";
   static final String HTTPS_SCHEMA = "https://";
   public static final String LOGIN_TIMEOUT = "loginTimeout";
 
@@ -71,10 +86,13 @@ public final class DatabricksJdbcConstants {
       "EnableQueryResultLZ4Compression"; // Adding this for backward compatibility only
   static final String COMPRESSION_FLAG = "QueryResultCompressionType";
   static final String USER_AGENT_ENTRY = "useragententry";
-  public static final String DEFAULT_USER_AGENT = "DatabricksJDBCDriverOSS";
+  public static final String DEFAULT_USER_AGENT = "DatabricksDatabricksJDBCDriverOSS";
   static final String CLIENT_USER_AGENT_PREFIX = "Java";
   static final String USER_AGENT_SEA_CLIENT = "SQLExecHttpClient/HC";
   static final String USER_AGENT_THRIFT_CLIENT = "THttpClient/HC";
+  public static final String ALLOWED_VOLUME_INGESTION_PATHS =
+      "allowlistedVolumeOperationLocalFilePaths";
+  public static final String VOLUME_OPERATION_STATUS_COLUMN_NAME = "operation_status";
   public static final Map<String, String> ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP =
       // This map comes from
       // https://docs.databricks.com/en/sql/language-manual/sql-ref-parameters.html
@@ -87,4 +105,7 @@ public final class DatabricksJdbcConstants {
           "STATEMENT_TIMEOUT", "172800",
           "TIMEZONE", "UTC",
           "USE_CACHED_RESULT", "TRUE");
+
+  public static final Set<String> ALLOWED_CLIENT_INFO_PROPERTIES =
+      Set.of(ALLOWED_VOLUME_INGESTION_PATHS);
 }

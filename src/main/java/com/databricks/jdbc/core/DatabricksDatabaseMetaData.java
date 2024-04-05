@@ -936,12 +936,9 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
         tableNamePattern,
         types);
     throwExceptionIfConnectionIsClosed();
-    Map.Entry<String, String> pair = applyContext(catalog, schemaPattern);
-    String catalogWithContext = pair.getKey();
-    String schemaWithContext = pair.getValue();
     return session
         .getDatabricksMetadataClient()
-        .listTables(session, catalogWithContext, schemaWithContext, tableNamePattern);
+        .listTables(session, catalog, schemaPattern, tableNamePattern);
   }
 
   @Override
@@ -1049,6 +1046,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
         catalog,
         schema,
         table);
+    throwExceptionIfConnectionIsClosed();
     return session.getDatabricksMetadataClient().listPrimaryKeys(session, catalog, schema, table);
   }
 
@@ -1792,13 +1790,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
         catalog,
         schemaPattern);
     throwExceptionIfConnectionIsClosed();
-    Map.Entry<String, String> pair = applyContext(catalog, schemaPattern);
-    String catalogWithContext = pair.getKey();
-    String schemaWithContext = pair.getValue();
-
-    return session
-        .getDatabricksMetadataClient()
-        .listSchemas(session, catalogWithContext, schemaWithContext);
+    return session.getDatabricksMetadataClient().listSchemas(session, catalog, schemaPattern);
   }
 
   @Override
@@ -1825,43 +1817,10 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
   @Override
   public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern)
       throws SQLException {
-    LOGGER.debug(
-        "public ResultSet getFunctions(String catalog = {}, String schemaPattern = {}, String functionNamePattern = {})",
-        catalog,
-        schemaPattern,
-        functionNamePattern);
     throwExceptionIfConnectionIsClosed();
-    // TODO: implement, returning only empty set for now
-    throwExceptionIfConnectionIsClosed();
-    return new DatabricksResultSet(
-        new StatementStatus().setState(StatementState.SUCCEEDED),
-        "getfunctions-metadata",
-        Arrays.asList(
-            "FUNCTION_CAT",
-            "FUNCTION_SCHEM",
-            "FUNCTION_NAME",
-            "REMARKS",
-            "FUNCTION_TYPE",
-            "SPECIFIC_NAME"),
-        Arrays.asList("VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR", "VARCHAR"),
-        Arrays.asList(
-            Types.VARCHAR,
-            Types.VARCHAR,
-            Types.VARCHAR,
-            Types.VARCHAR,
-            Types.VARCHAR,
-            Types.VARCHAR),
-        Arrays.asList(128, 128, 128, 128, 128, 128),
-        new Object[0][0],
-        StatementType.METADATA);
-
-    //    // TODO: Handle null catalog, schema, function behaviour
-    //
-    //    String showSchemaSQL = "show functions in " + catalog + "." + schemaPattern + " like '" +
-    // functionNamePattern + "'";
-    //    return session.getDatabricksClient().executeStatement(showSchemaSQL,
-    // session.getWarehouseId(),
-    //        new HashMap<Integer, ImmutableSqlParameter>(), StatementType.METADATA, session);
+    return session
+        .getDatabricksMetadataClient()
+        .listFunctions(session, catalog, schemaPattern, functionNamePattern);
   }
 
   @Override
@@ -1918,28 +1877,5 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
     if (!connection.getSession().isOpen()) {
       throw new DatabricksSQLException("Connection closed!");
     }
-  }
-
-  private Map.Entry<String, String> applyContext(String catalog, String schema)
-      throws SQLException {
-    LOGGER.debug(
-        "private Map.Entry<String, String> applyContext(String catalog = {}, String schema = {})",
-        catalog,
-        schema);
-    if (catalog == null) {
-      catalog = connection.getConnection().getCatalog();
-    }
-    // If catalog is not set in context, look at all catalogs
-    if (catalog == null) {
-      catalog = "*";
-    }
-    if (schema == null) {
-      schema = connection.getConnection().getSchema();
-    }
-    // If schema is not set in context, look at all schemas
-    if (schema == null) {
-      schema = "*";
-    }
-    return Map.entry(catalog, schema);
   }
 }

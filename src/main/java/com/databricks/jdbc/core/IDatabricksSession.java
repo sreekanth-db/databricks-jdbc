@@ -4,6 +4,7 @@ import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.DatabricksMetadataClient;
 import com.databricks.jdbc.core.types.CompressionType;
 import com.databricks.jdbc.core.types.ComputeResource;
+import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -17,6 +18,9 @@ public interface IDatabricksSession {
    */
   @Nullable
   String getSessionId();
+
+  @Nullable
+  ImmutableSessionInfo getSessionInfo();
 
   /**
    * Get the warehouse associated with the session.
@@ -33,10 +37,10 @@ public interface IDatabricksSession {
   boolean isOpen();
 
   /** Opens a new session. */
-  void open();
+  void open() throws DatabricksSQLException;
 
   /** Closes the session. */
-  void close();
+  void close() throws DatabricksSQLException;
 
   /** Returns the client for connecting to Databricks server */
   DatabricksClient getDatabricksClient();
@@ -67,4 +71,12 @@ public interface IDatabricksSession {
 
   /** Sets the session config */
   void setSessionConfig(String name, String value);
+
+  /** Returns the client info properties */
+  Map<String, String> getClientInfoProperties();
+
+  /** Sets the client info property */
+  void setClientInfoProperty(String name, String value);
+
+  IDatabricksConnectionContext getConnectionContext();
 }

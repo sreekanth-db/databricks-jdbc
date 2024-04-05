@@ -1,11 +1,7 @@
 package com.databricks.jdbc.client;
 
 import com.databricks.jdbc.client.sqlexec.ExternalLink;
-import com.databricks.jdbc.core.DatabricksResultSet;
-import com.databricks.jdbc.core.IDatabricksSession;
-import com.databricks.jdbc.core.IDatabricksStatement;
-import com.databricks.jdbc.core.ImmutableSessionInfo;
-import com.databricks.jdbc.core.ImmutableSqlParameter;
+import com.databricks.jdbc.core.*;
 import com.databricks.jdbc.core.types.ComputeResource;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -17,7 +13,7 @@ public interface DatabricksClient {
   /**
    * Creates a new session for given warehouse-Id, catalog and session.
    *
-   * @param warehouseId for which a session should be created
+   * @param computeResource underlying SQL-warehouse or all-purpose cluster
    * @param catalog for the session
    * @param schema for the session
    * @param sessionConf session configuration
@@ -27,21 +23,23 @@ public interface DatabricksClient {
       ComputeResource computeResource,
       String catalog,
       String schema,
-      Map<String, String> sessionConf);
+      Map<String, String> sessionConf)
+      throws DatabricksSQLException;
 
   /**
    * Deletes a session for given session-Id
    *
-   * @param sessionId for which the session should be deleted
-   * @param warehouseId underlying warehouse-Id
+   * @param session for which the session should be deleted
+   * @param computeResource underlying SQL-warehouse or all-purpose cluster
    */
-  void deleteSession(String sessionId, ComputeResource computeResource);
+  void deleteSession(IDatabricksSession session, ComputeResource computeResource)
+      throws DatabricksSQLException;
 
   /**
    * Executes a statement in Databricks server
    *
    * @param sql SQL statement that needs to be executed
-   * @param warehouseId warehouse-Id which should be used for statement execution
+   * @param computeResource underlying SQL-warehouse or all-purpose cluster
    * @param parameters SQL parameters for the statement
    * @param statementType type of statement (metadata, update or generic SQL)
    * @param session underlying session
@@ -71,5 +69,6 @@ public interface DatabricksClient {
    * @param statementId statement-Id for which chunk should be fetched
    * @param chunkIndex chunkIndex for which chunk should be fetched
    */
-  Collection<ExternalLink> getResultChunks(String statementId, long chunkIndex);
+  Collection<ExternalLink> getResultChunks(String statementId, long chunkIndex)
+      throws DatabricksSQLException;
 }

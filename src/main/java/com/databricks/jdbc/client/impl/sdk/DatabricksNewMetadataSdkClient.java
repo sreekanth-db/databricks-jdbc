@@ -1,14 +1,10 @@
 package com.databricks.jdbc.client.impl.sdk;
 
-import static com.databricks.jdbc.client.impl.sdk.helper.CommandConstants.*;
-import static com.databricks.jdbc.commons.util.ValidationUtil.*;
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
-
 import com.databricks.jdbc.client.DatabricksMetadataClient;
 import com.databricks.jdbc.client.StatementType;
-import com.databricks.jdbc.client.impl.sdk.helper.CommandBuilder;
-import com.databricks.jdbc.client.impl.sdk.helper.CommandName;
-import com.databricks.jdbc.client.impl.sdk.helper.MetadataResultSetBuilder;
+import com.databricks.jdbc.client.impl.helper.CommandBuilder;
+import com.databricks.jdbc.client.impl.helper.CommandName;
+import com.databricks.jdbc.client.impl.helper.MetadataResultSetBuilder;
 import com.databricks.jdbc.core.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,6 +16,7 @@ import org.slf4j.LoggerFactory;
  * This is for the new SQL commands added in runtime. Note that the DatabricksMetadataSdkClient will
  * be replaced by this class once runtime code is merged and this class is tested end to end.
  * https://docs.google.com/document/d/1E28o7jyPIp6_byZHGD5Eyc4uwGVSydX5o9PaiSY1V4s/edit#heading=h.681k0yimshae
+ * Tracking bug for replacement: (PECO-1502)
  */
 public class DatabricksNewMetadataSdkClient implements DatabricksMetadataClient {
 
@@ -71,7 +68,6 @@ public class DatabricksNewMetadataSdkClient implements DatabricksMetadataClient 
   @Override
   public DatabricksResultSet listTableTypes(IDatabricksSession session) throws SQLException {
     LOGGER.debug("Returning list of table types.");
-    ;
     return MetadataResultSetBuilder.getTableTypesResult();
   }
 
