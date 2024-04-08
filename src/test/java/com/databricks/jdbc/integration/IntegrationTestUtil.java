@@ -24,7 +24,6 @@ public class IntegrationTestUtil {
     return System.getenv("DATABRICKS_TOKEN");
   }
 
-
   public static String getDatabricksBenchfoodToken() {
     return System.getenv("DATABRICKS_BENCHFOOD_TOKEN");
   }
@@ -56,7 +55,8 @@ public class IntegrationTestUtil {
 
   public static Connection getBenchfoodJDBCConnection() throws SQLException {
     // add support for properties
-    return DriverManager.getConnection(getBenchfoodJDBCUrl(), getDatabricksUser(), getDatabricksBenchfoodToken());
+    return DriverManager.getConnection(
+        getBenchfoodJDBCUrl(), getDatabricksUser(), getDatabricksBenchfoodToken());
   }
 
   public static String getJDBCUrl() {
@@ -68,10 +68,9 @@ public class IntegrationTestUtil {
     return String.format(template, host, httpPath);
   }
 
-
   public static String getBenchfoodJDBCUrl() {
     String template =
-            "jdbc:databricks://%s/default;transportMode=http;ssl=1;AuthMech=3;httpPath=%s";
+        "jdbc:databricks://%s/default;transportMode=http;ssl=1;AuthMech=3;httpPath=%s";
     String host = getDatabricksBenchfoodHost();
     String httpPath = getDatabricksBenchfoodHTTPPath();
 

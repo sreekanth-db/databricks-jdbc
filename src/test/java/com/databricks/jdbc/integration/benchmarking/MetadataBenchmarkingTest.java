@@ -4,8 +4,6 @@ import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.util.Enumeration;
-import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +21,8 @@ public class MetadataBenchmarkingTest {
 
   private static final String BASE_SCHEMA_NAME = "jdbc_metadata_benchmark_schema";
 
-  private static final String RESULTS_TABLE = "main.jdbc_metadata_benchmark_schema.benchmarking_results";
+  private static final String RESULTS_TABLE =
+      "main.jdbc_metadata_benchmark_schema.benchmarking_results";
 
   private static final String BASE_TABLE_NAME = "table";
 
@@ -46,7 +45,8 @@ public class MetadataBenchmarkingTest {
   private void setUpSchemas() {
     for (int i = 0; i < NUM_SCHEMAS; i++) {
       System.out.println("Creating schema " + i);
-      executeSQL("CREATE SCHEMA IF NOT EXISTS " + getDatabricksCatalog() + "." + BASE_SCHEMA_NAME + i);
+      executeSQL(
+          "CREATE SCHEMA IF NOT EXISTS " + getDatabricksCatalog() + "." + BASE_SCHEMA_NAME + i);
     }
   }
 
@@ -57,9 +57,11 @@ public class MetadataBenchmarkingTest {
         executeSQL(
             "CREATE TABLE IF NOT EXISTS "
                 + getDatabricksCatalog()
-                + "." + BASE_SCHEMA_NAME
+                + "."
+                + BASE_SCHEMA_NAME
                 + i
-                + "." + BASE_TABLE_NAME
+                + "."
+                + BASE_TABLE_NAME
                 + j
                 + " "
                 + getColumnString());
@@ -79,7 +81,13 @@ public class MetadataBenchmarkingTest {
 
   private void tearDownSchemas() {
     for (int i = 0; i < NUM_SCHEMAS; i++) {
-      executeSQL("DROP SCHEMA IF EXISTS " + getDatabricksCatalog() + "." + BASE_SCHEMA_NAME + i + " CASCADE");
+      executeSQL(
+          "DROP SCHEMA IF EXISTS "
+              + getDatabricksCatalog()
+              + "."
+              + BASE_SCHEMA_NAME
+              + i
+              + " CASCADE");
     }
   }
 
@@ -88,7 +96,7 @@ public class MetadataBenchmarkingTest {
 
     // SECTION 1: Get all schemas
     long startTime = System.currentTimeMillis();
-    for(int i = 0; i < ATTEMPTS; i++) {
+    for (int i = 0; i < ATTEMPTS; i++) {
       metaData.getSchemas(getDatabricksCatalog(), "%");
     }
     long endTime = System.currentTimeMillis();
@@ -97,7 +105,7 @@ public class MetadataBenchmarkingTest {
 
     // SECTION 2: Get all schemas matching a name
     startTime = System.currentTimeMillis();
-    for(int i = 0; i < ATTEMPTS; i++) {
+    for (int i = 0; i < ATTEMPTS; i++) {
       metaData.getSchemas(getDatabricksCatalog(), BASE_SCHEMA_NAME + "%");
     }
     endTime = System.currentTimeMillis();
@@ -106,7 +114,7 @@ public class MetadataBenchmarkingTest {
 
     // SECTION 3: Get all tables for all schema
     startTime = System.currentTimeMillis();
-    for(int i = 0; i < ATTEMPTS; i++) {
+    for (int i = 0; i < ATTEMPTS; i++) {
       metaData.getTables(getDatabricksCatalog(), "%", "%", null);
     }
     endTime = System.currentTimeMillis();
@@ -115,7 +123,7 @@ public class MetadataBenchmarkingTest {
 
     // SECTION 4: Get all tables for a schema
     startTime = System.currentTimeMillis();
-    for(int i = 0; i < ATTEMPTS; i++) {
+    for (int i = 0; i < ATTEMPTS; i++) {
       metaData.getTables(getDatabricksCatalog(), BASE_SCHEMA_NAME + "%", "%", null);
     }
     endTime = System.currentTimeMillis();
@@ -124,7 +132,7 @@ public class MetadataBenchmarkingTest {
 
     // SECTION 5: Get all columns for all tables
     startTime = System.currentTimeMillis();
-    for(int i = 0; i < ATTEMPTS; i++) {
+    for (int i = 0; i < ATTEMPTS; i++) {
       metaData.getColumns(getDatabricksCatalog(), "%", "%", "%");
     }
     endTime = System.currentTimeMillis();
@@ -133,7 +141,7 @@ public class MetadataBenchmarkingTest {
 
     // SECTION 6: Get all columns for all tables in a schema
     startTime = System.currentTimeMillis();
-    for(int i = 0; i < ATTEMPTS; i++) {
+    for (int i = 0; i < ATTEMPTS; i++) {
       metaData.getColumns(getDatabricksCatalog(), BASE_SCHEMA_NAME + "%", "%", "%");
     }
     endTime = System.currentTimeMillis();
@@ -142,8 +150,9 @@ public class MetadataBenchmarkingTest {
 
     // SECTION 7: Get all columns for a table
     startTime = System.currentTimeMillis();
-    for(int i = 0; i < ATTEMPTS; i++) {
-      metaData.getColumns(getDatabricksCatalog(), BASE_SCHEMA_NAME + "%", BASE_TABLE_NAME + "%", null);
+    for (int i = 0; i < ATTEMPTS; i++) {
+      metaData.getColumns(
+          getDatabricksCatalog(), BASE_SCHEMA_NAME + "%", BASE_TABLE_NAME + "%", null);
     }
     endTime = System.currentTimeMillis();
     totalTimesForSection[recording][6] = endTime - startTime;
@@ -180,11 +189,31 @@ public class MetadataBenchmarkingTest {
     System.out.println("5. Get all columns for all tables for all schema");
     System.out.println("6. Get all columns for all tables in a schema");
     System.out.println("7. Get all columns for a table");
-    for(int i = 0; i < NUM_SECTIONS; i++) {
-        System.out.println("Average time taken by OSS JDBC for section " + (i + 1) + ": " + avgTimesForSection[0][i] + "ms");
-        System.out.println("Average time taken by Databricks JDBC for section " + (i + 1) + ": " + avgTimesForSection[1][i] + "ms");
-        System.out.println("Total time taken by OSS JDBC for section " + (i + 1) + ": " + totalTimesForSection[0][i] + "ms");
-        System.out.println("Total time taken by Databricks JDBC for section " + (i + 1) + ": " + totalTimesForSection[1][i] + "ms");
+    for (int i = 0; i < NUM_SECTIONS; i++) {
+      System.out.println(
+          "Average time taken by OSS JDBC for section "
+              + (i + 1)
+              + ": "
+              + avgTimesForSection[0][i]
+              + "ms");
+      System.out.println(
+          "Average time taken by Databricks JDBC for section "
+              + (i + 1)
+              + ": "
+              + avgTimesForSection[1][i]
+              + "ms");
+      System.out.println(
+          "Total time taken by OSS JDBC for section "
+              + (i + 1)
+              + ": "
+              + totalTimesForSection[0][i]
+              + "ms");
+      System.out.println(
+          "Total time taken by Databricks JDBC for section "
+              + (i + 1)
+              + ": "
+              + totalTimesForSection[1][i]
+              + "ms");
     }
     insertResultsIntoTable();
   }
@@ -192,15 +221,18 @@ public class MetadataBenchmarkingTest {
   private void insertResultsIntoTable() throws SQLException {
     connection = getBenchfoodJDBCConnection();
     // SQL statement with placeholders
-    String sql = "INSERT INTO " + RESULTS_TABLE +  "(DateTime, " +
-            "s1_avg_oss, s1_tot_oss, s1_avg_db, s1_tot_db, " +
-            "s2_avg_oss, s2_tot_oss, s2_avg_db, s2_tot_db, " +
-            "s3_avg_oss, s3_tot_oss, s3_avg_db, s3_tot_db, " +
-            "s4_avg_oss, s4_tot_oss, s4_avg_db, s4_tot_db, " +
-            "s5_avg_oss, s5_tot_oss, s5_avg_db, s5_tot_db, " +
-            "s6_avg_oss, s6_tot_oss, s6_avg_db, s6_tot_db, " +
-            "s7_avg_oss, s7_tot_oss, s7_avg_db, s7_tot_db) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    String sql =
+        "INSERT INTO "
+            + RESULTS_TABLE
+            + "(DateTime, "
+            + "s1_avg_oss, s1_tot_oss, s1_avg_db, s1_tot_db, "
+            + "s2_avg_oss, s2_tot_oss, s2_avg_db, s2_tot_db, "
+            + "s3_avg_oss, s3_tot_oss, s3_avg_db, s3_tot_db, "
+            + "s4_avg_oss, s4_tot_oss, s4_avg_db, s4_tot_db, "
+            + "s5_avg_oss, s5_tot_oss, s5_avg_db, s5_tot_db, "
+            + "s6_avg_oss, s6_tot_oss, s6_avg_db, s6_tot_db, "
+            + "s7_avg_oss, s7_tot_oss, s7_avg_db, s7_tot_db) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     try (PreparedStatement stmt = connection.prepareStatement(sql)) {
       // Set the TIMESTAMP for the current date and time
