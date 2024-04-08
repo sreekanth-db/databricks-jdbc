@@ -192,6 +192,7 @@
           <configuration>
             <excludes>
               <exclude>**/**IntegrationTests.java</exclude>
+              <exclude>**/**MetadataBenchmarkingTest.java</exclude>
             </excludes>
             <argLine>
               @{argLine}
