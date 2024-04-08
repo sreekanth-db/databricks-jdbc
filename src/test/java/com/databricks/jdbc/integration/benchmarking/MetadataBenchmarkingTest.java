@@ -44,7 +44,6 @@ public class MetadataBenchmarkingTest {
 
   private void setUpSchemas() {
     for (int i = 0; i < NUM_SCHEMAS; i++) {
-      System.out.println("Creating schema " + i);
       executeSQL(
           "CREATE SCHEMA IF NOT EXISTS " + getDatabricksCatalog() + "." + BASE_SCHEMA_NAME + i);
     }
@@ -53,7 +52,6 @@ public class MetadataBenchmarkingTest {
   private void setUpTables() {
     for (int i = 0; i < NUM_SCHEMAS; i++) {
       for (int j = 0; j < NUM_TABLES; j++) {
-        System.out.println("Creating table " + j + " in schema " + i);
         executeSQL(
             "CREATE TABLE IF NOT EXISTS "
                 + getDatabricksCatalog()
