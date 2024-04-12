@@ -95,6 +95,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     }
     return HTTP_CLUSTER_PATH_PATTERN.matcher(url).matches()
         || HTTP_WAREHOUSE_PATH_PATTERN.matcher(url).matches()
+        || HTTP_ENDPOINT_PATH_PATTERN.matcher(url).matches()
         || TEST_PATH_PATTERN.matcher(url).matches();
   }
 
@@ -117,6 +118,10 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   private ComputeResource buildCompute() throws DatabricksSQLException {
     String httpPath = getHttpPath();
     Matcher urlMatcher = HTTP_WAREHOUSE_PATH_PATTERN.matcher(httpPath);
+    if (urlMatcher.find()) {
+      return new Warehouse(urlMatcher.group(1));
+    }
+    urlMatcher = HTTP_ENDPOINT_PATH_PATTERN.matcher(httpPath);
     if (urlMatcher.find()) {
       return new Warehouse(urlMatcher.group(1));
     }

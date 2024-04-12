@@ -8,7 +8,8 @@ public final class DatabricksJdbcConstants {
 
   static final Pattern JDBC_URL_PATTERN =
       Pattern.compile("jdbc:databricks://([^/;]*)(?::\\d+)?/*(.*)");
-  static final Pattern HTTP_WAREHOUSE_PATH_PATTERN = Pattern.compile(".*/(warehouses|endpoints)/(.+)");
+  static final Pattern HTTP_WAREHOUSE_PATH_PATTERN = Pattern.compile(".*/warehouses/(.+)");
+  static final Pattern HTTP_ENDPOINT_PATH_PATTERN = Pattern.compile(".*/endpoints/(.+)");
   static final Pattern TEST_PATH_PATTERN = Pattern.compile("jdbc:databricks://test");
   static final Pattern HTTP_CLUSTER_PATH_PATTERN = Pattern.compile(".*/o/(.+)/(.+)");
   public static final String JDBC_SCHEMA = "jdbc:databricks://";
