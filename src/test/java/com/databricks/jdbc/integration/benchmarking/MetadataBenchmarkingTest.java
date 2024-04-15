@@ -4,6 +4,8 @@ import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.util.Enumeration;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +41,9 @@ public class MetadataBenchmarkingTest {
   @AfterEach
   void tearDown() throws SQLException {
     connection = getValidJDBCConnection();
+    insertResultsIntoTable();
     tearDownSchemas();
+    connection.close();
   }
 
   private void setUpSchemas() {
@@ -167,7 +171,16 @@ public class MetadataBenchmarkingTest {
 
     // Switching to Databricks JDBC
     connection.close();
-    DriverManager.deregisterDriver(new com.databricks.jdbc.driver.DatabricksDriver());
+
+    Enumeration<Driver> drivers = DriverManager.getDrivers();
+
+    while (drivers.hasMoreElements()) {
+      Driver driver = drivers.nextElement();
+      if (driver.getClass().getName().contains("DatabricksDriver")) {
+        DriverManager.deregisterDriver(driver);
+      }
+    }
+
     connection = DriverManager.getConnection(getJDBCUrl(), "token", getDatabricksToken());
 
     // Currently connection is held by Databricks driver
@@ -175,8 +188,8 @@ public class MetadataBenchmarkingTest {
     measureMetadataPerformance(1);
     endTime = System.currentTimeMillis();
     System.out.println("Time taken by Databricks JDBC: " + (endTime - startTime) + "ms");
+
     DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
-    DriverManager.deregisterDriver(new com.databricks.client.jdbc.Driver());
 
     System.out.println("STATS");
     System.out.println("Section Descriptions");
@@ -213,7 +226,7 @@ public class MetadataBenchmarkingTest {
               + totalTimesForSection[1][i]
               + "ms");
     }
-    insertResultsIntoTable();
+    connection.close();
   }
 
   private void insertResultsIntoTable() throws SQLException {
@@ -247,8 +260,10 @@ public class MetadataBenchmarkingTest {
 
       // Execute the insert operation
       stmt.executeUpdate();
+      System.out.println("Data successfully logged");
     } catch (SQLException e) {
       e.printStackTrace();
+      System.out.println("Error logging data");
     }
   }
 }
