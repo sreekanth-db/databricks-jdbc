@@ -5,7 +5,6 @@ import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.Enumeration;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
