@@ -193,6 +193,7 @@
             <excludes>
               <exclude>**/**IntegrationTests.java</exclude>
               <exclude>**/*MetadataBenchmarkingTest.java</exclude>
+              <exclude>**/*LargeQueriesBenchmarkingTest.java</exclude>
             </excludes>
             <argLine>
               @{argLine}
