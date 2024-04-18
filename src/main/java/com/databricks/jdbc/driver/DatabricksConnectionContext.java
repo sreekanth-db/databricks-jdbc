@@ -102,7 +102,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   public String getHostUrl() {
     LOGGER.debug("public String getHostUrl()");
     String prefix =
-        getTransportMode().equals("http")
+        (getTransportMode() != null && getTransportMode().equals("http"))
             ? DatabricksJdbcConstants.HTTP_SCHEMA
             : DatabricksJdbcConstants.HTTPS_SCHEMA;
     StringBuilder hostUrlBuilder = new StringBuilder().append(prefix).append(this.host);
