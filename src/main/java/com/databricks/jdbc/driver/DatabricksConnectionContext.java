@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -101,15 +102,28 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public String getHostUrl() {
     LOGGER.debug("public String getHostUrl()");
-    String prefix =
+    // Determine the schema based on the transport mode
+    String schema =
         (getTransportMode() != null && getTransportMode().equals("http"))
             ? DatabricksJdbcConstants.HTTP_SCHEMA
             : DatabricksJdbcConstants.HTTPS_SCHEMA;
-    StringBuilder hostUrlBuilder = new StringBuilder().append(prefix).append(this.host);
-    if (port != 0) {
-      hostUrlBuilder.append(DatabricksJdbcConstants.PORT_DELIMITER).append(port);
+
+    schema = schema.replace("://", "");
+
+    try {
+      URIBuilder uriBuilder = new URIBuilder().setScheme(schema).setHost(this.host);
+
+      // Conditionally add the port if it is specified
+      if (port != 0) {
+        uriBuilder.setPort(port);
+      }
+
+      // Build the URI and convert to string
+      return uriBuilder.build().toString();
+    } catch (Exception e) {
+      e.printStackTrace();
+      return null;
     }
-    return hostUrlBuilder.toString();
   }
 
   private String getTransportMode() {
