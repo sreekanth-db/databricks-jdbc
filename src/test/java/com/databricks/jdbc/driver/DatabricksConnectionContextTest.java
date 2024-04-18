@@ -187,11 +187,8 @@ class DatabricksConnectionContextTest {
   @Test
   public void testEndpointHttpPathParsing() throws DatabricksSQLException {
     DatabricksConnectionContext connectionContext =
-            (DatabricksConnectionContext)
-                    DatabricksConnectionContext.parse(VALID_URL_7, properties);
-    assertEquals(
-            "/sql/1.0/endpoints/erg6767gg",
-            connectionContext.getHttpPath());
+        (DatabricksConnectionContext) DatabricksConnectionContext.parse(VALID_URL_7, properties);
+    assertEquals("/sql/1.0/endpoints/erg6767gg", connectionContext.getHttpPath());
   }
 
   @Test
