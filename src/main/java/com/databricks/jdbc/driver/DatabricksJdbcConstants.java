@@ -61,6 +61,10 @@ public final class DatabricksJdbcConstants {
   static final String AAD_CLIENT_ID = "96eecda7-19ea-49cc-abb5-240097d554f5";
 
   public static final String HTTP_PATH = "httppath";
+
+  public static final String TRANSPORT_MODE = "transportmode";
+
+  static final String HTTP_SCHEMA = "http://";
   static final String HTTPS_SCHEMA = "https://";
   public static final String LOGIN_TIMEOUT = "loginTimeout";
 

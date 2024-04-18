@@ -101,12 +101,19 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public String getHostUrl() {
     LOGGER.debug("public String getHostUrl()");
-    StringBuilder hostUrlBuilder =
-        new StringBuilder().append(DatabricksJdbcConstants.HTTPS_SCHEMA).append(this.host);
+    String prefix =
+        getTransportMode().equals("http")
+            ? DatabricksJdbcConstants.HTTP_SCHEMA
+            : DatabricksJdbcConstants.HTTPS_SCHEMA;
+    StringBuilder hostUrlBuilder = new StringBuilder().append(prefix).append(this.host);
     if (port != 0) {
       hostUrlBuilder.append(DatabricksJdbcConstants.PORT_DELIMITER).append(port);
     }
     return hostUrlBuilder.toString();
+  }
+
+  private String getTransportMode() {
+    return getParameter(DatabricksJdbcConstants.TRANSPORT_MODE);
   }
 
   @Override
