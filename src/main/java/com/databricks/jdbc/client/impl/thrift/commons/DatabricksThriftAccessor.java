@@ -8,6 +8,7 @@ import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.http.DatabricksHttpClient;
 import com.databricks.jdbc.client.impl.thrift.generated.*;
 import com.databricks.jdbc.commons.CommandName;
+import com.databricks.jdbc.core.DatabricksParsingException;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.core.DatabricksSQLFeatureNotSupportedException;
 import com.databricks.jdbc.core.IDatabricksStatement;
@@ -30,7 +31,8 @@ public class DatabricksThriftAccessor {
   private static final TSparkGetDirectResults DEFAULT_DIRECT_RESULTS =
       new TSparkGetDirectResults().setMaxRows(DEFAULT_ROW_LIMIT).setMaxBytes(DEFAULT_BYTE_LIMIT);
 
-  public DatabricksThriftAccessor(IDatabricksConnectionContext connectionContext) {
+  public DatabricksThriftAccessor(IDatabricksConnectionContext connectionContext)
+      throws DatabricksParsingException {
     DatabricksHttpTTransport transport =
         new DatabricksHttpTTransport(
             DatabricksHttpClient.getInstance(connectionContext),

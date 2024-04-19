@@ -30,7 +30,8 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
 
   private final DatabricksThriftAccessor thriftAccessor;
 
-  public DatabricksThriftServiceClient(IDatabricksConnectionContext connectionContext) {
+  public DatabricksThriftServiceClient(IDatabricksConnectionContext connectionContext)
+      throws DatabricksParsingException {
     this.thriftAccessor = new DatabricksThriftAccessor(connectionContext);
   }
 

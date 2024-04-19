@@ -49,7 +49,8 @@ public class DatabricksSdkClient implements DatabricksClient {
         "Content-Type", "application/json");
   }
 
-  public DatabricksSdkClient(IDatabricksConnectionContext connectionContext) {
+  public DatabricksSdkClient(IDatabricksConnectionContext connectionContext)
+      throws DatabricksParsingException {
     this.connectionContext = connectionContext;
     // TODO: [PECO-1486] pass on proxy settings to SDK once changes are merged in SDK
     // Handle more auth types
@@ -65,7 +66,8 @@ public class DatabricksSdkClient implements DatabricksClient {
   public DatabricksSdkClient(
       IDatabricksConnectionContext connectionContext,
       StatementExecutionService statementExecutionService,
-      ApiClient apiClient) {
+      ApiClient apiClient)
+      throws DatabricksParsingException {
     this.connectionContext = connectionContext;
     // Handle more auth types
     this.databricksConfig =
