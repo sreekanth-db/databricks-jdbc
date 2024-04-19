@@ -100,7 +100,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
-  public String getHostUrl() {
+  public String getHostUrl() throws DatabricksParsingException {
     LOGGER.debug("public String getHostUrl()");
     // Determine the schema based on the transport mode
     String schema =
@@ -121,8 +121,8 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       // Build the URI and convert to string
       return uriBuilder.build().toString();
     } catch (Exception e) {
-      e.printStackTrace();
-      return null;
+      LOGGER.debug("URI Building failed with exception: " + e.getMessage());
+      throw new DatabricksParsingException("URI Building failed with exception: " + e.getMessage());
     }
   }
 
@@ -167,7 +167,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
         : getParameter(DatabricksJdbcConstants.PWD);
   }
 
-  public String getCloud() {
+  public String getCloud() throws DatabricksParsingException {
     String hostURL = getHostUrl();
     if (hostURL.contains("azuredatabricks.net")
         || hostURL.contains(".databricks.azure.cn")
@@ -180,7 +180,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
-  public String getClientId() {
+  public String getClientId() throws DatabricksParsingException {
     String clientId = getParameter(DatabricksJdbcConstants.CLIENT_ID);
     if (nullOrEmptyString(clientId)) {
       if (getCloud().equals("AWS")) {
@@ -193,7 +193,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
-  public List<String> getOAuthScopesForU2M() {
+  public List<String> getOAuthScopesForU2M() throws DatabricksParsingException {
     if (getCloud().equals("AWS")) {
       return Arrays.asList(
           DatabricksJdbcConstants.SQL_SCOPE, DatabricksJdbcConstants.OFFLINE_ACCESS_SCOPE);
@@ -368,7 +368,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
-  public String getEndpointURL() {
+  public String getEndpointURL() throws DatabricksParsingException {
     return String.format("%s/%s", this.getHostUrl(), this.getHttpPath());
   }
 }
