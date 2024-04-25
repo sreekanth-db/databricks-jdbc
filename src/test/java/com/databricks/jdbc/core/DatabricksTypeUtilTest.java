@@ -2,13 +2,55 @@ package com.databricks.jdbc.core;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.databricks.jdbc.client.impl.thrift.generated.TTypeId;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.stream.Stream;
+import org.apache.arrow.vector.types.DateUnit;
+import org.apache.arrow.vector.types.FloatingPointPrecision;
+import org.apache.arrow.vector.types.TimeUnit;
+import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class DatabricksTypeUtilTest {
+  static Stream<Object[]> dataProvider() {
+    return Stream.of(
+        new Object[] {TTypeId.BOOLEAN_TYPE, ArrowType.Bool.INSTANCE},
+        new Object[] {TTypeId.TINYINT_TYPE, new ArrowType.Int(8, true)},
+        new Object[] {TTypeId.SMALLINT_TYPE, new ArrowType.Int(16, true)},
+        new Object[] {TTypeId.INT_TYPE, new ArrowType.Int(32, true)},
+        new Object[] {TTypeId.BIGINT_TYPE, new ArrowType.Int(64, true)},
+        new Object[] {
+          TTypeId.FLOAT_TYPE, new ArrowType.FloatingPoint(FloatingPointPrecision.SINGLE)
+        },
+        new Object[] {
+          TTypeId.DOUBLE_TYPE, new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE)
+        },
+        new Object[] {TTypeId.STRING_TYPE, ArrowType.Utf8.INSTANCE},
+        new Object[] {TTypeId.INTERVAL_DAY_TIME_TYPE, ArrowType.Utf8.INSTANCE},
+        new Object[] {TTypeId.INTERVAL_YEAR_MONTH_TYPE, ArrowType.Utf8.INSTANCE},
+        new Object[] {TTypeId.UNION_TYPE, ArrowType.Utf8.INSTANCE},
+        new Object[] {TTypeId.STRING_TYPE, ArrowType.Utf8.INSTANCE},
+        new Object[] {TTypeId.VARCHAR_TYPE, ArrowType.Utf8.INSTANCE},
+        new Object[] {TTypeId.CHAR_TYPE, ArrowType.Utf8.INSTANCE},
+        new Object[] {TTypeId.TIMESTAMP_TYPE, new ArrowType.Timestamp(TimeUnit.MICROSECOND, null)},
+        new Object[] {TTypeId.BINARY_TYPE, ArrowType.Binary.INSTANCE},
+        new Object[] {TTypeId.NULL_TYPE, ArrowType.Null.INSTANCE},
+        new Object[] {TTypeId.DATE_TYPE, new ArrowType.Date(DateUnit.DAY)});
+  }
+
+  @ParameterizedTest
+  @MethodSource("dataProvider")
+  public void testMapToArrowType(TTypeId typeId, ArrowType expectedArrowType)
+      throws DatabricksSQLException {
+    DatabricksTypeUtil typeUtil = new DatabricksTypeUtil(); // code coverage of constructor too
+    ArrowType result = typeUtil.mapThriftToArrowType(typeId);
+    assertEquals(expectedArrowType, result);
+  }
 
   @Test
   void testGetColumnType() {
@@ -69,6 +111,8 @@ class DatabricksTypeUtilTest {
     assertEquals(29, DatabricksTypeUtil.getPrecision(ColumnInfoTypeName.TIMESTAMP));
     assertEquals(255, DatabricksTypeUtil.getPrecision(ColumnInfoTypeName.STRUCT));
     assertEquals(255, DatabricksTypeUtil.getPrecision(ColumnInfoTypeName.INTERVAL));
+    assertEquals(5, DatabricksTypeUtil.getPrecision(ColumnInfoTypeName.BYTE));
+    assertEquals(5, DatabricksTypeUtil.getPrecision(ColumnInfoTypeName.SHORT));
   }
 
   @Test
