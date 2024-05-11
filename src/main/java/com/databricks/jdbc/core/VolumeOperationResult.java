@@ -5,6 +5,7 @@ import static com.databricks.jdbc.driver.DatabricksJdbcConstants.ALLOWED_VOLUME_
 
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.http.DatabricksHttpClient;
+import com.databricks.jdbc.client.sqlexec.ExternalLink;
 import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.client.sqlexec.VolumeOperationInfo;
 import com.databricks.jdbc.core.VolumeOperationExecutor.VolumeOperationStatus;
@@ -41,12 +42,16 @@ class VolumeOperationResult implements IExecutionResult {
   }
 
   private void init(VolumeOperationInfo volumeOperationInfo, IDatabricksHttpClient httpClient) {
+    // For now there would be only one external link, until multi part upload is supported
+    ExternalLink externalLink =
+        volumeOperationInfo.getExternalLinks() == null
+            ? null
+            : volumeOperationInfo.getExternalLinks().stream().findFirst().orElse(null);
     this.volumeOperationExecutor =
         new VolumeOperationExecutor(
             volumeOperationInfo.getVolumeOperationType(),
-            volumeOperationInfo.getPresignedUrl().getExternalLink(),
+            externalLink,
             volumeOperationInfo.getLocalFile(),
-            volumeOperationInfo.getPresignedUrl().getHttpHeaders(),
             session
                 .getClientInfoProperties()
                 .getOrDefault(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ""),
