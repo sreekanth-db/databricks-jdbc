@@ -44,8 +44,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
         "Result manifest for statement {} has schema: {}", statementId, resultManifest.getSchema());
 
     int currIndex = 0;
-    if (resultData.getVolumeOperationInfo() != null
-        && !resultData.getVolumeOperationInfo().getExternalLinks().isEmpty()) {
+    if (resultData.getVolumeOperationInfo() != null) {
       ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
       columnBuilder
           .columnName(VOLUME_OPERATION_STATUS_COLUMN_NAME)
