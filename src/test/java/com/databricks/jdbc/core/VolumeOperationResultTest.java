@@ -535,4 +535,28 @@ public class VolumeOperationResultTest {
       assertEquals("Invalid row access", e.getMessage());
     }
   }
+
+  @Test
+  public void testGetResult_Get_emptyLink() throws Exception {
+    when(session.getClientInfoProperties())
+        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
+
+    ResultData resultData =
+        new ResultData()
+            .setVolumeOperationInfo(
+                new VolumeOperationInfo()
+                    .setVolumeOperationType("GET")
+                    .setLocalFile(LOCAL_FILE_GET));
+    VolumeOperationResult volumeOperationResult =
+        new VolumeOperationResult(resultData, STATEMENT_ID, session, mockHttpClient);
+
+    assertTrue(volumeOperationResult.hasNext());
+    assertEquals(-1, volumeOperationResult.getCurrentRow());
+    try {
+      volumeOperationResult.next();
+      fail("Should throw DatabricksSQLException");
+    } catch (DatabricksSQLException e) {
+      assertEquals("Volume operation aborted: Volume operation URL is not set", e.getMessage());
+    }
+  }
 }
