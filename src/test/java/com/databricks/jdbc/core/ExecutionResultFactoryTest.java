@@ -14,6 +14,7 @@ import com.databricks.jdbc.client.sqlexec.VolumeOperationInfo;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.service.sql.Format;
 import com.databricks.sdk.service.sql.ResultSchema;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -60,12 +61,11 @@ public class ExecutionResultFactoryTest {
     when(session.getConnectionContext()).thenReturn(connectionContext);
 
     ResultManifest manifest = new ResultManifest();
-    manifest.setIsVolumeOperation(true);
     ResultData data = new ResultData();
     data.setVolumeOperationInfo(
         new VolumeOperationInfo()
             .setVolumeOperationType("INVALID")
-            .setPresignedUrl(new ExternalLink().setExternalLink("url")));
+            .setExternalLinks(List.of(new ExternalLink().setExternalLink("url"))));
     IExecutionResult result =
         ExecutionResultFactory.getResultSet(data, manifest, "statementId", session);
 

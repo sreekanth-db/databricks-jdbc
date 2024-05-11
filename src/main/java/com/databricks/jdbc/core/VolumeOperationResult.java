@@ -40,12 +40,13 @@ class VolumeOperationResult implements IExecutionResult {
   }
 
   private void init(VolumeOperationInfo volumeOperationInfo, IDatabricksHttpClient httpClient) {
+
     this.volumeOperationExecutor =
         new VolumeOperationExecutor(
             volumeOperationInfo.getVolumeOperationType(),
-            volumeOperationInfo.getPresignedUrl().getExternalLink(),
+            // For now there would be only one external link, until multi part upload is supported
+            volumeOperationInfo.getExternalLinks().stream().findFirst().orElse(null),
             volumeOperationInfo.getLocalFile(),
-            volumeOperationInfo.getPresignedUrl().getHttpHeaders(),
             session
                 .getClientInfoProperties()
                 .getOrDefault(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ""),
