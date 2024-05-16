@@ -50,8 +50,11 @@ class DatabricksConnectionContextTest {
       "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/5c89f447c476a5a8;UseProxy=1;ProxyHost=127.0.0.1;ProxyPort=8080;ProxyAuth=1;ProxyUID=proxyUser;ProxyPwd=proxyPassword;";
   private static final String VALID_URL_WITH_PROXY_AND_CF_PROXY =
       "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/5c89f447c476a5a8;UseSystemProxy=1;UseProxy=1;ProxyHost=127.0.0.1;ProxyPort=8080;ProxyAuth=1;ProxyUID=proxyUser;ProxyPwd=proxyPassword;UseCFProxy=1;CFProxyHost=127.0.1.2;CFProxyPort=8081;CFProxyAuth=1;CFProxyUID=cfProxyUser;CFProxyPwd=cfProxyPassword;";
-
   private static Properties properties = new Properties();
+
+  private static final String VALID_URL_POLLING =
+      "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:4473;ssl=1;asyncexecpollinterval=500;AuthMech=3;httpPath=/sql/1.0/warehouses/5c89f447c476a5a8;QueryResultCompressionType=1";
+
   private static Properties properties_with_pwd = new Properties();
 
   @BeforeAll
@@ -244,6 +247,18 @@ class DatabricksConnectionContextTest {
     assertEquals(
         "https://e2-dogfood.staging.cloud.databricks.com:4473", connectionContext.getHostUrl());
     assertEquals("INFO", connectionContext.getLogLevelString());
+  }
+
+  @Test
+  public void testPollingInterval() throws DatabricksSQLException {
+    DatabricksConnectionContext connectionContext =
+        (DatabricksConnectionContext) DatabricksConnectionContext.parse(VALID_URL_5, properties);
+    assertEquals(200, connectionContext.getInterval());
+
+    DatabricksConnectionContext connectionContextWithPoll =
+        (DatabricksConnectionContext)
+            DatabricksConnectionContext.parse(VALID_URL_POLLING, properties);
+    assertEquals(500, connectionContextWithPoll.getInterval());
   }
 
   @Test
