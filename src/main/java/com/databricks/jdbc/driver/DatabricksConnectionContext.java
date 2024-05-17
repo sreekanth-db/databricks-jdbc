@@ -176,7 +176,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   public int getAsyncExecPollInterval() {
     return getParameter(POLL_INTERVAL) == null
         ? POLL_INTERVAL_DEFAULT
-        : Integer.parseInt((getParameter(DatabricksJdbcConstants.POLL_INTERVAL)));
+        : Integer.parseInt(getParameter(DatabricksJdbcConstants.POLL_INTERVAL));
   }
 
   public String getCloud() throws DatabricksParsingException {
