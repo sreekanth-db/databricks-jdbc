@@ -114,7 +114,7 @@ public interface IDatabricksConnectionContext {
 
   String getEndpointURL() throws DatabricksParsingException;
 
-  int getInterval();
+  int getAsyncExecPollInterval();
 
   DatabricksClientType getClientType();
 }

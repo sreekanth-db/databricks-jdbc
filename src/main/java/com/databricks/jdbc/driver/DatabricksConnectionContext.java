@@ -173,7 +173,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
-  public int getInterval() {
+  public int getAsyncExecPollInterval() {
     return getParameter(POLL_INTERVAL) == null
         ? POLL_INTERVAL_DEFAULT
         : Integer.parseInt((getParameter(DatabricksJdbcConstants.POLL_INTERVAL)));

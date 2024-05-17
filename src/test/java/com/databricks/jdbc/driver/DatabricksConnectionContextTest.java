@@ -253,12 +253,12 @@ class DatabricksConnectionContextTest {
   public void testPollingInterval() throws DatabricksSQLException {
     DatabricksConnectionContext connectionContext =
         (DatabricksConnectionContext) DatabricksConnectionContext.parse(VALID_URL_5, properties);
-    assertEquals(200, connectionContext.getInterval());
+    assertEquals(200, connectionContext.getAsyncExecPollInterval());
 
     DatabricksConnectionContext connectionContextWithPoll =
         (DatabricksConnectionContext)
             DatabricksConnectionContext.parse(VALID_URL_POLLING, properties);
-    assertEquals(500, connectionContextWithPoll.getInterval());
+    assertEquals(500, connectionContextWithPoll.getAsyncExecPollInterval());
   }
 
   @Test
