@@ -37,7 +37,6 @@ public class DatabricksSdkClient implements DatabricksClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksSdkClient.class);
   private static final String SYNC_TIMEOUT_VALUE = "10s";
   private static final String ASYNC_TIMEOUT_VALUE = "0s";
-  private int statementResultPollIntervalMillis = 200;
 
   private final IDatabricksConnectionContext connectionContext;
   private final DatabricksConfig databricksConfig;
@@ -61,7 +60,6 @@ public class DatabricksSdkClient implements DatabricksClient {
 
     OAuthAuthenticator authenticator = new OAuthAuthenticator(connectionContext);
     this.workspaceClient = authenticator.getWorkspaceClient();
-    this.statementResultPollIntervalMillis = connectionContext.getAsyncExecPollInterval();
   }
 
   public DatabricksSdkClient(
@@ -78,8 +76,6 @@ public class DatabricksSdkClient implements DatabricksClient {
     this.workspaceClient =
         new WorkspaceClient(true /* mock */, apiClient)
             .withStatementExecutionImpl(statementExecutionService);
-
-    this.statementResultPollIntervalMillis = connectionContext.getAsyncExecPollInterval();
   }
 
   @Override
@@ -163,7 +159,7 @@ public class DatabricksSdkClient implements DatabricksClient {
     while (responseState == StatementState.PENDING || responseState == StatementState.RUNNING) {
       if (pollCount > 0) { // First poll happens without a delay
         try {
-          Thread.sleep(statementResultPollIntervalMillis);
+          Thread.sleep(this.connectionContext.getAsyncExecPollInterval());
         } catch (InterruptedException e) {
           throw new DatabricksTimeoutException("Thread interrupted due to statement timeout");
         }
