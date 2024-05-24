@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 /** Utility class to support integration tests * */
 public class IntegrationTestUtil {
@@ -74,6 +75,14 @@ public class IntegrationTestUtil {
   public static Connection getValidJDBCConnection() throws SQLException {
     // add support for properties
     return DriverManager.getConnection(getJDBCUrl(), getDatabricksUser(), getDatabricksToken());
+  }
+
+  public static Connection getValidJDBCConnection(List<List<String>> extraArgs) throws SQLException {
+    String jdbcUrl = getJDBCUrl();
+    for (List<String> args : extraArgs) {
+      jdbcUrl += ";" + args.get(0) + "=" + args.get(1);
+    }
+    return DriverManager.getConnection(jdbcUrl, getDatabricksUser(), getDatabricksToken());
   }
 
   public static Connection getBenchfoodJDBCConnection() throws SQLException {
