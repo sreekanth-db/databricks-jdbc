@@ -53,11 +53,12 @@ public class DatabricksSession implements IDatabricksSession {
       this.databricksMetadataClient = null;
     } else {
       this.databricksClient = new DatabricksSdkClient(connectionContext);
-      if(connectionContext.getUseLegacyMetadata()) {
-        this.databricksMetadataClient = new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
-      }
-      else {
-        this.databricksMetadataClient = new DatabricksNewMetadataSdkClient((DatabricksSdkClient) databricksClient);
+      if (connectionContext.getUseLegacyMetadata()) {
+        this.databricksMetadataClient =
+            new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
+      } else {
+        this.databricksMetadataClient =
+            new DatabricksNewMetadataSdkClient((DatabricksSdkClient) databricksClient);
       }
     }
     this.isSessionOpen = false;
