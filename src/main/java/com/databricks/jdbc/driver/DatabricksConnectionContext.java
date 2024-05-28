@@ -294,8 +294,9 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public Boolean getUseLegacyMetadata() {
-    return getParameter(DatabricksJdbcConstants.USE_LEGACY_METADATA) != null
-        && getParameter(DatabricksJdbcConstants.USE_LEGACY_METADATA).equals("1");
+    // Defaults to use legacy metadata client
+    return getParameter(DatabricksJdbcConstants.USE_LEGACY_METADATA) == null
+        || getParameter(DatabricksJdbcConstants.USE_LEGACY_METADATA).equals("1");
   }
 
   private static boolean nullOrEmptyString(String s) {
