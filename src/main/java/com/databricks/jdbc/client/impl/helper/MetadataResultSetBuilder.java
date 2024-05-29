@@ -77,8 +77,7 @@ public class MetadataResultSetBuilder {
           } catch (SQLException e) {
             if (Objects.equals(column.getColumnName(), "TABLE_CAT")) {
               object = catalog;
-            }
-            else {
+            } else {
               throw e;
             }
           }
