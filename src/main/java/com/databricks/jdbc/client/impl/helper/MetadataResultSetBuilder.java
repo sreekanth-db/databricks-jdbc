@@ -63,7 +63,6 @@ public class MetadataResultSetBuilder {
     while (resultSet.next()) {
       List<Object> row = new ArrayList<>();
       for (ResultColumn column : columns) {
-        System.out.println(column.getColumnName() + " " + column.getResultSetColumnName());
         Object object;
         try {
           object = resultSet.getObject(column.getResultSetColumnName());
