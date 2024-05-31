@@ -1,9 +1,11 @@
 package com.databricks.jdbc.core;
 
+import static com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftHelper.getTypeFromTypeDesc;
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.VOLUME_OPERATION_STATUS_COLUMN_NAME;
 
 import com.databricks.jdbc.client.impl.thrift.generated.TColumnDesc;
 import com.databricks.jdbc.client.impl.thrift.generated.TGetResultSetMetadataResp;
+import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import com.databricks.jdbc.commons.util.WrapperUtil;
 import com.databricks.jdbc.core.types.AccessType;
@@ -33,7 +35,8 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
 
   // TODO: Add handling for Arrow stream results
 
-  public DatabricksResultSetMetaData(String statementId, ResultManifest resultManifest) {
+  public DatabricksResultSetMetaData(
+      String statementId, ResultManifest resultManifest, ResultData resultData) {
     this.statementId = statementId;
     Map<String, Integer> columnNameToIndexMap = new HashMap<>();
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
@@ -41,7 +44,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
         "Result manifest for statement {} has schema: {}", statementId, resultManifest.getSchema());
 
     int currIndex = 0;
-    if (resultManifest.getIsVolumeOperation() != null && resultManifest.getIsVolumeOperation()) {
+    if (resultData.getVolumeOperationInfo() != null) {
       ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
       columnBuilder
           .columnName(VOLUME_OPERATION_STATUS_COLUMN_NAME)
@@ -87,14 +90,14 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
     int currIndex = 0;
     if (resultManifest.getSchema() != null && resultManifest.getSchema().getColumnsSize() > 0) {
       for (TColumnDesc columnInfo : resultManifest.getSchema().getColumns()) {
-        ColumnInfoTypeName columnTypeName = ColumnInfoTypeName.STRING; // TODO : derive typeName
+        ColumnInfoTypeName columnTypeName = getTypeFromTypeDesc(columnInfo.getTypeDesc());
         int precision = DatabricksTypeUtil.getPrecision(columnTypeName);
         ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
         columnBuilder
             .columnName(columnInfo.getColumnName())
             .columnTypeClassName(DatabricksTypeUtil.getColumnTypeClassName(columnTypeName))
             .columnType(DatabricksTypeUtil.getColumnType(columnTypeName))
-            .columnTypeText("STRING")
+            .columnTypeText(columnTypeName.name())
             .typePrecision(precision)
             .displaySize(DatabricksTypeUtil.getDisplaySize(columnTypeName, precision))
             .isSigned(DatabricksTypeUtil.isSigned(columnTypeName));

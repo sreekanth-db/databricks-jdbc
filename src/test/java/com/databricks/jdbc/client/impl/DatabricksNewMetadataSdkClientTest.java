@@ -35,7 +35,7 @@ public class DatabricksNewMetadataSdkClientTest {
   private static Stream<Arguments> listTableTestParams() {
     return Stream.of(
         Arguments.of(
-            "SHOW TABLES IN CATALOG catalog1 SCHEMA LIKE `testSchema` LIKE `testTable`",
+            "SHOW TABLES IN CATALOG catalog1 SCHEMA LIKE 'testSchema' LIKE 'testTable'",
             TEST_CATALOG,
             TEST_SCHEMA,
             TEST_TABLE,
@@ -47,13 +47,13 @@ public class DatabricksNewMetadataSdkClientTest {
             null,
             "test for all tables and schemas"),
         Arguments.of(
-            "SHOW TABLES IN CATALOG catalog1 SCHEMA LIKE `testSchema`",
+            "SHOW TABLES IN CATALOG catalog1 SCHEMA LIKE 'testSchema'",
             TEST_CATALOG,
             TEST_SCHEMA,
             null,
             "test for all tables"),
         Arguments.of(
-            "SHOW TABLES IN CATALOG catalog1 LIKE `testTable`",
+            "SHOW TABLES IN CATALOG catalog1 LIKE 'testTable'",
             TEST_CATALOG,
             null,
             TEST_TABLE,
@@ -62,26 +62,26 @@ public class DatabricksNewMetadataSdkClientTest {
 
   private static Stream<Arguments> listSchemasTestParams() {
     return Stream.of(
-        Arguments.of("SHOW SCHEMAS IN catalog1 LIKE `testSchema`", TEST_SCHEMA, "test for schema"),
+        Arguments.of("SHOW SCHEMAS IN catalog1 LIKE 'testSchema'", TEST_SCHEMA, "test for schema"),
         Arguments.of("SHOW SCHEMAS IN catalog1", null, "test for all schemas"));
   }
 
   private static Stream<Arguments> listFunctionsTestParams() {
     return Stream.of(
         Arguments.of(
-            "SHOW FUNCTIONS IN CATALOG catalog1 SCHEMA LIKE `testSchema` LIKE `functionPattern`",
+            "SHOW FUNCTIONS IN CATALOG catalog1 SCHEMA LIKE 'testSchema' LIKE 'functionPattern'",
             TEST_CATALOG,
             TEST_SCHEMA,
             TEST_FUNCTION_PATTERN,
             "test for get functions"),
         Arguments.of(
-            "SHOW FUNCTIONS IN CATALOG catalog1 LIKE `functionPattern`",
+            "SHOW FUNCTIONS IN CATALOG catalog1 LIKE 'functionPattern'",
             TEST_CATALOG,
             null,
             TEST_FUNCTION_PATTERN,
             "test for get functions without schema"),
         Arguments.of(
-            "SHOW FUNCTIONS IN CATALOG catalog1 SCHEMA LIKE `testSchema`",
+            "SHOW FUNCTIONS IN CATALOG catalog1 SCHEMA LIKE 'testSchema'",
             TEST_CATALOG,
             TEST_SCHEMA,
             null,
@@ -91,7 +91,7 @@ public class DatabricksNewMetadataSdkClientTest {
   private static Stream<Arguments> listColumnTestParams() {
     return Stream.of(
         Arguments.of(
-            "SHOW COLUMNS IN CATALOG catalog1 SCHEMA LIKE `testSchema` TABLE LIKE `testTable`",
+            "SHOW COLUMNS IN CATALOG catalog1 SCHEMA LIKE 'testSchema' TABLE LIKE 'testTable'",
             TEST_CATALOG,
             TEST_TABLE,
             TEST_SCHEMA,
@@ -105,42 +105,42 @@ public class DatabricksNewMetadataSdkClientTest {
             null,
             "test for all tables and schemas"),
         Arguments.of(
-            "SHOW COLUMNS IN CATALOG catalog1 SCHEMA LIKE `testSchema`",
+            "SHOW COLUMNS IN CATALOG catalog1 SCHEMA LIKE 'testSchema'",
             TEST_CATALOG,
             null,
             TEST_SCHEMA,
             null,
             "test for schema"),
         Arguments.of(
-            "SHOW COLUMNS IN CATALOG catalog1 TABLE LIKE `testTable`",
+            "SHOW COLUMNS IN CATALOG catalog1 TABLE LIKE 'testTable'",
             TEST_CATALOG,
             TEST_TABLE,
             null,
             null,
             "test for table"),
         Arguments.of(
-            "SHOW COLUMNS IN CATALOG catalog1 SCHEMA LIKE `testSchema` TABLE LIKE `testTable` LIKE `testColumn`",
+            "SHOW COLUMNS IN CATALOG catalog1 SCHEMA LIKE 'testSchema' TABLE LIKE 'testTable' LIKE 'testColumn'",
             TEST_CATALOG,
             TEST_TABLE,
             TEST_SCHEMA,
             TEST_COLUMN,
             "test for table, schema and column"),
         Arguments.of(
-            "SHOW COLUMNS IN CATALOG catalog1 LIKE `testColumn`",
+            "SHOW COLUMNS IN CATALOG catalog1 LIKE 'testColumn'",
             TEST_CATALOG,
             null,
             null,
             TEST_COLUMN,
             "test for column"),
         Arguments.of(
-            "SHOW COLUMNS IN CATALOG catalog1 SCHEMA LIKE `testSchema` LIKE `testColumn`",
+            "SHOW COLUMNS IN CATALOG catalog1 SCHEMA LIKE 'testSchema' LIKE 'testColumn'",
             TEST_CATALOG,
             null,
             TEST_SCHEMA,
             TEST_COLUMN,
             "test for schema and column"),
         Arguments.of(
-            "SHOW COLUMNS IN CATALOG catalog1 TABLE LIKE `testTable` LIKE `testColumn`",
+            "SHOW COLUMNS IN CATALOG catalog1 TABLE LIKE 'testTable' LIKE 'testColumn'",
             TEST_CATALOG,
             TEST_TABLE,
             null,
@@ -202,8 +202,11 @@ public class DatabricksNewMetadataSdkClientTest {
         .thenReturn(mockedResultSet);
     when(mockedResultSet.next()).thenReturn(true, false);
     for (ResultColumn resultColumn : TABLE_COLUMNS) {
-      when(mockedResultSet.getObject(resultColumn.getResultSetColumnName()))
-          .thenReturn(TEST_COLUMN);
+      if (resultColumn == TABLE_COLUMNS.get(3)) {
+        when(mockedResultSet.getObject(resultColumn.getResultSetColumnName())).thenReturn("TABLE");
+      } else
+        when(mockedResultSet.getObject(resultColumn.getResultSetColumnName()))
+            .thenReturn(TEST_COLUMN);
     }
     DatabricksResultSet actualResult =
         metadataClient.listTables(session, catalog, schema, table, null);
@@ -231,7 +234,7 @@ public class DatabricksNewMetadataSdkClientTest {
             sqlStatement,
             mockedComputeResource,
             new HashMap<Integer, ImmutableSqlParameter>(),
-            StatementType.METADATA,
+            StatementType.QUERY,
             session,
             null))
         .thenReturn(mockedResultSet);
@@ -264,10 +267,7 @@ public class DatabricksNewMetadataSdkClientTest {
             null))
         .thenReturn(mockedResultSet);
     when(mockedResultSet.next()).thenReturn(true, false);
-    for (ResultColumn resultColumn : SCHEMA_COLUMNS) {
-      when(mockedResultSet.getObject(resultColumn.getResultSetColumnName()))
-          .thenReturn(TEST_COLUMN);
-    }
+    when(mockedResultSet.getObject("databaseName")).thenReturn(TEST_COLUMN);
     DatabricksResultSet actualResult = metadataClient.listSchemas(session, TEST_CATALOG, schema);
     assertEquals(
         actualResult.getStatementStatus().getState(), StatementState.SUCCEEDED, description);

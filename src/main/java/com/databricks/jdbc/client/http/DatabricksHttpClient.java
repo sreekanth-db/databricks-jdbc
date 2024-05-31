@@ -1,5 +1,8 @@
 package com.databricks.jdbc.client.http;
 
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.FAKE_SERVICE_URI_PROP_SUFFIX;
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.IS_FAKE_SERVICE_TEST_PROP;
+
 import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
@@ -21,10 +24,13 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.UnsupportedSchemeException;
+import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.ProxyAuthenticationStrategy;
+import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
@@ -45,6 +51,8 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   private static final int MAX_RETRY_INTERVAL = 10 * 1000; // 10s
   private static final int DEFAULT_RETRY_COUNT = 5;
   private static final String HTTP_GET = "GET";
+  private static final String SDK_USER_AGENT = "databricks-sdk-java";
+  private static final String JDBC_HTTP_USER_AGENT = "databricks-jdbc-http";
   private static final Set<Integer> RETRYABLE_HTTP_CODES = getRetryableHttpCodes();
   protected static final long DEFAULT_IDLE_CONNECTION_TIMEOUT = 5;
 
@@ -153,7 +161,10 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
           connectionContext.getUseProxyAuth(),
           connectionContext.getProxyUser(),
           connectionContext.getProxyPassword());
+    } else if (Boolean.parseBoolean(System.getProperty(IS_FAKE_SERVICE_TEST_PROP))) {
+      setFakeServiceRouteInHttpClient(builder);
     }
+
     return builder.build();
   }
 
@@ -175,6 +186,27 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
           .setDefaultCredentialsProvider(credsProvider)
           .setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy());
     }
+  }
+
+  @VisibleForTesting
+  static void setFakeServiceRouteInHttpClient(HttpClientBuilder builder) {
+    builder.setRoutePlanner(
+        (host, request, context) -> {
+          // Get the fake service URI for the target URI and set it as proxy
+          final HttpHost proxy =
+              HttpHost.create(System.getProperty(host.toURI() + FAKE_SERVICE_URI_PROP_SUFFIX));
+          final HttpHost target;
+          try {
+            target =
+                new HttpHost(
+                    host.getHostName(),
+                    DefaultSchemePortResolver.INSTANCE.resolve(host),
+                    host.getSchemeName());
+          } catch (UnsupportedSchemeException e) {
+            throw new HttpException(e.getMessage());
+          }
+          return new HttpRoute(target, null, proxy, false);
+        });
   }
 
   @VisibleForTesting
@@ -233,13 +265,28 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     // Remove the SDK part from user agent
     StringBuilder mergedString = new StringBuilder();
     for (int i = 0; i < parts.length; i++) {
-      if (i != 1) { // Skip the second part
+      if (parts[i].startsWith(SDK_USER_AGENT)) {
+        mergedString.append(JDBC_HTTP_USER_AGENT);
+      } else {
         mergedString.append(parts[i]);
-        if (i != parts.length - 1) {
-          mergedString.append(" "); // Add space between parts
-        }
+      }
+      if (i != parts.length - 1) {
+        mergedString.append(" "); // Add space between parts
       }
     }
     return mergedString.toString();
+  }
+
+  /** Reset the instance of the http client. This is used for testing purposes only. */
+  @VisibleForTesting
+  public static synchronized void resetInstance() {
+    if (instance != null) {
+      try {
+        instance.httpClient.close();
+      } catch (IOException e) {
+        LOGGER.error("Caught error while closing http client", e);
+      }
+      instance = null;
+    }
   }
 }

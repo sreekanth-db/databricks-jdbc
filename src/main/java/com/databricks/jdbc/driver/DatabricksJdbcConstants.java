@@ -1,5 +1,6 @@
 package com.databricks.jdbc.driver;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -9,6 +10,7 @@ public final class DatabricksJdbcConstants {
   static final Pattern JDBC_URL_PATTERN =
       Pattern.compile("jdbc:databricks://([^/;]*)(?::\\d+)?/*(.*)");
   static final Pattern HTTP_WAREHOUSE_PATH_PATTERN = Pattern.compile(".*/warehouses/(.+)");
+  static final Pattern HTTP_ENDPOINT_PATH_PATTERN = Pattern.compile(".*/endpoints/(.+)");
   static final Pattern TEST_PATH_PATTERN = Pattern.compile("jdbc:databricks://test");
   static final Pattern HTTP_CLUSTER_PATH_PATTERN = Pattern.compile(".*/o/(.+)/(.+)");
   public static final String JDBC_SCHEMA = "jdbc:databricks://";
@@ -56,11 +58,18 @@ public final class DatabricksJdbcConstants {
   static final String UID = "uid";
   static final String PWD = "pwd";
 
+  static final String POLL_INTERVAL = "asyncexecpollinterval";
+  static final int POLL_INTERVAL_DEFAULT = 200;
+
   static final String AWS_CLIENT_ID = "databricks-sql-jdbc";
 
   static final String AAD_CLIENT_ID = "96eecda7-19ea-49cc-abb5-240097d554f5";
 
   public static final String HTTP_PATH = "httppath";
+
+  public static final String SSL = "ssl";
+
+  static final String HTTP_SCHEMA = "http://";
   static final String HTTPS_SCHEMA = "https://";
   public static final String LOGIN_TIMEOUT = "loginTimeout";
 
@@ -86,7 +95,7 @@ public final class DatabricksJdbcConstants {
       "EnableQueryResultLZ4Compression"; // Adding this for backward compatibility only
   static final String COMPRESSION_FLAG = "QueryResultCompressionType";
   static final String USER_AGENT_ENTRY = "useragententry";
-  public static final String DEFAULT_USER_AGENT = "DatabricksDatabricksJDBCDriverOSS";
+  public static final String DEFAULT_USER_AGENT = "DatabricksJDBCDriverOSS";
   static final String CLIENT_USER_AGENT_PREFIX = "Java";
   static final String USER_AGENT_SEA_CLIENT = "SQLExecHttpClient/HC";
   static final String USER_AGENT_THRIFT_CLIENT = "THttpClient/HC";
@@ -108,4 +117,19 @@ public final class DatabricksJdbcConstants {
 
   public static final Set<String> ALLOWED_CLIENT_INFO_PROPERTIES =
       Set.of(ALLOWED_VOLUME_INGESTION_PATHS);
+
+  @VisibleForTesting public static final String IS_FAKE_SERVICE_TEST_PROP = "isFakeServiceTest";
+
+  @VisibleForTesting public static final String FAKE_SERVICE_URI_PROP_SUFFIX = ".fakeServiceURI";
+
+  /** Enum for the services that can be replaced with a fake service in integration tests. */
+  @VisibleForTesting
+  public enum FakeServiceType {
+    SQL_EXEC,
+    CLOUD_FETCH
+  }
+
+  public static final String USE_THRIFT_CLIENT = "usethriftclient";
+
+  public static final String USE_LEGACY_METADATA = "uselegacymetadata";
 }

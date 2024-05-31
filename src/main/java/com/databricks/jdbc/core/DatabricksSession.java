@@ -1,8 +1,10 @@
 package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksClient;
+import com.databricks.jdbc.client.DatabricksClientType;
 import com.databricks.jdbc.client.DatabricksMetadataClient;
 import com.databricks.jdbc.client.impl.sdk.DatabricksMetadataSdkClient;
+import com.databricks.jdbc.client.impl.sdk.DatabricksNewMetadataSdkClient;
 import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
 import com.databricks.jdbc.client.impl.thrift.DatabricksThriftServiceClient;
 import com.databricks.jdbc.core.types.CompressionType;
@@ -46,13 +48,18 @@ public class DatabricksSession implements IDatabricksSession {
    */
   public DatabricksSession(IDatabricksConnectionContext connectionContext)
       throws DatabricksSQLException {
-    if (connectionContext.isAllPurposeCluster()) {
+    if (connectionContext.getClientType() == DatabricksClientType.THRIFT) {
       this.databricksClient = new DatabricksThriftServiceClient(connectionContext);
       this.databricksMetadataClient = null;
     } else {
       this.databricksClient = new DatabricksSdkClient(connectionContext);
-      this.databricksMetadataClient =
-          new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
+      if (connectionContext.getUseLegacyMetadata()) {
+        this.databricksMetadataClient =
+            new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient);
+      } else {
+        this.databricksMetadataClient =
+            new DatabricksNewMetadataSdkClient((DatabricksSdkClient) databricksClient);
+      }
     }
     this.isSessionOpen = false;
     this.sessionInfo = null;
@@ -159,7 +166,7 @@ public class DatabricksSession implements IDatabricksSession {
   @Override
   public DatabricksMetadataClient getDatabricksMetadataClient() {
     LOGGER.debug("public DatabricksClient getDatabricksMetadataClient()");
-    if (this.connectionContext.isAllPurposeCluster()) {
+    if (this.connectionContext.getClientType() == DatabricksClientType.THRIFT) {
       return (DatabricksMetadataClient) databricksClient;
     }
     return databricksMetadataClient;

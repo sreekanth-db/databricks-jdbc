@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -95,18 +96,39 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     }
     return HTTP_CLUSTER_PATH_PATTERN.matcher(url).matches()
         || HTTP_WAREHOUSE_PATH_PATTERN.matcher(url).matches()
+        || HTTP_ENDPOINT_PATH_PATTERN.matcher(url).matches()
         || TEST_PATH_PATTERN.matcher(url).matches();
   }
 
   @Override
-  public String getHostUrl() {
+  public String getHostUrl() throws DatabricksParsingException {
     LOGGER.debug("public String getHostUrl()");
-    StringBuilder hostUrlBuilder =
-        new StringBuilder().append(DatabricksJdbcConstants.HTTPS_SCHEMA).append(this.host);
-    if (port != 0) {
-      hostUrlBuilder.append(DatabricksJdbcConstants.PORT_DELIMITER).append(port);
+    // Determine the schema based on the transport mode
+    String schema =
+        (getSSLMode() != null && getSSLMode().equals("0"))
+            ? DatabricksJdbcConstants.HTTP_SCHEMA
+            : DatabricksJdbcConstants.HTTPS_SCHEMA;
+
+    schema = schema.replace("://", "");
+
+    try {
+      URIBuilder uriBuilder = new URIBuilder().setScheme(schema).setHost(this.host);
+
+      // Conditionally add the port if it is specified
+      if (port != 0) {
+        uriBuilder.setPort(port);
+      }
+
+      // Build the URI and convert to string
+      return uriBuilder.build().toString();
+    } catch (Exception e) {
+      LOGGER.debug("URI Building failed with exception: " + e.getMessage());
+      throw new DatabricksParsingException("URI Building failed with exception: " + e.getMessage());
     }
-    return hostUrlBuilder.toString();
+  }
+
+  private String getSSLMode() {
+    return getParameter(DatabricksJdbcConstants.SSL);
   }
 
   @Override
@@ -117,6 +139,10 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   private ComputeResource buildCompute() throws DatabricksSQLException {
     String httpPath = getHttpPath();
     Matcher urlMatcher = HTTP_WAREHOUSE_PATH_PATTERN.matcher(httpPath);
+    if (urlMatcher.find()) {
+      return new Warehouse(urlMatcher.group(1));
+    }
+    urlMatcher = HTTP_ENDPOINT_PATH_PATTERN.matcher(httpPath);
     if (urlMatcher.find()) {
       return new Warehouse(urlMatcher.group(1));
     }
@@ -146,7 +172,14 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
         : getParameter(DatabricksJdbcConstants.PWD);
   }
 
-  public String getCloud() {
+  @Override
+  public int getAsyncExecPollInterval() {
+    return getParameter(POLL_INTERVAL) == null
+        ? POLL_INTERVAL_DEFAULT
+        : Integer.parseInt(getParameter(DatabricksJdbcConstants.POLL_INTERVAL));
+  }
+
+  public String getCloud() throws DatabricksParsingException {
     String hostURL = getHostUrl();
     if (hostURL.contains("azuredatabricks.net")
         || hostURL.contains(".databricks.azure.cn")
@@ -159,7 +192,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
-  public String getClientId() {
+  public String getClientId() throws DatabricksParsingException {
     String clientId = getParameter(DatabricksJdbcConstants.CLIENT_ID);
     if (nullOrEmptyString(clientId)) {
       if (getCloud().equals("AWS")) {
@@ -172,7 +205,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
-  public List<String> getOAuthScopesForU2M() {
+  public List<String> getOAuthScopesForU2M() throws DatabricksParsingException {
     if (getCloud().equals("AWS")) {
       return Arrays.asList(
           DatabricksJdbcConstants.SQL_SCOPE, DatabricksJdbcConstants.OFFLINE_ACCESS_SCOPE);
@@ -247,8 +280,23 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     return CompressionType.parseCompressionType(compressionType);
   }
 
-  private DatabricksClientType getClientType() {
-    return computeResource.getClientType();
+  @Override
+  public DatabricksClientType getClientType() {
+    if (computeResource instanceof AllPurposeCluster) {
+      return DatabricksClientType.THRIFT;
+    }
+    String useThriftClient = getParameter(DatabricksJdbcConstants.USE_THRIFT_CLIENT);
+    if (useThriftClient != null && useThriftClient.equals("1")) {
+      return DatabricksClientType.THRIFT;
+    }
+    return DatabricksClientType.SQL_EXEC;
+  }
+
+  @Override
+  public Boolean getUseLegacyMetadata() {
+    // Defaults to use legacy metadata client
+    return getParameter(DatabricksJdbcConstants.USE_LEGACY_METADATA) == null
+        || getParameter(DatabricksJdbcConstants.USE_LEGACY_METADATA).equals("1");
   }
 
   private static boolean nullOrEmptyString(String s) {
@@ -347,7 +395,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
-  public String getEndpointURL() {
+  public String getEndpointURL() throws DatabricksParsingException {
     return String.format("%s/%s", this.getHostUrl(), this.getHttpPath());
   }
 }
