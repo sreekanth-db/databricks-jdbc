@@ -1,4 +1,4 @@
-package com.databricks.jdbc.integration.e2e;
+package com.databricks.jdbc.integration.benchmarking;
 
 import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 
@@ -6,7 +6,6 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.Enumeration;
 import java.util.Map;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,9 +17,9 @@ public class MetadataBenchmarkingTests {
   private static final int NUM_TABLES = 10;
   private static final int NUM_COLUMNS = 10;
 
-  private static final int NUM_SECTIONS = 8;
+  private static final int NUM_SECTIONS = 7;
 
-  private static final int ATTEMPTS = 10;
+  private static final int ATTEMPTS = 30;
 
   private static final String BASE_SCHEMA_NAME = "jdbc_new_metadata_benchmark_schema";
 
@@ -42,7 +41,7 @@ public class MetadataBenchmarkingTests {
   @AfterEach
   void tearDown() throws SQLException {
     connection = getValidJDBCConnection();
-//    insertResultsIntoTable();
+    insertResultsIntoTable();
     tearDownSchemas();
     connection.close();
   }
@@ -104,7 +103,6 @@ public class MetadataBenchmarkingTests {
     long startTime = System.currentTimeMillis();
     for (int i = 0; i < ATTEMPTS; i++) {
       ResultSet r = metaData.getSchemas(getDatabricksCatalog(), "*");
-      printResultSet(r);
     }
     long endTime = System.currentTimeMillis();
     totalTimesForSection[recording][0] = endTime - startTime;
@@ -116,7 +114,6 @@ public class MetadataBenchmarkingTests {
     startTime = System.currentTimeMillis();
     for (int i = 0; i < ATTEMPTS; i++) {
       ResultSet r = metaData.getSchemas(getDatabricksCatalog(), BASE_SCHEMA_NAME + "*");
-      printResultSet(r);
     }
     endTime = System.currentTimeMillis();
     totalTimesForSection[recording][1] = endTime - startTime;
@@ -128,7 +125,6 @@ public class MetadataBenchmarkingTests {
     startTime = System.currentTimeMillis();
     for (int i = 0; i < ATTEMPTS; i++) {
       ResultSet r = metaData.getTables(getDatabricksCatalog(), "*", "*", null);
-      printResultSet(r);
     }
     endTime = System.currentTimeMillis();
     totalTimesForSection[recording][2] = endTime - startTime;
@@ -140,7 +136,6 @@ public class MetadataBenchmarkingTests {
     startTime = System.currentTimeMillis();
     for (int i = 0; i < ATTEMPTS; i++) {
       ResultSet r = metaData.getTables(getDatabricksCatalog(), BASE_SCHEMA_NAME + "*", "*", null);
-      printResultSet(r);
     }
     endTime = System.currentTimeMillis();
     totalTimesForSection[recording][3] = endTime - startTime;
@@ -163,7 +158,6 @@ public class MetadataBenchmarkingTests {
     startTime = System.currentTimeMillis();
     for (int i = 0; i < ATTEMPTS; i++) {
       ResultSet r = metaData.getColumns(getDatabricksCatalog(), BASE_SCHEMA_NAME + "*", "*", "*");
-      printResultSet(r);
     }
     endTime = System.currentTimeMillis();
     totalTimesForSection[recording][5] = endTime - startTime;
@@ -174,29 +168,14 @@ public class MetadataBenchmarkingTests {
     // SECTION 7: Get all columns for a table
     startTime = System.currentTimeMillis();
     for (int i = 0; i < ATTEMPTS; i++) {
-      ResultSet r = metaData.getColumns(
-          getDatabricksCatalog(), BASE_SCHEMA_NAME + "*", BASE_TABLE_NAME + "*", null);
-      printResultSet(r);
+      ResultSet r =
+          metaData.getColumns(
+              getDatabricksCatalog(), BASE_SCHEMA_NAME + "*", BASE_TABLE_NAME + "*", null);
     }
     endTime = System.currentTimeMillis();
     totalTimesForSection[recording][6] = endTime - startTime;
     avgTimesForSection[recording][6] = totalTimesForSection[recording][6] / ATTEMPTS;
     System.out.println("END OF SECTION 7");
-
-
-    System.out.println("START OF SECTION 8");
-    // SECTION 7: Get all functions in a given catalog
-    startTime = System.currentTimeMillis();
-    for (int i = 0; i < ATTEMPTS; i++) {
-      ResultSet r = metaData.getFunctions(getDatabricksCatalog(), null, null);
-      printResultSet(r);
-    }
-    endTime = System.currentTimeMillis();
-    totalTimesForSection[recording][6] = endTime - startTime;
-    avgTimesForSection[recording][6] = totalTimesForSection[recording][6] / ATTEMPTS;
-    System.out.println("END OF SECTION 8");
-
-
   }
 
   @Test
@@ -281,9 +260,8 @@ public class MetadataBenchmarkingTests {
             + "s4_avg_oss, s4_tot_oss, s4_avg_db, s4_tot_db, "
             + "s5_avg_oss, s5_tot_oss, s5_avg_db, s5_tot_db, "
             + "s6_avg_oss, s6_tot_oss, s6_avg_db, s6_tot_db, "
-            + "s7_avg_oss, s7_tot_oss, s7_avg_db, s7_tot_db, "
-            + "s8_avg_oss, s8_tot_oss, s8_avg_db, s8_tot_db) "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            + "s7_avg_oss, s7_tot_oss, s7_avg_db, s7_tot_db) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     try (PreparedStatement stmt = connection.prepareStatement(sql)) {
       // Set the TIMESTAMP for the current date and time
@@ -307,21 +285,7 @@ public class MetadataBenchmarkingTests {
     }
   }
 
-  public void printResultSet(ResultSet resultSet) throws SQLException {
-    System.out.println("\n\nPrinting resultSet...........\n");
-    ResultSetMetaData rsmd = resultSet.getMetaData();
-    int columnsNumber = rsmd.getColumnCount();
-    while (resultSet.next()) {
-      for (int i = 1; i <= columnsNumber; i++) {
-        try {
-          Object columnValue = resultSet.getObject(i);
-          System.out.print(columnValue + "\t\t");
-        } catch (Exception e) {
-          System.out.print(
-                  "NULL\t\t"); // It is possible for certain columns to be non-existent (edge case)
-        }
-      }
-      System.out.println();
-    }
+  private String getDatabricksCatalog() {
+    return "jdbcbenchmarkingcatalog";
   }
 }

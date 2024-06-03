@@ -116,7 +116,7 @@ public class DatabricksNewMetadataSdkClient implements DatabricksMetadataClient 
     String SQL = commandBuilder.getSQLString(CommandName.LIST_FUNCTIONS);
     LOGGER.debug("SQL command to fetch functions: {}", SQL);
     return MetadataResultSetBuilder.getFunctionsResult(
-        getResultSet(SQL, session, StatementType.METADATA));
+        getResultSet(SQL, session, StatementType.QUERY));
   }
 
   @Override
