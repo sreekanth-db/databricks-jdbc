@@ -60,8 +60,8 @@ public class DriverTester {
         "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
     Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
     System.out.println("Connection established......");
-    DatabaseMetaData metaData = con.getMetaData();
-    ResultSet resultSet = metaData.getCatalogs();
+    // DatabaseMetaData metaData = con.getMetaData();
+    ResultSet resultSet = con.getMetaData().getTables("main", ".*", ".*", null);
     printResultSet(resultSet);
     resultSet.close();
     con.close();
@@ -91,11 +91,10 @@ public class DriverTester {
 
   @Test
   void testAllPurposeClusters() throws Exception {
-    DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
-    DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
     String jdbcUrl =
-        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv;AuthMech=3;UID=token;";
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;AuthMech=3;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv";
     Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
+    DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
     System.out.println("Connection established......");
     Statement statement = con.createStatement();
     ResultSet rs =
@@ -107,13 +106,15 @@ public class DriverTester {
 
   @Test
   void testAllPurposeClustersMetadata() throws Exception {
-    DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
-    DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
     String jdbcUrl =
-        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv;AuthMech=3;UID=token;";
-    Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "xx");
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;AuthMech=3;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv";
+    Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
     System.out.println("Connection established......");
-    ResultSet resultSet = con.getMetaData().getPrimaryKeys("main", "ggm_pk", "table_with_pk");
+    // ResultSet resultSet = con.getMetaData().getCatalogs();
+    ResultSet resultSet = con.getMetaData().getSchemas("main", "%");
+    // ResultSet resultSet = con.getMetaData().getTables("main", "ggm_pk","table_with_pk", null);
+    // ResultSet resultSet = con.getMetaData().getTables("%", "%", null, null);
+    // con.getMetaData().getPrimaryKeys("main", "ggm_pk", "table_with_pk");
     printResultSet(resultSet);
     resultSet.close();
     con.close();
