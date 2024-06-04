@@ -1,11 +1,12 @@
 package com.databricks.jdbc.integration.e2e;
 
 import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,20 +16,22 @@ public class UCMetadataIntegrationTests {
   private Connection connection;
 
   long currentTimeMillis = System.currentTimeMillis();
-  String prefix = "UC_" + currentTimeMillis + "_"; // Define your prefix here
+  String prefix = "uc_" + currentTimeMillis + "_"; // Define your prefix here
   String catA = prefix + "catA";
   String hiveCatalog = "hive_metastore"; // Define your hive catalog here
+
+  String sparkCatalog = "spark";
 
   String mainCatalog = "main";
   String db1 = prefix + "db1";
   String db2 = prefix + "db2";
-  String hmsDb2Table1 = prefix + "hive_metastore_1";
-  String hmsDb2Table2 = prefix + "hive_metastore_2";
+  String table1 = prefix + "table_1";
+  String table2 = prefix + "table_2";
   String mainDb1Table1 = prefix + "main_1";
 
   @BeforeEach
   void setUp() throws SQLException {
-    connection = getValidJDBCConnection();
+    connection = getValidJDBCConnection(List.of(List.of("useLegacyMetadata", "0")));
 
     executeSQL("CREATE CATALOG IF NOT EXISTS " + catA);
     executeSQL("USE CATALOG " + catA);
@@ -76,23 +79,23 @@ public class UCMetadataIntegrationTests {
     executeSQL("USE " + db2);
     executeSQL(
         "CREATE TABLE IF NOT EXISTS "
-            + hmsDb2Table1
+            + table1
             + " AS (SELECT 1 AS col_1, '"
             + hiveCatalog
             + "."
             + db2
             + "."
-            + hmsDb2Table1
+            + table1
             + "' AS col_2)");
     executeSQL(
         "CREATE TABLE IF NOT EXISTS "
-            + hmsDb2Table2
+            + table2
             + " AS (SELECT 1 AS col_1, '"
             + hiveCatalog
             + "."
             + db2
             + "."
-            + hmsDb2Table2
+            + table2
             + "' AS col_2)");
 
       // Created tables:
@@ -105,7 +108,6 @@ public class UCMetadataIntegrationTests {
       // |      main      |     db2     |          ∅         |
       // | hive_metastore |     db2     |  hive_metastore_1  |
       // | hive_metastore |     db2     |  hive_metastore_2  |
-      // |                | global_temp | global_temp_view_1 |
   }
 
   @AfterEach
@@ -140,13 +142,14 @@ public class UCMetadataIntegrationTests {
   @Test
   void testGetSchemas() throws SQLException {
     executeSQL("USE CATALOG hive_metastore");
-    ResultSet r = connection.getMetaData().getSchemas("hive_metastore", "*");
+    ResultSet r = connection.getMetaData().getSchemas("hive_metastore", "%");
+    System.out.println(db2.toLowerCase());
     verifyContainsSchemas(
         r,
         List.of(
             List.of("hive_metastore", "default"), List.of("hive_metastore", db2.toLowerCase())));
 
-    r = connection.getMetaData().getSchemas(catA.toLowerCase(), "*");
+    r = connection.getMetaData().getSchemas(catA.toLowerCase(), "%");
     verifyContainsSchemas(
         r,
         List.of(
@@ -158,7 +161,7 @@ public class UCMetadataIntegrationTests {
   @Test
   void testGetTables() throws SQLException {
     ResultSet r =
-        connection.getMetaData().getTables(catA.toLowerCase(), "*", "*", null);
+        connection.getMetaData().getTables(catA.toLowerCase(), "%", "%", null);
       verifyContainsTables(
               r,
               List.of(
@@ -166,67 +169,65 @@ public class UCMetadataIntegrationTests {
                       List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "TABLE"),
                       List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "TABLE")));
 
-      r = connection.getMetaData().getTables("hive_metastore", "*", "*", null);
-      printResultSet(r);
-        verifyContainsTables(
-                r,
-                List.of(
-                        List.of("hive_metastore", db2.toLowerCase(), hmsDb2Table1.toLowerCase(), "TABLE"),
-                        List.of("hive_metastore", db2.toLowerCase(), hmsDb2Table2.toLowerCase(), "TABLE")));
+      r = connection.getMetaData().getTables(hiveCatalog, "%", "%", null);
+      verifyContainsTables(
+              r,
+              List.of(
+                      List.of(hiveCatalog, db2.toLowerCase(), table1.toLowerCase(), "TABLE"),
+                      List.of(hiveCatalog, db2.toLowerCase(), table2.toLowerCase(), "TABLE")));
 
   }
 
   @Test
   void testGetColumns() throws SQLException {
     ResultSet r =
-        connection.getMetaData().getColumns(catA.toLowerCase(), "*", "*", "*");
-    printResultSet(r);
+        connection.getMetaData().getColumns(catA.toLowerCase(), "%", "%", "%");
     verifyContainsColumns(
         r,
         List.of(
-            List.of(catA.toLowerCase(), db1.toLowerCase(), "a_1", "col_1", "4"),
-                List.of(catA.toLowerCase(), db1.toLowerCase(), "a_1", "col_2", "12"),
-                List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "col_1", "4"),
-                List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "col_2", "12"),
-                List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "col_1", "4"),
-                List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "col_2", "12")
+            List.of(catA.toLowerCase(), db1.toLowerCase(), "a_1", "col_1", "INT"),
+                List.of(catA.toLowerCase(), db1.toLowerCase(), "a_1", "col_2", "STRING"),
+                List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "col_1", "INT"),
+                List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "col_2", "STRING"),
+                List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "col_1", "INT"),
+                List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "col_2", "STRING")
 
                 ));
 
     r =
-        connection.getMetaData().getColumns("hive_metastore", "*", "*", "*");
+        connection.getMetaData().getColumns(hiveCatalog, "%", "%", "%");
     verifyContainsColumns(
         r,
         List.of(
-            List.of("hive_metastore", db2.toLowerCase(), hmsDb2Table1, "col_1", "INTEGER"),
-            List.of("hive_metastore", db2.toLowerCase(), hmsDb2Table1, "col_2", "STRING")));
+            List.of(hiveCatalog, db2.toLowerCase(), table1, "col_1", "INT"),
+            List.of(hiveCatalog, db2.toLowerCase(), table1, "col_2", "STRING")));
   }
 
 
   @Test
   void testGetCurrentCatalogAndSchema() throws SQLException {
-    connection = getValidJDBCConnection(List.of(List.of("connCatalog", catA)));
+    connection = getValidJDBCConnection(List.of(List.of("useLegacyMetadata", "0"), List.of("connCatalog", catA)));
     ResultSet r = connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
     printResultSet(r);
     r.next();
     assert (r.getString(1).equals(catA.toLowerCase()));
     assert (r.getString(2).equals("default"));
 
-    connection = getValidJDBCConnection(List.of(List.of("connCatalog", "samples")));
+    connection = getValidJDBCConnection(List.of(List.of("useLegacyMetadata", "0"), List.of("connCatalog", "samples")));
     r = connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
     printResultSet(r);
     r.next();
     assert (r.getString(1).equals("samples"));
     assert (r.getString(2).equals("default"));
 
-    connection = getValidJDBCConnection(List.of(List.of("connSchema", db2.toLowerCase())));
+    connection = getValidJDBCConnection(List.of(List.of("useLegacyMetadata", "0"), List.of("connSchema", db2.toLowerCase())));
     r = connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
     printResultSet(r);
     r.next();
-    assert (r.getString(1).equals("hive_metastore"));
+    assert (r.getString(1).equals(sparkCatalog));
     assert (r.getString(2).equals(db2.toLowerCase()));
 
-    connection = getValidJDBCConnection(List.of(List.of("connCatalog", "fake_catalog"), List.of("connSchema", "fake_schema")));
+    connection = getValidJDBCConnection(List.of(List.of("useLegacyMetadata", "0"), List.of("connCatalog", "fake_catalog"), List.of("connSchema", "fake_schema")));
     r = connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
     printResultSet(r);
     r.next();
@@ -270,11 +271,11 @@ public class UCMetadataIntegrationTests {
         assert (allTables.containsAll(included_tables));
   }
 
-  private void verifyContainsSchemas(ResultSet r, List<List<String>> included_schema) {
+  private void verifyContainsSchemas(ResultSet r, List<List<String>> included_schema) throws SQLException {
     ArrayList<List<String>> allSchemas = new ArrayList<>();
     try {
       while (r.next()) {
-        allSchemas.add(List.of(r.getString("TABLE_CATALOG"), r.getString("TABLE_SCHEM")));
+        allSchemas.add(List.of(r.getString("TABLE_CAT"), r.getString("TABLE_SCHEM")));
       }
     } catch (SQLException e) {
       e.printStackTrace();
