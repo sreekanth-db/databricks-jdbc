@@ -43,6 +43,10 @@ public class IntegrationTestUtil {
     return System.getenv("DATABRICKS_BENCHFOOD_HOST");
   }
 
+  public static String getDatabricksDogfoodHost() {
+    return System.getenv("DATABRICKS_DOGFOOD_HOST");
+  }
+
   public static String getDatabricksBenchmarkingHost() {
     // includes port
     return System.getenv("DATABRICKS_BENCHMARKING_HOST");
@@ -50,6 +54,10 @@ public class IntegrationTestUtil {
 
   public static String getDatabricksToken() {
     return System.getenv("DATABRICKS_TOKEN");
+  }
+
+  public static String getDatabricksDogfoodToken() {
+    return System.getenv("DATABRICKS_DOGFOOD_TOKEN");
   }
 
   public static String getDatabricksBenchfoodToken() {
@@ -66,6 +74,10 @@ public class IntegrationTestUtil {
 
   public static String getDatabricksBenchfoodHTTPPath() {
     return System.getenv("DATABRICKS_BENCHFOOD_HTTP_PATH");
+  }
+
+  public static String getDatabricksDogfoodHTTPPath() {
+    return System.getenv("DATABRICKS_DOGFOOD_HTTP_PATH");
   }
 
   public static String getDatabricksBenchmarkingHTTPPath() {
@@ -87,6 +99,11 @@ public class IntegrationTestUtil {
   public static Connection getValidJDBCConnection() throws SQLException {
     // add support for properties
     return DriverManager.getConnection(getJDBCUrl(), getDatabricksUser(), getDatabricksToken());
+  }
+
+  public static Connection getDogfoodJDBCConnection() throws SQLException {
+    return DriverManager.getConnection(
+        getDogfoodJDBCUrl(), getDatabricksUser(), getDatabricksDogfoodToken());
   }
 
   public static Connection getBenchfoodJDBCConnection() throws SQLException {
@@ -122,6 +139,15 @@ public class IntegrationTestUtil {
         "jdbc:databricks://%s/default;transportMode=http;ssl=1;AuthMech=3;httpPath=%s";
     String host = getDatabricksBenchfoodHost();
     String httpPath = getDatabricksBenchfoodHTTPPath();
+
+    return String.format(template, host, httpPath);
+  }
+
+  public static String getDogfoodJDBCUrl() {
+    String template =
+        "jdbc:databricks://%s/default;transportMode=http;ssl=1;AuthMech=3;httpPath=%s";
+    String host = getDatabricksDogfoodHost();
+    String httpPath = getDatabricksDogfoodHTTPPath();
 
     return String.format(template, host, httpPath);
   }
