@@ -11,11 +11,11 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DatabricksThriftHelper {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksThriftHelper.class);
+  private static final Logger LOGGER = LogManager.getLogger(DatabricksThriftHelper.class);
   public static final List<TStatusCode> SUCCESS_STATUS_LIST =
       List.of(TStatusCode.SUCCESS_STATUS, TStatusCode.SUCCESS_WITH_INFO_STATUS);
 
@@ -80,6 +80,20 @@ public class DatabricksThriftHelper {
                 })
             .collect(Collectors.toList());
     return Collections.singletonList(obj);
+  }
+
+  public static List<List<Object>> extractValuesColumnar(List<TColumn> columnList) {
+    if (columnList == null || columnList.isEmpty() || columnList.get(0).getStringVal() == null) {
+      return Collections.singletonList(Collections.emptyList());
+    }
+    int numberOfItems = columnList.get(0).getStringVal().getValuesSize();
+    return IntStream.range(0, numberOfItems)
+        .mapToObj(
+            i ->
+                columnList.stream()
+                    .map(column -> (Object) column.getStringVal().getValues().get(i))
+                    .collect(Collectors.toList()))
+        .collect(Collectors.toList());
   }
 
   private static Object getColumnFirstValue(TColumn column) {
