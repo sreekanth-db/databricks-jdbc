@@ -103,6 +103,7 @@ public class IntegrationTestUtil {
     return DriverManager.getConnection(
         getBenchmarkingJDBCUrl(), getDatabricksUser(), getDatabricksBenchmarkingToken());
   }
+
   public static void resetJDBCConnection() {
     JDBCConnection = null;
   }
