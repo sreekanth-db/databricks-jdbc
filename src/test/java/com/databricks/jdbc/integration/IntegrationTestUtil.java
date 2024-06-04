@@ -44,6 +44,11 @@ public class IntegrationTestUtil {
     return System.getenv("DATABRICKS_BENCHFOOD_HOST");
   }
 
+  public static String getDatabricksBenchmarkingHost() {
+    // includes port
+    return System.getenv("DATABRICKS_BENCHMARKING_HOST");
+  }
+
   public static String getDatabricksToken() {
     return System.getenv("DATABRICKS_TOKEN");
   }
@@ -52,12 +57,20 @@ public class IntegrationTestUtil {
     return System.getenv("DATABRICKS_BENCHFOOD_TOKEN");
   }
 
+  public static String getDatabricksBenchmarkingToken() {
+    return System.getenv("DATABRICKS_BENCHMARKING_TOKEN");
+  }
+
   public static String getDatabricksHTTPPath() {
     return System.getenv("DATABRICKS_HTTP_PATH");
   }
 
   public static String getDatabricksBenchfoodHTTPPath() {
     return System.getenv("DATABRICKS_BENCHFOOD_HTTP_PATH");
+  }
+
+  public static String getDatabricksBenchmarkingHTTPPath() {
+    return System.getenv("DATABRICKS_BENCHMARKING_HTTP_PATH");
   }
 
   public static String getDatabricksCatalog() {
@@ -91,6 +104,12 @@ public class IntegrationTestUtil {
         getBenchfoodJDBCUrl(), getDatabricksUser(), getDatabricksBenchfoodToken());
   }
 
+  public static Connection getBenchmarkingJDBCConnection() throws SQLException {
+    // add support for properties
+    return DriverManager.getConnection(
+        getBenchmarkingJDBCUrl(), getDatabricksUser(), getDatabricksBenchmarkingToken());
+  }
+
   public static void resetJDBCConnection() {
     JDBCConnection = null;
   }
@@ -98,7 +117,7 @@ public class IntegrationTestUtil {
   public static String getJDBCUrl() {
     String template =
         Boolean.parseBoolean(System.getProperty(IS_FAKE_SERVICE_TEST_PROP))
-            ? "jdbc:databricks://%s/default;transportMode=http;ssl=1;AuthMech=3;httpPath=%s"
+            ? "jdbc:databricks://%s/default;transportMode=http;ssl=0;AuthMech=3;httpPath=%s"
             : "jdbc:databricks://%s/default;ssl=1;AuthMech=3;httpPath=%s";
 
     String host = getDatabricksHost();
@@ -112,6 +131,15 @@ public class IntegrationTestUtil {
         "jdbc:databricks://%s/default;transportMode=http;ssl=1;AuthMech=3;httpPath=%s";
     String host = getDatabricksBenchfoodHost();
     String httpPath = getDatabricksBenchfoodHTTPPath();
+
+    return String.format(template, host, httpPath);
+  }
+
+  public static String getBenchmarkingJDBCUrl() {
+    String template =
+        "jdbc:databricks://%s/default;transportMode=http;ssl=1;AuthMech=3;httpPath=%s";
+    String host = getDatabricksBenchmarkingHost();
+    String httpPath = getDatabricksBenchmarkingHTTPPath();
 
     return String.format(template, host, httpPath);
   }

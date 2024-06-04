@@ -58,13 +58,16 @@ public final class DatabricksJdbcConstants {
   static final String UID = "uid";
   static final String PWD = "pwd";
 
+  static final String POLL_INTERVAL = "asyncexecpollinterval";
+  static final int POLL_INTERVAL_DEFAULT = 200;
+
   static final String AWS_CLIENT_ID = "databricks-sql-jdbc";
 
   static final String AAD_CLIENT_ID = "96eecda7-19ea-49cc-abb5-240097d554f5";
 
   public static final String HTTP_PATH = "httppath";
 
-  public static final String TRANSPORT_MODE = "transportmode";
+  public static final String SSL = "ssl";
 
   static final String HTTP_SCHEMA = "http://";
   static final String HTTPS_SCHEMA = "https://";
@@ -127,4 +130,6 @@ public final class DatabricksJdbcConstants {
   }
 
   public static final String USE_THRIFT_CLIENT = "usethriftclient";
+
+  public static final String USE_LEGACY_METADATA = "uselegacymetadata";
 }

@@ -105,7 +105,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     LOGGER.debug("public String getHostUrl()");
     // Determine the schema based on the transport mode
     String schema =
-        (getTransportMode() != null && getTransportMode().equals("http"))
+        (getSSLMode() != null && getSSLMode().equals("0"))
             ? DatabricksJdbcConstants.HTTP_SCHEMA
             : DatabricksJdbcConstants.HTTPS_SCHEMA;
 
@@ -127,8 +127,8 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     }
   }
 
-  private String getTransportMode() {
-    return getParameter(DatabricksJdbcConstants.TRANSPORT_MODE);
+  private String getSSLMode() {
+    return getParameter(DatabricksJdbcConstants.SSL);
   }
 
   @Override
@@ -170,6 +170,13 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     return getParameter(DatabricksJdbcConstants.PWD) == null
         ? getParameter(DatabricksJdbcConstants.PASSWORD)
         : getParameter(DatabricksJdbcConstants.PWD);
+  }
+
+  @Override
+  public int getAsyncExecPollInterval() {
+    return getParameter(POLL_INTERVAL) == null
+        ? POLL_INTERVAL_DEFAULT
+        : Integer.parseInt(getParameter(DatabricksJdbcConstants.POLL_INTERVAL));
   }
 
   public String getCloud() throws DatabricksParsingException {
@@ -283,6 +290,13 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       return DatabricksClientType.THRIFT;
     }
     return DatabricksClientType.SQL_EXEC;
+  }
+
+  @Override
+  public Boolean getUseLegacyMetadata() {
+    // Defaults to use legacy metadata client
+    return getParameter(DatabricksJdbcConstants.USE_LEGACY_METADATA) == null
+        || getParameter(DatabricksJdbcConstants.USE_LEGACY_METADATA).equals("1");
   }
 
   private static boolean nullOrEmptyString(String s) {

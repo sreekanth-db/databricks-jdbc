@@ -37,7 +37,6 @@ public class DatabricksSdkClient implements DatabricksClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksSdkClient.class);
   private static final String SYNC_TIMEOUT_VALUE = "10s";
   private static final String ASYNC_TIMEOUT_VALUE = "0s";
-  private static final int STATEMENT_RESULT_POLL_INTERVAL_MILLIS = 200;
 
   private final IDatabricksConnectionContext connectionContext;
   private final DatabricksConfig databricksConfig;
@@ -160,7 +159,7 @@ public class DatabricksSdkClient implements DatabricksClient {
     while (responseState == StatementState.PENDING || responseState == StatementState.RUNNING) {
       if (pollCount > 0) { // First poll happens without a delay
         try {
-          Thread.sleep(STATEMENT_RESULT_POLL_INTERVAL_MILLIS); // TODO: make this configurable
+          Thread.sleep(this.connectionContext.getAsyncExecPollInterval());
         } catch (InterruptedException e) {
           throw new DatabricksTimeoutException("Thread interrupted due to statement timeout");
         }
@@ -204,6 +203,14 @@ public class DatabricksSdkClient implements DatabricksClient {
     CloseStatementRequest request = new CloseStatementRequest().setStatementId(statementId);
     String path = String.format(STATEMENT_PATH_WITH_ID, request.getStatementId());
     workspaceClient.apiClient().DELETE(path, request, Void.class, getHeaders());
+  }
+
+  @Override
+  public void cancelStatement(String statementId) {
+    LOGGER.debug("public void cancelStatement(String statementId = {})", statementId);
+    CancelStatementRequest request = new CancelStatementRequest().setStatementId(statementId);
+    String path = String.format(CANCEL_STATEMENT_PATH_WITH_ID, request.getStatementId());
+    workspaceClient.apiClient().POST(path, request, Void.class, getHeaders());
   }
 
   @Override
