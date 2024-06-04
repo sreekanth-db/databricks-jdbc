@@ -1,4 +1,4 @@
-package com.databricks.jdbc.integration.metadata;
+package com.databricks.jdbc.integration.e2e;
 
 import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
