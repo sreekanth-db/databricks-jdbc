@@ -6,12 +6,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.databricks.jdbc.core.DatabricksParsingException;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.core.DatabricksSQLFeatureNotSupportedException;
-import com.databricks.jdbc.integration.fakeservice.BaseFakeServiceIntegrationTests;
+import com.databricks.jdbc.integration.fakeservice.AbstractFakeServiceIntegrationTests;
 import java.sql.*;
 import org.junit.jupiter.api.Test;
 
 /** Integration tests for error handling scenarios. */
-public class ErrorHandlingIntegrationTests extends BaseFakeServiceIntegrationTests {
+public class ErrorHandlingIntegrationTests extends AbstractFakeServiceIntegrationTests {
 
   @Test
   void testFailureToLoadDriver() {
@@ -65,6 +65,10 @@ public class ErrorHandlingIntegrationTests extends BaseFakeServiceIntegrationTes
   void testAccessingClosedResultSet() {
     String tableName = "access_closed_result_set_test_table";
     setupDatabaseTable(tableName);
+    String sql =
+        "INSERT INTO "
+            + getFullyQualifiedTableName(tableName)
+            + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
     executeSQL(
         "INSERT INTO "
             + getFullyQualifiedTableName(tableName)

@@ -15,13 +15,13 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import org.apache.http.client.utils.URIBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.event.Level;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DatabricksConnectionContext implements IDatabricksConnectionContext {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DatabricksConnectionContext.class);
+  private static final Logger LOGGER = LogManager.getLogger(DatabricksConnectionContext.class);
   private final String host;
   private final int port;
   private final String schema;
@@ -238,25 +238,31 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
-  public String getLogLevelString() {
+  public Level getLogLevel() {
     String logLevel = getParameter(DatabricksJdbcConstants.LOG_LEVEL);
     if (nullOrEmptyString(logLevel)) {
       LOGGER.debug("No logLevel given in the input, defaulting to info.");
       return DEFAULT_LOG_LEVEL;
     }
-    logLevel = logLevel.toUpperCase();
     try {
-      Level.valueOf(logLevel);
+      return getLogLevel(Integer.parseInt(logLevel));
+    } catch (NumberFormatException e) {
+      LOGGER.debug("Input log level is not an integer, parsing string.");
+      logLevel = logLevel.toUpperCase();
+    }
+
+    try {
+      return Level.valueOf(logLevel);
     } catch (Exception e) {
       LOGGER.debug("Invalid logLevel given in the input, defaulting to info.");
       return DEFAULT_LOG_LEVEL;
     }
-    return logLevel;
   }
 
   @Override
   public String getLogPathString() {
-    return getParameter(DatabricksJdbcConstants.LOG_PATH);
+    String parameter = getParameter(LOG_PATH);
+    return (parameter == null) ? DEFAULT_LOG_PATH : parameter;
   }
 
   @Override
@@ -397,5 +403,28 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public String getEndpointURL() throws DatabricksParsingException {
     return String.format("%s/%s", this.getHostUrl(), this.getHttpPath());
+  }
+
+  @VisibleForTesting
+  static Level getLogLevel(int level) {
+    switch (level) {
+      case 0:
+        return Level.OFF;
+      case 1:
+        return Level.FATAL;
+      case 2:
+        return Level.ERROR;
+      case 3:
+        return Level.WARN;
+      case 4:
+        return Level.INFO;
+      case 5:
+        return Level.DEBUG;
+      case 6:
+        return Level.TRACE;
+      default:
+        LOGGER.debug("Invalid logLevel, defaulting to default log level.");
+        return DEFAULT_LOG_LEVEL;
+    }
   }
 }
