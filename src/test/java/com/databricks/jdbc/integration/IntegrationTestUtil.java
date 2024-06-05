@@ -12,6 +12,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 /** Utility class to support integration tests * */
 public class IntegrationTestUtil {
@@ -115,14 +116,16 @@ public class IntegrationTestUtil {
         getDogfoodJDBCUrl(), getDatabricksUser(), getDatabricksDogfoodToken());
   }
 
+  public static Connection getValidJDBCConnection(Map<String, String> args) throws SQLException {
+    return DriverManager.getConnection(getJDBCUrl(args), getDatabricksUser(), getDatabricksToken());
+  }
+
   public static Connection getBenchfoodJDBCConnection() throws SQLException {
-    // add support for properties
     return DriverManager.getConnection(
         getBenchfoodJDBCUrl(), getDatabricksUser(), getDatabricksBenchfoodToken());
   }
 
   public static Connection getBenchmarkingJDBCConnection() throws SQLException {
-    // add support for properties
     return DriverManager.getConnection(
         getBenchmarkingJDBCUrl(), getDatabricksUser(), getDatabricksBenchmarkingToken());
   }
@@ -141,6 +144,26 @@ public class IntegrationTestUtil {
     String httpPath = getDatabricksHTTPPath();
 
     return String.format(template, host, httpPath);
+  }
+
+  public static String getJDBCUrl(Map<String, String> args) {
+    String template =
+        Boolean.parseBoolean(System.getProperty(IS_FAKE_SERVICE_TEST_PROP))
+            ? "jdbc:databricks://%s/default;transportMode=http;ssl=0;AuthMech=3;httpPath=%s"
+            : "jdbc:databricks://%s/default;ssl=1;AuthMech=3;httpPath=%s";
+
+    String host = getDatabricksHost();
+    String httpPath = getDatabricksHTTPPath();
+
+    StringBuilder url = new StringBuilder(String.format(template, host, httpPath));
+    for (Map.Entry<String, String> entry : args.entrySet()) {
+      url.append(";");
+      url.append(entry.getKey());
+      url.append("=");
+      url.append(entry.getValue());
+    }
+
+    return url.toString();
   }
 
   public static String getBenchfoodJDBCUrl() {
