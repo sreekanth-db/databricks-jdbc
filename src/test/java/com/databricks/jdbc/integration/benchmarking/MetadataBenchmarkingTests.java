@@ -61,10 +61,10 @@ public class MetadataBenchmarkingTests {
         break;
       case "THRIFT":
         connection =
-                DriverManager.getConnection(
-                        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;AuthMech=3;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv",
-                        "token",
-                        getDatabricksDogfoodToken());
+            DriverManager.getConnection(
+                "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;AuthMech=3;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv",
+                "token",
+                getDatabricksDogfoodToken());
         break;
       default:
         throw new IllegalArgumentException("Invalid testing mode");
