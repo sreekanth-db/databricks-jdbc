@@ -19,7 +19,7 @@ public class MetadataBenchmarkingTests {
 
   private static final int NUM_SECTIONS = 7;
 
-  private static final int ATTEMPTS = 1;
+  private static final int ATTEMPTS = 30;
 
   private static final String BASE_SCHEMA_NAME = "jdbc_new_metadata_benchmark_schema";
 
