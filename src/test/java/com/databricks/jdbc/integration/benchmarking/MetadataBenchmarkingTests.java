@@ -163,7 +163,7 @@ public class MetadataBenchmarkingTests {
     // SECTION 4: Get all tables for a schema
     startTime = System.currentTimeMillis();
     for (int i = 0; i < ATTEMPTS; i++) {
-      metaData.getTables(getDatabricksCatalog(), BASE_SCHEMA_NAME + "%", "%", null);
+      metaData.getTables(getDatabricksCatalog(), BASE_SCHEMA_NAME + "0", "%", null);
     }
     endTime = System.currentTimeMillis();
     totalTimesForSection[recording][3] = endTime - startTime;
