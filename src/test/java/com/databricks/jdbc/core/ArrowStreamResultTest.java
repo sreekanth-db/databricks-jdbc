@@ -16,12 +16,12 @@ import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import com.databricks.jdbc.core.types.CompressionType;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
-import com.databricks.jdbc.driver.IDatabricksConnectionContext
+import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.service.sql.BaseChunkInfo;
 import com.databricks.sdk.service.sql.ColumnInfo;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 import com.databricks.sdk.service.sql.ResultSchema;
-import com.google.common.collect.ImmutableList; 
+import com.google.common.collect.ImmutableList;
 import java.io.*;
 import java.time.Instant;
 import java.util.*;
