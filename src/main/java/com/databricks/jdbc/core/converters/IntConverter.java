@@ -19,7 +19,11 @@ public class IntConverter extends AbstractObjectConverter {
   public IntConverter(Object object) throws DatabricksSQLException {
     super(object);
     if (object instanceof String) {
-      this.object = Integer.parseInt((String) object);
+      try {
+        this.object = Integer.parseInt((String) object);
+      } catch (NumberFormatException e) {
+        throw new DatabricksSQLException("Invalid conversion" + e.getMessage() + " " + object);
+      }
     } else {
       this.object = (int) object;
     }

@@ -61,7 +61,7 @@ public class StringConverter extends AbstractObjectConverter {
     try {
       return Integer.parseInt(this.object);
     } catch (NumberFormatException e) {
-      throw new DatabricksSQLException("Invalid conversion");
+      throw new DatabricksSQLException("Invalid conversion" + e.getMessage() + " " + this.object);
     }
   }
 

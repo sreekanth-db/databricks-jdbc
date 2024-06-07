@@ -396,6 +396,8 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
 
   @Override
   public int getInt(String columnLabel) throws SQLException {
+    System.out.println(
+        "GETINT" + getColumnNameIndex(columnLabel) + " " + getInt(getColumnNameIndex(columnLabel)));
     return getInt(getColumnNameIndex(columnLabel));
   }
 

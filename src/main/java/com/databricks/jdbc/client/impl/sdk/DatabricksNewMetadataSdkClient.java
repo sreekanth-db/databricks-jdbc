@@ -98,7 +98,7 @@ public class DatabricksNewMetadataSdkClient implements DatabricksMetadataClient 
             .setColumnPattern(columnNamePattern);
     String SQL = commandBuilder.getSQLString(CommandName.LIST_COLUMNS);
     return MetadataResultSetBuilder.getColumnsResult(
-        getResultSet(SQL, session, StatementType.QUERY));
+        getResultSet(SQL, session, StatementType.METADATA));
   }
 
   @Override
