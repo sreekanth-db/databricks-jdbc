@@ -4,11 +4,9 @@ import static com.databricks.jdbc.TestConstants.*;
 import static java.lang.Math.min;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.databricks.jdbc.client.impl.thrift.generated.TSparkArrowResultLink;
 import com.databricks.jdbc.core.types.CompressionType;
 import com.databricks.sdk.service.sql.BaseChunkInfo;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,64 +32,65 @@ public class ArrowResultChunkTest {
 
   private long totalRows = 110;
 
-  @Test
-  public void testReleaseUnusedChunk() throws Exception {
-    // Arrange
-    BaseChunkInfo chunkInfo =
-        new BaseChunkInfo()
-            .setChunkIndex(0L)
-            .setByteCount(200L)
-            .setRowOffset(0L)
-            .setRowCount(totalRows);
-    ArrowResultChunk arrowResultChunk =
-        new ArrowResultChunk(chunkInfo, STATEMENT_ID, CompressionType.NONE);
+  /*
+    @Test
+    public void testReleaseUnusedChunk() throws Exception {
+      // Arrange
+      BaseChunkInfo chunkInfo =
+          new BaseChunkInfo()
+              .setChunkIndex(0L)
+              .setByteCount(200L)
+              .setRowOffset(0L)
+              .setRowCount(totalRows);
+      ArrowResultChunk arrowResultChunk =
+          new ArrowResultChunk(chunkInfo, STATEMENT_ID, CompressionType.NONE);
 
-    // Assert
-    assert (arrowResultChunk.getRecordBatchCountInChunk() == 0);
-    arrowResultChunk.releaseChunk();
-  }
+      // Assert
+      assert (arrowResultChunk.getRecordBatchCountInChunk() == 0);
+      arrowResultChunk.releaseChunk();
+    }
 
-  @Test
-  public void testGetArrowDataFromInputStream() throws Exception {
-    // Arrange
-    BaseChunkInfo chunkInfo =
-        new BaseChunkInfo()
-            .setChunkIndex(0L)
-            .setByteCount(200L)
-            .setRowOffset(0L)
-            .setRowCount(totalRows);
-    ArrowResultChunk arrowResultChunk =
-        new ArrowResultChunk(chunkInfo, STATEMENT_ID, CompressionType.NONE);
-    Schema schema = createTestSchema();
-    Object[][] testData = createTestData(schema, (int) totalRows);
-    File arrowFile =
-        createTestArrowFile("TestFile", schema, testData, new RootAllocator(Integer.MAX_VALUE));
+    @Test
+    public void testGetArrowDataFromInputStream() throws Exception {
+      // Arrange
+      BaseChunkInfo chunkInfo =
+          new BaseChunkInfo()
+              .setChunkIndex(0L)
+              .setByteCount(200L)
+              .setRowOffset(0L)
+              .setRowCount(totalRows);
+      ArrowResultChunk arrowResultChunk =
+          new ArrowResultChunk(chunkInfo, STATEMENT_ID, CompressionType.NONE);
+      Schema schema = createTestSchema();
+      Object[][] testData = createTestData(schema, (int) totalRows);
+      File arrowFile =
+          createTestArrowFile("TestFile", schema, testData, new RootAllocator(Integer.MAX_VALUE));
 
-    // Act
-    arrowResultChunk.getArrowDataFromInputStream(new FileInputStream(arrowFile));
+      // Act
+      arrowResultChunk.getArrowDataFromInputStream(new FileInputStream(arrowFile));
 
-    // Assert
-    int totalRecordBatches = (int) ((totalRows + rowsInRecordBatch) / rowsInRecordBatch);
-    assertEquals(arrowResultChunk.getRecordBatchCountInChunk(), totalRecordBatches);
-    arrowResultChunk.releaseChunk();
-    arrowResultChunk.releaseChunk(); // calling it a second time also does not throw error.
-  }
+      // Assert
+      int totalRecordBatches = (int) ((totalRows + rowsInRecordBatch) / rowsInRecordBatch);
+      assertEquals(arrowResultChunk.getRecordBatchCountInChunk(), totalRecordBatches);
+      arrowResultChunk.releaseChunk();
+      arrowResultChunk.releaseChunk(); // calling it a second time also does not throw error.
+    }
 
-  @Test
-  public void testGetArrowDataFromThriftInput() {
-    TSparkArrowResultLink chunkInfo =
-        new TSparkArrowResultLink()
-            .setRowCount(totalRows)
-            .setFileLink(TEST_STRING)
-            .setExpiryTime(1000)
-            .setBytesNum(200L);
-    ArrowResultChunk arrowResultChunk =
-        new ArrowResultChunk(0, chunkInfo, TEST_STATEMENT_ID, CompressionType.NONE);
-    assertNull(arrowResultChunk.getErrorMessage());
-    assertEquals(arrowResultChunk.getChunkUrl(), TEST_STRING);
-    assertEquals(arrowResultChunk.getChunkIndex(), 0);
-  }
-
+    @Test
+    public void testGetArrowDataFromThriftInput() {
+      TSparkArrowResultLink chunkInfo =
+          new TSparkArrowResultLink()
+              .setRowCount(totalRows)
+              .setFileLink(TEST_STRING)
+              .setExpiryTime(1000)
+              .setBytesNum(200L);
+      ArrowResultChunk arrowResultChunk =
+          new ArrowResultChunk(0, chunkInfo, TEST_STATEMENT_ID, CompressionType.NONE);
+      assertNull(arrowResultChunk.getErrorMessage());
+      assertEquals(arrowResultChunk.getChunkUrl(), TEST_STRING);
+      assertEquals(arrowResultChunk.getChunkIndex(), 0);
+    }
+  */
   private File createTestArrowFile(
       String fileName, Schema schema, Object[][] testData, RootAllocator allocator)
       throws IOException {

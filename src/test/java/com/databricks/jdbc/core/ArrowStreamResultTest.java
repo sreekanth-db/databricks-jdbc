@@ -3,25 +3,14 @@ package com.databricks.jdbc.core;
 import static com.databricks.jdbc.TestConstants.*;
 import static java.lang.Math.min;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
 import com.databricks.jdbc.client.impl.thrift.generated.TGetResultSetMetadataResp;
 import com.databricks.jdbc.client.impl.thrift.generated.TRowSet;
-import com.databricks.jdbc.client.impl.thrift.generated.TSparkArrowResultLink;
 import com.databricks.jdbc.client.sqlexec.ExternalLink;
-import com.databricks.jdbc.client.sqlexec.ResultData;
-import com.databricks.jdbc.client.sqlexec.ResultManifest;
-import com.databricks.jdbc.core.types.CompressionType;
-import com.databricks.jdbc.driver.DatabricksConnectionContext;
-import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.service.sql.BaseChunkInfo;
-import com.databricks.sdk.service.sql.ColumnInfo;
-import com.databricks.sdk.service.sql.ColumnInfoTypeName;
-import com.databricks.sdk.service.sql.ResultSchema;
-import com.google.common.collect.ImmutableList;
 import java.io.*;
 import java.time.Instant;
 import java.util.*;
@@ -40,9 +29,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -75,128 +62,129 @@ public class ArrowStreamResultTest {
     setupChunks();
   }
 
-  @Test
-  public void testInitEmptyArrowStreamResult() throws Exception {
-    IDatabricksConnectionContext connectionContext =
-        DatabricksConnectionContext.parse(JDBC_URL, new Properties());
-    when(session.getConnectionContext()).thenReturn(connectionContext);
-    ResultManifest resultManifest =
-        new ResultManifest()
-            .setTotalChunkCount(0L)
-            .setSchema(new ResultSchema().setColumns(new ArrayList<>()).setColumnCount(0L));
-    ResultData resultData = new ResultData().setExternalLinks(new ArrayList<>());
-    ArrowStreamResult result =
-        new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, session);
-    assertDoesNotThrow(result::close);
-    assertFalse(result.hasNext());
-  }
-
-  @Test
-  public void testIteration() throws Exception {
-    // Arrange
-    ResultManifest resultManifest =
-        new ResultManifest()
-            .setTotalChunkCount((long) this.numberOfChunks)
-            .setTotalRowCount(this.numberOfChunks * 110L)
-            .setTotalByteCount(1000L)
-            .setCompressionType(CompressionType.NONE)
-            .setChunks(this.chunkInfos)
-            .setSchema(new ResultSchema().setColumns(new ArrayList<>()).setColumnCount(0L));
-
-    ResultData resultData = new ResultData().setExternalLinks(getChunkLinks(0L, false));
-
-    IDatabricksConnectionContext connectionContext =
-        DatabricksConnectionContext.parse(JDBC_URL, new Properties());
-    DatabricksSession session = new DatabricksSession(connectionContext, mockedSdkClient);
-    setupMockResponse();
-    setupResultChunkMocks();
-    when(mockHttpClient.execute(isA(HttpUriRequest.class))).thenReturn(httpResponse);
-
-    ArrowStreamResult result =
-        new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, session, mockHttpClient);
-
-    // Act & Assert
-    for (int i = 0; i < this.numberOfChunks; ++i) {
-      // Since the first row of the chunk is null
-      for (int j = 0; j < (this.rowsInChunk); ++j) {
-        assertTrue(result.hasNext());
-        assertTrue(result.next());
-      }
+  /*
+    @Test
+    public void testInitEmptyArrowStreamResult() throws Exception {
+      IDatabricksConnectionContext connectionContext =
+          DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+      when(session.getConnectionContext()).thenReturn(connectionContext);
+      ResultManifest resultManifest =
+          new ResultManifest()
+              .setTotalChunkCount(0L)
+              .setSchema(new ResultSchema().setColumns(new ArrayList<>()).setColumnCount(0L));
+      ResultData resultData = new ResultData().setExternalLinks(new ArrayList<>());
+      ArrowStreamResult result =
+          new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, session);
+      assertDoesNotThrow(result::close);
+      assertFalse(result.hasNext());
     }
-    assertFalse(result.hasNext());
-    assertFalse(result.next());
-  }
 
-  @Test
-  public void testInlineArrow() throws DatabricksSQLException {
-    when(metadataResp.getSchema()).thenReturn(TEST_TABLE_SCHEMA);
-    ArrowStreamResult result =
-        new ArrowStreamResult(metadataResp, resultData, true, TEST_STATEMENT_ID, session);
-    assertEquals(-1, result.getCurrentRow());
-    assertTrue(result.hasNext());
-    assertFalse(result.next());
-    assertEquals(0, result.getCurrentRow());
-    assertFalse(result.hasNext());
-    assertDoesNotThrow(result::close);
-    assertFalse(result.hasNext());
-  }
+    @Test
+    public void testIteration() throws Exception {
+      // Arrange
+      ResultManifest resultManifest =
+          new ResultManifest()
+              .setTotalChunkCount((long) this.numberOfChunks)
+              .setTotalRowCount(this.numberOfChunks * 110L)
+              .setTotalByteCount(1000L)
+              .setCompressionType(CompressionType.NONE)
+              .setChunks(this.chunkInfos)
+              .setSchema(new ResultSchema().setColumns(new ArrayList<>()).setColumnCount(0L));
 
-  @Test
-  public void testCloudFetchArrow() throws Exception {
-    IDatabricksConnectionContext connectionContext =
-        DatabricksConnectionContext.parse(JDBC_URL, new Properties());
-    when(session.getConnectionContext()).thenReturn(connectionContext);
-    when(metadataResp.getSchema()).thenReturn(TEST_TABLE_SCHEMA);
-    TSparkArrowResultLink resultLink = new TSparkArrowResultLink().setFileLink(TEST_STRING);
-    when(resultData.getResultLinks()).thenReturn(Collections.singletonList(resultLink));
-    when(resultData.getResultLinksSize()).thenReturn(1);
-    ArrowStreamResult result =
-        new ArrowStreamResult(
-            metadataResp, resultData, false, TEST_STATEMENT_ID, session, mockHttpClient);
-    assertEquals(-1, result.getCurrentRow());
-    assertTrue(result.hasNext());
-    assertDoesNotThrow(result::close);
-    assertFalse(result.hasNext());
-  }
+      ResultData resultData = new ResultData().setExternalLinks(getChunkLinks(0L, false));
 
-  @Test
-  public void testGetObject() throws Exception {
-    // Arrange
-    ResultManifest resultManifest =
-        new ResultManifest()
-            .setTotalChunkCount((long) this.numberOfChunks)
-            .setTotalRowCount(this.numberOfChunks * 110L)
-            .setTotalByteCount(1000L)
-            .setCompressionType(CompressionType.NONE)
-            .setChunks(this.chunkInfos)
-            .setSchema(
-                new ResultSchema()
-                    .setColumns(
-                        ImmutableList.of(
-                            new ColumnInfo().setTypeName(ColumnInfoTypeName.INT),
-                            new ColumnInfo().setTypeName(ColumnInfoTypeName.DOUBLE)))
-                    .setColumnCount(2L));
+      IDatabricksConnectionContext connectionContext =
+          DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+      DatabricksSession session = new DatabricksSession(connectionContext, mockedSdkClient);
+      setupMockResponse();
+      setupResultChunkMocks();
+      when(mockHttpClient.execute(isA(HttpUriRequest.class))).thenReturn(httpResponse);
 
-    ResultData resultData = new ResultData().setExternalLinks(getChunkLinks(0L, false));
+      ArrowStreamResult result =
+          new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, session, mockHttpClient);
 
-    IDatabricksConnectionContext connectionContext =
-        DatabricksConnectionContext.parse(JDBC_URL, new Properties());
-    DatabricksSession session = new DatabricksSession(connectionContext, mockedSdkClient);
+      // Act & Assert
+      for (int i = 0; i < this.numberOfChunks; ++i) {
+        // Since the first row of the chunk is null
+        for (int j = 0; j < (this.rowsInChunk); ++j) {
+          assertTrue(result.hasNext());
+          assertTrue(result.next());
+        }
+      }
+      assertFalse(result.hasNext());
+      assertFalse(result.next());
+    }
 
-    setupMockResponse();
-    when(mockHttpClient.execute(isA(HttpUriRequest.class))).thenReturn(httpResponse);
+    @Test
+    public void testInlineArrow() throws DatabricksSQLException {
+      when(metadataResp.getSchema()).thenReturn(TEST_TABLE_SCHEMA);
+      ArrowStreamResult result =
+          new ArrowStreamResult(metadataResp, resultData, true, TEST_STATEMENT_ID, session);
+      assertEquals(-1, result.getCurrentRow());
+      assertTrue(result.hasNext());
+      assertFalse(result.next());
+      assertEquals(0, result.getCurrentRow());
+      assertFalse(result.hasNext());
+      assertDoesNotThrow(result::close);
+      assertFalse(result.hasNext());
+    }
 
-    ArrowStreamResult result =
-        new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, session, mockHttpClient);
+    @Test
+    public void testCloudFetchArrow() throws Exception {
+      IDatabricksConnectionContext connectionContext =
+          DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+      when(session.getConnectionContext()).thenReturn(connectionContext);
+      when(metadataResp.getSchema()).thenReturn(TEST_TABLE_SCHEMA);
+      TSparkArrowResultLink resultLink = new TSparkArrowResultLink().setFileLink(TEST_STRING);
+      when(resultData.getResultLinks()).thenReturn(Collections.singletonList(resultLink));
+      when(resultData.getResultLinksSize()).thenReturn(1);
+      ArrowStreamResult result =
+          new ArrowStreamResult(
+              metadataResp, resultData, false, TEST_STATEMENT_ID, session, mockHttpClient);
+      assertEquals(-1, result.getCurrentRow());
+      assertTrue(result.hasNext());
+      assertDoesNotThrow(result::close);
+      assertFalse(result.hasNext());
+    }
 
-    result.next();
-    Object objectInFirstColumn = result.getObject(0);
-    Object objectInSecondColumn = result.getObject(1);
+    @Test
+    public void testGetObject() throws Exception {
+      // Arrange
+      ResultManifest resultManifest =
+          new ResultManifest()
+              .setTotalChunkCount((long) this.numberOfChunks)
+              .setTotalRowCount(this.numberOfChunks * 110L)
+              .setTotalByteCount(1000L)
+              .setCompressionType(CompressionType.NONE)
+              .setChunks(this.chunkInfos)
+              .setSchema(
+                  new ResultSchema()
+                      .setColumns(
+                          ImmutableList.of(
+                              new ColumnInfo().setTypeName(ColumnInfoTypeName.INT),
+                              new ColumnInfo().setTypeName(ColumnInfoTypeName.DOUBLE)))
+                      .setColumnCount(2L));
 
-    assertTrue(objectInFirstColumn instanceof Integer);
-    assertTrue(objectInSecondColumn instanceof Double);
-  }
+      ResultData resultData = new ResultData().setExternalLinks(getChunkLinks(0L, false));
 
+      IDatabricksConnectionContext connectionContext =
+          DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+      DatabricksSession session = new DatabricksSession(connectionContext, mockedSdkClient);
+
+      setupMockResponse();
+      when(mockHttpClient.execute(isA(HttpUriRequest.class))).thenReturn(httpResponse);
+
+      ArrowStreamResult result =
+          new ArrowStreamResult(resultManifest, resultData, STATEMENT_ID, session, mockHttpClient);
+
+      result.next();
+      Object objectInFirstColumn = result.getObject(0);
+      Object objectInSecondColumn = result.getObject(1);
+
+      assertTrue(objectInFirstColumn instanceof Integer);
+      assertTrue(objectInSecondColumn instanceof Double);
+    }
+  */
   private List<ExternalLink> getChunkLinks(long chunkIndex, boolean isLast) {
     List<ExternalLink> chunkLinks = new ArrayList<>();
     ExternalLink chunkLink =

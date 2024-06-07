@@ -15,7 +15,7 @@
         <url>https://github.com/databricks/databricks-jdbc</url>
     </scm>
   <properties>
-    <arrow.version>10.0.0</arrow.version>
+    <arrow.version>10.0.1</arrow.version>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <mockito.version>5.2.0</mockito.version>
@@ -48,6 +48,11 @@
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-memory-core</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-unsafe</artifactId>
       <version>${arrow.version}</version>
     </dependency>
     <dependency>
@@ -126,6 +131,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
       <version>${jackson.version}</version>
     </dependency>
     <dependency>
