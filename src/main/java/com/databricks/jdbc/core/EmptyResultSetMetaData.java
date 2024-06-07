@@ -1,28 +1,9 @@
 package com.databricks.jdbc.core;
 
-import com.databricks.jdbc.client.impl.thrift.generated.TColumnDesc;
-import com.databricks.jdbc.client.impl.thrift.generated.TGetResultSetMetadataResp;
-import com.databricks.jdbc.client.sqlexec.ResultData;
-import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import com.databricks.jdbc.commons.util.WrapperUtil;
-import com.databricks.jdbc.core.types.AccessType;
-import com.databricks.jdbc.core.types.Nullable;
-import com.databricks.sdk.service.sql.ColumnInfo;
-import com.databricks.sdk.service.sql.ColumnInfoTypeName;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftHelper.getTypeFromTypeDesc;
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.VOLUME_OPERATION_STATUS_COLUMN_NAME;
 
 public class EmptyResultSetMetaData implements ResultSetMetaData {
 
@@ -141,5 +122,10 @@ public class EmptyResultSetMetaData implements ResultSetMetaData {
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
     return WrapperUtil.isWrapperFor(iface, this);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    return o instanceof EmptyResultSetMetaData;
   }
 }
