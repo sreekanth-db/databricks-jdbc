@@ -32,7 +32,6 @@ public class ArrowResultChunkTest {
 
   private long totalRows = 110;
 
-  /*
     @Test
     public void testReleaseUnusedChunk() throws Exception {
       // Arrange
@@ -90,7 +89,7 @@ public class ArrowResultChunkTest {
       assertEquals(arrowResultChunk.getChunkUrl(), TEST_STRING);
       assertEquals(arrowResultChunk.getChunkIndex(), 0);
     }
-  */
+
   private File createTestArrowFile(
       String fileName, Schema schema, Object[][] testData, RootAllocator allocator)
       throws IOException {

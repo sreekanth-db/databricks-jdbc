@@ -61,8 +61,7 @@ public class ArrowStreamResultTest {
   public void setup() throws Exception {
     setupChunks();
   }
-
-  /*
+  
     @Test
     public void testInitEmptyArrowStreamResult() throws Exception {
       IDatabricksConnectionContext connectionContext =
@@ -184,7 +183,7 @@ public class ArrowStreamResultTest {
       assertTrue(objectInFirstColumn instanceof Integer);
       assertTrue(objectInSecondColumn instanceof Double);
     }
-  */
+
   private List<ExternalLink> getChunkLinks(long chunkIndex, boolean isLast) {
     List<ExternalLink> chunkLinks = new ArrayList<>();
     ExternalLink chunkLink =
