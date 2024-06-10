@@ -37,7 +37,8 @@ public class MetricsMap {
         .thenAccept(
             response -> {
               if (response != null) {
-                System.out.println("Response" + response);
+                // System.out.println("Response" + response);
+                gaugeMetrics.clear();
                 count_http_post += (System.currentTimeMillis() - LastModified);
               }
             });

@@ -169,7 +169,7 @@ public class DriverTester {
       MetricsMap.SetGaugeMetric(MetricName.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 2);
       Thread.sleep(1000);
     }
-    Thread.sleep(10000);
+    Thread.sleep(5000);
 
     for (int i = 1; i <= 10; i++) {
       MetricsMap.SetGaugeMetric(MetricName.LIST_TABLES_METADATA_SEA.name(), (3 * i));
@@ -177,8 +177,6 @@ public class DriverTester {
       Thread.sleep(1000);
     }
 
-    System.out.println(MetricsMap.GetGaugeMetric(MetricName.LIST_TABLES_METADATA_SEA.name()));
-    // System.out.println(MetricsMap.GetCounterMetric(MetricName.LIST_PRIMARY_KEYS_METADATA_SEA.name()));
     System.out.println(MetricsMap.getHttpLatency());
   }
 }
