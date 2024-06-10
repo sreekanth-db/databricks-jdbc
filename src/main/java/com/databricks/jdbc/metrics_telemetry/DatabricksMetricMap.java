@@ -61,7 +61,7 @@ public class DatabricksMetricMap {
     postMetrics();
   }
 
-  public static void Record(String name, double value){
+  public static void Record(String name, double value) {
     SetGaugeMetric(name, value);
   }
 
