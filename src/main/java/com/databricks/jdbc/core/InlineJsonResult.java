@@ -1,7 +1,5 @@
 package com.databricks.jdbc.core;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import java.sql.SQLException;
