@@ -41,15 +41,4 @@ public class HTTP_REQ {
         }
         return result.toString();
     }
-
-    public static void main(String[] args) {
-        // Example usage
-        String url = "https://test-shard-bhuvan-v2.dev.azuredatabricks.net/api/2.0/example-v2/exportMetrics";
-        String accessToken = "dapif4da29d88f5a3f56a6654e3c46413dc2";
-        HashMap<String, Double> map = new HashMap<>();
-        map.put("key1", 1.0);
-        map.put("key2", 2.0);
-        String response = sendPostRequest(url, accessToken, map);
-        System.out.println(response);
-    }
 }

@@ -7,7 +7,8 @@ import com.databricks.jdbc.httpReq.HTTP_REQ;
 
 public class MetricsMap {
     private static final String URL = "https://test-shard-bhuvan-v2.dev.azuredatabricks.net/api/2.0/example-v2/exportMetrics";
-    private static final String ACCESS_TOKEN = "dapif4da29d88f5a3f56a6654e3c46413dc2";
+    //TODO: Replace ACCESS_TOKEN with your own token - TO BE DECIDED ONCE THE SERVICE IS CREATED
+    private static final String ACCESS_TOKEN = "x";
     private static final HashMap<String, Double> gaugeMetrics = new HashMap<>();
     private static final HashMap<String, Double> counterMetrics = new HashMap<>();
 
