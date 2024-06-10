@@ -1,5 +1,7 @@
 package com.databricks.jdbc.httpReq;
 
+import com.databricks.jdbc.commons.MetricsList;
+import com.databricks.jdbc.metrics_telemetry.DatabricksMetricMap;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -37,7 +39,7 @@ public class HTTP_REQ {
       conn.disconnect();
 
     } catch (Exception e) {
-      e.printStackTrace();
+      DatabricksMetricMap.Record(MetricsList.RECORD_METRICS_ERROR_COUNT.name(), 1.0);
     }
     return result.toString();
   }

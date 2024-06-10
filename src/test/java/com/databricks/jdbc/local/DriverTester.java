@@ -1,7 +1,7 @@
 package com.databricks.jdbc.local;
 
-import com.databricks.jdbc.commons.MetricName;
-import com.databricks.jdbc.metrics_telemetry.MetricsMap;
+import com.databricks.jdbc.commons.MetricsList;
+import com.databricks.jdbc.metrics_telemetry.DatabricksMetricMap;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
@@ -163,20 +163,20 @@ public class DriverTester {
   }
 
   @Test
-  void modifyMetrics() throws Exception {
+  void testModifyMetrics() throws Exception {
     for (int i = 1; i <= 10; i++) {
-      MetricsMap.SetGaugeMetric(MetricName.LIST_TABLES_METADATA_SEA.name(), (2 * i));
-      MetricsMap.SetGaugeMetric(MetricName.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 2);
+      DatabricksMetricMap.Record(MetricsList.LIST_TABLES_METADATA_SEA.name(), (2 * i));
+      DatabricksMetricMap.Record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 2);
       Thread.sleep(1000);
     }
     Thread.sleep(5000);
 
     for (int i = 1; i <= 10; i++) {
-      MetricsMap.SetGaugeMetric(MetricName.LIST_TABLES_METADATA_SEA.name(), (3 * i));
-      MetricsMap.SetGaugeMetric(MetricName.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 3);
+      DatabricksMetricMap.Record(MetricsList.LIST_TABLES_METADATA_SEA.name(), (3 * i));
+      DatabricksMetricMap.Record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 3);
       Thread.sleep(1000);
     }
 
-    System.out.println(MetricsMap.getHttpLatency());
+    System.out.println(DatabricksMetricMap.getHttpLatency());
   }
 }

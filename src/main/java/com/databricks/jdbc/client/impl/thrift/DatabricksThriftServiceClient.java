@@ -13,9 +13,11 @@ import com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftAccessor;
 import com.databricks.jdbc.client.impl.thrift.generated.*;
 import com.databricks.jdbc.client.sqlexec.ExternalLink;
 import com.databricks.jdbc.commons.CommandName;
+import com.databricks.jdbc.commons.MetricsList;
 import com.databricks.jdbc.core.*;
 import com.databricks.jdbc.core.types.ComputeResource;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.databricks.jdbc.metrics_telemetry.DatabricksMetricMap;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.SQLException;
 import java.util.*;
@@ -57,6 +59,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
         catalog,
         schema,
         sessionConf);
+    long startTime = System.currentTimeMillis();
     TOpenSessionReq openSessionReq =
         new TOpenSessionReq()
             .setInitialNamespace(getNamespace(catalog, schema))
@@ -69,11 +72,17 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
     verifySuccessStatus(response.status.getStatusCode(), response.toString());
     String sessionId = byteBufferToString(response.sessionHandle.getSessionId().guid);
     LOGGER.info("Session created with ID {}", sessionId);
-    return ImmutableSessionInfo.builder()
-        .sessionId(sessionId)
-        .sessionHandle(response.sessionHandle)
-        .computeResource(cluster)
-        .build();
+
+    ImmutableSessionInfo sessionInfo =
+        ImmutableSessionInfo.builder()
+            .sessionId(sessionId)
+            .sessionHandle(response.sessionHandle)
+            .computeResource(cluster)
+            .build();
+    DatabricksMetricMap.Record(
+            MetricsList.CREATE_SESSION_THRIFT.name(),
+            (double) (System.currentTimeMillis() - startTime));
+    return sessionInfo;
   }
 
   @Override

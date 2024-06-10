@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 
-public class MetricsMap {
+public class DatabricksMetricMap {
   private static final String URL =
       "https://test-shard-bhuvan-v2.dev.azuredatabricks.net/api/2.0/example-v2/exportMetrics";
   // TODO: Replace ACCESS_TOKEN with your own token - TO BE DECIDED ONCE THE SERVICE IS CREATED
@@ -15,11 +15,11 @@ public class MetricsMap {
 
   private static long LastModified = System.currentTimeMillis();
 
-  private static int INTERVAL = 0;
+  private static int INTERVAL = 10 * 1000;
 
   private static long count_http_post = 0;
 
-  private MetricsMap() throws IOException {
+  private DatabricksMetricMap() throws IOException {
     // Private constructor to prevent instantiation
   }
 
@@ -59,6 +59,10 @@ public class MetricsMap {
     }
     counterMetrics.put(name, counterMetrics.get(name) + value);
     postMetrics();
+  }
+
+  public static void Record(String name, double value){
+    SetGaugeMetric(name, value);
   }
 
   public static double GetGaugeMetric(String name) {
