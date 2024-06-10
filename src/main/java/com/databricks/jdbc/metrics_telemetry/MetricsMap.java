@@ -30,6 +30,7 @@ public class MetricsMap {
 
               if (current_time - LastModified >= INTERVAL) {
                 LastModified = current_time;
+                // TODO: Use DatabricksHTTPClient for sending HTTP requests
                 return HTTP_REQ.sendPostRequest(URL, ACCESS_TOKEN, gaugeMetrics);
               }
               return null;
@@ -37,7 +38,6 @@ public class MetricsMap {
         .thenAccept(
             response -> {
               if (response != null) {
-                // System.out.println("Response" + response);
                 gaugeMetrics.clear();
                 count_http_post += (System.currentTimeMillis() - LastModified);
               }
@@ -45,6 +45,7 @@ public class MetricsMap {
   }
 
   public static void SetGaugeMetric(String name, double value) {
+    // TODO: Handling metrics export when multiple users are accessing from the same workspace_id.
     if (!gaugeMetrics.containsKey(name)) {
       gaugeMetrics.put(name, 0.0);
     }

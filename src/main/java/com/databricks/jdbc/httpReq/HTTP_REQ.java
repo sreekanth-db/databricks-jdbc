@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.HashMap;
 import org.apache.http.client.utils.URIBuilder;
 
+// TODO: Authenticate the user with the access token
 public class HTTP_REQ {
   public static String sendPostRequest(
       String urlString, String accessToken, HashMap<String, Double> map) {
