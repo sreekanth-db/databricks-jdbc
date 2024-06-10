@@ -18,25 +18,29 @@ public class MetricsMap {
   private static int INTERVAL = 0;
 
   private static long count_http_post = 0;
+
   private MetricsMap() throws IOException {
     // Private constructor to prevent instantiation
   }
 
   public static void postMetrics() {
-    CompletableFuture.supplyAsync(() -> {
-      long current_time = System.currentTimeMillis();
+    CompletableFuture.supplyAsync(
+            () -> {
+              long current_time = System.currentTimeMillis();
 
-      if (current_time - LastModified >= INTERVAL) {
-        LastModified = current_time;
-        return HTTP_REQ.sendPostRequest(URL, ACCESS_TOKEN, gaugeMetrics);
-      }
-      return null;
-    }).thenAccept(response -> {
-      if (response != null) {
-        System.out.println("Response" + response);
-        count_http_post += (System.currentTimeMillis() - LastModified);
-      }
-    });
+              if (current_time - LastModified >= INTERVAL) {
+                LastModified = current_time;
+                return HTTP_REQ.sendPostRequest(URL, ACCESS_TOKEN, gaugeMetrics);
+              }
+              return null;
+            })
+        .thenAccept(
+            response -> {
+              if (response != null) {
+                System.out.println("Response" + response);
+                count_http_post += (System.currentTimeMillis() - LastModified);
+              }
+            });
   }
 
   public static void SetGaugeMetric(String name, double value) {

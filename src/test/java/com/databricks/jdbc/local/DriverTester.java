@@ -165,14 +165,14 @@ public class DriverTester {
   @Test
   void modifyMetrics() throws Exception {
     for (int i = 1; i <= 10; i++) {
-      MetricsMap.SetGaugeMetric(MetricName.LIST_TABLES_METADATA_SEA.name(), (2*i));
+      MetricsMap.SetGaugeMetric(MetricName.LIST_TABLES_METADATA_SEA.name(), (2 * i));
       MetricsMap.SetGaugeMetric(MetricName.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 2);
       Thread.sleep(1000);
     }
     Thread.sleep(10000);
 
     for (int i = 1; i <= 10; i++) {
-      MetricsMap.SetGaugeMetric(MetricName.LIST_TABLES_METADATA_SEA.name(), (3*i));
+      MetricsMap.SetGaugeMetric(MetricName.LIST_TABLES_METADATA_SEA.name(), (3 * i));
       MetricsMap.SetGaugeMetric(MetricName.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 3);
       Thread.sleep(1000);
     }
