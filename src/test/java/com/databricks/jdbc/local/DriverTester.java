@@ -2,6 +2,10 @@ package com.databricks.jdbc.local;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+
+import com.databricks.jdbc.commons.MetricName;
+import com.databricks.jdbc.metrics_telemetry.MetricsMap;
+
 import java.sql.*;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
@@ -121,6 +125,7 @@ public class DriverTester {
   }
 
   @Test
+
   void testLogging() throws Exception {
     DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
     DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
@@ -158,5 +163,17 @@ public class DriverTester {
     BigDecimal bigDecimal = rs.getObject("big_decimal", BigDecimal.class);
     System.out.println(
         "here is bigDecimal " + bigDecimal + ". Class Details : " + bigDecimal.getClass());
+    }
+
+  @Test
+  void modifyMetrics() throws Exception {
+    for(int i=1; i<=5;i++){
+        MetricsMap.SetGaugeMetric(MetricName.LIST_TABLES_METADATA_SEA.name(), (2*i));
+        MetricsMap.SetGaugeMetric(MetricName.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i^2);
+        Thread.sleep(1000);
+    }
+    System.out.println(MetricsMap.GetGaugeMetric(MetricName.LIST_TABLES_METADATA_SEA.name()));
+    //System.out.println(MetricsMap.GetCounterMetric(MetricName.LIST_PRIMARY_KEYS_METADATA_SEA.name()));
+    System.out.println(MetricsMap.getHttpLatency());
   }
 }
