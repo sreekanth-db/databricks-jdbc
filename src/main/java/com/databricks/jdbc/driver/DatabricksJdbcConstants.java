@@ -48,6 +48,7 @@ public final class DatabricksJdbcConstants {
   static final String CF_PROXY_HOST = "cfproxyhost";
   static final String CF_PROXY_PORT = "cfproxyport";
   static final String USE_CF_PROXY_AUTH = "cfproxyauth";
+  static final String ENABLE_ARROW = "EnableArrow";
   static final String CF_PROXY_USER = "cfproxyuid";
   static final String CF_PROXY_PWD = "cfproxypwd";
 
@@ -130,4 +131,7 @@ public final class DatabricksJdbcConstants {
   public static final String USE_THRIFT_CLIENT = "usethriftclient";
 
   public static final String USE_LEGACY_METADATA = "uselegacymetadata";
+
+  static final String CLOUD_FETCH_THREAD_POOL_SIZE = "cloudFetchThreadPoolSize";
+  static final int CLOUD_FETCH_THREAD_POOL_SIZE_DEFAULT = 16;
 }

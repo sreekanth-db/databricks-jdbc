@@ -117,7 +117,12 @@ public interface IDatabricksConnectionContext {
 
   int getAsyncExecPollInterval();
 
+  Boolean shouldEnableArrow();
+
   DatabricksClientType getClientType();
 
   Boolean getUseLegacyMetadata();
+
+  /** Returns the number of threads to be used for fetching data from cloud storage */
+  int getCloudFetchThreadPoolSize();
 }

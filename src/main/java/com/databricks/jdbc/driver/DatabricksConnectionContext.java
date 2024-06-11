@@ -224,6 +224,10 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     return this.parameters.getOrDefault(key.toLowerCase(), null);
   }
 
+  private String getParameter(String key, String defaultValue) {
+    return this.parameters.getOrDefault(key.toLowerCase(), defaultValue);
+  }
+
   @Override
   public AuthFlow getAuthFlow() {
     String authFlow = getParameter(DatabricksJdbcConstants.AUTH_FLOW);
@@ -301,8 +305,19 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public Boolean getUseLegacyMetadata() {
     // Defaults to use legacy metadata client
-    return getParameter(DatabricksJdbcConstants.USE_LEGACY_METADATA) == null
-        || getParameter(DatabricksJdbcConstants.USE_LEGACY_METADATA).equals("1");
+    return Objects.equals(getParameter(USE_LEGACY_METADATA, "0"), "1");
+  }
+
+  @Override
+  public int getCloudFetchThreadPoolSize() {
+    try {
+      return Integer.parseInt(
+          getParameter(
+              CLOUD_FETCH_THREAD_POOL_SIZE, String.valueOf(CLOUD_FETCH_THREAD_POOL_SIZE_DEFAULT)));
+    } catch (NumberFormatException e) {
+      LOGGER.debug("Invalid thread pool size, defaulting to default thread pool size.");
+      return CLOUD_FETCH_THREAD_POOL_SIZE_DEFAULT;
+    }
   }
 
   private static boolean nullOrEmptyString(String s) {
@@ -398,6 +413,11 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public Boolean getUseCloudFetchProxyAuth() {
     return Objects.equals(getParameter(USE_CF_PROXY_AUTH), "1");
+  }
+
+  @Override
+  public Boolean shouldEnableArrow() {
+    return Objects.equals(getParameter(ENABLE_ARROW, "1"), "1");
   }
 
   @Override
