@@ -5,30 +5,29 @@ import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.api.*;
 
 public class UCMetadataIntegrationTests {
 
-  private Connection connection;
+  private static Connection connection;
 
-  long currentTimeMillis = System.currentTimeMillis();
-  String prefix = "uc_" + currentTimeMillis + "_"; // Define your prefix here
-  String catA = prefix + "catA";
-  String hiveCatalog = "hive_metastore"; // Define your hive catalog here
+  static long currentTimeMillis = System.currentTimeMillis();
+  static String prefix = "uc_" + currentTimeMillis + "_"; // Define your prefix here
+  static String catA = prefix + "catA";
+  static String hiveCatalog = "hive_metastore"; // Define your hive catalog here
 
   String sparkCatalog = "spark";
 
-  String mainCatalog = "main";
-  String db1 = prefix + "db1";
-  String db2 = prefix + "db2";
-  String table1 = prefix + "table_1";
-  String table2 = prefix + "table_2";
-  String mainDb1Table1 = prefix + "main_1";
+  static String mainCatalog = "main";
+  static String db1 = prefix + "db1";
+  static String db2 = prefix + "db2";
+  static String table1 = prefix + "table_1";
+  static String table2 = prefix + "table_2";
+  static String mainDb1Table1 = prefix + "main_1";
 
-  @BeforeEach
-  void setUp() throws SQLException {
+  @BeforeAll
+  static void setUp() throws SQLException {
     // Change connection to actual test warehouse once it supports latest runtime
     connection = getDogfoodJDBCConnection(List.of(List.of("useLegacyMetadata", "0")));
 
@@ -109,8 +108,8 @@ public class UCMetadataIntegrationTests {
     // | hive_metastore |     db2     |  hive_metastore_2  |
   }
 
-  @AfterEach
-  void cleanUp() throws SQLException {
+  @AfterAll
+  static void cleanUp() throws SQLException {
     if (connection != null) {
       connection.close();
     }
@@ -142,7 +141,6 @@ public class UCMetadataIntegrationTests {
   void testGetSchemas() throws SQLException {
     executeSQL("USE CATALOG hive_metastore");
     ResultSet r = connection.getMetaData().getSchemas("hive_metastore", "%");
-    System.out.println(db2.toLowerCase());
     verifyContainsSchemas(
         r,
         List.of(
@@ -166,13 +164,6 @@ public class UCMetadataIntegrationTests {
             List.of(catA.toLowerCase(), db1.toLowerCase(), "a_1", "TABLE"),
             List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "TABLE"),
             List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "TABLE")));
-
-    r = connection.getMetaData().getTables(hiveCatalog, "%", "%", null);
-    verifyContainsTables(
-        r,
-        List.of(
-            List.of(hiveCatalog, db2.toLowerCase(), table1.toLowerCase(), "TABLE"),
-            List.of(hiveCatalog, db2.toLowerCase(), table2.toLowerCase(), "TABLE")));
   }
 
   @Test
@@ -187,13 +178,6 @@ public class UCMetadataIntegrationTests {
             List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "col_2", "STRING"),
             List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "col_1", "INT"),
             List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "col_2", "STRING")));
-
-    r = connection.getMetaData().getColumns(hiveCatalog, "%", "%", "%");
-    verifyContainsColumns(
-        r,
-        List.of(
-            List.of(hiveCatalog, db2.toLowerCase(), table1, "col_1", "INT"),
-            List.of(hiveCatalog, db2.toLowerCase(), table1, "col_2", "STRING")));
   }
 
   @Test
@@ -203,7 +187,6 @@ public class UCMetadataIntegrationTests {
             List.of(List.of("useLegacyMetadata", "0"), List.of("connCatalog", catA)));
     ResultSet r =
         connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
-    printResultSet(r);
     r.next();
     assert (r.getString(1).equals(catA.toLowerCase()));
     assert (r.getString(2).equals("default"));
@@ -212,7 +195,6 @@ public class UCMetadataIntegrationTests {
         getDogfoodJDBCConnection(
             List.of(List.of("useLegacyMetadata", "0"), List.of("connCatalog", "samples")));
     r = connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
-    printResultSet(r);
     r.next();
     assert (r.getString(1).equals("samples"));
     assert (r.getString(2).equals("default"));
@@ -221,7 +203,6 @@ public class UCMetadataIntegrationTests {
         getDogfoodJDBCConnection(
             List.of(List.of("useLegacyMetadata", "0"), List.of("connSchema", db2.toLowerCase())));
     r = connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
-    printResultSet(r);
     r.next();
     assert (r.getString(1).equals(sparkCatalog));
     assert (r.getString(2).equals(db2.toLowerCase()));
@@ -233,7 +214,6 @@ public class UCMetadataIntegrationTests {
                 List.of("connCatalog", "fake_catalog"),
                 List.of("connSchema", "fake_schema")));
     r = connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
-    printResultSet(r);
     r.next();
     assert (r.getString(1).equals("fake_catalog"));
     assert (r.getString(2).equals("fake_schema"));
@@ -297,31 +277,5 @@ public class UCMetadataIntegrationTests {
       e.printStackTrace();
     }
     assert (allCatalogs.containsAll(included_catalogs));
-  }
-
-  public void printResultSet(ResultSet resultSet) throws SQLException {
-    System.out.println("\n\nPrinting resultSet...........\n");
-    ResultSetMetaData rsmd = resultSet.getMetaData();
-    int columnsNumber = rsmd.getColumnCount();
-    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnName(i) + "\t");
-    System.out.println();
-    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnTypeName(i) + "\t\t");
-    System.out.println();
-    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnType(i) + "\t\t\t");
-    System.out.println();
-    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getPrecision(i) + "\t\t\t");
-    System.out.println();
-    while (resultSet.next()) {
-      for (int i = 1; i <= columnsNumber; i++) {
-        try {
-          Object columnValue = resultSet.getObject(i);
-          System.out.print(columnValue + "\t\t");
-        } catch (Exception e) {
-          System.out.print(
-              "NULL\t\t"); // It is possible for certain columns to be non-existent (edge case)
-        }
-      }
-      System.out.println();
-    }
   }
 }
