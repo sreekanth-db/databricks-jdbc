@@ -117,13 +117,13 @@ public class IntegrationTestUtil {
         getDogfoodJDBCUrl(), getDatabricksUser(), getDatabricksDogfoodToken());
   }
 
-  public static Connection getDogfoodJDBCConnection(List<List<String>> extraArgs) throws SQLException {
+  public static Connection getDogfoodJDBCConnection(List<List<String>> extraArgs)
+      throws SQLException {
     String jdbcUrl = getDogfoodJDBCUrl();
     for (List<String> args : extraArgs) {
       jdbcUrl += ";" + args.get(0) + "=" + args.get(1);
     }
-    return DriverManager.getConnection(
-            jdbcUrl, getDatabricksUser(), getDatabricksDogfoodToken());
+    return DriverManager.getConnection(jdbcUrl, getDatabricksUser(), getDatabricksDogfoodToken());
   }
 
   public static Connection getValidJDBCConnection(Map<String, String> args) throws SQLException {

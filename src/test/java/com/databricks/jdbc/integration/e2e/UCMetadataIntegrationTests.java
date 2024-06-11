@@ -5,7 +5,6 @@ import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.junit.jupiter.api.*;
 
 public class UCMetadataIntegrationTests {
