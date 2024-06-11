@@ -109,10 +109,6 @@ public class UCMetadataIntegrationTests {
 
   @AfterAll
   static void cleanUp() throws SQLException {
-    if (connection != null) {
-      connection.close();
-    }
-
     // Cleanup
     executeSQL("USE CATALOG " + catA);
     executeSQL("DROP DATABASE " + db1 + " CASCADE");
@@ -128,6 +124,10 @@ public class UCMetadataIntegrationTests {
     // Cleanup legacy catalog
     executeSQL("USE CATALOG " + hiveCatalog);
     executeSQL("DROP DATABASE " + db2 + " CASCADE");
+
+    if (connection != null) {
+      connection.close();
+    }
   }
 
   @Test
