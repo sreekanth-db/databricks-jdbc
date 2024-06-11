@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.HashMap;
 import org.junit.jupiter.api.Test;
 
 public class DriverTester {
@@ -178,5 +179,24 @@ public class DriverTester {
     }
 
     System.out.println(DatabricksMetrics.getHttpLatency());
+  }
+
+  @Test
+  public void testExecuteHttpRequest() throws Exception {
+
+    DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
+    DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
+
+    String jdbcUrl =
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
+    Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
+    System.out.println("Connection established......");
+
+    HashMap<String, Double> map = new HashMap<>();
+    map.put("M1", (double) 5);
+    map.put("M2", (double) 7);
+
+    String response = DatabricksMetrics.sendRequest(map);
+    System.out.println(response);
   }
 }
