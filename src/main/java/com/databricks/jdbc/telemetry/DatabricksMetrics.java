@@ -26,34 +26,29 @@ public class DatabricksMetrics {
 
   private static long count_http_post = 0;
 
-  private static IDatabricksConnectionContext context;
+  private static DatabricksHttpClient telemetryClient = null;
+
+  public static void setTelemetryClient(IDatabricksConnectionContext context) {
+    telemetryClient = DatabricksHttpClient.getInstance(context);
+  }
 
   private DatabricksMetrics() throws IOException {
     // Private constructor to prevent instantiation
   }
 
-  public static void setContext(IDatabricksConnectionContext context) {
-    DatabricksMetrics.context = context;
-  }
-
-  public static IDatabricksConnectionContext getContext() {
-    return DatabricksMetrics.context;
-  }
-
   public static String sendRequest(HashMap<String, Double> map) throws Exception {
-    if (context == null) {
-      throw new Exception("Context is not set. Initialize the Driver first.");
+    if (telemetryClient == null) {
+      throw new Exception("Telemetry client is not set. Initialize the Driver first.");
     }
     ObjectMapper objectMapper = new ObjectMapper();
     String jsonInputString = objectMapper.writeValueAsString(map);
-    DatabricksHttpClient client = DatabricksHttpClient.getInstance(context);
     URIBuilder uriBuilder = new URIBuilder(URL);
     uriBuilder.addParameter("metrics_map_string", jsonInputString);
     HttpUriRequest request = new HttpGet(uriBuilder.build());
     request.addHeader("Authorization", "Bearer " + ACCESS_TOKEN);
 
     try {
-      CloseableHttpResponse response = client.execute(request);
+      CloseableHttpResponse response = telemetryClient.execute(request);
       if (response != null && response.getStatusLine().getStatusCode() != 200) {
         throw new Exception(
             "Response code is not 200. Response code: "

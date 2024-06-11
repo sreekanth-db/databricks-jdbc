@@ -50,7 +50,7 @@ public class DatabricksDriver implements Driver {
     IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(url, info);
     configureLogging(connectionContext.getLogPathString(), connectionContext.getLogLevel());
     setUserAgent(connectionContext);
-    DatabricksMetrics.setContext(connectionContext);
+    DatabricksMetrics.setTelemetryClient(connectionContext);
     try {
       return new DatabricksConnection(connectionContext);
     } catch (Exception e) {
