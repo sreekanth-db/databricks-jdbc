@@ -186,6 +186,7 @@ public class DatabricksHttpClientTest {
     when(request.getURI()).thenReturn(URI.create("TestURI"));
     when(mockHttpClient.execute(request)).thenReturn(closeableHttpResponse);
     assertEquals(closeableHttpResponse, databricksHttpClient.execute(request));
+    System.out.println(request.getURI());
   }
 
   @Test
