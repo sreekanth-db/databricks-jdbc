@@ -5,8 +5,6 @@ import static com.databricks.jdbc.integration.IntegrationTestUtil.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +29,8 @@ public class UCMetadataIntegrationTests {
 
   @BeforeEach
   void setUp() throws SQLException {
-    connection = getValidJDBCConnection(List.of(List.of("useLegacyMetadata", "0")));
+    // Change connection to actual test warehouse once it supports latest runtime
+    connection = getDogfoodJDBCConnection(List.of(List.of("useLegacyMetadata", "0")));
 
     executeSQL("CREATE CATALOG IF NOT EXISTS " + catA);
     executeSQL("USE CATALOG " + catA);
@@ -98,16 +97,16 @@ public class UCMetadataIntegrationTests {
             + table2
             + "' AS col_2)");
 
-      // Created tables:
-      // |     catalog    |    schema   |        table       |
-      // +----------------+-------------+--------------------+
-      // |      cat_a     |     db1     |         a_1        |
-      // |      cat_a     |     db1     |         a_2        |
-      // |      cat_a     |     db2     |         a_1        |
-      // |      main      |     db1     |       main_1       |
-      // |      main      |     db2     |          ∅         |
-      // | hive_metastore |     db2     |  hive_metastore_1  |
-      // | hive_metastore |     db2     |  hive_metastore_2  |
+    // Created tables:
+    // |     catalog    |    schema   |        table       |
+    // +----------------+-------------+--------------------+
+    // |      cat_a     |     db1     |         a_1        |
+    // |      cat_a     |     db1     |         a_2        |
+    // |      cat_a     |     db2     |         a_1        |
+    // |      main      |     db1     |       main_1       |
+    // |      main      |     db2     |          ∅         |
+    // | hive_metastore |     db2     |  hive_metastore_1  |
+    // | hive_metastore |     db2     |  hive_metastore_2  |
   }
 
   @AfterEach
@@ -160,42 +159,36 @@ public class UCMetadataIntegrationTests {
 
   @Test
   void testGetTables() throws SQLException {
-    ResultSet r =
-        connection.getMetaData().getTables(catA.toLowerCase(), "%", "%", null);
-      verifyContainsTables(
-              r,
-              List.of(
-                      List.of(catA.toLowerCase(), db1.toLowerCase(), "a_1", "TABLE"),
-                      List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "TABLE"),
-                      List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "TABLE")));
+    ResultSet r = connection.getMetaData().getTables(catA.toLowerCase(), "%", "%", null);
+    verifyContainsTables(
+        r,
+        List.of(
+            List.of(catA.toLowerCase(), db1.toLowerCase(), "a_1", "TABLE"),
+            List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "TABLE"),
+            List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "TABLE")));
 
-      r = connection.getMetaData().getTables(hiveCatalog, "%", "%", null);
-      verifyContainsTables(
-              r,
-              List.of(
-                      List.of(hiveCatalog, db2.toLowerCase(), table1.toLowerCase(), "TABLE"),
-                      List.of(hiveCatalog, db2.toLowerCase(), table2.toLowerCase(), "TABLE")));
-
+    r = connection.getMetaData().getTables(hiveCatalog, "%", "%", null);
+    verifyContainsTables(
+        r,
+        List.of(
+            List.of(hiveCatalog, db2.toLowerCase(), table1.toLowerCase(), "TABLE"),
+            List.of(hiveCatalog, db2.toLowerCase(), table2.toLowerCase(), "TABLE")));
   }
 
   @Test
   void testGetColumns() throws SQLException {
-    ResultSet r =
-        connection.getMetaData().getColumns(catA.toLowerCase(), "%", "%", "%");
+    ResultSet r = connection.getMetaData().getColumns(catA.toLowerCase(), "%", "%", "%");
     verifyContainsColumns(
         r,
         List.of(
             List.of(catA.toLowerCase(), db1.toLowerCase(), "a_1", "col_1", "INT"),
-                List.of(catA.toLowerCase(), db1.toLowerCase(), "a_1", "col_2", "STRING"),
-                List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "col_1", "INT"),
-                List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "col_2", "STRING"),
-                List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "col_1", "INT"),
-                List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "col_2", "STRING")
+            List.of(catA.toLowerCase(), db1.toLowerCase(), "a_1", "col_2", "STRING"),
+            List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "col_1", "INT"),
+            List.of(catA.toLowerCase(), db1.toLowerCase(), "a_2", "col_2", "STRING"),
+            List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "col_1", "INT"),
+            List.of(catA.toLowerCase(), db2.toLowerCase(), "a_1", "col_2", "STRING")));
 
-                ));
-
-    r =
-        connection.getMetaData().getColumns(hiveCatalog, "%", "%", "%");
+    r = connection.getMetaData().getColumns(hiveCatalog, "%", "%", "%");
     verifyContainsColumns(
         r,
         List.of(
@@ -203,31 +196,42 @@ public class UCMetadataIntegrationTests {
             List.of(hiveCatalog, db2.toLowerCase(), table1, "col_2", "STRING")));
   }
 
-
   @Test
   void testGetCurrentCatalogAndSchema() throws SQLException {
-    connection = getValidJDBCConnection(List.of(List.of("useLegacyMetadata", "0"), List.of("connCatalog", catA)));
-    ResultSet r = connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
+    connection =
+        getDogfoodJDBCConnection(
+            List.of(List.of("useLegacyMetadata", "0"), List.of("connCatalog", catA)));
+    ResultSet r =
+        connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
     printResultSet(r);
     r.next();
     assert (r.getString(1).equals(catA.toLowerCase()));
     assert (r.getString(2).equals("default"));
 
-    connection = getValidJDBCConnection(List.of(List.of("useLegacyMetadata", "0"), List.of("connCatalog", "samples")));
+    connection =
+        getDogfoodJDBCConnection(
+            List.of(List.of("useLegacyMetadata", "0"), List.of("connCatalog", "samples")));
     r = connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
     printResultSet(r);
     r.next();
     assert (r.getString(1).equals("samples"));
     assert (r.getString(2).equals("default"));
 
-    connection = getValidJDBCConnection(List.of(List.of("useLegacyMetadata", "0"), List.of("connSchema", db2.toLowerCase())));
+    connection =
+        getDogfoodJDBCConnection(
+            List.of(List.of("useLegacyMetadata", "0"), List.of("connSchema", db2.toLowerCase())));
     r = connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
     printResultSet(r);
     r.next();
     assert (r.getString(1).equals(sparkCatalog));
     assert (r.getString(2).equals(db2.toLowerCase()));
 
-    connection = getValidJDBCConnection(List.of(List.of("useLegacyMetadata", "0"), List.of("connCatalog", "fake_catalog"), List.of("connSchema", "fake_schema")));
+    connection =
+        getDogfoodJDBCConnection(
+            List.of(
+                List.of("useLegacyMetadata", "0"),
+                List.of("connCatalog", "fake_catalog"),
+                List.of("connSchema", "fake_schema")));
     r = connection.createStatement().executeQuery("SELECT current_catalog(), current_database()");
     printResultSet(r);
     r.next();
@@ -235,43 +239,43 @@ public class UCMetadataIntegrationTests {
     assert (r.getString(2).equals("fake_schema"));
   }
 
-
-    private void verifyContainsColumns(ResultSet r, List<List<String>> included_columns) {
-        ArrayList<List<String>> allColumns = new ArrayList<>();
-        try {
-            while (r.next()) {
-                allColumns.add(
-                        List.of(
-                                r.getString("TABLE_CAT"),
-                                r.getString("TABLE_SCHEM"),
-                                r.getString("TABLE_NAME"),
-                                r.getString("COLUMN_NAME"),
-                                r.getString("DATA_TYPE")));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        assert (allColumns.containsAll(included_columns));
+  private void verifyContainsColumns(ResultSet r, List<List<String>> included_columns) {
+    ArrayList<List<String>> allColumns = new ArrayList<>();
+    try {
+      while (r.next()) {
+        allColumns.add(
+            List.of(
+                r.getString("TABLE_CAT"),
+                r.getString("TABLE_SCHEM"),
+                r.getString("TABLE_NAME"),
+                r.getString("COLUMN_NAME"),
+                r.getString("DATA_TYPE")));
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
-
-    private void verifyContainsTables(ResultSet r, List<List<String>> included_tables) {
-        ArrayList<List<String>> allTables = new ArrayList<>();
-        try {
-          while (r.next()) {
-            allTables.add(
-                List.of(
-                    r.getString("TABLE_CAT"),
-                    r.getString("TABLE_SCHEM"),
-                    r.getString("TABLE_NAME"),
-                    r.getString("TABLE_TYPE")));
-          }
-        } catch (SQLException e) {
-          e.printStackTrace();
-        }
-        assert (allTables.containsAll(included_tables));
+    assert (allColumns.containsAll(included_columns));
   }
 
-  private void verifyContainsSchemas(ResultSet r, List<List<String>> included_schema) throws SQLException {
+  private void verifyContainsTables(ResultSet r, List<List<String>> included_tables) {
+    ArrayList<List<String>> allTables = new ArrayList<>();
+    try {
+      while (r.next()) {
+        allTables.add(
+            List.of(
+                r.getString("TABLE_CAT"),
+                r.getString("TABLE_SCHEM"),
+                r.getString("TABLE_NAME"),
+                r.getString("TABLE_TYPE")));
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    assert (allTables.containsAll(included_tables));
+  }
+
+  private void verifyContainsSchemas(ResultSet r, List<List<String>> included_schema)
+      throws SQLException {
     ArrayList<List<String>> allSchemas = new ArrayList<>();
     try {
       while (r.next()) {

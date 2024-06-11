@@ -103,7 +103,8 @@ public class IntegrationTestUtil {
     return DriverManager.getConnection(getJDBCUrl(), getDatabricksUser(), getDatabricksToken());
   }
 
-  public static Connection getValidJDBCConnection(List<List<String>> extraArgs) throws SQLException {
+  public static Connection getValidJDBCConnection(List<List<String>> extraArgs)
+      throws SQLException {
     String jdbcUrl = getJDBCUrl();
     for (List<String> args : extraArgs) {
       jdbcUrl += ";" + args.get(0) + "=" + args.get(1);
@@ -114,6 +115,15 @@ public class IntegrationTestUtil {
   public static Connection getDogfoodJDBCConnection() throws SQLException {
     return DriverManager.getConnection(
         getDogfoodJDBCUrl(), getDatabricksUser(), getDatabricksDogfoodToken());
+  }
+
+  public static Connection getDogfoodJDBCConnection(List<List<String>> extraArgs) throws SQLException {
+    String jdbcUrl = getDogfoodJDBCUrl();
+    for (List<String> args : extraArgs) {
+      jdbcUrl += ";" + args.get(0) + "=" + args.get(1);
+    }
+    return DriverManager.getConnection(
+            jdbcUrl, getDatabricksUser(), getDatabricksDogfoodToken());
   }
 
   public static Connection getValidJDBCConnection(Map<String, String> args) throws SQLException {
