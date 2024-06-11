@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.*;
 
-public class UCMetadataIntegrationTests {
+public class UCMetadataTests {
 
   private static Connection connection;
 
@@ -28,7 +28,6 @@ public class UCMetadataIntegrationTests {
   @BeforeAll
   static void setUp() throws SQLException {
     // Change connection to actual test warehouse once it supports latest runtime
-    System.out.println("CHECK " + System.getenv("DATABRICKS_DOGFOOD_HOST"));
     connection = getDogfoodJDBCConnection(List.of(List.of("useLegacyMetadata", "0")));
 
     executeSQL("CREATE CATALOG IF NOT EXISTS " + catA);
