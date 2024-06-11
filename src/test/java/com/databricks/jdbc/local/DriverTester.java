@@ -1,7 +1,7 @@
 package com.databricks.jdbc.local;
 
 import com.databricks.jdbc.commons.MetricsList;
-import com.databricks.jdbc.metrics_telemetry.DatabricksMetricMap;
+import com.databricks.jdbc.telemetry.DatabricksMetrics;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
@@ -165,18 +165,18 @@ public class DriverTester {
   @Test
   void testModifyMetrics() throws Exception {
     for (int i = 1; i <= 10; i++) {
-      DatabricksMetricMap.Record(MetricsList.LIST_TABLES_METADATA_SEA.name(), (2 * i));
-      DatabricksMetricMap.Record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 2);
+      DatabricksMetrics.record(MetricsList.LIST_TABLES_METADATA_SEA.name(), (2 * i));
+      DatabricksMetrics.record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 2);
       Thread.sleep(1000);
     }
     Thread.sleep(5000);
 
     for (int i = 1; i <= 10; i++) {
-      DatabricksMetricMap.Record(MetricsList.LIST_TABLES_METADATA_SEA.name(), (3 * i));
-      DatabricksMetricMap.Record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 3);
+      DatabricksMetrics.record(MetricsList.LIST_TABLES_METADATA_SEA.name(), (3 * i));
+      DatabricksMetrics.record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 3);
       Thread.sleep(1000);
     }
 
-    System.out.println(DatabricksMetricMap.getHttpLatency());
+    System.out.println(DatabricksMetrics.getHttpLatency());
   }
 }

@@ -1,11 +1,11 @@
-package com.databricks.jdbc.metrics_telemetry;
+package com.databricks.jdbc.telemetry;
 
 import com.databricks.jdbc.httpReq.HTTP_REQ;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 
-public class DatabricksMetricMap {
+public class DatabricksMetrics {
   private static final String URL =
       "https://test-shard-bhuvan-v2.dev.azuredatabricks.net/api/2.0/example-v2/exportMetrics";
   // TODO: Replace ACCESS_TOKEN with your own token - TO BE DECIDED ONCE THE SERVICE IS CREATED
@@ -19,7 +19,7 @@ public class DatabricksMetricMap {
 
   private static long count_http_post = 0;
 
-  private DatabricksMetricMap() throws IOException {
+  private DatabricksMetrics() throws IOException {
     // Private constructor to prevent instantiation
   }
 
@@ -61,7 +61,7 @@ public class DatabricksMetricMap {
     postMetrics();
   }
 
-  public static void Record(String name, double value) {
+  public static void record(String name, double value) {
     SetGaugeMetric(name, value);
   }
 

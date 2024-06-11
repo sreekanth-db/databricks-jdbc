@@ -17,7 +17,7 @@ import com.databricks.jdbc.commons.MetricsList;
 import com.databricks.jdbc.core.*;
 import com.databricks.jdbc.core.types.ComputeResource;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
-import com.databricks.jdbc.metrics_telemetry.DatabricksMetricMap;
+import com.databricks.jdbc.telemetry.DatabricksMetrics;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.SQLException;
 import java.util.*;
@@ -79,7 +79,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
             .sessionHandle(response.sessionHandle)
             .computeResource(cluster)
             .build();
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.CREATE_SESSION_THRIFT.name(),
         (double) (System.currentTimeMillis() - startTime));
     return sessionInfo;
@@ -99,7 +99,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
         (TCloseSessionResp)
             thriftAccessor.getThriftResponse(closeSessionReq, CommandName.CLOSE_SESSION, null);
     verifySuccessStatus(response.status.getStatusCode(), response.toString());
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.DELETE_SESSION_THRIFT.name(),
         (double) (System.currentTimeMillis() - startTime));
   }
@@ -128,7 +128,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
             .setCanDownloadResult(true);
     DatabricksResultSet resultSet =
         thriftAccessor.execute(request, parentStatement, session, statementType);
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.EXECUTE_STATEMENT_THRIFT.name(),
         (double) (System.currentTimeMillis() - startTime));
     return resultSet;
@@ -178,7 +178,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
             resultLink -> {
               externalLinks.add(createExternalLink(resultLink, index.getAndIncrement()));
             });
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.GET_RESULT_CHUNK_THRIFT.name(),
         (double) (System.currentTimeMillis() - startTime));
     return externalLinks;
@@ -196,7 +196,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
             thriftAccessor.getThriftResponse(request, CommandName.LIST_TYPE_INFO, null);
     DatabricksResultSet resultSet =
         getTypeInfoResult(extractValues(response.getResults().getColumns()));
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.LIST_TYPE_INFO_THRIFT.name(),
         (double) (System.currentTimeMillis() - startTime));
     return resultSet;
@@ -216,7 +216,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
             thriftAccessor.getThriftResponse(request, CommandName.LIST_CATALOGS, null);
     DatabricksResultSet resultSet =
         getCatalogsResult(extractValuesColumnar(response.getResults().getColumns()));
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.LIST_CATALOGS_THRIFT.name(), (double) (System.currentTimeMillis() - startTime));
     return resultSet;
   }
@@ -242,7 +242,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
             thriftAccessor.getThriftResponse(request, CommandName.LIST_SCHEMAS, null);
     DatabricksResultSet resultSet =
         getSchemasResult(extractValuesColumnar(response.getResults().getColumns()));
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.LIST_SCHEMAS_THRIFT.name(), (double) (System.currentTimeMillis() - startTime));
     return resultSet;
   }
@@ -275,7 +275,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
             thriftAccessor.getThriftResponse(request, CommandName.LIST_TABLES, null);
     DatabricksResultSet resultSet =
         getTablesResult(extractValuesColumnar(response.getResults().getColumns()));
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.LIST_TABLES_THRIFT.name(), (double) (System.currentTimeMillis() - startTime));
     return resultSet;
   }
@@ -292,7 +292,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
             thriftAccessor.getThriftResponse(request, CommandName.LIST_TABLE_TYPES, null);
     DatabricksResultSet resultSet =
         getTableTypesResult(extractValues(response.getResults().getColumns()));
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.LIST_TABLE_TYPES_THRIFT.name(),
         (double) (System.currentTimeMillis() - startTime));
     return resultSet;
@@ -324,7 +324,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
             thriftAccessor.getThriftResponse(request, CommandName.LIST_COLUMNS, null);
     DatabricksResultSet resultSet =
         getColumnsResult(extractValues(response.getResults().getColumns()));
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.LIST_COLUMNS_THRIFT.name(), (double) (System.currentTimeMillis() - startTime));
     return resultSet;
   }
@@ -353,7 +353,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
             thriftAccessor.getThriftResponse(request, CommandName.LIST_FUNCTIONS, null);
     DatabricksResultSet resultSet =
         getFunctionsResult(extractValues(response.getResults().getColumns()));
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.LIST_FUNCTIONS_THRIFT.name(),
         (double) (System.currentTimeMillis() - startTime));
     return resultSet;
@@ -379,7 +379,7 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
             thriftAccessor.getThriftResponse(request, CommandName.LIST_PRIMARY_KEYS, null);
     DatabricksResultSet resultSet =
         getPrimaryKeysResult(extractValues(response.getResults().getColumns()));
-    DatabricksMetricMap.Record(
+    DatabricksMetrics.record(
         MetricsList.LIST_PRIMARY_KEYS_THRIFT.name(),
         (double) (System.currentTimeMillis() - startTime));
     return resultSet;

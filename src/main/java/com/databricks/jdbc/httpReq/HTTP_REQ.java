@@ -1,7 +1,5 @@
 package com.databricks.jdbc.httpReq;
 
-import com.databricks.jdbc.commons.MetricsList;
-import com.databricks.jdbc.metrics_telemetry.DatabricksMetricMap;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
