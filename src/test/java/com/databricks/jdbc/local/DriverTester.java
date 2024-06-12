@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 public class DriverTester {
@@ -192,7 +193,7 @@ public class DriverTester {
     Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
     System.out.println("Connection established......");
 
-    HashMap<String, Double> map = new HashMap<>();
+    Map<String, Double> map = new HashMap<>();
     map.put("M1", (double) 5);
     map.put("M2", (double) 7);
 
