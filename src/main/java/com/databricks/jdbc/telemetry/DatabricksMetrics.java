@@ -88,7 +88,7 @@ public class DatabricksMetrics {
 
               if (currentTimeMillis - lastSuccessfulHttpReq >= intervalDurationForSendingReq) {
                 try {
-                  if(isGauge == 1){
+                  if (isGauge == 1) {
                     sendRequest(gaugeMetrics, 1);
                   } else {
                     sendRequest(counterMetrics, 0);
