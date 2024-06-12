@@ -197,10 +197,10 @@ public class DriverTester {
     System.out.println("Connection established......");
 
     Map<String, Double> map = new HashMap<>();
-    map.put("M1", (double) 5);
-    map.put("M2", (double) 7);
+    map.put("M3", (double) 2);
+    map.put("M4", (double) 3);
 
-    String response = DatabricksMetrics.sendRequest(map);
+    String response = DatabricksMetrics.sendRequest(map, 0);
     System.out.println(response);
   }
 }

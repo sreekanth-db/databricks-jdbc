@@ -21,8 +21,6 @@ public class DatabricksMetrics {
   // TODO: Replace ACCESS_TOKEN with your own token - TO BE DECIDED ONCE THE SERVICE IS CREATED
   private static final String ACCESS_TOKEN = "x";
   private static final Map<String, Double> gaugeMetrics = new HashMap<>();
-
-  // counterMetrics is not used in the current implementation will be used in future
   private static final Map<String, Double> counterMetrics = new HashMap<>();
 
   private static long lastSuccessfulHttpReq = System.currentTimeMillis();
@@ -36,6 +34,7 @@ public class DatabricksMetrics {
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   private static final String metricsMapString = "metrics_map_string";
+  private static final String metricsType = "metrics_map_int";
 
   public static void instantiateTelemetryClient(IDatabricksConnectionContext context) {
     telemetryClient = DatabricksHttpClient.getInstance(context);
@@ -45,7 +44,7 @@ public class DatabricksMetrics {
     // Private constructor to prevent instantiation
   }
 
-  public static String sendRequest(Map<String, Double> map) throws Exception {
+  public static String sendRequest(Map<String, Double> map, int isGauge) throws Exception {
     // Check if the telemetry client is set
     if (telemetryClient == null) {
       throw new DatabricksHttpException(
@@ -58,6 +57,7 @@ public class DatabricksMetrics {
     // Create the request and adding parameters & headers
     URIBuilder uriBuilder = new URIBuilder(URL);
     uriBuilder.addParameter(metricsMapString, jsonInputString);
+    uriBuilder.addParameter(metricsType, String.valueOf(isGauge));
     HttpUriRequest request = new HttpGet(uriBuilder.build());
     request.addHeader("Authorization", "Bearer " + ACCESS_TOKEN);
 
@@ -69,7 +69,7 @@ public class DatabricksMetrics {
       throw new DatabricksHttpException("Response is null");
     } else if (response.getStatusLine().getStatusCode() != 200) {
       throw new DatabricksHttpException(
-          "Response code is not 200. Response code: "
+          "Response code: "
               + response.getStatusLine().getStatusCode()
               + " Response: "
               + response.getEntity().toString());
@@ -81,14 +81,18 @@ public class DatabricksMetrics {
     return responseString;
   }
 
-  public static void postMetrics() {
+  public static void postMetrics(int isGauge) {
     CompletableFuture.supplyAsync(
             () -> {
               long currentTimeMillis = System.currentTimeMillis();
 
               if (currentTimeMillis - lastSuccessfulHttpReq >= intervalDurationForSendingReq) {
                 try {
-                  sendRequest(gaugeMetrics);
+                  if(isGauge == 1){
+                    sendRequest(gaugeMetrics, 1);
+                  } else {
+                    sendRequest(counterMetrics, 0);
+                  }
                   lastSuccessfulHttpReq = System.currentTimeMillis();
                   httpLatency += (lastSuccessfulHttpReq - currentTimeMillis);
                 } catch (Exception e) {
@@ -112,19 +116,23 @@ public class DatabricksMetrics {
       gaugeMetrics.put(name, 0.0);
     }
     gaugeMetrics.put(name, value);
-    postMetrics();
+    postMetrics(1);
   }
 
   public static void incCounterMetrics(String name, double value) {
     if (!counterMetrics.containsKey(name)) {
       counterMetrics.put(name, 0.0);
     }
-    counterMetrics.put(name, counterMetrics.get(name) + value);
-    postMetrics();
+    counterMetrics.put(name, value);
+    postMetrics(0);
   }
 
   public static void record(String name, double value) {
     setGaugeMetrics(name, value);
+  }
+
+  public static void increment(String name, double value) {
+    incCounterMetrics(name, value);
   }
 
   public static long getHttpLatency() {
