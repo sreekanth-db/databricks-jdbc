@@ -23,7 +23,7 @@ public class DatabricksMetrics {
 
   private static long LastModified = System.currentTimeMillis();
 
-  private static final int INTERVAL = 10 * 1000;
+  private static final int INTERVAL = 10 * 60 * 1000;
 
   private static long count_http_post = 0;
 
