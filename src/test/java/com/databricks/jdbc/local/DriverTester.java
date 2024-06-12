@@ -1,9 +1,13 @@
 package com.databricks.jdbc.local;
 
+import com.databricks.jdbc.commons.MetricsList;
+import com.databricks.jdbc.telemetry.DatabricksMetrics;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 public class DriverTester {
@@ -40,11 +44,13 @@ public class DriverTester {
     // Getting the connection
     String jdbcUrl =
         "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
-    Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
+    Connection con =
+        DriverManager.getConnection(
+            jdbcUrl, "samikshya.chand@databricks.com", "dapi064c157bd3b949b616c9bb5cd44bd522");
     System.out.println("Connection established......");
     Statement statement = con.createStatement();
     statement.setMaxRows(10);
-    ResultSet rs = statement.executeQuery("select * from samples.tpch.lineitem limit 10");
+    ResultSet rs = con.getMetaData().getTables("hive_metastore", "*", "*", null);
     printResultSet(rs);
     rs.close();
     statement.close();
@@ -111,9 +117,10 @@ public class DriverTester {
     Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
     System.out.println("Connection established......");
     // ResultSet resultSet = con.getMetaData().getCatalogs();
-    ResultSet resultSet = con.getMetaData().getSchemas("main", "%");
+    // ResultSet resultSet = con.getMetaData().getSchemas("main", "%");
     // ResultSet resultSet = con.getMetaData().getTables("main", "ggm_pk","table_with_pk", null);
     // ResultSet resultSet = con.getMetaData().getTables("%", "%", null, null);
+    ResultSet resultSet = con.getMetaData().getColumns("main", "ggm_pk", "%", "%");
     // con.getMetaData().getPrimaryKeys("main", "ggm_pk", "table_with_pk");
     printResultSet(resultSet);
     resultSet.close();
@@ -158,5 +165,42 @@ public class DriverTester {
     BigDecimal bigDecimal = rs.getObject("big_decimal", BigDecimal.class);
     System.out.println(
         "here is bigDecimal " + bigDecimal + ". Class Details : " + bigDecimal.getClass());
+  }
+
+  @Test
+  void testModifyMetrics() throws Exception {
+    for (int i = 1; i <= 10; i++) {
+      DatabricksMetrics.record(MetricsList.LIST_TABLES_METADATA_SEA.name(), (2 * i));
+      DatabricksMetrics.record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 2);
+      Thread.sleep(1000);
+    }
+    Thread.sleep(5000);
+
+    for (int i = 1; i <= 10; i++) {
+      DatabricksMetrics.record(MetricsList.LIST_TABLES_METADATA_SEA.name(), (3 * i));
+      DatabricksMetrics.record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 3);
+      Thread.sleep(1000);
+    }
+
+    System.out.println(DatabricksMetrics.getHttpLatency());
+  }
+
+  @Test
+  public void testExecuteHttpRequest() throws Exception {
+
+    DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
+    DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
+
+    String jdbcUrl =
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
+    Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
+    System.out.println("Connection established......");
+
+    Map<String, Double> map = new HashMap<>();
+    map.put("M1", (double) 5);
+    map.put("M2", (double) 7);
+
+    String response = DatabricksMetrics.sendRequest(map);
+    System.out.println(response);
   }
 }

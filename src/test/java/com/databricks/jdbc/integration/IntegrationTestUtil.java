@@ -1,7 +1,6 @@
 package com.databricks.jdbc.integration;
 
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.FAKE_SERVICE_URI_PROP_SUFFIX;
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.IS_FAKE_SERVICE_TEST_PROP;
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
 import static com.databricks.jdbc.integration.fakeservice.FakeServiceExtension.TARGET_URI_PROP_SUFFIX;
 
 import com.databricks.jdbc.driver.DatabricksJdbcConstants.FakeServiceType;
@@ -11,6 +10,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
 /** Utility class to support integration tests * */
@@ -19,7 +19,7 @@ public class IntegrationTestUtil {
   private static Connection JDBCConnection;
 
   public static String getDatabricksHost() {
-    if (Boolean.parseBoolean(System.getProperty(IS_FAKE_SERVICE_TEST_PROP))) {
+    if (fakeServiceToBeUsed()) {
       // Target base URL of the fake service type
       String serviceURI =
           System.getProperty(
@@ -37,6 +37,11 @@ public class IntegrationTestUtil {
 
     // includes port
     return System.getenv("DATABRICKS_HOST");
+  }
+
+  public static boolean fakeServiceToBeUsed() {
+    return !isAllpurposeCluster()
+        && Boolean.parseBoolean(System.getProperty(IS_FAKE_SERVICE_TEST_PROP));
   }
 
   public static String getDatabricksBenchfoodHost() {
@@ -102,9 +107,27 @@ public class IntegrationTestUtil {
     return DriverManager.getConnection(getJDBCUrl(), getDatabricksUser(), getDatabricksToken());
   }
 
+  public static Connection getValidJDBCConnection(List<List<String>> extraArgs)
+      throws SQLException {
+    String jdbcUrl = getJDBCUrl();
+    for (List<String> args : extraArgs) {
+      jdbcUrl += ";" + args.get(0) + "=" + args.get(1);
+    }
+    return DriverManager.getConnection(jdbcUrl, getDatabricksUser(), getDatabricksToken());
+  }
+
   public static Connection getDogfoodJDBCConnection() throws SQLException {
     return DriverManager.getConnection(
         getDogfoodJDBCUrl(), getDatabricksUser(), getDatabricksDogfoodToken());
+  }
+
+  public static Connection getDogfoodJDBCConnection(List<List<String>> extraArgs)
+      throws SQLException {
+    String jdbcUrl = getDogfoodJDBCUrl();
+    for (List<String> args : extraArgs) {
+      jdbcUrl += ";" + args.get(0) + "=" + args.get(1);
+    }
+    return DriverManager.getConnection(jdbcUrl, getDatabricksUser(), getDatabricksDogfoodToken());
   }
 
   public static Connection getValidJDBCConnection(Map<String, String> args) throws SQLException {
@@ -127,19 +150,18 @@ public class IntegrationTestUtil {
 
   public static String getJDBCUrl() {
     String template =
-        Boolean.parseBoolean(System.getProperty(IS_FAKE_SERVICE_TEST_PROP))
+        fakeServiceToBeUsed()
             ? "jdbc:databricks://%s/default;transportMode=http;ssl=0;AuthMech=3;httpPath=%s"
             : "jdbc:databricks://%s/default;ssl=1;AuthMech=3;httpPath=%s";
 
     String host = getDatabricksHost();
     String httpPath = getDatabricksHTTPPath();
-
     return String.format(template, host, httpPath);
   }
 
   public static String getJDBCUrl(Map<String, String> args) {
     String template =
-        Boolean.parseBoolean(System.getProperty(IS_FAKE_SERVICE_TEST_PROP))
+        fakeServiceToBeUsed()
             ? "jdbc:databricks://%s/default;transportMode=http;ssl=0;AuthMech=3;httpPath=%s"
             : "jdbc:databricks://%s/default;ssl=1;AuthMech=3;httpPath=%s";
 
@@ -268,5 +290,17 @@ public class IntegrationTestUtil {
             + getFullyQualifiedTableName(tableName)
             + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
     executeSQL(insertSQL);
+  }
+
+  public static boolean isAllpurposeCluster() {
+    return HTTP_CLUSTER_PATH_PATTERN.matcher(getDatabricksHTTPPath()).matches();
+  }
+
+  /** Get the JDBC connection if it is already initialized in the test suite. */
+  public static Connection getJDBCConnectionIfInitialized() {
+    if (JDBCConnection == null) {
+      throw new IllegalStateException("JDBC connection is not initialized for the test");
+    }
+    return JDBCConnection;
   }
 }
