@@ -84,7 +84,8 @@ public class DatabricksMetrics {
                 try {
                   sendRequest(gaugeMetrics);
                 } catch (Exception e) {
-                  System.out.println(e.getMessage());
+                  // Commenting out the exception for now - failing silently
+                  // System.out.println(e.getMessage());
                 }
               }
               return null;
