@@ -1,5 +1,6 @@
 package com.databricks.jdbc.telemetry;
 
+import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.http.DatabricksHttpClient;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +23,7 @@ public class DatabricksMetrics {
 
   private static long LastModified = System.currentTimeMillis();
 
-  private static int INTERVAL = 10 * 1000;
+  private static final int INTERVAL = 10 * 1000;
 
   private static long count_http_post = 0;
 
@@ -37,31 +38,40 @@ public class DatabricksMetrics {
   }
 
   public static String sendRequest(HashMap<String, Double> map) throws Exception {
+    // Check if the telemetry client is set
     if (telemetryClient == null) {
-      throw new Exception("Telemetry client is not set. Initialize the Driver first.");
+      throw new DatabricksHttpException(
+          "Telemetry client is not set. Initialize the Driver first.");
     }
+
+    // Convert the map to JSON string
     ObjectMapper objectMapper = new ObjectMapper();
     String jsonInputString = objectMapper.writeValueAsString(map);
+
+    // Create the request and adding parameters & headers
     URIBuilder uriBuilder = new URIBuilder(URL);
     uriBuilder.addParameter("metrics_map_string", jsonInputString);
     HttpUriRequest request = new HttpGet(uriBuilder.build());
     request.addHeader("Authorization", "Bearer " + ACCESS_TOKEN);
 
-    try {
-      CloseableHttpResponse response = telemetryClient.execute(request);
-      if (response != null && response.getStatusLine().getStatusCode() != 200) {
-        throw new Exception(
-            "Response code is not 200. Response code: "
-                + response.getStatusLine().getStatusCode()
-                + " Response: "
-                + response.getEntity().toString());
-      }
-      String responseString = EntityUtils.toString(response.getEntity());
-      response.close();
-      return responseString;
-    } catch (Exception e) {
-      throw new Exception("Error executing post request");
+    // Execute the request and get the response
+    CloseableHttpResponse response = telemetryClient.execute(request);
+
+    // Error handling
+    if (response == null) {
+      throw new DatabricksHttpException("Response is null");
+    } else if (response.getStatusLine().getStatusCode() != 200) {
+      throw new DatabricksHttpException(
+          "Response code is not 200. Response code: "
+              + response.getStatusLine().getStatusCode()
+              + " Response: "
+              + response.getEntity().toString());
     }
+
+    // Get the response string
+    String responseString = EntityUtils.toString(response.getEntity());
+    response.close();
+    return responseString;
   }
 
   public static void postMetrics() {
@@ -71,7 +81,6 @@ public class DatabricksMetrics {
 
               if (current_time - LastModified >= INTERVAL) {
                 LastModified = current_time;
-                // TODO: Use DatabricksHTTPClient for sending HTTP requests
                 try {
                   sendRequest(gaugeMetrics);
                 } catch (Exception e) {
