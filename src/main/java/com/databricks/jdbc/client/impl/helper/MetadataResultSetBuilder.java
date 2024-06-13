@@ -70,7 +70,6 @@ public class MetadataResultSetBuilder {
       List<Object> row = new ArrayList<>();
       for (ResultColumn column : columns) {
         Object object = null;
-        System.out.println("MYLOG" + column.getColumnName());
         switch (column.getColumnName()) {
           case "NUM_PREC_RADIX":
             object = 10;
@@ -99,18 +98,13 @@ public class MetadataResultSetBuilder {
 
             continue;
         }
-        System.out.println("MYLOG2" + column.getColumnName());
         try {
           object = resultSet.getObject(column.getResultSetColumnName());
         } catch (DatabricksSQLException e) {
           if (column.getColumnName().equals("DATA_TYPE")) {
-            System.out.println("HAPPENED");
             String typeVal = resultSet.getString("columnType");
             if (typeVal.contains("(")) typeVal = typeVal.substring(0, typeVal.indexOf('('));
-            System.out.println(typeVal);
-            System.out.println(getCode(typeVal));
             object = getCode(typeVal);
-            System.out.println(object);
           } else if (column.getColumnName().equals("CHAR_OCTET_LENGTH")) {
             String typeVal = resultSet.getString("columnType");
             object =
