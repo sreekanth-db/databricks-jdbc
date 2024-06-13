@@ -17,11 +17,15 @@ import org.junit.jupiter.api.Test;
 /** Integration tests for metadata retrieval. */
 public class MetadataIntegrationTests extends AbstractFakeServiceIntegrationTests {
 
+  /** TODO: switch to new metadata client when it is available in Azure test env. */
+  private static final String jdbcUrlTemplateWithLegacyMetadata =
+      "jdbc:databricks://%s/default;transportMode=http;ssl=0;AuthMech=3;httpPath=%s;useLegacyMetadata=1";
+
   private Connection connection;
 
   @BeforeEach
   void setUp() throws SQLException {
-    connection = getValidJDBCConnection();
+    connection = getConnection();
   }
 
   @AfterEach
@@ -57,7 +61,7 @@ public class MetadataIntegrationTests extends AbstractFakeServiceIntegrationTest
         metaData.getMaxColumnsInTable() >= 0, "Max columns in table should be greater than 0");
 
     // Create session request is sent
-    getSqlExecApiExtension().verify(1, postRequestedFor(urlEqualTo(SESSION_PATH)));
+    getDatabricksApiExtension().verify(1, postRequestedFor(urlEqualTo(SESSION_PATH)));
   }
 
   @Test
@@ -113,7 +117,7 @@ public class MetadataIntegrationTests extends AbstractFakeServiceIntegrationTest
     executeSQL(SQL);
 
     // At least 5 statement requests are sent: drop, create, insert, select, drop
-    getSqlExecApiExtension()
+    getDatabricksApiExtension()
         .verify(
             new CountMatchingStrategy(CountMatchingStrategy.GREATER_THAN_OR_EQUAL, 5),
             postRequestedFor(urlEqualTo(STATEMENT_PATH)));
@@ -170,9 +174,16 @@ public class MetadataIntegrationTests extends AbstractFakeServiceIntegrationTest
     // At least 7 statement requests are sent:
     // show catalogs, show schemas, drop table, create table, show tables, show particular table,
     // drop
-    getSqlExecApiExtension()
+    getDatabricksApiExtension()
         .verify(
             new CountMatchingStrategy(CountMatchingStrategy.GREATER_THAN_OR_EQUAL, 7),
             postRequestedFor(urlEqualTo(STATEMENT_PATH)));
+  }
+
+  private Connection getConnection() throws SQLException {
+    String jdbcUrl =
+        String.format(
+            jdbcUrlTemplateWithLegacyMetadata, getDatabricksHost(), getDatabricksHTTPPath());
+    return DriverManager.getConnection(jdbcUrl, getDatabricksUser(), getDatabricksToken());
   }
 }

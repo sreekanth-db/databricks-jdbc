@@ -4,6 +4,7 @@ import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
 
 import com.databricks.jdbc.core.DatabricksConnection;
 import com.databricks.jdbc.core.DatabricksSQLException;
+import com.databricks.jdbc.telemetry.DatabricksMetrics;
 import com.databricks.sdk.core.UserAgent;
 import java.sql.*;
 import java.util.Properties;
@@ -49,6 +50,7 @@ public class DatabricksDriver implements Driver {
     IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(url, info);
     configureLogging(connectionContext.getLogPathString(), connectionContext.getLogLevel());
     setUserAgent(connectionContext);
+    DatabricksMetrics.instantiateTelemetryClient(connectionContext);
     try {
       return new DatabricksConnection(connectionContext);
     } catch (Exception e) {
