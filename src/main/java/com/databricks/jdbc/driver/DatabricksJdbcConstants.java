@@ -125,7 +125,9 @@ public final class DatabricksJdbcConstants {
   @VisibleForTesting
   public enum FakeServiceType {
     SQL_EXEC,
-    CLOUD_FETCH
+    CLOUD_FETCH,
+    SQL_GATEWAY,
+    CLOUD_FETCH_SQL_GATEWAY
   }
 
   public static final String USE_THRIFT_CLIENT = "usethriftclient";
