@@ -17,7 +17,7 @@ public class DriverTester {
     int columnsNumber = rsmd.getColumnCount();
     for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnName(i) + "\t");
     System.out.println();
-    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnTypeName(i) + "\t\t\t");
+    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnTypeName(i) + "\t\t");
     System.out.println();
     for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnType(i) + "\t\t\t");
     System.out.println();
@@ -27,13 +27,6 @@ public class DriverTester {
       for (int i = 1; i <= columnsNumber; i++) {
         try {
           Object columnValue = resultSet.getObject(i);
-          try {
-            if (columnValue.toString().equals("")) {
-              System.out.print("EMP_STR" + "\t\t");
-              continue;
-            }
-          } catch (Exception e) {
-          }
           System.out.print(columnValue + "\t\t");
         } catch (Exception e) {
           System.out.print(
@@ -53,7 +46,7 @@ public class DriverTester {
         "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
     Connection con =
         DriverManager.getConnection(
-            jdbcUrl, "samikshya.chand@databricks.com", "dapi064c157bd3b949b616c9bb5cd44bd522");
+            jdbcUrl, "samikshya.chand@databricks.com", "xx");
     System.out.println("Connection established......");
     Statement statement = con.createStatement();
     statement.setMaxRows(10);
@@ -71,46 +64,12 @@ public class DriverTester {
     // Getting the connection
     String jdbcUrl =
         "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
-    Connection con =
-        DriverManager.getConnection(
-            jdbcUrl, "samikshya.chand@databricks.com", "xx");
+    Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
     System.out.println("Connection established......");
     // DatabaseMetaData metaData = con.getMetaData();
-    ResultSet rs = con.getMetaData().getTypeInfo();
-    printResultSet(rs);
-    ResultSet rs3 =
-        con.createStatement()
-            .executeQuery(
-                "SHOW COLUMNS IN CATALOG main SCHEMA LIKE 'jdbc.test.schema' TABLE LIKE 'catalog.and.schema.test.table' LIKE '*'");
-    printResultSet(rs3);
-    ResultSet rs2 =
-        con.getMetaData()
-            .getColumns("main", "jdbc_test_schema", "catalog_and_schema_test_table", "%");
-    printResultSet(rs2);
-    ResultSetMetaData rs2m = rs2.getMetaData();
-    for (int i = 1; i <= 24; i++) {
-      System.out.println(
-          rs2m.getColumnLabel(i)
-              + " "
-              + rs2m.getColumnType(i)
-              + " "
-              + rs2m.getColumnTypeName(i)
-              + " "
-              + rs2m.getPrecision(i));
-    }
-    //    while(rs2.next()) {
-    //      System.out.println("HELLOWORLD");
-    //      rs2.getInt("DATA_TYPE");
-    //    }
-    //    //    ResultSetMetaData rsm = rs.getMetaData();
-    ////    System.out.println(rs.getInt(5));
-    //        while(rs.next()) {
-    //          System.out.println(rs.getInt(5));
-    //        }
-    //    printResultSet(rs);
-    //    ResultSet resultSet = con.getMetaData().getTables("main", ".*", ".*", null);
-    //    printResultSet(resultSet);
-    //    resultSet.close();
+    ResultSet resultSet = con.getMetaData().getTables("main", ".*", ".*", null);
+    printResultSet(resultSet);
+    resultSet.close();
     con.close();
   }
 
