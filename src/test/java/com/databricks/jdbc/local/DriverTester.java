@@ -102,7 +102,7 @@ public class DriverTester {
     Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "dapi59b6dc8d33b42fb4cb4b550c87ae7977");
     System.out.println("Connection established......");
     Statement s = con.createStatement();
-    s.executeQuery("SELECT * from \"SPARK.RANGE(10) --\"");
+    s.executeQuery("SELECT *5 from RANGE(100000000)");
     con.close();
     System.out.println("Connection closed successfully......");
   }
