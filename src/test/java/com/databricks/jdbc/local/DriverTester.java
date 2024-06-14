@@ -99,13 +99,10 @@ public class DriverTester {
   void testAllPurposeClusters() throws Exception {
     String jdbcUrl =
         "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;AuthMech=3;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv";
-    Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
-    DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
+    Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "dapi59b6dc8d33b42fb4cb4b550c87ae7977");
     System.out.println("Connection established......");
-    Statement statement = con.createStatement();
-    ResultSet rs =
-        statement.executeQuery("SELECT * from lb_demo.demographics_fs.demographics LIMIT 10");
-    printResultSet(rs);
+    Statement s = con.createStatement();
+    s.executeQuery("SELECT * from \"SPARK.RANGE(10) --\"");
     con.close();
     System.out.println("Connection closed successfully......");
   }

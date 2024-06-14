@@ -178,6 +178,10 @@ public class DatabricksThriftAccessor {
     TFetchResultsResp resultSet = null;
     try {
       response = thriftClient.ExecuteStatement(request);
+      if(response.status.statusCode != TStatusCode.SUCCESS_STATUS) {
+        throw new DatabricksSQLException(response.status.errorMessage);
+      }
+      System.out.println("MLOGS: " + response.toString());
       if (response.isSetDirectResults()) {
         checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
         resultSet = response.getDirectResults().getResultSet();
