@@ -94,7 +94,6 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     if (!JDBC_URL_PATTERN.matcher(url).matches()) {
       return false;
     }
-    System.out.println(HTTP_CLI_PATTERN.matcher(url).matches());
     return HTTP_CLUSTER_PATH_PATTERN.matcher(url).matches()
         || HTTP_WAREHOUSE_PATH_PATTERN.matcher(url).matches()
         || HTTP_ENDPOINT_PATH_PATTERN.matcher(url).matches()
