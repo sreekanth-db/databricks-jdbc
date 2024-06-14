@@ -13,9 +13,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.RollingFileAppender;
-import org.apache.logging.log4j.core.appender.rolling.DefaultRolloverStrategy;
-import org.apache.logging.log4j.core.appender.rolling.TimeBasedTriggeringPolicy;
+import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
@@ -112,28 +110,14 @@ public class DatabricksDriver implements Driver {
             .withPattern("%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n")
             .build();
 
-    // Define the triggering policy based on date
-    TimeBasedTriggeringPolicy timeTrigger =
-        TimeBasedTriggeringPolicy.newBuilder()
-            .withInterval(1) // interval is set to 1 to roll over every day
-            .withModulate(true)
-            .build();
-
-    // Define the rollover strategy no more than 10 files are stored at a single moment. The oldest
-    // file is deleted to created space for the new file.
-    DefaultRolloverStrategy strategy =
-        DefaultRolloverStrategy.createStrategy("10", "1", null, null, null, true, config);
-
-    // Define the appender
-    RollingFileAppender appender =
-        RollingFileAppender.newBuilder()
+    boolean isFilePath = (logDirectory.endsWith(".log"));
+    FileAppender appender =
+        FileAppender.newBuilder()
             .setConfiguration(config)
             .withLayout(layout)
-            .withFileName(logDirectory + "/logfile-" + LocalDate.now() + ".log")
-            .withFilePattern(logDirectory + "/logfile-%d{yyyy-MM-dd}.log")
-            .withPolicy(timeTrigger)
-            .withStrategy(strategy)
-            .withName("RollingFile")
+            .withFileName(
+                isFilePath ? logDirectory : logDirectory + "/logfile-" + LocalDate.now() + ".log")
+            .withName(logDirectory)
             .build();
 
     LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
