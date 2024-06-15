@@ -24,6 +24,11 @@ public final class DatabricksJdbcConstants {
   static final String LOG_LEVEL = "loglevel";
   static final String LOG_PATH = "logpath";
   static final String DEFAULT_LOG_PATH = "logs";
+  static final String LOG_FILE_SIZE = "LogFileSize";
+  static final int DEFAULT_LOG_FILE_SIZE = 10;
+  static final String LOG_FILE_COUNT = "LogFileCount";
+  static final int DEFAULT_LOG_FILE_COUNT = 10;
+  static final String USE_LOG_PREFIX = "UseLogPrefix";
   public static final String URL_DELIMITER = ";";
   public static final String PORT_DELIMITER = ":";
   static final String DEFAULT_SCHEMA = "default";
