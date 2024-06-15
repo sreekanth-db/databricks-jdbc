@@ -421,7 +421,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
       // Look for underlying DatabricksSQL exception
       while (cause.getCause() != null) {
         cause = cause.getCause();
-        if(cause instanceof DatabricksSQLException) {
+        if (cause instanceof DatabricksSQLException) {
           throw (DatabricksSQLException) cause;
         }
       }

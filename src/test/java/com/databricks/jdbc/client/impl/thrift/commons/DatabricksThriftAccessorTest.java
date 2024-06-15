@@ -165,12 +165,16 @@ public class DatabricksThriftAccessorTest {
     TExecuteStatementReq request = new TExecuteStatementReq();
     TExecuteStatementResp tExecuteStatementResp =
         new TExecuteStatementResp()
-            .setStatus(new TStatus().setStatusCode(TStatusCode.ERROR_STATUS).setErrorMessage("Test Error Message"));
+            .setStatus(
+                new TStatus()
+                    .setStatusCode(TStatusCode.ERROR_STATUS)
+                    .setErrorMessage("Test Error Message"));
     when(thriftClient.ExecuteStatement(request)).thenReturn(tExecuteStatementResp);
-    DatabricksSQLException e = assertThrows(
-        DatabricksSQLException.class,
-        () -> accessor.execute(request, null, null, StatementType.SQL));
-    assert(e.getMessage().contains("Test Error Message"));
+    DatabricksSQLException e =
+        assertThrows(
+            DatabricksSQLException.class,
+            () -> accessor.execute(request, null, null, StatementType.SQL));
+    assert (e.getMessage().contains("Test Error Message"));
   }
 
   @Test

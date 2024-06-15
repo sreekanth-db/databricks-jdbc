@@ -104,8 +104,7 @@ public class DatabricksThriftAccessor {
   public TFetchResultsResp getResultSetResp(TOperationHandle operationHandle, String context)
       throws DatabricksHttpException {
     refreshHeadersIfRequired();
-    return getResultSetResp(
-        SUCCESS_STATUS, operationHandle, context, DEFAULT_ROW_LIMIT, false);
+    return getResultSetResp(SUCCESS_STATUS, operationHandle, context, DEFAULT_ROW_LIMIT, false);
   }
 
   private TFetchResultsResp getResultSetResp(
@@ -179,16 +178,19 @@ public class DatabricksThriftAccessor {
     TFetchResultsResp resultSet = null;
     try {
       response = thriftClient.ExecuteStatement(request);
-      if(response.status.statusCode == TStatusCode.ERROR_STATUS) {
+      if (response.status.statusCode == TStatusCode.ERROR_STATUS) {
         throw new DatabricksSQLException(response.status.errorMessage);
       }
-      if (((response.status.statusCode == SUCCESS_STATUS) || (response.status.statusCode == SUCCESS_WITH_INFO_STATUS)) && response.isSetDirectResults()) {
+      if (((response.status.statusCode == SUCCESS_STATUS)
+              || (response.status.statusCode == SUCCESS_WITH_INFO_STATUS))
+          && response.isSetDirectResults()) {
         checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
         resultSet = response.getDirectResults().getResultSet();
         resultSet.setResultSetMetadata(response.getDirectResults().getResultSetMetadata());
       } else {
-        if(response.status.statusCode == INVALID_HANDLE_STATUS || response.getOperationHandle() == null) {
-            throw new DatabricksSQLException("Unknown error occurred during query execution");
+        if (response.status.statusCode == INVALID_HANDLE_STATUS
+            || response.getOperationHandle() == null) {
+          throw new DatabricksSQLException("Unknown error occurred during query execution");
         }
         longPolling(response.getOperationHandle());
         resultSet =
