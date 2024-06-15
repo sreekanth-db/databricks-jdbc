@@ -99,7 +99,7 @@ public class DriverTester {
         "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;AuthMech=3;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv";
     Connection con =
         DriverManager.getConnection(
-            jdbcUrl, "samikshya.chand@databricks.com", "dapi59b6dc8d33b42fb4cb4b550c87ae7977");
+            jdbcUrl, "samikshya.chand@databricks.com", "xx");
     System.out.println("Connection established......");
     Statement s = con.createStatement();
     s.executeQuery("SELECT *5 from RANGE(100000000)");
