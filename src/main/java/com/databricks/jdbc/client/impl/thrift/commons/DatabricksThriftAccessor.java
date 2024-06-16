@@ -15,6 +15,7 @@ import com.databricks.sdk.core.DatabricksConfig;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.SQLException;
 import java.util.Map;
+import org.apache.http.HttpException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
@@ -92,6 +93,13 @@ public class DatabricksThriftAccessor {
           throw new DatabricksSQLFeatureNotSupportedException(errorMessage);
       }
     } catch (TException | SQLException e) {
+      Throwable r = e;
+      while (r != null) {
+        if (r instanceof HttpException) {
+          throw new DatabricksHttpException(r.getMessage(), r);
+        }
+        r = r.getCause();
+      }
       String errorMessage =
           String.format(
               "Error while receiving response from Thrift server. Request {%s}, Error {%s}",

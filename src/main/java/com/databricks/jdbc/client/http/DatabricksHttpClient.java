@@ -137,7 +137,21 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
                   public void process(HttpResponse httpResponse, HttpContext httpContext)
                       throws HttpException, IOException {
                     if (isErrorCodeRetryable(httpResponse.getStatusLine().getStatusCode())) {
-                      throw new IOException("Retry http request");
+                      String thriftErrorHeader = "X-Thriftserver-Error-Message";
+                      if (httpResponse.containsHeader(thriftErrorHeader)) {
+                        String errorMessage =
+                            httpResponse.getFirstHeader(thriftErrorHeader).getValue();
+                        throw new HttpException(
+                            "HTTP Response code: "
+                                + httpResponse.getStatusLine().getStatusCode()
+                                + ", Error message: "
+                                + errorMessage);
+                      }
+                      throw new HttpException(
+                          "HTTP Response code: "
+                              + httpResponse.getStatusLine().getStatusCode()
+                              + ", Error Message: "
+                              + httpResponse.getStatusLine().getReasonPhrase());
                     }
                   }
                 });
@@ -243,6 +257,13 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     try {
       return httpClient.execute(request);
     } catch (IOException e) {
+      Throwable r = e;
+      while (r != null) {
+        if (r instanceof HttpException) {
+          throw new DatabricksHttpException(r.getMessage(), r);
+        }
+        r = r.getCause();
+      }
       String errorMsg =
           String.format(
               "Caught error while executing http request: [%s]",

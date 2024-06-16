@@ -53,6 +53,8 @@ public class DatabricksDriver implements Driver {
     DatabricksMetrics.instantiateTelemetryClient(connectionContext);
     try {
       return new DatabricksConnection(connectionContext);
+    } catch (DatabricksSQLException e) {
+      throw e;
     } catch (Exception e) {
       throw new DatabricksSQLException(
           "Invalid or unknown token or hostname provided :" + connectionContext.getHostUrl(), e);

@@ -119,6 +119,11 @@ public class DatabricksHttpTTransport extends TTransport {
       inputStream = response.getEntity().getContent();
       requestBuffer.reset();
     } catch (DatabricksHttpException | IOException e) {
+      Throwable r = e;
+      while (r != null) {
+        System.out.println(r);
+        r = r.getCause();
+      }
       String errorMessage = "Failed to flush data to server: " + e.getMessage();
       LOGGER.error(errorMessage);
       throw new TTransportException(TTransportException.UNKNOWN, errorMessage);
