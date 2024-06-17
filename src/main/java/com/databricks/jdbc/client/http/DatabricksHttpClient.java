@@ -56,7 +56,6 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   private static final String SDK_USER_AGENT = "databricks-sdk-java";
   private static final String JDBC_HTTP_USER_AGENT = "databricks-jdbc-http";
   private static final Set<Integer> RETRYABLE_HTTP_CODES = getRetryableHttpCodes();
-  protected static final long DEFAULT_IDLE_CONNECTION_TIMEOUT = 5;
   private static DatabricksHttpClient instance = null;
 
   private static PoolingHttpClientConnectionManager connectionManager;
@@ -67,7 +66,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   private static int temporarilyUnavailableRetryTimeout;
   private static int rateLimitRetryInterval;
   private static int rateLimitRetryTimeout;
-  private static int idleHttpConnectionExpiry;
+  protected static int idleHttpConnectionExpiry;
   private static int temporarilyUnavailableRetryCount;
   private static int rateLimitRetryCount;
 
@@ -118,7 +117,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     return retryableCodes;
   }
 
-  private long calculateDelay(int errCode, int executionCount) {
+  public long calculateDelay(int errCode, int executionCount, boolean isTest) {
     long delay;
     if (errCode != 503 && errCode != 429) {
       delay =
@@ -127,12 +126,16 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
               MAX_RETRY_INTERVAL);
     } else if (errCode == 503) {
       delay = temporarilyUnavailableRetryInterval;
-      temporarilyUnavailableRetryCount++;
+      if (!isTest) temporarilyUnavailableRetryCount++;
     } else {
       delay = rateLimitRetryInterval;
-      rateLimitRetryCount++;
+      if (!isTest) rateLimitRetryCount++;
     }
     return delay;
+  }
+
+  public static int getTemporarilyUnavailableRetryInterval() {
+    return temporarilyUnavailableRetryInterval;
   }
 
   private CloseableHttpClient makeClosableHttpClient(
@@ -146,7 +149,6 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
                 (exception, executionCount, context) -> {
                   int errCode = getErrorCode(exception);
                   if (!isRetryAllowedHttp(
-                      exception,
                       executionCount,
                       context,
                       errCode,
@@ -158,7 +160,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
                       rateLimitRetryCount)) {
                     return false;
                   }
-                  long delay = calculateDelay(errCode, executionCount);
+                  long delay = calculateDelay(errCode, executionCount, false);
                   sleepForDelay(delay);
                   return true;
                 })
@@ -292,7 +294,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
       synchronized (connectionManager) {
         LOGGER.debug("connection pool stats: {}", connectionManager.getTotalStats());
         connectionManager.closeExpiredConnections();
-        connectionManager.closeIdleConnections(DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
+        connectionManager.closeIdleConnections(idleHttpConnectionExpiry, TimeUnit.SECONDS);
       }
     }
   }

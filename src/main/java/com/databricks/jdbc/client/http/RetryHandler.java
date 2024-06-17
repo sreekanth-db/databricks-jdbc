@@ -16,7 +16,6 @@ public class RetryHandler {
   }
 
   public static Boolean isRetryAllowedHttp(
-      IOException exception,
       int executionCount,
       HttpContext context,
       int errCode,
