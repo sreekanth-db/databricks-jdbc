@@ -123,10 +123,6 @@ public interface IDatabricksConnectionContext {
 
   Boolean getUseLegacyMetadata();
 
-  void setUseLegacyMetadataImplicitly(Boolean useLegacyMetadata);
-
-  void setUseLegacyMetadataExplicitly(Boolean useLegacyMetadata);
-
   /** Returns the number of threads to be used for fetching data from cloud storage */
   int getCloudFetchThreadPoolSize();
 }

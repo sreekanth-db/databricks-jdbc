@@ -57,9 +57,9 @@ public class DatabricksDriver implements Driver {
       DatabricksConnection connection = new DatabricksConnection(connectionContext);
       try {
         ResultSet getDBSQLVersionInfo =
-            connection.createStatement().executeQuery("SELECT current_version()");
+            connection.createStatement().executeQuery("SELECT current_version().dbsql_version");
         getDBSQLVersionInfo.next();
-        String dbsqlVersion = getDBSQLVersion(getDBSQLVersionInfo);
+        String dbsqlVersion = getDBSQLVersionInfo.getString(1);
         LOGGER.info("Connected to Databricks DBSQL version: {}", dbsqlVersion);
         if (checkSupportForNewMetadata(dbsqlVersion)) {
           LOGGER.info(
@@ -77,7 +77,7 @@ public class DatabricksDriver implements Driver {
               dbsqlVersion);
           connection.setMetadataClient(true);
         }
-      } catch (SQLException | JsonProcessingException e) {
+      } catch (SQLException e) {
         LOGGER.warn(
             "Unable to get the DBSQL version. Falling back to legacy metadata commands.", e);
         connection.setMetadataClient(true);
@@ -107,11 +107,6 @@ public class DatabricksDriver implements Driver {
           dbsqlVersion);
       return false;
     }
-  }
-
-  private String getDBSQLVersion(ResultSet info) throws SQLException, JsonProcessingException {
-    ObjectMapper mapper = new ObjectMapper();
-    return mapper.readTree(info.getString(1)).get("dbsql_version").asText();
   }
 
   @Override

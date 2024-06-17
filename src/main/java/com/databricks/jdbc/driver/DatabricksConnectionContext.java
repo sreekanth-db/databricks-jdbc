@@ -316,18 +316,6 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
-  public void setUseLegacyMetadataImplicitly(Boolean useLegacyMetadata) {
-    if (getParameter(USE_LEGACY_METADATA) == null) {
-      this.parameters.put(USE_LEGACY_METADATA, useLegacyMetadata ? "1" : "0");
-    }
-  }
-
-  @Override
-  public void setUseLegacyMetadataExplicitly(Boolean useLegacyMetadata) {
-    this.parameters.put(USE_LEGACY_METADATA, useLegacyMetadata ? "1" : "0");
-  }
-
-  @Override
   public int getCloudFetchThreadPoolSize() {
     try {
       return Integer.parseInt(
