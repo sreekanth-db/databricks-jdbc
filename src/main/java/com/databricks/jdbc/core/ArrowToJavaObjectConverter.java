@@ -15,16 +15,16 @@ import org.apache.arrow.vector.util.Text;
 
 public class ArrowToJavaObjectConverter {
   private static List<DateTimeFormatter> DATE_FORMATTERS =
-      Arrays.asList(
-          DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-          DateTimeFormatter.ofPattern("yyyy/MM/dd"),
-          DateTimeFormatter.ISO_LOCAL_DATE_TIME,
-          DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
-          DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+          Arrays.asList(
+                  DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+                  DateTimeFormatter.ofPattern("yyyy/MM/dd"),
+                  DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+                  DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+                  DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
 
   // TODO (Madhav): Check Arrow to JSON conversion
   public static Object convert(Object object, ColumnInfoTypeName requiredType)
-      throws DatabricksSQLException {
+          throws DatabricksSQLException {
     if (object == null) {
       return null;
     }
@@ -71,13 +71,13 @@ public class ArrowToJavaObjectConverter {
     }
     // Divide by 1000 since we need to convert from microseconds to milliseconds.
     Instant instant =
-        Instant.ofEpochMilli(
-            object instanceof Integer ? ((int) object) / 1000 : ((long) object) / 1000);
+            Instant.ofEpochMilli(
+                    object instanceof Integer ? ((int) object) / 1000 : ((long) object) / 1000);
     return Timestamp.from(instant);
   }
 
   private static Object convertArrowTextToTimestamp(String arrowText)
-      throws DatabricksSQLException {
+          throws DatabricksSQLException {
     LocalDateTime localDateTime = parseDate(arrowText);
     return Timestamp.valueOf(localDateTime);
   }
@@ -128,12 +128,18 @@ public class ArrowToJavaObjectConverter {
     if (object instanceof Text) {
       return Byte.parseByte(object.toString());
     }
+    if (object instanceof Number) {
+      return ((Number) object).byteValue();
+    }
     return (byte) object;
   }
 
   private static short convertToShort(Object object) throws DatabricksSQLException {
     if (object instanceof Text) {
       return Short.parseShort(object.toString());
+    }
+    if (object instanceof Number) {
+      return ((Number) object).shortValue();
     }
     return (short) object;
   }
@@ -149,6 +155,9 @@ public class ArrowToJavaObjectConverter {
     if (object instanceof Text) {
       return Double.parseDouble(object.toString());
     }
+    if (object instanceof Number) {
+      return ((Number) object).doubleValue();
+    }
     return (double) object;
   }
 
@@ -156,19 +165,28 @@ public class ArrowToJavaObjectConverter {
     if (object instanceof Text) {
       return Float.parseFloat(object.toString());
     }
+    if (object instanceof Number) {
+      return ((Number) object).floatValue();
+    }
     return (float) object;
   }
 
   private static int convertToInteger(Object object) throws DatabricksSQLException {
     if (object instanceof Text) {
-      Integer.parseInt(object.toString());
+      return Integer.parseInt(object.toString());
+    }
+    if (object instanceof Number) {
+      return ((Number) object).intValue();
     }
     return (int) object;
   }
 
   private static long convertToLong(Object object) throws DatabricksSQLException {
     if (object instanceof Text) {
-      Long.parseLong(object.toString());
+      return Long.parseLong(object.toString());
+    }
+    if (object instanceof Number) {
+      return ((Number) object).longValue();
     }
     return (long) object;
   }
