@@ -73,8 +73,9 @@ public class DatabricksThriftServiceClient implements DatabricksClient, Databric
     verifySuccessStatus(response.status.getStatusCode(), response.toString());
 
     TProtocolVersion serverProtocol = response.getServerProtocolVersion();
-    if (serverProtocol.getValue() <= TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V9.getValue()) {
-      throw new DatabricksSQLException("Attempting to connect to a non Databricks cluster using the Databricks driver.");
+    if (serverProtocol.getValue() <= TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10.getValue()) {
+      throw new DatabricksSQLException(
+          "Attempting to connect to a non Databricks cluster using the Databricks driver.");
     }
 
     String sessionId = byteBufferToString(response.sessionHandle.getSessionId().guid);

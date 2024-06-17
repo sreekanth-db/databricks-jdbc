@@ -48,6 +48,7 @@ public class DatabricksThriftServiceClientTest {
     TOpenSessionResp openSessionResp =
         new TOpenSessionResp()
             .setSessionHandle(SESSION_HANDLE)
+            .setServerProtocolVersion(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V9)
             .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS));
     when(thriftAccessor.getThriftResponse(openSessionReq, CommandName.OPEN_SESSION, null))
         .thenReturn(openSessionResp);
