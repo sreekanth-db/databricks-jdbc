@@ -257,12 +257,12 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     try {
       return httpClient.execute(request);
     } catch (IOException e) {
-      Throwable r = e;
-      while (r != null) {
-        if (r instanceof HttpException) {
-          throw new DatabricksHttpException(r.getMessage(), r);
+      Throwable cause = e;
+      while (cause != null) {
+        if (cause instanceof HttpException) {
+          throw new DatabricksHttpException(cause.getMessage(), cause);
         }
-        r = r.getCause();
+        cause = cause.getCause();
       }
       String errorMsg =
           String.format(
