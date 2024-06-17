@@ -15,28 +15,29 @@ import org.apache.arrow.vector.util.Text;
 
 public class ArrowToJavaObjectConverter {
   private static List<DateTimeFormatter> DATE_FORMATTERS =
-          Arrays.asList(
-                  DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-                  DateTimeFormatter.ofPattern("yyyy/MM/dd"),
-                  DateTimeFormatter.ofPattern("yyyy.MM.dd"),
-                  DateTimeFormatter.ofPattern("yyyyMMdd"),
-                  DateTimeFormatter.ofPattern("dd-MM-yyyy"),
-                  DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-                  DateTimeFormatter.ofPattern("dd.MM.yyyy"),
-                  DateTimeFormatter.ofPattern("ddMMyyyy"),
-                  DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
-                  DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"),
-                  DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss"),
-                  DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss"),
-                  DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"),
-                  DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"),
-                  DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"),
-                  DateTimeFormatter.ofPattern("ddMMyyyy HH:mm:ss"),
-                  DateTimeFormatter.ISO_LOCAL_DATE_TIME,
-                  DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-                  DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"),
-                  DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-                  DateTimeFormatter.RFC_1123_DATE_TIME);
+      Arrays.asList(
+          DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+          DateTimeFormatter.ofPattern("yyyy/MM/dd"),
+          DateTimeFormatter.ofPattern("yyyy.MM.dd"),
+          DateTimeFormatter.ofPattern("yyyyMMdd"),
+          DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+          DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+          DateTimeFormatter.ofPattern("dd.MM.yyyy"),
+          DateTimeFormatter.ofPattern("ddMMyyyy"),
+          DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+          DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"),
+          DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss"),
+          DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss"),
+          DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"),
+          DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"),
+          DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"),
+          DateTimeFormatter.ofPattern("ddMMyyyy HH:mm:ss"),
+          DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+          DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
+          DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"),
+          DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+          DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS"), // Two-digit milliseconds
+          DateTimeFormatter.RFC_1123_DATE_TIME);
 
   // TODO (Madhav): Check Arrow to JSON conversion
   public static Object convert(Object object, ColumnInfoTypeName requiredType)
