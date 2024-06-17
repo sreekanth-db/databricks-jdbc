@@ -7,8 +7,9 @@ import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.http.DatabricksHttpClient;
 import com.databricks.jdbc.client.sqlexec.ExternalLink;
 import com.databricks.jdbc.client.sqlexec.ResultData;
-import com.databricks.jdbc.client.sqlexec.VolumeOperationInfo;
+import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import com.databricks.jdbc.core.VolumeOperationExecutor.VolumeOperationStatus;
+import com.databricks.sdk.service.sql.ResultSchema;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.SQLException;
 
@@ -16,32 +17,32 @@ import java.sql.SQLException;
 class VolumeOperationResult implements IExecutionResult {
 
   private final IDatabricksSession session;
+  private final ResultManifest manifest;
   private final String statementId;
   private VolumeOperationExecutor volumeOperationExecutor;
   private int currentRowIndex;
 
-  VolumeOperationResult(ResultData resultData, String statementId, IDatabricksSession session) {
+  VolumeOperationResult(
+          String statementId, IDatabricksSession session, IExecutionResult resultHandler) {
     this.statementId = statementId;
     this.session = session;
-    this.currentRowIndex = -1;
-    init(
-        resultData.getVolumeOperationInfo(),
+    init(resultHandler,
         DatabricksHttpClient.getInstance(session.getConnectionContext()));
   }
 
   @VisibleForTesting
   VolumeOperationResult(
-      ResultData resultData,
       String statementId,
       IDatabricksSession session,
+      IExecutionResult resultHandler,
       IDatabricksHttpClient httpClient) {
     this.statementId = statementId;
     this.session = session;
     this.currentRowIndex = -1;
-    init(resultData.getVolumeOperationInfo(), httpClient);
+    init(resultHandler, httpClient);
   }
 
-  private void init(VolumeOperationInfo volumeOperationInfo, IDatabricksHttpClient httpClient) {
+  private void init(IExecutionResult resultHandler, IDatabricksHttpClient httpClient) {
     // For now there would be only one external link, until multi part upload is supported
     ExternalLink externalLink =
         volumeOperationInfo.getExternalLinks() == null
@@ -59,6 +60,21 @@ class VolumeOperationResult implements IExecutionResult {
     Thread thread = new Thread(volumeOperationExecutor);
     thread.setName("VolumeOperationExecutor " + statementId);
     thread.start();
+  }
+
+  private void validateMetadata() throws SQLException {
+    // For now we only support one row for Volume operation
+    if (manifest.getTotalRowCount() > 1) {
+      throw new DatabricksSQLException("Too many rows for Volume Operation");
+    }
+    ResultSchema schema = manifest.getSchema();
+    if (schema.getColumnCount() > 4) {
+      throw new DatabricksSQLException("Too many columns for Volume Operation");
+    }
+    if (schema.getColumnCount() < 3)  {
+      throw new DatabricksSQLException("Too few columns for Volume Operation");
+    }
+
   }
 
   @Override

@@ -6,7 +6,6 @@ import com.databricks.jdbc.client.impl.thrift.generated.TTableSchema;
 import com.databricks.jdbc.client.sqlexec.ExternalLink;
 import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
-import com.databricks.jdbc.client.sqlexec.VolumeOperationInfo;
 import com.databricks.jdbc.driver.DatabricksJdbcConstants;
 import com.databricks.sdk.service.sql.ColumnInfo;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;

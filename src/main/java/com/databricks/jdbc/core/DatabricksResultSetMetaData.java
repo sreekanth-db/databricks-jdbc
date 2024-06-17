@@ -37,7 +37,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
   // TODO: Add handling for Arrow stream results
 
   public DatabricksResultSetMetaData(
-      String statementId, ResultManifest resultManifest, ResultData resultData) {
+      String statementId, ResultManifest resultManifest) {
     this.statementId = statementId;
     Map<String, Integer> columnNameToIndexMap = new HashMap<>();
     ImmutableList.Builder<ImmutableDatabricksColumn> columnsBuilder = ImmutableList.builder();
@@ -45,7 +45,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
         "Result manifest for statement {} has schema: {}", statementId, resultManifest.getSchema());
 
     int currIndex = 0;
-    if (resultData.getVolumeOperationInfo() != null) {
+    if (resultManifest.getIsVolumeOperation()) {
       ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
       columnBuilder
           .columnName(VOLUME_OPERATION_STATUS_COLUMN_NAME)

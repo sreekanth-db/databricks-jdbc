@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.sqlexec.ExternalLink;
 import com.databricks.jdbc.client.sqlexec.ResultData;
-import com.databricks.jdbc.client.sqlexec.VolumeOperationInfo;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Files;
