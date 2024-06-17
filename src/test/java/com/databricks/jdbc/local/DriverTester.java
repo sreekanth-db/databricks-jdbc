@@ -220,8 +220,7 @@ public class DriverTester {
     DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
     String jdbcUrl =
         "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;LogLevel=debug;LogPath=test;TemporarilyUnavailableRetry=1;TemporarilyUnavailableRetryTimeout=700;RateLimitRetry=2;RateLimitRetryTimeout=100;IdleHttpConnectionExpiry=60;";
-    Connection con =
-        DriverManager.getConnection(jdbcUrl, "token", "dapia0cc7332f057311b685c384315e2f126");
+    Connection con = DriverManager.getConnection(jdbcUrl, "token", "x");
     System.out.println("Connection established......");
     System.out.println(
         con.getMetaData().getDriverName() + " " + con.getMetaData().getDriverVersion());
