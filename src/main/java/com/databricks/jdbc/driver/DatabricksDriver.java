@@ -126,7 +126,7 @@ public class DatabricksDriver implements Driver {
     LoggerContext context = (LoggerContext) LogManager.getContext(false);
     Configuration config = context.getConfiguration();
     PatternLayout layout = AppenderUtil.getPatternLayout(config, DEFAULT_LOG_PATTERN);
-    boolean isFilePath = logDirectory.matches(".*\\.(log|txt|json)$");
+    boolean isFilePath = logDirectory.matches(".*\\.(log|txt|json|csv|xml|out)$");
     if (isFilePath) {
       configureLogger(AppenderUtil.getFileAppender(config, layout, logDirectory), logLevel);
     } else {
