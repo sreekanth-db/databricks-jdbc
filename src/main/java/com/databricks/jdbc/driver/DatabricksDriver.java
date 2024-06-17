@@ -2,22 +2,18 @@ package com.databricks.jdbc.driver;
 
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
 
+import com.databricks.jdbc.commons.util.AppenderUtil;
 import com.databricks.jdbc.core.DatabricksConnection;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.telemetry.DatabricksMetrics;
 import com.databricks.sdk.core.UserAgent;
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.Properties;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.FileAppender;
-import org.apache.logging.log4j.core.appender.RollingFileAppender;
-import org.apache.logging.log4j.core.appender.rolling.DefaultRolloverStrategy;
-import org.apache.logging.log4j.core.appender.rolling.SizeBasedTriggeringPolicy;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
@@ -57,8 +53,7 @@ public class DatabricksDriver implements Driver {
         connectionContext.getLogPathString(),
         connectionContext.getLogLevel(),
         connectionContext.getLogFileCount(),
-        connectionContext.getLogFileSize(),
-        connectionContext.getUseLogPrefix());
+        connectionContext.getLogFileSize());
     setUserAgent(connectionContext);
     DatabricksMetrics.instantiateTelemetryClient(connectionContext);
     try {
@@ -127,57 +122,18 @@ public class DatabricksDriver implements Driver {
   }
 
   public static void configureLogging(
-      String logDirectory,
-      Level logLevel,
-      int logFileCount,
-      int logFileSize,
-      Boolean useLogPrefix) {
+      String logDirectory, Level logLevel, int logFileCount, int logFileSize) {
     LoggerContext context = (LoggerContext) LogManager.getContext(false);
     Configuration config = context.getConfiguration();
-    PatternLayout layout =
-        PatternLayout.newBuilder()
-            .withPattern("%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n")
-            .build();
-
-    boolean isFilePath =
-        (logDirectory.endsWith(".log"))
-            || (logDirectory.endsWith(".txt"))
-            || (logDirectory.endsWith(".json"));
+    PatternLayout layout = AppenderUtil.getPatternLayout(config, DEFAULT_LOG_PATTERN);
+    boolean isFilePath = logDirectory.matches(".*\\.(log|txt|json)$");
     if (isFilePath) {
-      FileAppender appender =
-          FileAppender.newBuilder()
-              .setConfiguration(config)
-              .withLayout(layout)
-              .withFileName(logDirectory)
-              .withName(logDirectory)
-              .build();
-      configureLogger(appender, logLevel);
+      configureLogger(AppenderUtil.getFileAppender(config, layout, logDirectory), logLevel);
     } else {
-      String fileName = logDirectory + "/" + LocalDate.now() + "-logfile-0.log";
-      String filePattern = logDirectory + "/%d{yyyy-MM-dd}-logfile-%i.log";
-
-      // Create a size-based triggering policy with the specified log file size
-      SizeBasedTriggeringPolicy triggeringPolicy =
-          SizeBasedTriggeringPolicy.createPolicy(logFileSize + "KB");
-
-      // Create a default rollover strategy with the specified maximum number of log files
-      DefaultRolloverStrategy rolloverStrategy =
-          DefaultRolloverStrategy.createStrategy(
-              String.valueOf(logFileCount), "1", "1", null, null, false, config);
-
-      // Create a rolling file appender with the triggering policy and rollover strategy
-      RollingFileAppender appender =
-          RollingFileAppender.newBuilder()
-              .withFileName(fileName)
-              .withFilePattern(filePattern)
-              .withLayout(layout)
-              .withPolicy(triggeringPolicy)
-              .withStrategy(rolloverStrategy)
-              .setConfiguration(config)
-              .withName(logDirectory)
-              .build();
-
-      configureLogger(appender, logLevel);
+      configureLogger(
+          AppenderUtil.getRollingFileAppender(
+              config, layout, logDirectory, logFileSize, logFileCount - 1),
+          logLevel);
     }
   }
 }
