@@ -178,8 +178,8 @@ public class DatabricksThriftAccessorTest {
 
   @Test
   void testExecute_throwsException() throws TException {
-    setup();
-    accessor = new DatabricksThriftAccessor(thriftClient, config);
+    setup(true);
+    accessor = new DatabricksThriftAccessor(thriftClient, config, connectionContext);
     TExecuteStatementReq request = new TExecuteStatementReq();
     TExecuteStatementResp tExecuteStatementResp =
         new TExecuteStatementResp()
