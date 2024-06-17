@@ -93,7 +93,7 @@ public class MetadataResultSetBuilder {
     while (resultSet.next()) {
       List<Object> row = new ArrayList<>();
       for (ResultColumn column : columns) {
-        if (column.getColumnName().equals("TABLE_CAT")) {
+        if (column.getColumnName().equals("TABLE_CATALOG")) {
           row.add(catalog);
           continue;
         }
