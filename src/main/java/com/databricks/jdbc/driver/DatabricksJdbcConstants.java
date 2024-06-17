@@ -140,4 +140,7 @@ public final class DatabricksJdbcConstants {
 
   static final String CLOUD_FETCH_THREAD_POOL_SIZE = "cloudFetchThreadPoolSize";
   static final int CLOUD_FETCH_THREAD_POOL_SIZE_DEFAULT = 16;
+
+  static final int DBSQL_MIN_MAJOR_VERSION_FOR_NEW_METADATA = 2024;
+  static final int DBSQL_MIN_MINOR_VERSION_FOR_NEW_METADATA = 30;
 }

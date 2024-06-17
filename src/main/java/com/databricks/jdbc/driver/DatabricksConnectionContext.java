@@ -311,7 +311,20 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public Boolean getUseLegacyMetadata() {
     // Defaults to use legacy metadata client
-    return Objects.equals(getParameter(USE_LEGACY_METADATA, "0"), "1");
+    String param = getParameter(USE_LEGACY_METADATA);
+    return param != null && param.equals("1");
+  }
+
+  @Override
+  public void setUseLegacyMetadataImplicitly(Boolean useLegacyMetadata) {
+    if (getParameter(USE_LEGACY_METADATA) == null) {
+      this.parameters.put(USE_LEGACY_METADATA, useLegacyMetadata ? "1" : "0");
+    }
+  }
+
+  @Override
+  public void setUseLegacyMetadataExplicitly(Boolean useLegacyMetadata) {
+    this.parameters.put(USE_LEGACY_METADATA, useLegacyMetadata ? "1" : "0");
   }
 
   @Override
