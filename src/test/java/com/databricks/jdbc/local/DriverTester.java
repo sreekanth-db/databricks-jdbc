@@ -133,7 +133,7 @@ public class DriverTester {
         "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv;AuthMech=3;UID=token;LogLevel=debug;LogPath=test;LogFileCount=3;LogFileSize=2;";
     Connection con =
         DriverManager.getConnection(
-            jdbcUrl, "samikshya.chand@databricks.com", "dapia0cc7332f057311b685c384315e2f126");
+            jdbcUrl, "samikshya.chand@databricks.com", "x");
     System.out.println("Connection established......");
     ResultSet resultSet =
         con.createStatement()
