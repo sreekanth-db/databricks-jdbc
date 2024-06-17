@@ -52,7 +52,6 @@ public class DatabricksThriftAccessor {
     this.databricksConfig = config;
     this.thriftClient = client;
     this.enableDirectResults = connectionContext.getDirectResultMode();
-    System.out.println("Bhuvan" + enableDirectResults);
   }
 
   public TBase getThriftResponse(
