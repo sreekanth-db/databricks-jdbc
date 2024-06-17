@@ -142,4 +142,14 @@ public final class DatabricksJdbcConstants {
 
   static final String CLOUD_FETCH_THREAD_POOL_SIZE = "cloudFetchThreadPoolSize";
   static final int CLOUD_FETCH_THREAD_POOL_SIZE_DEFAULT = 16;
+  static final String TEMPORARILY_UNAVAILABLE_RETRY = "TemporarilyUnavailableRetry";
+  public static final String DEFAULT_TEMPORARILY_UNAVAILABLE_RETRY = "1";
+  static final String TEMPORARILY_UNAVAILABLE_RETRY_TIMEOUT = "TemporarilyUnavailableRetryTimeout";
+  public static final String DEFAULT_TEMPORARILY_UNAVAILABLE_RETRY_TIMEOUT = "900";
+  static final String RATE_LIMIT_RETRY = "RateLimitRetry";
+  public static final String DEFAULT_RATE_LIMIT_RETRY = "1";
+  static final String RATE_LIMIT_RETRY_TIMEOUT = "RateLimitRetryTimeout";
+  public static final String DEFAULT_RATE_LIMIT_RETRY_TIMEOUT = "120";
+  static final String IDLE_HTTP_CONNECTION_EXPIRY = "IdleHttpConnectionExpiry";
+  public static final String DEFAULT_IDLE_HTTP_CONNECTION_EXPIRY = "60";
 }

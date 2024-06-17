@@ -127,4 +127,14 @@ public interface IDatabricksConnectionContext {
   int getCloudFetchThreadPoolSize();
 
   Boolean getDirectResultMode();
+
+  int getTemporarilyUnavailableRetryInterval();
+
+  int getTemporarilyUnavailableRetryTimeout();
+
+  int getRateLimitRetryInterval();
+
+  int getRateLimitRetryTimeout();
+
+  int getIdleHttpConnectionExpiry();
 }

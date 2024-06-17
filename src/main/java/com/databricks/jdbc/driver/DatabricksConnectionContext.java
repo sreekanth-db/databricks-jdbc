@@ -459,4 +459,34 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
         return DEFAULT_LOG_LEVEL;
     }
   }
+
+  @Override
+  public int getTemporarilyUnavailableRetryInterval() {
+    return Integer.parseInt(
+        getParameter(TEMPORARILY_UNAVAILABLE_RETRY, DEFAULT_TEMPORARILY_UNAVAILABLE_RETRY));
+  }
+
+  @Override
+  public int getTemporarilyUnavailableRetryTimeout() {
+    return Integer.parseInt(
+        getParameter(
+            TEMPORARILY_UNAVAILABLE_RETRY_TIMEOUT, DEFAULT_TEMPORARILY_UNAVAILABLE_RETRY_TIMEOUT));
+  }
+
+  @Override
+  public int getRateLimitRetryInterval() {
+    return Integer.parseInt(getParameter(RATE_LIMIT_RETRY, DEFAULT_RATE_LIMIT_RETRY));
+  }
+
+  @Override
+  public int getRateLimitRetryTimeout() {
+    return Integer.parseInt(
+        getParameter(RATE_LIMIT_RETRY_TIMEOUT, DEFAULT_RATE_LIMIT_RETRY_TIMEOUT));
+  }
+
+  @Override
+  public int getIdleHttpConnectionExpiry() {
+    return Integer.parseInt(
+        getParameter(IDLE_HTTP_CONNECTION_EXPIRY, DEFAULT_IDLE_HTTP_CONNECTION_EXPIRY));
+  }
 }
