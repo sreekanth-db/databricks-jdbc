@@ -15,7 +15,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class MetadataResultSetBuilder {
-  public static DatabricksResultSet getFunctionsResult(ResultSet resultSet, String catalog) throws SQLException {
+  public static DatabricksResultSet getFunctionsResult(ResultSet resultSet, String catalog)
+      throws SQLException {
     List<List<Object>> rows = getRowsForFunctions(resultSet, FUNCTION_COLUMNS, catalog);
     return buildResultSet(FUNCTION_COLUMNS, rows, GET_FUNCTIONS_STATEMENT_ID);
   }
@@ -86,8 +87,8 @@ public class MetadataResultSetBuilder {
     return rows;
   }
 
-  private static List<List<Object>> getRowsForFunctions(ResultSet resultSet, List<ResultColumn> columns, String catalog)
-          throws SQLException {
+  private static List<List<Object>> getRowsForFunctions(
+      ResultSet resultSet, List<ResultColumn> columns, String catalog) throws SQLException {
     List<List<Object>> rows = new ArrayList<>();
     while (resultSet.next()) {
       List<Object> row = new ArrayList<>();
