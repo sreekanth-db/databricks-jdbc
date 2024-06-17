@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class MetadataResultSetBuilder {
-  public static DatabricksResultSet getFunctionsResult(ResultSet resultSet) throws SQLException {
-    List<List<Object>> rows = getRows(resultSet, FUNCTION_COLUMNS);
+  public static DatabricksResultSet getFunctionsResult(ResultSet resultSet, String catalog) throws SQLException {
+    List<List<Object>> rows = getRowsForFunctions(resultSet, FUNCTION_COLUMNS, catalog);
     return buildResultSet(FUNCTION_COLUMNS, rows, GET_FUNCTIONS_STATEMENT_ID);
   }
 
@@ -69,6 +69,33 @@ public class MetadataResultSetBuilder {
     while (resultSet.next()) {
       List<Object> row = new ArrayList<>();
       for (ResultColumn column : columns) {
+        Object object;
+        try {
+          object = resultSet.getObject(column.getResultSetColumnName());
+          if (object == null) {
+            object = NULL_STRING;
+          }
+        } catch (DatabricksSQLException e) {
+          // Remove non-relevant columns from the obtained result set
+          object = NULL_STRING;
+        }
+        row.add(object);
+      }
+      rows.add(row);
+    }
+    return rows;
+  }
+
+  private static List<List<Object>> getRowsForFunctions(ResultSet resultSet, List<ResultColumn> columns, String catalog)
+          throws SQLException {
+    List<List<Object>> rows = new ArrayList<>();
+    while (resultSet.next()) {
+      List<Object> row = new ArrayList<>();
+      for (ResultColumn column : columns) {
+        if (column.getColumnName().equals("FUNCTION_CAT")) {
+          row.add(catalog);
+          continue;
+        }
         Object object;
         try {
           object = resultSet.getObject(column.getResultSetColumnName());
