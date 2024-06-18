@@ -22,20 +22,17 @@ public class DatabricksMetrics {
   private static final String ACCESS_TOKEN = "x";
   private static final Map<String, Double> gaugeMetrics = new HashMap<>();
   private static final Map<String, Double> counterMetrics = new HashMap<>();
-
   private static long lastSuccessfulHttpReq = System.currentTimeMillis();
-
   private static final long intervalDurationForSendingReq = TimeUnit.SECONDS.toMillis(10 * 60);
-
   private static long httpLatency = 0;
-
   private static DatabricksHttpClient telemetryClient = null;
-
   private static final ObjectMapper objectMapper = new ObjectMapper();
-
-  private static final String metricsMapString = "metrics_map_string";
-  private static final String metricsType = "metrics_map_int";
-
+  private static final String METRICS_MAP_STRING = "metrics_map_string";
+  private static final String METRICS_TYPE = "metrics_map_int";
+  public enum MetricsType {
+    GAUGE,
+    COUNTER
+  }
   public static void instantiateTelemetryClient(IDatabricksConnectionContext context) {
     telemetryClient = DatabricksHttpClient.getInstance(context);
   }
@@ -43,8 +40,7 @@ public class DatabricksMetrics {
   private DatabricksMetrics() throws IOException {
     // Private constructor to prevent instantiation
   }
-
-  public static String sendRequest(Map<String, Double> map, int isGauge) throws Exception {
+  public static String sendRequest(Map<String, Double> map, MetricsType metricsType) throws Exception {
     // Check if the telemetry client is set
     if (telemetryClient == null) {
       throw new DatabricksHttpException(
@@ -56,8 +52,8 @@ public class DatabricksMetrics {
 
     // Create the request and adding parameters & headers
     URIBuilder uriBuilder = new URIBuilder(URL);
-    uriBuilder.addParameter(metricsMapString, jsonInputString);
-    uriBuilder.addParameter(metricsType, String.valueOf(isGauge));
+    uriBuilder.addParameter(METRICS_MAP_STRING, jsonInputString);
+    uriBuilder.addParameter(METRICS_TYPE, metricsType.name().equals("GAUGE") ? "1" : "0");
     HttpUriRequest request = new HttpGet(uriBuilder.build());
     request.addHeader("Authorization", "Bearer " + ACCESS_TOKEN);
 
@@ -81,23 +77,23 @@ public class DatabricksMetrics {
     return responseString;
   }
 
-  public static void postMetrics(int isGauge) {
+  public static void postMetrics(MetricsType metricsType) {
     CompletableFuture.supplyAsync(
             () -> {
               long currentTimeMillis = System.currentTimeMillis();
 
               if (currentTimeMillis - lastSuccessfulHttpReq >= intervalDurationForSendingReq) {
                 try {
-                  if (isGauge == 1) {
-                    sendRequest(gaugeMetrics, 1);
+                  if (metricsType == MetricsType.GAUGE) {
+                    sendRequest(gaugeMetrics, MetricsType.GAUGE);
                   } else {
-                    sendRequest(counterMetrics, 0);
+                    sendRequest(counterMetrics, MetricsType.COUNTER);
                   }
                   lastSuccessfulHttpReq = System.currentTimeMillis();
                   httpLatency += (lastSuccessfulHttpReq - currentTimeMillis);
                 } catch (Exception e) {
                   // Commenting out the exception for now - failing silently
-                  // System.out.println(e.getMessage());
+                  System.out.println(e.getMessage());
                 }
               }
               return null;
@@ -105,7 +101,11 @@ public class DatabricksMetrics {
         .thenAccept(
             response -> {
               if (response != null) {
-                gaugeMetrics.clear();
+                if(metricsType == MetricsType.GAUGE) {
+                  gaugeMetrics.clear();
+                } else {
+                  counterMetrics.clear();
+                }
               }
             });
   }
@@ -116,7 +116,7 @@ public class DatabricksMetrics {
       gaugeMetrics.put(name, 0.0);
     }
     gaugeMetrics.put(name, value);
-    postMetrics(1);
+    postMetrics(MetricsType.GAUGE);
   }
 
   public static void incCounterMetrics(String name, double value) {
@@ -124,7 +124,7 @@ public class DatabricksMetrics {
       counterMetrics.put(name, 0.0);
     }
     counterMetrics.put(name, value);
-    postMetrics(0);
+    postMetrics(MetricsType.COUNTER);
   }
 
   public static void record(String name, double value) {

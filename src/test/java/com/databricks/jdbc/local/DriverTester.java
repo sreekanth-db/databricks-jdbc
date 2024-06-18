@@ -200,7 +200,7 @@ public class DriverTester {
     map.put("M3", (double) 2);
     map.put("M4", (double) 3);
 
-    String response = DatabricksMetrics.sendRequest(map, 0);
+    String response = DatabricksMetrics.sendRequest(map, DatabricksMetrics.MetricsType.GAUGE);
     System.out.println(response);
   }
 }
