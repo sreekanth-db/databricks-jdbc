@@ -66,7 +66,7 @@ public class MetadataResultConstants {
   private static final ResultColumn FUNCTION_NAME_COLUMN =
       new ResultColumn("FUNCTION_NAME", "functionName", Types.VARCHAR);
   private static final ResultColumn FUNCTION_TYPE_COLUMN =
-      new ResultColumn("FUNCTION_TYPE", "functionType", Types.VARCHAR);
+      new ResultColumn("FUNCTION_TYPE", "functionType", Types.SMALLINT);
   private static final ResultColumn SPECIFIC_NAME_COLUMN =
       new ResultColumn("SPECIFIC_NAME", "specificName", Types.VARCHAR);
   private static final ResultColumn INFORMATION_NAME_COLUMN =
