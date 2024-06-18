@@ -41,7 +41,7 @@ public class AppenderUtil {
 
     // Create a size-based triggering policy with the specified log file size
     SizeBasedTriggeringPolicy triggeringPolicy =
-        SizeBasedTriggeringPolicy.createPolicy(logFileSize + "KB");
+        SizeBasedTriggeringPolicy.createPolicy(logFileSize + "MB");
 
     // Create a default rollover strategy with the specified maximum number of log files
     DefaultRolloverStrategy rolloverStrategy =

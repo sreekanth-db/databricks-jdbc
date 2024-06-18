@@ -283,7 +283,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public int getLogFileSize() {
     String parameter = getParameter(LOG_FILE_SIZE);
-    return (parameter == null) ? DEFAULT_LOG_FILE_SIZE_IN_KB : Integer.parseInt(parameter);
+    return (parameter == null) ? DEFAULT_LOG_FILE_SIZE_IN_MB : Integer.parseInt(parameter);
   }
 
   @Override
