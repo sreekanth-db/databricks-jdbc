@@ -57,7 +57,7 @@ public class ErrorHandlingIntegrationTests extends AbstractFakeServiceIntegratio
                       + " (id, col1, col2) VALUES (1, 'value1', 'value2')";
               statement.executeQuery(sql);
             });
-    assertTrue(e.getMessage().contains("Error occurred during statement execution"));
+    assertTrue(e.getMessage().contains("Syntax error"));
     deleteTable(tableName);
   }
 
