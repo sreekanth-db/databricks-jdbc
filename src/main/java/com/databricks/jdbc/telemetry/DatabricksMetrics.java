@@ -29,10 +29,12 @@ public class DatabricksMetrics {
   private static final ObjectMapper objectMapper = new ObjectMapper();
   private static final String METRICS_MAP_STRING = "metrics_map_string";
   private static final String METRICS_TYPE = "metrics_map_int";
+
   public enum MetricsType {
     GAUGE,
     COUNTER
   }
+
   public static void instantiateTelemetryClient(IDatabricksConnectionContext context) {
     telemetryClient = DatabricksHttpClient.getInstance(context);
   }
@@ -40,7 +42,9 @@ public class DatabricksMetrics {
   private DatabricksMetrics() throws IOException {
     // Private constructor to prevent instantiation
   }
-  public static String sendRequest(Map<String, Double> map, MetricsType metricsType) throws Exception {
+
+  public static String sendRequest(Map<String, Double> map, MetricsType metricsType)
+      throws Exception {
     // Check if the telemetry client is set
     if (telemetryClient == null) {
       throw new DatabricksHttpException(
@@ -101,7 +105,7 @@ public class DatabricksMetrics {
         .thenAccept(
             response -> {
               if (response != null) {
-                if(metricsType == MetricsType.GAUGE) {
+                if (metricsType == MetricsType.GAUGE) {
                   gaugeMetrics.clear();
                 } else {
                   counterMetrics.clear();
