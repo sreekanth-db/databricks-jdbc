@@ -128,12 +128,18 @@ public class ArrowToJavaObjectConverter {
     if (object instanceof Text) {
       return Byte.parseByte(object.toString());
     }
+    if (object instanceof Number) {
+      return ((Number) object).byteValue();
+    }
     return (byte) object;
   }
 
   private static short convertToShort(Object object) throws DatabricksSQLException {
     if (object instanceof Text) {
       return Short.parseShort(object.toString());
+    }
+    if (object instanceof Number) {
+      return ((Number) object).shortValue();
     }
     return (short) object;
   }
@@ -149,6 +155,9 @@ public class ArrowToJavaObjectConverter {
     if (object instanceof Text) {
       return Double.parseDouble(object.toString());
     }
+    if (object instanceof Number) {
+      return ((Number) object).doubleValue();
+    }
     return (double) object;
   }
 
@@ -156,19 +165,28 @@ public class ArrowToJavaObjectConverter {
     if (object instanceof Text) {
       return Float.parseFloat(object.toString());
     }
+    if (object instanceof Number) {
+      return ((Number) object).floatValue();
+    }
     return (float) object;
   }
 
   private static int convertToInteger(Object object) throws DatabricksSQLException {
     if (object instanceof Text) {
-      Integer.parseInt(object.toString());
+      return Integer.parseInt(object.toString());
+    }
+    if (object instanceof Number) {
+      return ((Number) object).intValue();
     }
     return (int) object;
   }
 
   private static long convertToLong(Object object) throws DatabricksSQLException {
     if (object instanceof Text) {
-      Long.parseLong(object.toString());
+      return Long.parseLong(object.toString());
+    }
+    if (object instanceof Number) {
+      return ((Number) object).longValue();
     }
     return (long) object;
   }
