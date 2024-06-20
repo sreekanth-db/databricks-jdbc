@@ -45,11 +45,12 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     checkIfClosed();
+    ResultSet rs = executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.QUERY);
     if (!shouldReturnResultSet(sql)) {
       throw new DatabricksSQLException(
-          "A ResultSet was expected but not generated from query: " + sql);
+              "A ResultSet was expected but not generated from query: " + sql);
     }
-    return executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.QUERY);
+    return rs;
   }
 
   @Override
