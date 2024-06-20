@@ -2,6 +2,7 @@ package com.databricks.jdbc.client.impl.sdk;
 
 import static com.databricks.jdbc.client.impl.sdk.PathConstants.*;
 import static com.databricks.jdbc.commons.EnvironmentVariables.DEFAULT_ROW_LIMIT;
+import static com.databricks.jdbc.telemetry.DatabricksMetrics.setWarehouseId;
 
 import com.databricks.jdbc.client.DatabricksClient;
 import com.databricks.jdbc.client.StatementType;
@@ -89,6 +90,7 @@ public class DatabricksSdkClient implements DatabricksClient {
         catalog,
         schema,
         sessionConf);
+    setWarehouseId(((Warehouse) warehouse).getWarehouseId());
     // TODO: [PECO-1460] Handle sessionConf in public session API
     long startTime = System.currentTimeMillis();
     CreateSessionRequest request =

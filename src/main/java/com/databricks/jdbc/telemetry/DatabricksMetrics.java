@@ -31,6 +31,7 @@ public class DatabricksMetrics {
   private static final String METRICS_MAP_STRING = "metrics_map_string";
   private static final String METRICS_TYPE = "metrics_map_int";
   private static Boolean firstExport = false;
+  private static String warehouseId = null;
 
   public enum MetricsType {
     GAUGE,
@@ -63,6 +64,10 @@ public class DatabricksMetrics {
     // Schedule the task using a parallel thread to send metrics to server every
     // "intervalDurationForSendingReq" seconds
     scheduleExportMetrics();
+  }
+
+  public static void setWarehouseId(String workspaceId) {
+    DatabricksMetrics.warehouseId = workspaceId;
   }
 
   private DatabricksMetrics() throws IOException {
@@ -143,12 +148,12 @@ public class DatabricksMetrics {
   }
 
   public static void record(String name, double value) {
-    setGaugeMetrics(name, value);
+    setGaugeMetrics(name + "_" + warehouseId, value);
     FirstExport(gaugeMetrics, MetricsType.GAUGE);
   }
 
   public static void increment(String name, double value) {
-    incCounterMetrics(name, value);
+    incCounterMetrics(name + "_" + warehouseId, value);
     FirstExport(counterMetrics, MetricsType.COUNTER);
   }
 }
