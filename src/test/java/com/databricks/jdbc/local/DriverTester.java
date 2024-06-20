@@ -170,18 +170,14 @@ public class DriverTester {
   @Test
   void testModifyMetrics() throws Exception {
     for (int i = 1; i <= 10; i++) {
-      DatabricksMetrics.record(MetricsList.LIST_TABLES_METADATA_SEA.name(), (2 * i));
-      DatabricksMetrics.record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 2);
-      Thread.sleep(1000);
+      DatabricksMetrics.record(MetricsList.LIST_TABLES_METADATA_SEA.name(), (i));
+      DatabricksMetrics.record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), 2 * i);
     }
-    Thread.sleep(5000);
-
     for (int i = 1; i <= 10; i++) {
       DatabricksMetrics.record(MetricsList.LIST_TABLES_METADATA_SEA.name(), (3 * i));
-      DatabricksMetrics.record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), i ^ 3);
-      Thread.sleep(1000);
+      DatabricksMetrics.record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), 10 * i);
     }
-
+    Thread.sleep(5000);
     System.out.println(DatabricksMetrics.getHttpLatency());
   }
 
@@ -197,10 +193,9 @@ public class DriverTester {
     System.out.println("Connection established......");
 
     Map<String, Double> map = new HashMap<>();
-    map.put("M3", (double) 2);
-    map.put("M4", (double) 3);
-
-    String response = DatabricksMetrics.sendRequest(map, DatabricksMetrics.MetricsType.GAUGE);
+    map.put("M3", (double) 6);
+    map.put("M4", (double) 5);
+    String response = DatabricksMetrics.sendRequest(map, DatabricksMetrics.MetricsType.COUNTER);
     System.out.println(response);
   }
 }

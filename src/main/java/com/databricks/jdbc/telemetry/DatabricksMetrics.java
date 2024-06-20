@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -35,6 +37,26 @@ public class DatabricksMetrics {
     COUNTER
   }
 
+  public static void scheduleExportMetrics(long interval) {
+    Timer timer = new Timer();
+    TimerTask task =
+        new TimerTask() {
+          @Override
+          public void run() {
+            try {
+              sendRequest(gaugeMetrics, MetricsType.GAUGE);
+              sendRequest(counterMetrics, MetricsType.COUNTER);
+            } catch (Exception e) {
+              // Commenting out the exception for now - failing silently
+              // System.out.println(e.getMessage());
+            }
+          }
+        };
+
+    // Schedule the task to run once after the specified interval
+    timer.schedule(task, interval);
+  }
+
   public static void instantiateTelemetryClient(IDatabricksConnectionContext context) {
     telemetryClient = DatabricksHttpClient.getInstance(context);
   }
@@ -60,8 +82,6 @@ public class DatabricksMetrics {
     uriBuilder.addParameter(METRICS_TYPE, metricsType.name().equals("GAUGE") ? "1" : "0");
     HttpUriRequest request = new HttpGet(uriBuilder.build());
     request.addHeader("Authorization", "Bearer " + ACCESS_TOKEN);
-
-    // Execute the request and get the response
     CloseableHttpResponse response = telemetryClient.execute(request);
 
     // Error handling
@@ -85,7 +105,6 @@ public class DatabricksMetrics {
     CompletableFuture.supplyAsync(
             () -> {
               long currentTimeMillis = System.currentTimeMillis();
-
               if (currentTimeMillis - lastSuccessfulHttpReq >= intervalDurationForSendingReq) {
                 try {
                   if (metricsType == MetricsType.GAUGE) {
@@ -97,8 +116,11 @@ public class DatabricksMetrics {
                   httpLatency += (lastSuccessfulHttpReq - currentTimeMillis);
                 } catch (Exception e) {
                   // Commenting out the exception for now - failing silently
-                  System.out.println(e.getMessage());
+                  // System.out.println(e.getMessage());
                 }
+              } else {
+                scheduleExportMetrics(
+                    intervalDurationForSendingReq - (currentTimeMillis - lastSuccessfulHttpReq));
               }
               return null;
             })
