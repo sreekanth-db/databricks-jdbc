@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabricksSdkClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.client.impl.sdk</a> &gt; <span class="el_source">DatabricksSdkClient.java</span></div><h1>DatabricksSdkClient.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.client.impl.sdk;
+
+import static com.databricks.jdbc.client.impl.sdk.PathConstants.*;
+import static com.databricks.jdbc.commons.EnvironmentVariables.DEFAULT_ROW_LIMIT;
+
+import com.databricks.jdbc.client.DatabricksClient;
+import com.databricks.jdbc.client.StatementType;
+import com.databricks.jdbc.client.sqlexec.*;
+import com.databricks.jdbc.client.sqlexec.CloseStatementRequest;
+import com.databricks.jdbc.client.sqlexec.CreateSessionRequest;
+import com.databricks.jdbc.client.sqlexec.DeleteSessionRequest;
+import com.databricks.jdbc.client.sqlexec.ExecuteStatementRequest;
+import com.databricks.jdbc.client.sqlexec.ExecuteStatementResponse;
+import com.databricks.jdbc.client.sqlexec.ExternalLink;
+import com.databricks.jdbc.client.sqlexec.GetStatementResponse;
+import com.databricks.jdbc.client.sqlexec.ResultData;
+import com.databricks.jdbc.commons.MetricsList;
+import com.databricks.jdbc.core.*;
+import com.databricks.jdbc.core.types.ComputeResource;
+import com.databricks.jdbc.core.types.Warehouse;
+import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.databricks.jdbc.telemetry.DatabricksMetrics;
+import com.databricks.sdk.WorkspaceClient;
+import com.databricks.sdk.core.ApiClient;
+import com.databricks.sdk.core.DatabricksConfig;
+import com.databricks.sdk.service.sql.*;
+import java.sql.SQLException;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+/** Implementation of DatabricksClient interface using Databricks Java SDK. */
+public class DatabricksSdkClient implements DatabricksClient {
+<span class="fc" id="L39">  private static final Logger LOGGER = LogManager.getLogger(DatabricksSdkClient.class);</span>
+  private static final String SYNC_TIMEOUT_VALUE = &quot;10s&quot;;
+  private static final String ASYNC_TIMEOUT_VALUE = &quot;0s&quot;;
+
+  private final IDatabricksConnectionContext connectionContext;
+  private final DatabricksConfig databricksConfig;
+  private final WorkspaceClient workspaceClient;
+
+  private static Map&lt;String, String&gt; getHeaders() {
+<span class="fc" id="L48">    return Map.of(</span>
+        &quot;Accept&quot;, &quot;application/json&quot;,
+        &quot;Content-Type&quot;, &quot;application/json&quot;);
+  }
+
+  public DatabricksSdkClient(IDatabricksConnectionContext connectionContext)
+<span class="fc" id="L54">      throws DatabricksParsingException {</span>
+<span class="fc" id="L55">    this.connectionContext = connectionContext;</span>
+    // TODO: [PECO-1486] pass on proxy settings to SDK once changes are merged in SDK
+    // Handle more auth types
+<span class="fc" id="L58">    this.databricksConfig =</span>
+        new DatabricksConfig()
+<span class="fc" id="L60">            .setHost(connectionContext.getHostUrl())</span>
+<span class="fc" id="L61">            .setToken(connectionContext.getToken());</span>
+
+<span class="fc" id="L63">    OAuthAuthenticator authenticator = new OAuthAuthenticator(connectionContext);</span>
+<span class="fc" id="L64">    this.workspaceClient = authenticator.getWorkspaceClient();</span>
+<span class="fc" id="L65">  }</span>
+
+  public DatabricksSdkClient(
+      IDatabricksConnectionContext connectionContext,
+      StatementExecutionService statementExecutionService,
+      ApiClient apiClient)
+<span class="fc" id="L71">      throws DatabricksParsingException {</span>
+<span class="fc" id="L72">    this.connectionContext = connectionContext;</span>
+<span class="fc" id="L73">    this.databricksConfig =</span>
+        new DatabricksConfig()
+<span class="fc" id="L75">            .setHost(connectionContext.getHostUrl())</span>
+<span class="fc" id="L76">            .setToken(connectionContext.getToken());</span>
+
+<span class="fc" id="L78">    this.workspaceClient =</span>
+        new WorkspaceClient(true /* mock */, apiClient)
+<span class="fc" id="L80">            .withStatementExecutionImpl(statementExecutionService);</span>
+<span class="fc" id="L81">  }</span>
+
+  @Override
+  public ImmutableSessionInfo createSession(
+      ComputeResource warehouse, String catalog, String schema, Map&lt;String, String&gt; sessionConf) {
+<span class="fc" id="L86">    LOGGER.debug(</span>
+        &quot;public Session createSession(String warehouseId = {}, String catalog = {}, String schema = {}, Map&lt;String, String&gt; sessionConf = {})&quot;,
+<span class="fc" id="L88">        ((Warehouse) warehouse).getWarehouseId(),</span>
+        catalog,
+        schema,
+        sessionConf);
+    // TODO: [PECO-1460] Handle sessionConf in public session API
+<span class="fc" id="L93">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L94">    CreateSessionRequest request =</span>
+<span class="fc" id="L95">        new CreateSessionRequest().setWarehouseId(((Warehouse) warehouse).getWarehouseId());</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">    if (catalog != null) {</span>
+<span class="fc" id="L97">      request.setCatalog(catalog);</span>
+    }
+<span class="fc bfc" id="L99" title="All 2 branches covered.">    if (schema != null) {</span>
+<span class="fc" id="L100">      request.setSchema(schema);</span>
+    }
+<span class="pc bpc" id="L102" title="1 of 4 branches missed.">    if (sessionConf != null &amp;&amp; !sessionConf.isEmpty()) {</span>
+<span class="nc" id="L103">      request.setSessionConfigs(sessionConf);</span>
+    }
+<span class="fc" id="L105">    CreateSessionResponse createSessionResponse =</span>
+        workspaceClient
+<span class="fc" id="L107">            .apiClient()</span>
+<span class="fc" id="L108">            .POST(SESSION_PATH, request, CreateSessionResponse.class, getHeaders());</span>
+
+    ImmutableSessionInfo sessionInfo =
+<span class="fc" id="L111">        ImmutableSessionInfo.builder()</span>
+<span class="fc" id="L112">            .computeResource(warehouse)</span>
+<span class="fc" id="L113">            .sessionId(createSessionResponse.getSessionId())</span>
+<span class="fc" id="L114">            .build();</span>
+<span class="fc" id="L115">    DatabricksMetrics.record(</span>
+<span class="fc" id="L116">        MetricsList.CREATE_SESSION.name(), System.currentTimeMillis() - startTime);</span>
+<span class="fc" id="L117">    return sessionInfo;</span>
+  }
+
+  @Override
+  public void deleteSession(IDatabricksSession session, ComputeResource warehouse) {
+<span class="fc" id="L122">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L123">    LOGGER.debug(&quot;public void deleteSession(String sessionId = {})&quot;, session.getSessionId());</span>
+<span class="fc" id="L124">    DeleteSessionRequest request =</span>
+        new DeleteSessionRequest()
+<span class="fc" id="L126">            .setSessionId(session.getSessionId())</span>
+<span class="fc" id="L127">            .setWarehouseId(((Warehouse) warehouse).getWarehouseId());</span>
+<span class="fc" id="L128">    String path = String.format(DELETE_SESSION_PATH_WITH_ID, request.getSessionId());</span>
+<span class="fc" id="L129">    Map&lt;String, String&gt; headers = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L130">    workspaceClient.apiClient().DELETE(path, request, Void.class, headers);</span>
+<span class="fc" id="L131">    DatabricksMetrics.record(</span>
+<span class="fc" id="L132">        MetricsList.DELETE_SESSION.name(), System.currentTimeMillis() - startTime);</span>
+<span class="fc" id="L133">  }</span>
+
+  @Override
+  public DatabricksResultSet executeStatement(
+      String sql,
+      ComputeResource computeResource,
+      Map&lt;Integer, ImmutableSqlParameter&gt; parameters,
+      StatementType statementType,
+      IDatabricksSession session,
+      IDatabricksStatement parentStatement)
+      throws SQLException {
+<span class="fc" id="L144">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L145">    LOGGER.debug(</span>
+        &quot;public DatabricksResultSet executeStatement(String sql = {}, compute resource = {}, Map&lt;Integer, ImmutableSqlParameter&gt; parameters, StatementType statementType = {}, IDatabricksSession session)&quot;,
+        sql,
+<span class="fc" id="L148">        computeResource.toString(),</span>
+        statementType);
+
+<span class="fc" id="L151">    long pollCount = 0;</span>
+<span class="fc" id="L152">    long executionStartTime = Instant.now().toEpochMilli();</span>
+<span class="fc" id="L153">    ExecuteStatementRequest request =</span>
+<span class="fc" id="L154">        getRequest(</span>
+            statementType,
+            sql,
+<span class="fc" id="L157">            ((Warehouse) computeResource).getWarehouseId(),</span>
+            session,
+            parameters,
+            parentStatement);
+<span class="fc" id="L161">    ExecuteStatementResponse response =</span>
+        workspaceClient
+<span class="fc" id="L163">            .apiClient()</span>
+<span class="fc" id="L164">            .POST(STATEMENT_PATH, request, ExecuteStatementResponse.class, getHeaders());</span>
+
+<span class="fc" id="L166">    String statementId = response.getStatementId();</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">    if (parentStatement != null) {</span>
+<span class="fc" id="L168">      parentStatement.setStatementId(statementId);</span>
+    }
+<span class="fc" id="L170">    StatementState responseState = response.getStatus().getState();</span>
+<span class="pc bpc" id="L171" title="2 of 4 branches missed.">    while (responseState == StatementState.PENDING || responseState == StatementState.RUNNING) {</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">      if (pollCount &gt; 0) { // First poll happens without a delay</span>
+        try {
+<span class="nc" id="L174">          Thread.sleep(this.connectionContext.getAsyncExecPollInterval());</span>
+<span class="nc" id="L175">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L176">          throw new DatabricksTimeoutException(&quot;Thread interrupted due to statement timeout&quot;);</span>
+<span class="nc" id="L177">        }</span>
+      }
+<span class="nc" id="L179">      String getStatusPath = String.format(STATEMENT_PATH_WITH_ID, statementId);</span>
+<span class="nc" id="L180">      response =</span>
+<span class="nc" id="L181">          wrapGetStatementResponse(</span>
+              workspaceClient
+<span class="nc" id="L183">                  .apiClient()</span>
+<span class="nc" id="L184">                  .GET(getStatusPath, request, GetStatementResponse.class, getHeaders()));</span>
+<span class="nc" id="L185">      responseState = response.getStatus().getState();</span>
+<span class="nc" id="L186">      pollCount++;</span>
+<span class="nc" id="L187">    }</span>
+<span class="fc" id="L188">    long executionEndTime = Instant.now().toEpochMilli();</span>
+<span class="fc" id="L189">    LOGGER.debug(</span>
+        &quot;Executed sql [{}] with status [{}], total time taken [{}] and pollCount [{}]&quot;,
+        sql,
+        responseState,
+<span class="fc" id="L193">        (executionEndTime - executionStartTime),</span>
+<span class="fc" id="L194">        pollCount);</span>
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">    if (responseState != StatementState.SUCCEEDED) {</span>
+<span class="nc" id="L196">      handleFailedExecution(response, statementId, sql);</span>
+    }
+<span class="fc" id="L198">    DatabricksResultSet resultSet =</span>
+        new DatabricksResultSet(
+<span class="fc" id="L200">            response.getStatus(),</span>
+            statementId,
+<span class="fc" id="L202">            response.getResult(),</span>
+<span class="fc" id="L203">            response.getManifest(),</span>
+            statementType,
+            session,
+            parentStatement);
+<span class="fc" id="L207">    DatabricksMetrics.record(</span>
+<span class="fc" id="L208">        MetricsList.EXECUTE_STATEMENT.name(), System.currentTimeMillis() - startTime);</span>
+<span class="fc" id="L209">    return resultSet;</span>
+  }
+
+  private boolean useCloudFetchForResult(StatementType statementType) {
+<span class="pc bpc" id="L213" title="4 of 6 branches missed.">    return this.connectionContext.shouldEnableArrow()</span>
+        &amp;&amp; (statementType == StatementType.QUERY || statementType == StatementType.SQL);
+  }
+
+  @Override
+  public void closeStatement(String statementId) {
+<span class="fc" id="L219">    LOGGER.debug(&quot;public void closeStatement(String statementId = {})&quot;, statementId);</span>
+<span class="fc" id="L220">    CloseStatementRequest request = new CloseStatementRequest().setStatementId(statementId);</span>
+<span class="fc" id="L221">    String path = String.format(STATEMENT_PATH_WITH_ID, request.getStatementId());</span>
+<span class="fc" id="L222">    workspaceClient.apiClient().DELETE(path, request, Void.class, getHeaders());</span>
+<span class="fc" id="L223">  }</span>
+
+  @Override
+  public void cancelStatement(String statementId) {
+<span class="fc" id="L227">    LOGGER.debug(&quot;public void cancelStatement(String statementId = {})&quot;, statementId);</span>
+<span class="fc" id="L228">    CancelStatementRequest request = new CancelStatementRequest().setStatementId(statementId);</span>
+<span class="fc" id="L229">    String path = String.format(CANCEL_STATEMENT_PATH_WITH_ID, request.getStatementId());</span>
+<span class="fc" id="L230">    workspaceClient.apiClient().POST(path, request, Void.class, getHeaders());</span>
+<span class="fc" id="L231">  }</span>
+
+  @Override
+  public Collection&lt;ExternalLink&gt; getResultChunks(String statementId, long chunkIndex) {
+<span class="nc" id="L235">    LOGGER.debug(</span>
+        &quot;public Optional&lt;ExternalLink&gt; getResultChunk(String statementId = {}, long chunkIndex = {})&quot;,
+        statementId,
+<span class="nc" id="L238">        chunkIndex);</span>
+<span class="nc" id="L239">    long startTime = System.currentTimeMillis();</span>
+<span class="nc" id="L240">    GetStatementResultChunkNRequest request =</span>
+<span class="nc" id="L241">        new GetStatementResultChunkNRequest().setStatementId(statementId).setChunkIndex(chunkIndex);</span>
+<span class="nc" id="L242">    String path = String.format(RESULT_CHUNK_PATH, statementId, chunkIndex);</span>
+<span class="nc" id="L243">    Collection&lt;ExternalLink&gt; chunkLinks =</span>
+        workspaceClient
+<span class="nc" id="L245">            .apiClient()</span>
+<span class="nc" id="L246">            .GET(path, request, ResultData.class, getHeaders())</span>
+<span class="nc" id="L247">            .getExternalLinks();</span>
+<span class="nc" id="L248">    DatabricksMetrics.record(</span>
+<span class="nc" id="L249">        MetricsList.GET_RESULT_CHUNKS.name(), System.currentTimeMillis() - startTime);</span>
+<span class="nc" id="L250">    return chunkLinks;</span>
+  }
+
+  private ExecuteStatementRequest getRequest(
+      StatementType statementType,
+      String sql,
+      String warehouseId,
+      IDatabricksSession session,
+      Map&lt;Integer, ImmutableSqlParameter&gt; parameters,
+      IDatabricksStatement parentStatement)
+      throws SQLException {
+<span class="fc" id="L261">    long startTime = System.currentTimeMillis();</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">    Format format = useCloudFetchForResult(statementType) ? Format.ARROW_STREAM : Format.JSON_ARRAY;</span>
+    Disposition disposition =
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">        useCloudFetchForResult(statementType) ? Disposition.EXTERNAL_LINKS : Disposition.INLINE;</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">    long maxRows = (parentStatement == null) ? DEFAULT_ROW_LIMIT : parentStatement.getMaxRows();</span>
+
+<span class="fc" id="L267">    List&lt;StatementParameterListItem&gt; collect =</span>
+<span class="fc" id="L268">        parameters.values().stream().map(this::mapToParameterListItem).collect(Collectors.toList());</span>
+<span class="fc" id="L269">    ExecuteStatementRequest request =</span>
+        new ExecuteStatementRequest()
+<span class="fc" id="L271">            .setSessionId(session.getSessionId())</span>
+<span class="fc" id="L272">            .setStatement(sql)</span>
+<span class="fc" id="L273">            .setWarehouseId(warehouseId)</span>
+<span class="fc" id="L274">            .setDisposition(disposition)</span>
+<span class="fc" id="L275">            .setFormat(format)</span>
+<span class="fc" id="L276">            .setCompressionType(session.getCompressionType())</span>
+<span class="fc" id="L277">            .setWaitTimeout(SYNC_TIMEOUT_VALUE)</span>
+<span class="fc" id="L278">            .setOnWaitTimeout(ExecuteStatementRequestOnWaitTimeout.CONTINUE)</span>
+<span class="fc" id="L279">            .setParameters(collect);</span>
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">    if (maxRows != DEFAULT_ROW_LIMIT) {</span>
+<span class="fc" id="L281">      request.setRowLimit(maxRows);</span>
+    }
+<span class="fc" id="L283">    DatabricksMetrics.record(</span>
+<span class="fc" id="L284">        MetricsList.GET_REQUEST.name(), System.currentTimeMillis() - startTime);</span>
+<span class="fc" id="L285">    return request;</span>
+  }
+
+  private StatementParameterListItem mapToParameterListItem(ImmutableSqlParameter parameter) {
+<span class="fc" id="L289">    return new PositionalStatementParameterListItem()</span>
+<span class="fc" id="L290">        .setOrdinal(parameter.cardinal())</span>
+<span class="fc" id="L291">        .setType(parameter.type())</span>
+<span class="pc bpc" id="L292" title="1 of 2 branches missed.">        .setValue(parameter.value() != null ? parameter.value().toString() : null);</span>
+  }
+
+  /** Handles a failed execution and throws appropriate exception */
+  private void handleFailedExecution(
+      ExecuteStatementResponse response, String statementId, String statement) throws SQLException {
+<span class="nc" id="L298">    LOGGER.debug(</span>
+        &quot;private void handleFailedExecution(ExecuteStatementResponse response, String statementId = {}, String statement = {})&quot;,
+        statementId,
+        statement);
+<span class="nc" id="L302">    StatementState statementState = response.getStatus().getState();</span>
+<span class="nc bnc" id="L303" title="All 2 branches missed.">    switch (statementState) {</span>
+      case FAILED:
+      case CLOSED:
+      case CANCELED:
+        // TODO: Handle differently for failed, closed and cancelled with proper error codes
+<span class="nc" id="L308">        throw new DatabricksSQLException(</span>
+<span class="nc" id="L309">            String.format(</span>
+                &quot;Statement execution failed %s -&gt; %s\n%s: %s&quot;,
+                statementId,
+                statement,
+                statementState,
+<span class="nc" id="L314">                response.getStatus().getError().getMessage()));</span>
+      default:
+<span class="nc" id="L316">        throw new IllegalStateException(&quot;Invalid state for error&quot;);</span>
+    }
+  }
+
+  private ExecuteStatementResponse wrapGetStatementResponse(
+      GetStatementResponse getStatementResponse) {
+<span class="nc" id="L322">    return new ExecuteStatementResponse()</span>
+<span class="nc" id="L323">        .setStatementId(getStatementResponse.getStatementId())</span>
+<span class="nc" id="L324">        .setStatus(getStatementResponse.getStatus())</span>
+<span class="nc" id="L325">        .setManifest(getStatementResponse.getManifest())</span>
+<span class="nc" id="L326">        .setResult(getStatementResponse.getResult());</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

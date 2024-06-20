@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabricksStatement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core</a> &gt; <span class="el_source">DatabricksStatement.java</span></div><h1>DatabricksStatement.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core;
+
+import static com.databricks.jdbc.commons.EnvironmentVariables.*;
+import static java.lang.String.format;
+
+import com.databricks.jdbc.client.DatabricksClient;
+import com.databricks.jdbc.client.StatementType;
+import com.databricks.jdbc.commons.util.StringUtil;
+import com.databricks.jdbc.commons.util.ValidationUtil;
+import com.databricks.jdbc.commons.util.WarningUtil;
+import java.sql.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class DatabricksStatement implements IDatabricksStatement, Statement {
+<span class="fc" id="L19">  private static final Logger LOGGER = LogManager.getLogger(DatabricksStatement.class);</span>
+
+  private int timeoutInSeconds;
+  private final DatabricksConnection connection;
+  DatabricksResultSet resultSet;
+  private String statementId;
+  private boolean isClosed;
+  private boolean closeOnCompletion;
+<span class="fc" id="L27">  private SQLWarning warnings = null;</span>
+<span class="fc" id="L28">  private int maxRows = DEFAULT_ROW_LIMIT;</span>
+<span class="fc" id="L29">  private boolean escapeProcessing = DEFAULT_ESCAPE_PROCESSING;</span>
+
+<span class="fc" id="L31">  public DatabricksStatement(DatabricksConnection connection) {</span>
+<span class="fc" id="L32">    this.connection = connection;</span>
+<span class="fc" id="L33">    this.resultSet = null;</span>
+<span class="fc" id="L34">    this.statementId = null;</span>
+<span class="fc" id="L35">    this.isClosed = false;</span>
+<span class="fc" id="L36">    this.timeoutInSeconds = DEFAULT_STATEMENT_TIMEOUT_SECONDS;</span>
+<span class="fc" id="L37">  }</span>
+
+  @Override
+  public String getSessionId() {
+<span class="fc" id="L41">    return connection.getSession().getSessionId();</span>
+  }
+
+  @Override
+  public ResultSet executeQuery(String sql) throws SQLException {
+<span class="fc" id="L46">    checkIfClosed();</span>
+<span class="fc" id="L47">    return executeInternal(sql, new HashMap&lt;Integer, ImmutableSqlParameter&gt;(), StatementType.QUERY);</span>
+  }
+
+  @Override
+  public int executeUpdate(String sql) throws SQLException {
+<span class="fc" id="L52">    checkIfClosed();</span>
+<span class="fc" id="L53">    executeInternal(sql, new HashMap&lt;Integer, ImmutableSqlParameter&gt;(), StatementType.UPDATE);</span>
+<span class="fc" id="L54">    return (int) resultSet.getUpdateCount();</span>
+  }
+
+  @Override
+  public void close() throws SQLException {
+<span class="fc" id="L59">    LOGGER.debug(&quot;public void close()&quot;);</span>
+<span class="fc" id="L60">    close(true);</span>
+<span class="fc" id="L61">  }</span>
+
+  @Override
+  public void close(boolean removeFromSession) throws SQLException {
+<span class="fc" id="L65">    LOGGER.debug(&quot;public void close(boolean removeFromSession)&quot;);</span>
+<span class="fc" id="L66">    this.isClosed = true;</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">    if (statementId != null) {</span>
+<span class="fc" id="L68">      this.connection.getSession().getDatabricksClient().closeStatement(statementId);</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">      if (resultSet != null) {</span>
+<span class="fc" id="L70">        this.resultSet.close();</span>
+<span class="fc" id="L71">        this.resultSet = null;</span>
+      }
+    } else {
+<span class="fc" id="L74">      WarningUtil.addWarning(</span>
+          warnings, &quot;The statement you are trying to close does not have an ID yet.&quot;);
+<span class="fc" id="L76">      return;</span>
+    }
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">    if (removeFromSession) {</span>
+<span class="fc" id="L79">      this.connection.closeStatement(this);</span>
+    }
+<span class="fc" id="L81">  }</span>
+
+  @Override
+  public int getMaxFieldSize() throws SQLException {
+<span class="fc" id="L85">    LOGGER.debug(&quot;public int getMaxFieldSize()&quot;);</span>
+<span class="fc" id="L86">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksStatement - getMaxFieldSize()&quot;);
+  }
+
+  @Override
+  public void setMaxFieldSize(int max) throws SQLException {
+<span class="fc" id="L92">    LOGGER.debug(&quot;public void setMaxFieldSize(int max = {})&quot;, max);</span>
+<span class="fc" id="L93">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksStatement - setMaxFieldSize(int max)&quot;);
+  }
+
+  @Override
+  public int getMaxRows() throws SQLException {
+<span class="fc" id="L99">    LOGGER.debug(&quot;public int getMaxRows()&quot;);</span>
+<span class="fc" id="L100">    checkIfClosed();</span>
+<span class="fc" id="L101">    return this.maxRows;</span>
+  }
+
+  @Override
+  public void setMaxRows(int max) throws SQLException {
+<span class="fc" id="L106">    LOGGER.debug(&quot;public void setMaxRows(int max = {})&quot;, max);</span>
+<span class="fc" id="L107">    checkIfClosed();</span>
+<span class="fc" id="L108">    ValidationUtil.checkIfPositive(max, &quot;maxRows&quot;);</span>
+<span class="fc" id="L109">    this.maxRows = max;</span>
+<span class="fc" id="L110">  }</span>
+
+  @Override
+  public void setEscapeProcessing(boolean enable) throws SQLException {
+<span class="fc" id="L114">    LOGGER.debug(&quot;public void setEscapeProcessing(boolean enable = {})&quot;, enable);</span>
+<span class="fc" id="L115">    this.escapeProcessing = enable;</span>
+<span class="fc" id="L116">  }</span>
+
+  @Override
+  public int getQueryTimeout() throws SQLException {
+<span class="fc" id="L120">    LOGGER.debug(&quot;public int getQueryTimeout()&quot;);</span>
+<span class="fc" id="L121">    checkIfClosed();</span>
+<span class="fc" id="L122">    return this.timeoutInSeconds;</span>
+  }
+
+  @Override
+  public void setQueryTimeout(int seconds) throws SQLException {
+<span class="fc" id="L127">    LOGGER.debug(&quot;public void setQueryTimeout(int seconds = {})&quot;, seconds);</span>
+<span class="fc" id="L128">    checkIfClosed();</span>
+<span class="fc" id="L129">    this.timeoutInSeconds = seconds;</span>
+<span class="fc" id="L130">  }</span>
+
+  @Override
+  public void cancel() throws SQLException {
+<span class="fc" id="L134">    LOGGER.debug(&quot;public void cancel()&quot;);</span>
+<span class="fc" id="L135">    checkIfClosed();</span>
+
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">    if (statementId != null) {</span>
+<span class="nc" id="L138">      this.connection.getSession().getDatabricksClient().cancelStatement(statementId);</span>
+    } else {
+<span class="fc" id="L140">      WarningUtil.addWarning(</span>
+          warnings, &quot;The statement you are trying to cancel does not have an ID yet.&quot;);
+    }
+<span class="fc" id="L143">  }</span>
+
+  @Override
+  public SQLWarning getWarnings() throws SQLException {
+<span class="fc" id="L147">    LOGGER.debug(&quot;public SQLWarning getWarnings()&quot;);</span>
+<span class="fc" id="L148">    return warnings;</span>
+  }
+
+  @Override
+  public void clearWarnings() throws SQLException {
+<span class="fc" id="L153">    LOGGER.debug(&quot;public void clearWarnings()&quot;);</span>
+<span class="fc" id="L154">    warnings = null;</span>
+<span class="fc" id="L155">  }</span>
+
+  @Override
+  public void setCursorName(String name) throws SQLException {
+<span class="fc" id="L159">    LOGGER.debug(&quot;public void setCursorName(String name = {})&quot;, name);</span>
+<span class="fc" id="L160">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksStatement - setCursorName(String name)&quot;);
+  }
+
+  @Override
+  public boolean execute(String sql) throws SQLException {
+<span class="fc" id="L166">    checkIfClosed();</span>
+<span class="fc" id="L167">    resultSet =</span>
+<span class="fc" id="L168">        executeInternal(sql, new HashMap&lt;Integer, ImmutableSqlParameter&gt;(), StatementType.SQL);</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">    return !resultSet.hasUpdateCount();</span>
+  }
+
+  @Override
+  public ResultSet getResultSet() throws SQLException {
+<span class="nc" id="L174">    LOGGER.debug(&quot;public ResultSet getResultSet()&quot;);</span>
+<span class="nc" id="L175">    checkIfClosed();</span>
+<span class="nc" id="L176">    return resultSet;</span>
+  }
+
+  @Override
+  public int getUpdateCount() throws SQLException {
+<span class="nc" id="L181">    LOGGER.debug(&quot;public int getUpdateCount()&quot;);</span>
+<span class="nc" id="L182">    checkIfClosed();</span>
+<span class="nc" id="L183">    return (int) resultSet.getUpdateCount();</span>
+  }
+
+  @Override
+  public boolean getMoreResults() throws SQLException {
+<span class="fc" id="L188">    LOGGER.debug(&quot;public boolean getMoreResults()&quot;);</span>
+<span class="fc" id="L189">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksStatement - getMoreResults()&quot;);
+  }
+
+  @Override
+  public void setFetchDirection(int direction) throws SQLException {
+<span class="fc" id="L195">    LOGGER.debug(&quot;public void setFetchDirection(int direction = {})&quot;, direction);</span>
+<span class="fc" id="L196">    checkIfClosed();</span>
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">    if (direction != ResultSet.FETCH_FORWARD) {</span>
+<span class="fc" id="L198">      throw new DatabricksSQLFeatureNotSupportedException(&quot;Not supported&quot;);</span>
+    }
+<span class="nc" id="L200">  }</span>
+
+  @Override
+  public int getFetchDirection() throws SQLException {
+<span class="fc" id="L204">    LOGGER.debug(&quot;public int getFetchDirection()&quot;);</span>
+<span class="fc" id="L205">    checkIfClosed();</span>
+<span class="fc" id="L206">    return ResultSet.FETCH_FORWARD;</span>
+  }
+
+  @Override
+  public void setFetchSize(int rows) throws SQLException {
+    /* As we fetch chunks of data together,
+    setting fetchSize is an overkill.
+    Hence, we don't support it.*/
+<span class="fc" id="L214">    LOGGER.debug(&quot;public void setFetchSize(int rows = {})&quot;, rows);</span>
+<span class="fc" id="L215">    String warningString = &quot;As FetchSize is not supported in the Databricks JDBC, ignoring it&quot;;</span>
+<span class="fc" id="L216">    LOGGER.warn(warningString);</span>
+<span class="fc" id="L217">    warnings = WarningUtil.addWarning(warnings, warningString);</span>
+<span class="fc" id="L218">  }</span>
+
+  @Override
+  public int getFetchSize() throws SQLException {
+<span class="fc" id="L222">    LOGGER.debug(&quot;public int getFetchSize()&quot;);</span>
+<span class="fc" id="L223">    String warningString =</span>
+        &quot;As FetchSize is not supported in the Databricks JDBC, we don't set it in the first place&quot;;
+<span class="fc" id="L225">    LOGGER.warn(warningString);</span>
+<span class="fc" id="L226">    warnings = WarningUtil.addWarning(warnings, warningString);</span>
+<span class="fc" id="L227">    return 0;</span>
+  }
+
+  @Override
+  public int getResultSetConcurrency() throws SQLException {
+<span class="fc" id="L232">    LOGGER.debug(&quot;public int getResultSetConcurrency()&quot;);</span>
+<span class="fc" id="L233">    checkIfClosed();</span>
+<span class="fc" id="L234">    return ResultSet.CONCUR_READ_ONLY;</span>
+  }
+
+  @Override
+  public int getResultSetType() throws SQLException {
+<span class="fc" id="L239">    LOGGER.debug(&quot;public int getResultSetType()&quot;);</span>
+<span class="fc" id="L240">    checkIfClosed();</span>
+<span class="fc" id="L241">    return ResultSet.TYPE_FORWARD_ONLY;</span>
+  }
+
+  @Override
+  public void addBatch(String sql) throws SQLException {
+<span class="fc" id="L246">    LOGGER.debug(&quot;public void addBatch(String sql = {})&quot;, sql);</span>
+<span class="fc" id="L247">    checkIfClosed();</span>
+<span class="fc" id="L248">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Method not supported&quot;, &quot;addBatch(String sql)&quot;);
+  }
+
+  @Override
+  public void clearBatch() throws SQLException {
+<span class="fc" id="L254">    LOGGER.debug(&quot;public void clearBatch()&quot;);</span>
+<span class="fc" id="L255">    checkIfClosed();</span>
+<span class="fc" id="L256">    throw new DatabricksSQLFeatureNotSupportedException(&quot;Method not supported&quot;, &quot;clearBatch()&quot;);</span>
+  }
+
+  @Override
+  public int[] executeBatch() throws SQLException {
+<span class="fc" id="L261">    LOGGER.debug(&quot;public int[] executeBatch()&quot;);</span>
+<span class="fc" id="L262">    checkIfClosed();</span>
+<span class="fc" id="L263">    throw new DatabricksSQLFeatureNotSupportedException(&quot;Method not supported&quot;, &quot;executeBatch()&quot;);</span>
+  }
+
+  @Override
+  public Connection getConnection() throws SQLException {
+<span class="nc" id="L268">    LOGGER.debug(&quot;public Connection getConnection()&quot;);</span>
+<span class="nc" id="L269">    return this.connection;</span>
+  }
+
+  @Override
+  public boolean getMoreResults(int current) throws SQLException {
+<span class="fc" id="L274">    LOGGER.debug(&quot;public boolean getMoreResults(int current = {})&quot;, current);</span>
+<span class="fc" id="L275">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksStatement - getMoreResults(int current)&quot;);
+  }
+
+  @Override
+  public ResultSet getGeneratedKeys() throws SQLException {
+<span class="fc" id="L281">    LOGGER.debug(&quot;public ResultSet getGeneratedKeys()&quot;);</span>
+<span class="fc" id="L282">    checkIfClosed();</span>
+<span class="fc" id="L283">    return new EmptyResultSet();</span>
+  }
+
+  @Override
+  public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
+<span class="fc" id="L288">    checkIfClosed();</span>
+<span class="fc bfc" id="L289" title="All 2 branches covered.">    if (autoGeneratedKeys == Statement.NO_GENERATED_KEYS) {</span>
+<span class="fc" id="L290">      return executeUpdate(sql);</span>
+    } else {
+<span class="fc" id="L292">      throw new DatabricksSQLFeatureNotSupportedException(</span>
+          &quot;Method not supported&quot;, &quot;executeUpdate(String sql, int autoGeneratedKeys)&quot;);
+    }
+  }
+
+  @Override
+  public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
+<span class="fc" id="L299">    checkIfClosed();</span>
+<span class="fc" id="L300">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Method not supported&quot;, &quot;executeUpdate(String sql, int[] columnIndexes)&quot;);
+  }
+
+  @Override
+  public int executeUpdate(String sql, String[] columnNames) throws SQLException {
+<span class="fc" id="L306">    LOGGER.debug(&quot;public int executeUpdate(String sql, String[] columnNames)&quot;);</span>
+<span class="fc" id="L307">    checkIfClosed();</span>
+<span class="fc" id="L308">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Method not supported&quot;, &quot;executeUpdate(String sql, String[] columnNames)&quot;);
+  }
+
+  @Override
+  public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
+<span class="fc" id="L314">    checkIfClosed();</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">    if (autoGeneratedKeys == Statement.NO_GENERATED_KEYS) {</span>
+<span class="fc" id="L316">      return execute(sql);</span>
+    } else {
+<span class="fc" id="L318">      throw new DatabricksSQLFeatureNotSupportedException(</span>
+          &quot;Method not supported&quot;, &quot;execute(String sql, int autoGeneratedKeys)&quot;);
+    }
+  }
+
+  @Override
+  public boolean execute(String sql, int[] columnIndexes) throws SQLException {
+<span class="fc" id="L325">    checkIfClosed();</span>
+<span class="fc" id="L326">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Method not supported&quot;, &quot;execute(String sql, int[] columnIndexes)&quot;);
+  }
+
+  @Override
+  public boolean execute(String sql, String[] columnNames) throws SQLException {
+<span class="fc" id="L332">    checkIfClosed();</span>
+<span class="fc" id="L333">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Method not supported&quot;, &quot;execute(String sql, String[] columnNames)&quot;);
+  }
+
+  @Override
+  public int getResultSetHoldability() throws SQLException {
+<span class="fc" id="L339">    LOGGER.debug(&quot;public int getResultSetHoldability()&quot;);</span>
+<span class="fc" id="L340">    return ResultSet.CLOSE_CURSORS_AT_COMMIT;</span>
+  }
+
+  @Override
+  public boolean isClosed() throws SQLException {
+<span class="fc" id="L345">    LOGGER.debug(&quot;public boolean isClosed()&quot;);</span>
+<span class="fc" id="L346">    return this.isClosed;</span>
+  }
+
+  @Override
+  public void setPoolable(boolean poolable) throws SQLException {
+<span class="fc" id="L351">    LOGGER.debug(&quot;public void setPoolable(boolean poolable = {})&quot;, poolable);</span>
+<span class="fc" id="L352">    checkIfClosed();</span>
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">    if (poolable) {</span>
+<span class="fc" id="L354">      throw new DatabricksSQLFeatureNotSupportedException(</span>
+          &quot;Method not supported&quot;, &quot;setPoolable(boolean poolable)&quot;);
+    }
+<span class="nc" id="L357">  }</span>
+
+  @Override
+  public boolean isPoolable() throws SQLException {
+<span class="fc" id="L361">    LOGGER.debug(&quot;public boolean isPoolable()&quot;);</span>
+<span class="fc" id="L362">    checkIfClosed();</span>
+<span class="fc" id="L363">    return false;</span>
+  }
+
+  @Override
+  public void closeOnCompletion() throws SQLException {
+<span class="fc" id="L368">    LOGGER.debug(&quot;public void closeOnCompletion()&quot;);</span>
+<span class="fc" id="L369">    checkIfClosed();</span>
+<span class="fc" id="L370">    this.closeOnCompletion = true;</span>
+<span class="fc" id="L371">  }</span>
+
+  @Override
+  public boolean isCloseOnCompletion() throws SQLException {
+<span class="fc" id="L375">    LOGGER.debug(&quot;public boolean isCloseOnCompletion()&quot;);</span>
+<span class="fc" id="L376">    checkIfClosed();</span>
+<span class="fc" id="L377">    return this.closeOnCompletion;</span>
+  }
+
+  @Override
+  public &lt;T&gt; T unwrap(Class&lt;T&gt; iface) throws SQLException {
+<span class="fc" id="L382">    LOGGER.debug(&quot;public &lt;T&gt; T unwrap(Class&lt;T&gt; iface)&quot;);</span>
+<span class="fc" id="L383">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksStatement - unwrap(Class&lt;T&gt; iface)&quot;);
+  }
+
+  @Override
+  public boolean isWrapperFor(Class&lt;?&gt; iface) throws SQLException {
+<span class="fc" id="L389">    LOGGER.debug(&quot;public boolean isWrapperFor(Class&lt;?&gt; iface)&quot;);</span>
+<span class="fc" id="L390">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksStatement - isWrapperFor(Class&lt;?&gt; iface)&quot;);
+  }
+
+  @Override
+  public void handleResultSetClose(IDatabricksResultSet resultSet) throws SQLException {
+    // Don't throw exception, we are already closing here
+<span class="pc bpc" id="L397" title="1 of 2 branches missed.">    if (closeOnCompletion) {</span>
+<span class="nc" id="L398">      this.close(true);</span>
+    }
+<span class="fc" id="L400">  }</span>
+
+  DatabricksResultSet executeInternal(
+      String sql, Map&lt;Integer, ImmutableSqlParameter&gt; params, StatementType statementType)
+      throws SQLException {
+<span class="fc" id="L405">    String stackTraceMessage =</span>
+<span class="fc" id="L406">        format(</span>
+            &quot;DatabricksResultSet executeInternal(String sql = %s,Map&lt;Integer, ImmutableSqlParameter&gt; params = {%s}, StatementType statementType = {%s})&quot;,
+<span class="fc" id="L408">            sql, params.toString(), statementType.toString());</span>
+<span class="fc" id="L409">    LOGGER.debug(stackTraceMessage);</span>
+<span class="fc" id="L410">    CompletableFuture&lt;DatabricksResultSet&gt; futureResultSet =</span>
+<span class="fc" id="L411">        getFutureResult(sql, params, statementType);</span>
+    try {
+<span class="fc" id="L413">      resultSet = futureResultSet.get(timeoutInSeconds, TimeUnit.SECONDS);</span>
+<span class="nc" id="L414">    } catch (TimeoutException e) {</span>
+<span class="nc" id="L415">      this.close(); // Close the statement</span>
+<span class="nc" id="L416">      futureResultSet.cancel(true); // Cancel execution run</span>
+<span class="nc" id="L417">      throw new DatabricksTimeoutException(</span>
+          &quot;Statement execution timed-out. &quot; + stackTraceMessage, e);
+<span class="nc" id="L419">    } catch (InterruptedException | ExecutionException e) {</span>
+<span class="nc" id="L420">      LOGGER.error(&quot;Error occurred during statement execution: &quot; + sql, e);</span>
+<span class="nc" id="L421">      throw new DatabricksSQLException(&quot;Error occurred during statement execution: &quot; + sql, e);</span>
+<span class="fc" id="L422">    }</span>
+<span class="fc" id="L423">    LOGGER.debug(&quot;Result retrieved successfully&quot; + resultSet.toString());</span>
+<span class="fc" id="L424">    return resultSet;</span>
+  }
+
+  // Todo : Add timeout tests in the subsequent PR
+  CompletableFuture&lt;DatabricksResultSet&gt; getFutureResult(
+      String sql, Map&lt;Integer, ImmutableSqlParameter&gt; params, StatementType statementType) {
+<span class="fc" id="L430">    return CompletableFuture.supplyAsync(</span>
+        () -&gt; {
+          try {
+<span class="pc bpc" id="L433" title="1 of 2 branches missed.">            String SQLString = escapeProcessing ? StringUtil.getProcessedEscapeSequence(sql) : sql;</span>
+<span class="fc" id="L434">            return getResultFromClient(SQLString, params, statementType);</span>
+<span class="nc" id="L435">          } catch (SQLException e) {</span>
+<span class="nc" id="L436">            throw new RuntimeException(e);</span>
+          }
+        });
+  }
+
+  DatabricksResultSet getResultFromClient(
+      String sql, Map&lt;Integer, ImmutableSqlParameter&gt; params, StatementType statementType)
+      throws SQLException {
+<span class="fc" id="L444">    DatabricksClient client = connection.getSession().getDatabricksClient();</span>
+<span class="fc" id="L445">    return client.executeStatement(</span>
+        sql,
+<span class="fc" id="L447">        connection.getSession().getComputeResource(),</span>
+        params,
+        statementType,
+<span class="fc" id="L450">        connection.getSession(),</span>
+        this);
+  }
+
+  void checkIfClosed() throws DatabricksSQLException {
+<span class="fc bfc" id="L455" title="All 2 branches covered.">    if (isClosed) {</span>
+<span class="fc" id="L456">      throw new DatabricksSQLException(&quot;Statement is closed&quot;);</span>
+    }
+<span class="fc" id="L458">  }</span>
+
+  @Override
+  public void setStatementId(String statementId) {
+<span class="fc" id="L462">    this.statementId = statementId;</span>
+<span class="fc" id="L463">  }</span>
+
+  @Override
+  public String getStatementId() {
+<span class="fc" id="L467">    return this.statementId;</span>
+  }
+
+  @Override
+  public Statement getStatement() {
+<span class="fc" id="L472">    return this;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabricksTypeUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core</a> &gt; <span class="el_source">DatabricksTypeUtil.java</span></div><h1>DatabricksTypeUtil.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core;
+
+import com.databricks.jdbc.client.impl.thrift.generated.TPrimitiveTypeEntry;
+import com.databricks.jdbc.client.impl.thrift.generated.TTypeDesc;
+import com.databricks.jdbc.client.impl.thrift.generated.TTypeEntry;
+import com.databricks.jdbc.client.impl.thrift.generated.TTypeId;
+import com.databricks.sdk.service.sql.ColumnInfoTypeName;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Optional;
+import org.apache.arrow.vector.types.DateUnit;
+import org.apache.arrow.vector.types.FloatingPointPrecision;
+import org.apache.arrow.vector.types.TimeUnit;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+/**
+ * Databricks types as supported in
+ * https://docs.databricks.com/en/sql/language-manual/sql-ref-datatypes.html
+ */
+<span class="fc" id="L25">public class DatabricksTypeUtil {</span>
+
+<span class="fc" id="L27">  private static final Logger LOGGER = LogManager.getLogger(DatabricksTypeUtil.class);</span>
+
+  public static final String BIGINT = &quot;BIGINT&quot;;
+  public static final String BINARY = &quot;BINARY&quot;;
+  public static final String BOOLEAN = &quot;BOOLEAN&quot;;
+  public static final String DATE = &quot;DATE&quot;;
+  public static final String DECIMAL = &quot;DECIMAL&quot;;
+  public static final String DOUBLE = &quot;DOUBLE&quot;;
+  public static final String FLOAT = &quot;FLOAT&quot;;
+  public static final String INT = &quot;INT&quot;;
+  public static final String INTERVAL = &quot;INTERVAL&quot;;
+  public static final String VOID = &quot;VOID&quot;;
+  public static final String SMALLINT = &quot;SHORT&quot;;
+  public static final String NULL = &quot;NULL&quot;;
+  public static final String STRING = &quot;STRING&quot;;
+  public static final String TINYINT = &quot;TINYINT&quot;;
+  public static final String TIMESTAMP = &quot;TIMESTAMP&quot;;
+  public static final String TIMESTAMP_NTZ = &quot;TIMESTAMP_NTZ&quot;;
+  public static final String MAP = &quot;MAP&quot;;
+  public static final String ARRAY = &quot;ARRAY&quot;;
+  public static final String STRUCT = &quot;STRUCT&quot;;
+
+<span class="fc" id="L49">  private static final ArrayList&lt;ColumnInfoTypeName&gt; SIGNED_TYPES =</span>
+      new ArrayList&lt;&gt;(
+<span class="fc" id="L51">          Arrays.asList(</span>
+              ColumnInfoTypeName.DECIMAL,
+              ColumnInfoTypeName.DOUBLE,
+              ColumnInfoTypeName.FLOAT,
+              ColumnInfoTypeName.INT,
+              ColumnInfoTypeName.LONG,
+              ColumnInfoTypeName.SHORT));
+<span class="fc" id="L58">  private static final ArrayList&lt;ColumnInfoTypeName&gt; CASE_SENSITIVE_TYPES =</span>
+<span class="fc" id="L59">      new ArrayList&lt;&gt;(Arrays.asList(ColumnInfoTypeName.CHAR, ColumnInfoTypeName.STRING));</span>
+
+  public static int getColumnType(ColumnInfoTypeName typeName) {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">    if (typeName == null) {</span>
+<span class="fc" id="L63">      return Types.OTHER;</span>
+    }
+<span class="pc bpc" id="L65" title="1 of 18 branches missed.">    switch (typeName) {</span>
+      case BYTE:
+<span class="fc" id="L67">        return Types.TINYINT;</span>
+      case SHORT:
+<span class="fc" id="L69">        return Types.SMALLINT;</span>
+      case INT:
+<span class="fc" id="L71">        return Types.INTEGER;</span>
+      case LONG:
+<span class="fc" id="L73">        return Types.BIGINT;</span>
+      case FLOAT:
+<span class="fc" id="L75">        return Types.FLOAT;</span>
+      case DOUBLE:
+<span class="fc" id="L77">        return Types.DOUBLE;</span>
+      case DECIMAL:
+<span class="fc" id="L79">        return Types.DECIMAL;</span>
+      case BINARY:
+<span class="fc" id="L81">        return Types.BINARY;</span>
+      case BOOLEAN:
+<span class="fc" id="L83">        return Types.BOOLEAN;</span>
+      case CHAR:
+<span class="fc" id="L85">        return Types.CHAR;</span>
+      case STRING:
+        // TODO: Handle complex data types
+      case MAP:
+      case INTERVAL:
+<span class="fc" id="L90">        return Types.VARCHAR;</span>
+      case TIMESTAMP:
+<span class="fc" id="L92">        return Types.TIMESTAMP;</span>
+      case DATE:
+<span class="fc" id="L94">        return Types.DATE;</span>
+      case STRUCT:
+<span class="fc" id="L96">        return Types.STRUCT;</span>
+      case ARRAY:
+<span class="fc" id="L98">        return Types.ARRAY;</span>
+      case NULL:
+<span class="fc" id="L100">        return Types.NULL;</span>
+      case USER_DEFINED_TYPE:
+<span class="fc" id="L102">        return Types.OTHER;</span>
+      default:
+<span class="nc" id="L104">        LOGGER.error(&quot;Unknown column type: {}&quot;, typeName);</span>
+<span class="nc" id="L105">        throw new IllegalStateException(&quot;Unknown column type: &quot; + typeName);</span>
+    }
+  }
+
+  public static String getColumnTypeClassName(ColumnInfoTypeName typeName) {
+<span class="fc bfc" id="L110" title="All 2 branches covered.">    if (typeName == null) {</span>
+<span class="fc" id="L111">      return &quot;null&quot;;</span>
+    }
+<span class="pc bpc" id="L113" title="1 of 14 branches missed.">    switch (typeName) {</span>
+      case BYTE:
+      case SHORT:
+      case INT:
+<span class="fc" id="L117">        return &quot;java.lang.Integer&quot;;</span>
+      case LONG:
+<span class="fc" id="L119">        return &quot;java.lang.Long&quot;;</span>
+      case FLOAT:
+      case DOUBLE:
+<span class="fc" id="L122">        return &quot;java.lang.Double&quot;;</span>
+      case DECIMAL:
+<span class="fc" id="L124">        return &quot;java.math.BigDecimal&quot;;</span>
+      case BINARY:
+<span class="fc" id="L126">        return &quot;[B&quot;;</span>
+      case BOOLEAN:
+<span class="fc" id="L128">        return &quot;java.lang.Boolean&quot;;</span>
+      case CHAR:
+      case STRING:
+        // TODO: Handle complex data types
+      case INTERVAL:
+      case USER_DEFINED_TYPE:
+<span class="fc" id="L134">        return &quot;java.lang.String&quot;;</span>
+      case TIMESTAMP:
+<span class="fc" id="L136">        return &quot;java.sql.Timestamp&quot;;</span>
+      case DATE:
+<span class="fc" id="L138">        return &quot;java.sql.Date&quot;;</span>
+      case STRUCT:
+<span class="fc" id="L140">        return &quot;java.sql.Struct&quot;;</span>
+      case ARRAY:
+<span class="fc" id="L142">        return &quot;java.sql.Array&quot;;</span>
+      case NULL:
+<span class="fc" id="L144">        return &quot;null&quot;;</span>
+      case MAP:
+<span class="fc" id="L146">        return &quot;java.util.Map&quot;;</span>
+      default:
+<span class="nc" id="L148">        LOGGER.error(&quot;Unknown column type: {}&quot;, typeName);</span>
+<span class="nc" id="L149">        throw new IllegalStateException(&quot;Unknown column type: &quot; + typeName);</span>
+    }
+  }
+
+  public static int getDisplaySize(ColumnInfoTypeName typeName, int precision) {
+<span class="fc bfc" id="L154" title="All 2 branches covered.">    if (typeName == null) {</span>
+<span class="fc" id="L155">      return 255;</span>
+    }
+<span class="fc bfc" id="L157" title="All 8 branches covered.">    switch (typeName) {</span>
+      case BYTE:
+      case SHORT:
+      case INT:
+      case LONG:
+      case BINARY:
+<span class="fc" id="L163">        return precision + 1; // including negative sign</span>
+      case CHAR:
+<span class="fc" id="L165">        return precision;</span>
+      case FLOAT:
+      case DOUBLE:
+      case DECIMAL:
+<span class="fc" id="L169">        return 24;</span>
+      case BOOLEAN:
+<span class="fc" id="L171">        return 5; // length of `false`</span>
+      case TIMESTAMP:
+<span class="fc" id="L173">        return 29; // as per</span>
+        // https://docs.oracle.com/en/java/javase/21/docs/api/java.sql/java/sql/Timestamp.html#toString()
+      case DATE:
+<span class="fc" id="L176">        return 10;</span>
+      case NULL:
+<span class="fc" id="L178">        return 4; // Length of `NULL`</span>
+      case ARRAY:
+      case STRING:
+      case STRUCT:
+      default:
+<span class="fc" id="L183">        return 255;</span>
+    }
+  }
+
+  public static int getPrecision(ColumnInfoTypeName typeName) {
+<span class="fc bfc" id="L188" title="All 2 branches covered.">    if (typeName == null) {</span>
+<span class="fc" id="L189">      return 0;</span>
+    }
+<span class="fc bfc" id="L191" title="All 8 branches covered.">    switch (typeName) {</span>
+      case BYTE:
+      case SHORT:
+<span class="fc" id="L194">        return 5;</span>
+      case INT:
+      case DATE:
+      case DECIMAL:
+<span class="fc" id="L198">        return 10;</span>
+      case LONG:
+<span class="fc" id="L200">        return 19;</span>
+      case CHAR:
+      case BOOLEAN:
+      case BINARY:
+<span class="fc" id="L204">        return 1;</span>
+      case FLOAT:
+<span class="fc" id="L206">        return 7;</span>
+      case DOUBLE:
+<span class="fc" id="L208">        return 15;</span>
+      case TIMESTAMP:
+<span class="fc" id="L210">        return 29;</span>
+      case ARRAY:
+      case STRING:
+      case STRUCT:
+      default:
+<span class="fc" id="L215">        return 255;</span>
+    }
+  }
+
+  public static boolean isSigned(ColumnInfoTypeName typeName) {
+<span class="fc" id="L220">    return SIGNED_TYPES.contains(typeName);</span>
+  }
+
+  /**
+   * Converts SQL type into Databricks type as defined in
+   * https://docs.databricks.com/en/sql/language-manual/sql-ref-datatypes.html
+   *
+   * @param sqlType SQL type input
+   * @return databricks type
+   */
+  public static String getDatabricksTypeFromSQLType(int sqlType) {
+<span class="fc bfc" id="L231" title="All 16 branches covered.">    switch (sqlType) {</span>
+      case Types.ARRAY:
+<span class="fc" id="L233">        return ARRAY;</span>
+      case Types.BIGINT:
+<span class="fc" id="L235">        return BIGINT;</span>
+      case Types.BINARY:
+      case Types.VARBINARY:
+      case Types.LONGVARBINARY:
+<span class="fc" id="L239">        return BINARY;</span>
+      case Types.DATE:
+<span class="fc" id="L241">        return DATE;</span>
+      case Types.DECIMAL:
+<span class="fc" id="L243">        return DECIMAL;</span>
+      case Types.BOOLEAN:
+<span class="fc" id="L245">        return BOOLEAN;</span>
+      case Types.DOUBLE:
+<span class="fc" id="L247">        return DOUBLE;</span>
+      case Types.FLOAT:
+<span class="fc" id="L249">        return FLOAT;</span>
+      case Types.INTEGER:
+<span class="fc" id="L251">        return INT;</span>
+      case Types.VARCHAR:
+      case Types.LONGVARCHAR:
+      case Types.NVARCHAR:
+      case Types.LONGNVARCHAR:
+<span class="fc" id="L256">        return STRING;</span>
+      case Types.TIMESTAMP:
+<span class="fc" id="L258">        return TIMESTAMP_NTZ;</span>
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+<span class="fc" id="L260">        return TIMESTAMP;</span>
+      case Types.STRUCT:
+<span class="fc" id="L262">        return STRUCT;</span>
+      case Types.TINYINT:
+<span class="fc" id="L264">        return TINYINT;</span>
+      case Types.SMALLINT:
+<span class="fc" id="L266">        return SMALLINT;</span>
+      default:
+        // TODO: handle more types
+<span class="fc" id="L269">        return NULL;</span>
+    }
+  }
+
+  /**
+   * Infers Databricks type from class of given object as defined in
+   * https://docs.databricks.com/en/sql/language-manual/sql-ref-datatypes.html
+   *
+   * @param obj input object
+   * @return inferred Databricks type
+   */
+  public static String inferDatabricksType(Object obj) {
+<span class="fc" id="L281">    String type = null;</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L283">      type = VOID;</span>
+<span class="fc bfc" id="L284" title="All 2 branches covered.">    } else if (obj instanceof Long) {</span>
+<span class="fc" id="L285">      type = BIGINT;</span>
+<span class="fc bfc" id="L286" title="All 2 branches covered.">    } else if (obj instanceof Short) {</span>
+<span class="fc" id="L287">      type = SMALLINT;</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">    } else if (obj instanceof Byte) {</span>
+<span class="fc" id="L289">      type = TINYINT;</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">    } else if (obj instanceof Float) {</span>
+<span class="fc" id="L291">      type = FLOAT;</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">    } else if (obj instanceof String) {</span>
+<span class="fc" id="L293">      type = STRING;</span>
+<span class="fc bfc" id="L294" title="All 2 branches covered.">    } else if (obj instanceof Integer) {</span>
+<span class="fc" id="L295">      type = INT;</span>
+<span class="fc bfc" id="L296" title="All 2 branches covered.">    } else if (obj instanceof Timestamp) {</span>
+<span class="fc" id="L297">      type = TIMESTAMP;</span>
+<span class="fc bfc" id="L298" title="All 2 branches covered.">    } else if (obj instanceof Date) {</span>
+<span class="fc" id="L299">      type = DATE;</span>
+<span class="pc bpc" id="L300" title="1 of 2 branches missed.">    } else if (obj instanceof Double) {</span>
+<span class="fc" id="L301">      type = DOUBLE;</span>
+    }
+    // TODO: handle more types
+<span class="fc" id="L304">    return type;</span>
+  }
+
+  public static TTypeId getThriftTypeFromTypeDesc(TTypeDesc typeDesc) {
+<span class="fc" id="L308">    return Optional.ofNullable(typeDesc)</span>
+<span class="fc" id="L309">        .map(TTypeDesc::getTypes)</span>
+<span class="fc" id="L310">        .map(t -&gt; t.get(0))</span>
+<span class="fc" id="L311">        .map(TTypeEntry::getPrimitiveEntry)</span>
+<span class="fc" id="L312">        .map(TPrimitiveTypeEntry::getType)</span>
+<span class="fc" id="L313">        .orElse(TTypeId.STRING_TYPE);</span>
+  }
+
+  public static ArrowType mapThriftToArrowType(TTypeId typeId) throws DatabricksSQLException {
+<span class="pc bpc" id="L317" title="1 of 13 branches missed.">    switch (typeId) {</span>
+      case BOOLEAN_TYPE:
+<span class="fc" id="L319">        return ArrowType.Bool.INSTANCE;</span>
+      case TINYINT_TYPE:
+<span class="fc" id="L321">        return new ArrowType.Int(8, true);</span>
+      case SMALLINT_TYPE:
+<span class="fc" id="L323">        return new ArrowType.Int(16, true);</span>
+      case INT_TYPE:
+<span class="fc" id="L325">        return new ArrowType.Int(32, true);</span>
+      case BIGINT_TYPE:
+<span class="fc" id="L327">        return new ArrowType.Int(64, true);</span>
+      case FLOAT_TYPE:
+<span class="fc" id="L329">        return new ArrowType.FloatingPoint(FloatingPointPrecision.SINGLE);</span>
+      case DOUBLE_TYPE:
+<span class="fc" id="L331">        return new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE);</span>
+      case INTERVAL_DAY_TIME_TYPE:
+      case INTERVAL_YEAR_MONTH_TYPE:
+      case STRING_TYPE:
+      case ARRAY_TYPE:
+      case MAP_TYPE:
+      case STRUCT_TYPE:
+      case USER_DEFINED_TYPE:
+      case DECIMAL_TYPE:
+      case UNION_TYPE:
+      case VARCHAR_TYPE:
+      case CHAR_TYPE:
+<span class="fc" id="L343">        return ArrowType.Utf8.INSTANCE;</span>
+      case TIMESTAMP_TYPE:
+<span class="fc" id="L345">        return new ArrowType.Timestamp(TimeUnit.MICROSECOND, null);</span>
+      case BINARY_TYPE:
+<span class="fc" id="L347">        return ArrowType.Binary.INSTANCE;</span>
+      case DATE_TYPE:
+<span class="fc" id="L349">        return new ArrowType.Date(DateUnit.DAY);</span>
+      case NULL_TYPE:
+<span class="fc" id="L351">        return ArrowType.Null.INSTANCE;</span>
+      default:
+<span class="nc" id="L353">        throw new DatabricksSQLFeatureNotSupportedException(&quot;Unsupported Hive type: &quot; + typeId);</span>
+    }
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

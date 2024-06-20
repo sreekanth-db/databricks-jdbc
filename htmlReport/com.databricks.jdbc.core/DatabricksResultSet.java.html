@@ -1,0 +1,1628 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabricksResultSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core</a> &gt; <span class="el_source">DatabricksResultSet.java</span></div><h1>DatabricksResultSet.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core;
+
+import static com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftHelper.*;
+import static com.databricks.jdbc.core.converters.ConverterHelper.getConvertedObject;
+import static com.databricks.jdbc.core.converters.ConverterHelper.getObjectConverter;
+
+import com.databricks.jdbc.client.StatementType;
+import com.databricks.jdbc.client.impl.thrift.generated.TGetResultSetMetadataResp;
+import com.databricks.jdbc.client.impl.thrift.generated.TRowSet;
+import com.databricks.jdbc.client.impl.thrift.generated.TStatus;
+import com.databricks.jdbc.client.sqlexec.ResultData;
+import com.databricks.jdbc.client.sqlexec.ResultManifest;
+import com.databricks.jdbc.commons.util.WarningUtil;
+import com.databricks.jdbc.core.converters.*;
+import com.databricks.sdk.service.sql.StatementState;
+import com.databricks.sdk.service.sql.StatementStatus;
+import com.google.common.annotations.VisibleForTesting;
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.*;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
+<span class="fc" id="L30">  private static final Logger LOGGER = LogManager.getLogger(DatabricksResultSet.class);</span>
+  private static final String DECIMAL = &quot;.&quot;;
+  private static final String AFFECTED_ROWS_COUNT = &quot;num_affected_rows&quot;;
+  private final StatementStatus statementStatus;
+  private final String statementId;
+  private final IExecutionResult executionResult;
+  private final DatabricksResultSetMetaData resultSetMetaData;
+  private final StatementType statementType;
+  private final IDatabricksStatement parentStatement;
+  private Long updateCount;
+  private boolean isClosed;
+<span class="fc" id="L41">  private SQLWarning warnings = null;</span>
+  private boolean wasNull;
+
+  public DatabricksResultSet(
+      StatementStatus statementStatus,
+      String statementId,
+      ResultData resultData,
+      ResultManifest resultManifest,
+      StatementType statementType,
+      IDatabricksSession session,
+<span class="fc" id="L51">      IDatabricksStatement parentStatement) {</span>
+<span class="fc" id="L52">    this.statementStatus = statementStatus;</span>
+<span class="fc" id="L53">    this.statementId = statementId;</span>
+<span class="fc" id="L54">    this.executionResult =</span>
+<span class="fc" id="L55">        ExecutionResultFactory.getResultSet(resultData, resultManifest, statementId, session);</span>
+<span class="fc" id="L56">    this.resultSetMetaData =</span>
+        new DatabricksResultSetMetaData(statementId, resultManifest, resultData);
+<span class="fc" id="L58">    this.statementType = statementType;</span>
+<span class="fc" id="L59">    this.updateCount = null;</span>
+<span class="fc" id="L60">    this.parentStatement = parentStatement;</span>
+<span class="fc" id="L61">    this.isClosed = false;</span>
+<span class="fc" id="L62">    this.wasNull = false;</span>
+<span class="fc" id="L63">  }</span>
+
+  @VisibleForTesting
+  public DatabricksResultSet(
+      StatementStatus statementStatus,
+      String statementId,
+      StatementType statementType,
+      IDatabricksStatement parentStatement,
+      IExecutionResult executionResult,
+<span class="fc" id="L72">      DatabricksResultSetMetaData resultSetMetaData) {</span>
+<span class="fc" id="L73">    this.statementStatus = statementStatus;</span>
+<span class="fc" id="L74">    this.statementId = statementId;</span>
+<span class="fc" id="L75">    this.executionResult = executionResult;</span>
+<span class="fc" id="L76">    this.resultSetMetaData = resultSetMetaData;</span>
+<span class="fc" id="L77">    this.statementType = statementType;</span>
+<span class="fc" id="L78">    this.updateCount = null;</span>
+<span class="fc" id="L79">    this.parentStatement = parentStatement;</span>
+<span class="fc" id="L80">    this.isClosed = false;</span>
+<span class="fc" id="L81">    this.wasNull = false;</span>
+<span class="fc" id="L82">  }</span>
+
+  public DatabricksResultSet(
+      TStatus statementStatus,
+      String statementId,
+      TRowSet resultData,
+      TGetResultSetMetadataResp resultManifest,
+      StatementType statementType,
+      IDatabricksStatement parentStatement,
+      IDatabricksSession session)
+<span class="fc" id="L92">      throws DatabricksSQLException {</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">    if (SUCCESS_STATUS_LIST.contains(statementStatus.getStatusCode())) {</span>
+<span class="fc" id="L94">      this.statementStatus = new StatementStatus().setState(StatementState.SUCCEEDED);</span>
+    } else {
+<span class="nc" id="L96">      this.statementStatus = new StatementStatus().setState(StatementState.FAILED);</span>
+    }
+<span class="fc" id="L98">    this.statementId = statementId;</span>
+<span class="fc" id="L99">    this.executionResult =</span>
+<span class="fc" id="L100">        ExecutionResultFactory.getResultSet(resultData, resultManifest, statementId, session);</span>
+<span class="fc" id="L101">    long rowSize = getRowCount(resultData);</span>
+<span class="fc" id="L102">    this.resultSetMetaData =</span>
+        new DatabricksResultSetMetaData(
+<span class="fc" id="L104">            statementId, resultManifest, rowSize, resultData.getResultLinksSize());</span>
+<span class="fc" id="L105">    this.statementType = statementType;</span>
+<span class="fc" id="L106">    this.updateCount = null;</span>
+<span class="fc" id="L107">    this.parentStatement = parentStatement;</span>
+<span class="fc" id="L108">    this.isClosed = false;</span>
+<span class="fc" id="L109">    this.wasNull = false;</span>
+<span class="fc" id="L110">  }</span>
+
+  public DatabricksResultSet(
+      StatementStatus statementStatus,
+      String statementId,
+      List&lt;String&gt; columnNames,
+      List&lt;String&gt; columnTypeText,
+      List&lt;Integer&gt; columnTypes,
+      List&lt;Integer&gt; columnTypePrecisions,
+      Object[][] rows,
+<span class="fc" id="L120">      StatementType statementType) {</span>
+<span class="fc" id="L121">    this.statementStatus = statementStatus;</span>
+<span class="fc" id="L122">    this.statementId = statementId;</span>
+<span class="fc" id="L123">    this.executionResult = ExecutionResultFactory.getResultSet(rows);</span>
+<span class="fc" id="L124">    this.resultSetMetaData =</span>
+        new DatabricksResultSetMetaData(
+            statementId,
+            columnNames,
+            columnTypeText,
+            columnTypes,
+            columnTypePrecisions,
+            rows.length);
+<span class="fc" id="L132">    this.statementType = statementType;</span>
+<span class="fc" id="L133">    this.updateCount = null;</span>
+<span class="fc" id="L134">    this.parentStatement = null;</span>
+<span class="fc" id="L135">    this.isClosed = false;</span>
+<span class="fc" id="L136">    this.wasNull = false;</span>
+<span class="fc" id="L137">  }</span>
+
+  public DatabricksResultSet(
+      StatementStatus statementStatus,
+      String statementId,
+      List&lt;String&gt; columnNames,
+      List&lt;String&gt; columnTypeText,
+      List&lt;Integer&gt; columnTypes,
+      List&lt;Integer&gt; columnTypePrecisions,
+      List&lt;List&lt;Object&gt;&gt; rows,
+<span class="fc" id="L147">      StatementType statementType) {</span>
+<span class="fc" id="L148">    this.statementStatus = statementStatus;</span>
+<span class="fc" id="L149">    this.statementId = statementId;</span>
+<span class="fc" id="L150">    this.executionResult = ExecutionResultFactory.getResultSet(rows);</span>
+<span class="fc" id="L151">    this.resultSetMetaData =</span>
+        new DatabricksResultSetMetaData(
+            statementId,
+            columnNames,
+            columnTypeText,
+            columnTypes,
+            columnTypePrecisions,
+<span class="fc" id="L158">            rows.size());</span>
+<span class="fc" id="L159">    this.statementType = statementType;</span>
+<span class="fc" id="L160">    this.updateCount = null;</span>
+<span class="fc" id="L161">    this.parentStatement = null;</span>
+<span class="fc" id="L162">    this.isClosed = false;</span>
+<span class="fc" id="L163">    this.wasNull = false;</span>
+<span class="fc" id="L164">  }</span>
+
+  @Override
+  public boolean next() throws SQLException {
+<span class="fc" id="L168">    checkIfClosed();</span>
+<span class="fc" id="L169">    return this.executionResult.next();</span>
+  }
+
+  @Override
+  public void close() throws SQLException {
+<span class="fc" id="L174">    isClosed = true;</span>
+<span class="fc" id="L175">    this.executionResult.close();</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">    if (parentStatement != null) {</span>
+<span class="fc" id="L177">      parentStatement.handleResultSetClose(this);</span>
+    }
+<span class="fc" id="L179">  }</span>
+
+  @Override
+  public boolean wasNull() throws SQLException {
+<span class="fc" id="L183">    checkIfClosed();</span>
+<span class="fc" id="L184">    return this.wasNull;</span>
+  }
+
+  // TODO (Madhav): Clean up code by removing code duplicity by having common functions that branch
+  // out and to reuse converter objects.
+  @Override
+  public String getString(int columnIndex) throws SQLException {
+<span class="fc" id="L191">    checkIfClosed();</span>
+<span class="fc" id="L192">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L194">      return null;</span>
+    }
+<span class="fc" id="L196">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L197">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L198">    return converter.convertToString();</span>
+  }
+
+  @Override
+  public boolean getBoolean(int columnIndex) throws SQLException {
+<span class="fc" id="L203">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L205">      return false;</span>
+    }
+<span class="fc" id="L207">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L208">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L209">    return converter.convertToBoolean();</span>
+  }
+
+  @Override
+  public byte getByte(int columnIndex) throws SQLException {
+<span class="fc" id="L214">    checkIfClosed();</span>
+<span class="fc" id="L215">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L217">      return 0;</span>
+    }
+<span class="fc" id="L219">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L220">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L221">    return converter.convertToByte();</span>
+  }
+
+  @Override
+  public short getShort(int columnIndex) throws SQLException {
+<span class="fc" id="L226">    checkIfClosed();</span>
+<span class="fc" id="L227">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L229">      return 0;</span>
+    }
+<span class="fc" id="L231">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L232">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L233">    return converter.convertToShort();</span>
+  }
+
+  @Override
+  public int getInt(int columnIndex) throws SQLException {
+<span class="fc" id="L238">    checkIfClosed();</span>
+<span class="fc" id="L239">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L241">      return 0;</span>
+    }
+<span class="fc" id="L243">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L244">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L245">    return converter.convertToInt();</span>
+  }
+
+  @Override
+  public long getLong(int columnIndex) throws SQLException {
+<span class="fc" id="L250">    checkIfClosed();</span>
+<span class="fc" id="L251">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L253">      return 0;</span>
+    }
+<span class="fc" id="L255">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L256">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L257">    return converter.convertToLong();</span>
+  }
+
+  @Override
+  public float getFloat(int columnIndex) throws SQLException {
+<span class="fc" id="L262">    checkIfClosed();</span>
+<span class="fc" id="L263">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L264" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L265">      return 0f;</span>
+    }
+<span class="fc" id="L267">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L268">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L269">    return converter.convertToFloat();</span>
+  }
+
+  @Override
+  public double getDouble(int columnIndex) throws SQLException {
+<span class="fc" id="L274">    checkIfClosed();</span>
+<span class="fc" id="L275">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L276" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L277">      return 0;</span>
+    }
+<span class="fc" id="L279">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L280">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L281">    return converter.convertToDouble();</span>
+  }
+
+  // TODO (Madhav): Handle case when scale is not provided when getScale is implemented.
+  @Override
+  public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
+<span class="fc" id="L287">    checkIfClosed();</span>
+<span class="fc" id="L288">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L289" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L290">      return BigDecimal.ZERO;</span>
+    }
+<span class="fc" id="L292">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L293">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L294">    return converter.convertToBigDecimal();</span>
+  }
+
+  @Override
+  public byte[] getBytes(int columnIndex) throws SQLException {
+<span class="fc" id="L299">    checkIfClosed();</span>
+<span class="fc" id="L300">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L301" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L302">      return null;</span>
+    }
+<span class="fc" id="L304">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L305">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L306">    return converter.convertToByteArray();</span>
+  }
+
+  @Override
+  public Date getDate(int columnIndex) throws SQLException {
+<span class="fc" id="L311">    checkIfClosed();</span>
+<span class="fc" id="L312">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L314">      return null;</span>
+    }
+<span class="fc" id="L316">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L317">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L318">    return converter.convertToDate();</span>
+  }
+
+  @Override
+  public Time getTime(int columnIndex) throws SQLException {
+<span class="fc" id="L323">    checkIfClosed();</span>
+<span class="fc" id="L324">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getTime(int columnIndex)&quot;);
+  }
+
+  @Override
+  public Timestamp getTimestamp(int columnIndex) throws SQLException {
+<span class="fc" id="L330">    checkIfClosed();</span>
+<span class="fc" id="L331">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L333">      return null;</span>
+    }
+<span class="fc" id="L335">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L336">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L337">    return converter.convertToTimestamp();</span>
+  }
+
+  @Override
+  public InputStream getAsciiStream(int columnIndex) throws SQLException {
+<span class="fc" id="L342">    checkIfClosed();</span>
+<span class="fc" id="L343">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L344" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L345">      return null;</span>
+    }
+<span class="fc" id="L347">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L348">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L349">    return converter.convertToAsciiStream();</span>
+  }
+
+  @Override
+  public InputStream getUnicodeStream(int columnIndex) throws SQLException {
+<span class="fc" id="L354">    checkIfClosed();</span>
+<span class="fc" id="L355">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L356" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L357">      return null;</span>
+    }
+<span class="fc" id="L359">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L360">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L361">    return converter.convertToUnicodeStream();</span>
+  }
+
+  @Override
+  public InputStream getBinaryStream(int columnIndex) throws SQLException {
+<span class="fc" id="L366">    checkIfClosed();</span>
+<span class="fc" id="L367">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="fc bfc" id="L368" title="All 2 branches covered.">    if (obj == null) {</span>
+<span class="fc" id="L369">      return null;</span>
+    }
+<span class="fc" id="L371">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="fc" id="L372">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="fc" id="L373">    return converter.convertToBinaryStream();</span>
+  }
+
+  @Override
+  public String getString(String columnLabel) throws SQLException {
+<span class="fc" id="L378">    return getString(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public boolean getBoolean(String columnLabel) throws SQLException {
+<span class="fc" id="L383">    return getBoolean(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public byte getByte(String columnLabel) throws SQLException {
+<span class="fc" id="L388">    return getByte(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public short getShort(String columnLabel) throws SQLException {
+<span class="fc" id="L393">    return getShort(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public int getInt(String columnLabel) throws SQLException {
+<span class="fc" id="L398">    return getInt(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public long getLong(String columnLabel) throws SQLException {
+<span class="fc" id="L403">    return getLong(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public float getFloat(String columnLabel) throws SQLException {
+<span class="fc" id="L408">    return getFloat(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public double getDouble(String columnLabel) throws SQLException {
+<span class="fc" id="L413">    return getDouble(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
+<span class="nc" id="L418">    return getBigDecimal(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public byte[] getBytes(String columnLabel) throws SQLException {
+<span class="fc" id="L423">    return getBytes(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public Date getDate(String columnLabel) throws SQLException {
+<span class="fc" id="L428">    return getDate(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public Time getTime(String columnLabel) throws SQLException {
+<span class="nc" id="L433">    return getTime(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public Timestamp getTimestamp(String columnLabel) throws SQLException {
+<span class="fc" id="L438">    return getTimestamp(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public InputStream getAsciiStream(String columnLabel) throws SQLException {
+<span class="fc" id="L443">    return getAsciiStream(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public InputStream getUnicodeStream(String columnLabel) throws SQLException {
+<span class="fc" id="L448">    return getUnicodeStream(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public InputStream getBinaryStream(String columnLabel) throws SQLException {
+<span class="fc" id="L453">    return getBinaryStream(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public SQLWarning getWarnings() throws SQLException {
+<span class="nc" id="L458">    checkIfClosed();</span>
+<span class="nc" id="L459">    return warnings;</span>
+  }
+
+  @Override
+  public void clearWarnings() throws SQLException {
+<span class="nc" id="L464">    checkIfClosed();</span>
+<span class="nc" id="L465">    warnings = null;</span>
+<span class="nc" id="L466">  }</span>
+
+  @Override
+  public String getCursorName() throws SQLException {
+<span class="nc" id="L470">    checkIfClosed();</span>
+<span class="nc" id="L471">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not supported in DatabricksResultSet - getCursorName()&quot;);
+  }
+
+  @Override
+  public ResultSetMetaData getMetaData() throws SQLException {
+<span class="fc" id="L477">    return resultSetMetaData;</span>
+  }
+
+  @Override
+  public Object getObject(int columnIndex) throws SQLException {
+<span class="fc" id="L482">    checkIfClosed();</span>
+<span class="fc" id="L483">    return getObjectInternal(columnIndex);</span>
+  }
+
+  @Override
+  public Object getObject(String columnLabel) throws SQLException {
+<span class="fc" id="L488">    checkIfClosed();</span>
+<span class="fc" id="L489">    return getObject(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public int findColumn(String columnLabel) throws SQLException {
+<span class="nc" id="L494">    checkIfClosed();</span>
+<span class="nc" id="L495">    return getColumnNameIndex(columnLabel);</span>
+  }
+
+  @Override
+  public Reader getCharacterStream(int columnIndex) throws SQLException {
+<span class="nc" id="L500">    checkIfClosed();</span>
+<span class="nc" id="L501">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="nc bnc" id="L502" title="All 2 branches missed.">    if (obj == null) {</span>
+<span class="nc" id="L503">      return null;</span>
+    }
+<span class="nc" id="L505">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="nc" id="L506">    AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="nc" id="L507">    return converter.convertToCharacterStream();</span>
+  }
+
+  @Override
+  public Reader getCharacterStream(String columnLabel) throws SQLException {
+<span class="nc" id="L512">    return getCharacterStream(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
+<span class="fc" id="L517">    return getBigDecimal(columnIndex, resultSetMetaData.getScale(columnIndex));</span>
+  }
+
+  @Override
+  public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
+<span class="fc" id="L522">    return getBigDecimal(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public boolean isBeforeFirst() throws SQLException {
+<span class="nc" id="L527">    checkIfClosed();</span>
+<span class="nc bnc" id="L528" title="All 2 branches missed.">    return executionResult.getCurrentRow() == -1;</span>
+  }
+
+  @Override
+  public boolean isAfterLast() throws SQLException {
+<span class="nc" id="L533">    checkIfClosed();</span>
+<span class="nc bnc" id="L534" title="All 2 branches missed.">    return executionResult.getCurrentRow() &gt;= resultSetMetaData.getTotalRows();</span>
+  }
+
+  @Override
+  public boolean isFirst() throws SQLException {
+<span class="nc" id="L539">    checkIfClosed();</span>
+<span class="nc bnc" id="L540" title="All 2 branches missed.">    return executionResult.getCurrentRow() == 0;</span>
+  }
+
+  @Override
+  public boolean isLast() throws SQLException {
+<span class="nc" id="L545">    checkIfClosed();</span>
+<span class="nc bnc" id="L546" title="All 2 branches missed.">    return executionResult.getCurrentRow() == resultSetMetaData.getTotalRows() - 1;</span>
+  }
+
+  @Override
+  public void beforeFirst() throws SQLException {
+<span class="fc" id="L551">    checkIfClosed();</span>
+<span class="fc" id="L552">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC does not support random access (beforeFirst)&quot;);
+  }
+
+  @Override
+  public void afterLast() throws SQLException {
+<span class="fc" id="L558">    checkIfClosed();</span>
+<span class="fc" id="L559">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC does not support random access (afterLast)&quot;);
+  }
+
+  @Override
+  public boolean first() throws SQLException {
+<span class="fc" id="L565">    checkIfClosed();</span>
+<span class="fc" id="L566">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC does not support random access (first)&quot;);
+  }
+
+  @Override
+  public boolean last() throws SQLException {
+<span class="fc" id="L572">    checkIfClosed();</span>
+<span class="fc" id="L573">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC does not support random access (last)&quot;);
+  }
+
+  @Override
+  public int getRow() throws SQLException {
+<span class="nc" id="L579">    checkIfClosed();</span>
+<span class="nc" id="L580">    return (int) executionResult.getCurrentRow() + 1;</span>
+  }
+
+  @Override
+  public boolean absolute(int row) throws SQLException {
+<span class="fc" id="L585">    checkIfClosed();</span>
+<span class="fc" id="L586">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC does not support random access (absolute)&quot;);
+  }
+
+  @Override
+  public boolean relative(int rows) throws SQLException {
+<span class="fc" id="L592">    checkIfClosed();</span>
+<span class="fc" id="L593">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC does not support random access (relative)&quot;);
+  }
+
+  @Override
+  public boolean previous() throws SQLException {
+<span class="fc" id="L599">    checkIfClosed();</span>
+<span class="fc" id="L600">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC does not support random access (previous)&quot;);
+  }
+
+  @Override
+  public void setFetchDirection(int direction) throws SQLException {
+<span class="fc" id="L606">    checkIfClosed();</span>
+    // Only allow forward direction
+<span class="pc bpc" id="L608" title="1 of 2 branches missed.">    if (direction != ResultSet.FETCH_FORWARD) {</span>
+<span class="fc" id="L609">      throw new DatabricksSQLFeatureNotSupportedException(</span>
+          &quot;Databricks JDBC only supports FETCH_FORWARD direction&quot;);
+    }
+<span class="nc" id="L612">  }</span>
+
+  @Override
+  public int getFetchDirection() throws SQLException {
+<span class="nc" id="L616">    checkIfClosed();</span>
+<span class="nc" id="L617">    return ResultSet.FETCH_FORWARD;</span>
+  }
+
+  @Override
+  public void setFetchSize(int rows) throws SQLException {
+    /* As we fetch chunks of data together,
+    setting fetchSize is an overkill.
+    Hence, we don't support it.*/
+<span class="nc" id="L625">    LOGGER.debug(&quot;public void setFetchSize(int rows = {})&quot;, rows);</span>
+<span class="nc" id="L626">    checkIfClosed();</span>
+<span class="nc" id="L627">    addWarningAndLog(&quot;As FetchSize is not supported in the Databricks JDBC, ignoring it&quot;);</span>
+<span class="nc" id="L628">  }</span>
+
+  @Override
+  public int getFetchSize() throws SQLException {
+<span class="nc" id="L632">    LOGGER.debug(&quot;public int getFetchSize()&quot;);</span>
+<span class="nc" id="L633">    checkIfClosed();</span>
+<span class="nc" id="L634">    addWarningAndLog(</span>
+        &quot;As FetchSize is not supported in the Databricks JDBC, we don't set it in the first place&quot;);
+<span class="nc" id="L636">    return 0;</span>
+  }
+
+  @Override
+  public int getType() throws SQLException {
+<span class="nc" id="L641">    checkIfClosed();</span>
+<span class="nc" id="L642">    return ResultSet.TYPE_FORWARD_ONLY;</span>
+  }
+
+  @Override
+  public int getConcurrency() throws SQLException {
+<span class="nc" id="L647">    checkIfClosed();</span>
+<span class="nc" id="L648">    return ResultSet.CONCUR_READ_ONLY;</span>
+  }
+
+  @Override
+  public boolean rowUpdated() throws SQLException {
+<span class="fc" id="L653">    checkIfClosed();</span>
+<span class="fc" id="L654">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support the function : rowUpdated&quot;);
+  }
+
+  @Override
+  public boolean rowInserted() throws SQLException {
+<span class="fc" id="L660">    checkIfClosed();</span>
+<span class="fc" id="L661">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support the function : rowInserted&quot;);
+  }
+
+  @Override
+  public boolean rowDeleted() throws SQLException {
+<span class="fc" id="L667">    checkIfClosed();</span>
+<span class="fc" id="L668">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support the function : rowDeleted&quot;);
+  }
+
+  @Override
+  public void updateNull(int columnIndex) throws SQLException {
+<span class="fc" id="L674">    checkIfClosed();</span>
+<span class="fc" id="L675">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNull&quot;);
+  }
+
+  @Override
+  public void updateBoolean(int columnIndex, boolean x) throws SQLException {
+<span class="fc" id="L681">    checkIfClosed();</span>
+<span class="fc" id="L682">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBoolean&quot;);
+  }
+
+  @Override
+  public void updateByte(int columnIndex, byte x) throws SQLException {
+<span class="fc" id="L688">    checkIfClosed();</span>
+<span class="fc" id="L689">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateByte&quot;);
+  }
+
+  @Override
+  public void updateShort(int columnIndex, short x) throws SQLException {
+<span class="nc" id="L695">    checkIfClosed();</span>
+<span class="nc" id="L696">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateShort&quot;);
+  }
+
+  @Override
+  public void updateInt(int columnIndex, int x) throws SQLException {
+<span class="fc" id="L702">    checkIfClosed();</span>
+<span class="fc" id="L703">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateInt&quot;);
+  }
+
+  @Override
+  public void updateLong(int columnIndex, long x) throws SQLException {
+<span class="fc" id="L709">    checkIfClosed();</span>
+<span class="fc" id="L710">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateLong&quot;);
+  }
+
+  @Override
+  public void updateFloat(int columnIndex, float x) throws SQLException {
+<span class="fc" id="L716">    checkIfClosed();</span>
+<span class="fc" id="L717">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateFloat&quot;);
+  }
+
+  @Override
+  public void updateDouble(int columnIndex, double x) throws SQLException {
+<span class="fc" id="L723">    checkIfClosed();</span>
+<span class="fc" id="L724">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateDouble&quot;);
+  }
+
+  @Override
+  public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
+<span class="fc" id="L730">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBigDecimal&quot;);
+  }
+
+  @Override
+  public void updateString(int columnIndex, String x) throws SQLException {
+<span class="fc" id="L736">    checkIfClosed();</span>
+<span class="fc" id="L737">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateString&quot;);
+  }
+
+  @Override
+  public void updateBytes(int columnIndex, byte[] x) throws SQLException {
+<span class="fc" id="L743">    checkIfClosed();</span>
+<span class="fc" id="L744">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBytes&quot;);
+  }
+
+  @Override
+  public void updateDate(int columnIndex, Date x) throws SQLException {
+<span class="fc" id="L750">    checkIfClosed();</span>
+<span class="fc" id="L751">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateDate&quot;);
+  }
+
+  @Override
+  public void updateTime(int columnIndex, Time x) throws SQLException {
+<span class="fc" id="L757">    checkIfClosed();</span>
+<span class="fc" id="L758">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateTime&quot;);
+  }
+
+  @Override
+  public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException {
+<span class="fc" id="L764">    checkIfClosed();</span>
+<span class="fc" id="L765">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateTimestamp&quot;);
+  }
+
+  @Override
+  public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException {
+<span class="fc" id="L771">    checkIfClosed();</span>
+<span class="fc" id="L772">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateAsciiStream&quot;);
+  }
+
+  @Override
+  public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException {
+<span class="fc" id="L778">    checkIfClosed();</span>
+<span class="fc" id="L779">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBinaryStream&quot;);
+  }
+
+  @Override
+  public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
+<span class="fc" id="L785">    checkIfClosed();</span>
+<span class="fc" id="L786">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateCharacterStream&quot;);
+  }
+
+  @Override
+  public void updateObject(int columnIndex, Object x, int scaleOrLength) throws SQLException {
+<span class="fc" id="L792">    checkIfClosed();</span>
+<span class="fc" id="L793">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateObject&quot;);
+  }
+
+  @Override
+  public void updateObject(int columnIndex, Object x) throws SQLException {
+<span class="fc" id="L799">    checkIfClosed();</span>
+<span class="fc" id="L800">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateObject&quot;);
+  }
+
+  @Override
+  public void updateNull(String columnLabel) throws SQLException {
+<span class="fc" id="L806">    checkIfClosed();</span>
+<span class="fc" id="L807">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNull&quot;);
+  }
+
+  @Override
+  public void updateBoolean(String columnLabel, boolean x) throws SQLException {
+<span class="fc" id="L813">    checkIfClosed();</span>
+<span class="fc" id="L814">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBoolean&quot;);
+  }
+
+  @Override
+  public void updateByte(String columnLabel, byte x) throws SQLException {
+<span class="fc" id="L820">    checkIfClosed();</span>
+<span class="fc" id="L821">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateByte&quot;);
+  }
+
+  @Override
+  public void updateShort(String columnLabel, short x) throws SQLException {
+<span class="nc" id="L827">    checkIfClosed();</span>
+<span class="nc" id="L828">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateShort&quot;);
+  }
+
+  @Override
+  public void updateInt(String columnLabel, int x) throws SQLException {
+<span class="fc" id="L834">    checkIfClosed();</span>
+<span class="fc" id="L835">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateInt&quot;);
+  }
+
+  @Override
+  public void updateLong(String columnLabel, long x) throws SQLException {
+<span class="fc" id="L841">    checkIfClosed();</span>
+<span class="fc" id="L842">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateLong&quot;);
+  }
+
+  @Override
+  public void updateFloat(String columnLabel, float x) throws SQLException {
+<span class="fc" id="L848">    checkIfClosed();</span>
+<span class="fc" id="L849">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateFloat&quot;);
+  }
+
+  @Override
+  public void updateDouble(String columnLabel, double x) throws SQLException {
+<span class="fc" id="L855">    checkIfClosed();</span>
+<span class="fc" id="L856">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateDouble&quot;);
+  }
+
+  @Override
+  public void updateBigDecimal(String columnLabel, BigDecimal x) throws SQLException {
+<span class="fc" id="L862">    checkIfClosed();</span>
+<span class="fc" id="L863">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBigDecimal&quot;);
+  }
+
+  @Override
+  public void updateString(String columnLabel, String x) throws SQLException {
+<span class="fc" id="L869">    checkIfClosed();</span>
+<span class="fc" id="L870">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateString&quot;);
+  }
+
+  @Override
+  public void updateBytes(String columnLabel, byte[] x) throws SQLException {
+<span class="fc" id="L876">    checkIfClosed();</span>
+<span class="fc" id="L877">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBytes&quot;);
+  }
+
+  @Override
+  public void updateDate(String columnLabel, Date x) throws SQLException {
+<span class="fc" id="L883">    checkIfClosed();</span>
+<span class="fc" id="L884">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateDate&quot;);
+  }
+
+  @Override
+  public void updateTime(String columnLabel, Time x) throws SQLException {
+<span class="fc" id="L890">    checkIfClosed();</span>
+<span class="fc" id="L891">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateTime&quot;);
+  }
+
+  @Override
+  public void updateTimestamp(String columnLabel, Timestamp x) throws SQLException {
+<span class="fc" id="L897">    checkIfClosed();</span>
+<span class="fc" id="L898">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateTimestamp&quot;);
+  }
+
+  @Override
+  public void updateAsciiStream(String columnLabel, InputStream x, int length) throws SQLException {
+<span class="fc" id="L904">    checkIfClosed();</span>
+<span class="fc" id="L905">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateAsciiStream&quot;);
+  }
+
+  @Override
+  public void updateBinaryStream(String columnLabel, InputStream x, int length)
+      throws SQLException {
+<span class="fc" id="L912">    checkIfClosed();</span>
+<span class="fc" id="L913">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBinaryStream&quot;);
+  }
+
+  @Override
+  public void updateCharacterStream(String columnLabel, Reader reader, int length)
+      throws SQLException {
+<span class="fc" id="L920">    checkIfClosed();</span>
+<span class="fc" id="L921">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateCharacterStream&quot;);
+  }
+
+  @Override
+  public void updateObject(String columnLabel, Object x, int scaleOrLength) throws SQLException {
+<span class="fc" id="L927">    checkIfClosed();</span>
+<span class="fc" id="L928">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateObject&quot;);
+  }
+
+  @Override
+  public void updateObject(String columnLabel, Object x) throws SQLException {
+<span class="fc" id="L934">    checkIfClosed();</span>
+<span class="fc" id="L935">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateObject&quot;);
+  }
+
+  @Override
+  public void insertRow() throws SQLException {
+<span class="fc" id="L941">    checkIfClosed();</span>
+<span class="fc" id="L942">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support insert function : insertRow&quot;);
+  }
+
+  @Override
+  public void updateRow() throws SQLException {
+<span class="fc" id="L948">    checkIfClosed();</span>
+<span class="fc" id="L949">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateRow&quot;);
+  }
+
+  @Override
+  public void deleteRow() throws SQLException {
+<span class="fc" id="L955">    checkIfClosed();</span>
+<span class="fc" id="L956">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support deleteRow.&quot;);
+  }
+
+  @Override
+  public void refreshRow() throws SQLException {
+<span class="fc" id="L962">    checkIfClosed();</span>
+<span class="fc" id="L963">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : refreshRow&quot;);
+  }
+
+  @Override
+  public void cancelRowUpdates() throws SQLException {
+<span class="fc" id="L969">    checkIfClosed();</span>
+<span class="fc" id="L970">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support any row updates in the first place.&quot;);
+  }
+
+  @Override
+  public void moveToInsertRow() throws SQLException {
+<span class="fc" id="L976">    checkIfClosed();</span>
+<span class="fc" id="L977">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support moveToInsertRow.&quot;);
+  }
+
+  @Override
+  public void moveToCurrentRow() throws SQLException {
+<span class="fc" id="L983">    checkIfClosed();</span>
+<span class="fc" id="L984">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support deleteRow.&quot;);
+  }
+
+  @Override
+  public Statement getStatement() throws SQLException {
+<span class="fc" id="L990">    checkIfClosed();</span>
+    /*
+     *Retrieves the Statement object that produced this ResultSet object.
+     *In case the resultSet is produced as a response of meta-data operations, this method returns null.
+     */
+<span class="pc bpc" id="L995" title="1 of 2 branches missed.">    return (parentStatement != null) ? parentStatement.getStatement() : null;</span>
+  }
+
+  @Override
+  public Object getObject(int columnIndex, Map&lt;String, Class&lt;?&gt;&gt; map) throws SQLException {
+<span class="nc" id="L1000">    checkIfClosed();</span>
+<span class="nc" id="L1001">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="nc bnc" id="L1002" title="All 2 branches missed.">    if (obj == null) {</span>
+<span class="nc" id="L1003">      return null;</span>
+    }
+<span class="nc" id="L1005">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+<span class="nc" id="L1006">    String columnTypeText = resultSetMetaData.getColumnTypeName(columnIndex);</span>
+<span class="nc" id="L1007">    Class&lt;?&gt; returnObjectType = map.get(columnTypeText);</span>
+<span class="nc bnc" id="L1008" title="All 2 branches missed.">    if (returnObjectType != null) {</span>
+      try {
+<span class="nc" id="L1010">        AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="nc" id="L1011">        return getConvertedObject(returnObjectType, converter);</span>
+<span class="nc" id="L1012">      } catch (Exception e) {</span>
+<span class="nc" id="L1013">        addWarningAndLog(</span>
+            &quot;Exception occurred while converting object into corresponding return object type using getObject(int columnIndex, Map&lt;String, Class&lt;?&gt;&gt; map). Returning null. Exception: &quot;
+<span class="nc" id="L1015">                + e.getMessage());</span>
+<span class="nc" id="L1016">        return null;</span>
+      }
+    }
+<span class="nc" id="L1019">    addWarningAndLog(</span>
+        &quot;Corresponding return object type not found while using getObject(int columnIndex, Map&lt;String, Class&lt;?&gt;&gt; map). Returning null. Object type: &quot;
+            + columnTypeText);
+<span class="nc" id="L1022">    return null;</span>
+  }
+
+  private void addWarningAndLog(String warningMessage) {
+<span class="nc" id="L1026">    LOGGER.warn(warningMessage);</span>
+<span class="nc" id="L1027">    warnings = WarningUtil.addWarning(warnings, warningMessage);</span>
+<span class="nc" id="L1028">  }</span>
+
+  @Override
+  public Ref getRef(int columnIndex) throws SQLException {
+<span class="nc" id="L1032">    checkIfClosed();</span>
+<span class="nc" id="L1033">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getRef(int columnIndex)&quot;);
+  }
+
+  @Override
+  public Blob getBlob(int columnIndex) throws SQLException {
+<span class="fc" id="L1039">    checkIfClosed();</span>
+<span class="fc" id="L1040">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getBlob(int columnIndex)&quot;);
+  }
+
+  @Override
+  public Clob getClob(int columnIndex) throws SQLException {
+<span class="fc" id="L1046">    checkIfClosed();</span>
+<span class="fc" id="L1047">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getClob(int columnIndex)&quot;);
+  }
+
+  @Override
+  public Array getArray(int columnIndex) throws SQLException {
+<span class="fc" id="L1053">    checkIfClosed();</span>
+<span class="fc" id="L1054">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getArray(int columnIndex)&quot;);
+  }
+
+  @Override
+  public Object getObject(String columnLabel, Map&lt;String, Class&lt;?&gt;&gt; map) throws SQLException {
+<span class="nc" id="L1060">    return getObject(getColumnNameIndex(columnLabel), map);</span>
+  }
+
+  @Override
+  public Ref getRef(String columnLabel) throws SQLException {
+<span class="nc" id="L1065">    checkIfClosed();</span>
+<span class="nc" id="L1066">    return getRef(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public Blob getBlob(String columnLabel) throws SQLException {
+<span class="fc" id="L1071">    checkIfClosed();</span>
+<span class="nc" id="L1072">    return getBlob(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public Clob getClob(String columnLabel) throws SQLException {
+<span class="fc" id="L1077">    checkIfClosed();</span>
+<span class="nc" id="L1078">    return getClob(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public Array getArray(String columnLabel) throws SQLException {
+<span class="fc" id="L1083">    checkIfClosed();</span>
+<span class="nc" id="L1084">    return getArray(getColumnNameIndex(columnLabel));</span>
+  }
+
+  @Override
+  public Date getDate(int columnIndex, Calendar cal) throws SQLException {
+<span class="fc" id="L1089">    checkIfClosed();</span>
+<span class="fc" id="L1090">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getDate(int columnIndex, Calendar cal)&quot;);
+  }
+
+  @Override
+  public Date getDate(String columnLabel, Calendar cal) throws SQLException {
+<span class="fc" id="L1096">    checkIfClosed();</span>
+<span class="nc" id="L1097">    return getDate(getColumnNameIndex(columnLabel), cal);</span>
+  }
+
+  @Override
+  public Time getTime(int columnIndex, Calendar cal) throws SQLException {
+<span class="fc" id="L1102">    checkIfClosed();</span>
+<span class="fc" id="L1103">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getTime(int columnIndex, Calendar cal)&quot;);
+  }
+
+  @Override
+  public Time getTime(String columnLabel, Calendar cal) throws SQLException {
+<span class="fc" id="L1109">    checkIfClosed();</span>
+<span class="nc" id="L1110">    return getTime(getColumnNameIndex(columnLabel), cal);</span>
+  }
+
+  @Override
+  public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
+<span class="fc" id="L1115">    checkIfClosed();</span>
+<span class="fc" id="L1116">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getTimestamp(int columnIndex, Calendar cal)&quot;);
+  }
+
+  @Override
+  public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
+<span class="fc" id="L1122">    checkIfClosed();</span>
+<span class="fc" id="L1123">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getTimestamp(String columnLabel, Calendar cal)&quot;);
+  }
+
+  @Override
+  public URL getURL(int columnIndex) throws SQLException {
+<span class="fc" id="L1129">    checkIfClosed();</span>
+<span class="fc" id="L1130">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getURL(int columnIndex)&quot;);
+  }
+
+  @Override
+  public URL getURL(String columnLabel) throws SQLException {
+<span class="fc" id="L1136">    checkIfClosed();</span>
+<span class="fc" id="L1137">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getURL(String columnLabel)&quot;);
+  }
+
+  @Override
+  public void updateRef(int columnIndex, Ref x) throws SQLException {
+<span class="fc" id="L1143">    checkIfClosed();</span>
+<span class="fc" id="L1144">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - updateRef(int columnIndex, Ref x)&quot;);
+  }
+
+  @Override
+  public void updateRef(String columnLabel, Ref x) throws SQLException {
+<span class="fc" id="L1150">    checkIfClosed();</span>
+<span class="fc" id="L1151">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - updateRef(String columnLabel, Ref x)&quot;);
+  }
+
+  @Override
+  public void updateBlob(int columnIndex, Blob x) throws SQLException {
+<span class="fc" id="L1157">    checkIfClosed();</span>
+<span class="fc" id="L1158">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - updateBlob(int columnIndex, Blob x)&quot;);
+  }
+
+  @Override
+  public void updateBlob(String columnLabel, Blob x) throws SQLException {
+<span class="fc" id="L1164">    checkIfClosed();</span>
+<span class="fc" id="L1165">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - updateBlob(String columnLabel, Blob x)&quot;);
+  }
+
+  @Override
+  public void updateClob(int columnIndex, Clob x) throws SQLException {
+<span class="fc" id="L1171">    checkIfClosed();</span>
+<span class="fc" id="L1172">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - updateClob(int columnIndex, Clob x)&quot;);
+  }
+
+  @Override
+  public void updateClob(String columnLabel, Clob x) throws SQLException {
+<span class="fc" id="L1178">    checkIfClosed();</span>
+<span class="fc" id="L1179">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - updateClob(String columnLabel, Clob x)&quot;);
+  }
+
+  @Override
+  public void updateArray(int columnIndex, Array x) throws SQLException {
+<span class="fc" id="L1185">    checkIfClosed();</span>
+<span class="fc" id="L1186">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - updateArray(int columnIndex, Array x)&quot;);
+  }
+
+  @Override
+  public void updateArray(String columnLabel, Array x) throws SQLException {
+<span class="fc" id="L1192">    checkIfClosed();</span>
+<span class="fc" id="L1193">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - updateArray(String columnLabel, Array x)&quot;);
+  }
+
+  @Override
+  public RowId getRowId(int columnIndex) throws SQLException {
+<span class="fc" id="L1199">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getRowId(int columnIndex)&quot;);
+  }
+
+  @Override
+  public RowId getRowId(String columnLabel) throws SQLException {
+<span class="fc" id="L1205">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getRowId(String columnLabel)&quot;);
+  }
+
+  @Override
+  public void updateRowId(int columnIndex, RowId x) throws SQLException {
+<span class="fc" id="L1211">    checkIfClosed();</span>
+<span class="fc" id="L1212">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - updateRowId(int columnIndex, RowId x)&quot;);
+  }
+
+  @Override
+  public void updateRowId(String columnLabel, RowId x) throws SQLException {
+<span class="fc" id="L1218">    checkIfClosed();</span>
+<span class="fc" id="L1219">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - updateRowId(String columnLabel, RowId x)&quot;);
+  }
+
+  @Override
+  public int getHoldability() throws SQLException {
+<span class="fc" id="L1225">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getHoldability()&quot;);
+  }
+
+  @Override
+  public boolean isClosed() throws SQLException {
+<span class="fc" id="L1231">    return isClosed;</span>
+  }
+
+  @Override
+  public void updateNString(int columnIndex, String nString) throws SQLException {
+<span class="fc" id="L1236">    checkIfClosed();</span>
+<span class="fc" id="L1237">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNString&quot;);
+  }
+
+  @Override
+  public void updateNString(String columnLabel, String nString) throws SQLException {
+<span class="fc" id="L1243">    checkIfClosed();</span>
+<span class="fc" id="L1244">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNString&quot;);
+  }
+
+  @Override
+  public void updateNClob(int columnIndex, NClob nClob) throws SQLException {
+<span class="fc" id="L1250">    checkIfClosed();</span>
+<span class="fc" id="L1251">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNClob&quot;);
+  }
+
+  @Override
+  public void updateNClob(String columnLabel, NClob nClob) throws SQLException {
+<span class="fc" id="L1257">    checkIfClosed();</span>
+<span class="fc" id="L1258">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNClob&quot;);
+  }
+
+  @Override
+  public NClob getNClob(int columnIndex) throws SQLException {
+<span class="fc" id="L1264">    checkIfClosed();</span>
+<span class="fc" id="L1265">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getNClob(int columnIndex)&quot;);
+  }
+
+  @Override
+  public NClob getNClob(String columnLabel) throws SQLException {
+<span class="fc" id="L1271">    checkIfClosed();</span>
+<span class="fc" id="L1272">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getNClob(String columnLabel)&quot;);
+  }
+
+  @Override
+  public SQLXML getSQLXML(int columnIndex) throws SQLException {
+<span class="fc" id="L1278">    checkIfClosed();</span>
+<span class="fc" id="L1279">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getSQLXML(int columnIndex)&quot;);
+  }
+
+  @Override
+  public SQLXML getSQLXML(String columnLabel) throws SQLException {
+<span class="fc" id="L1285">    checkIfClosed();</span>
+<span class="fc" id="L1286">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getSQLXML(String columnLabel)&quot;);
+  }
+
+  @Override
+  public void updateSQLXML(int columnIndex, SQLXML xmlObject) throws SQLException {
+<span class="fc" id="L1292">    checkIfClosed();</span>
+<span class="fc" id="L1293">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateSQLXML&quot;);
+  }
+
+  @Override
+  public void updateSQLXML(String columnLabel, SQLXML xmlObject) throws SQLException {
+<span class="fc" id="L1299">    checkIfClosed();</span>
+<span class="fc" id="L1300">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateSQLXML&quot;);
+  }
+
+  @Override
+  public String getNString(int columnIndex) throws SQLException {
+<span class="fc" id="L1306">    checkIfClosed();</span>
+<span class="fc" id="L1307">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getNString(int columnIndex)&quot;);
+  }
+
+  @Override
+  public String getNString(String columnLabel) throws SQLException {
+<span class="fc" id="L1313">    checkIfClosed();</span>
+<span class="fc" id="L1314">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getNString(String columnLabel)&quot;);
+  }
+
+  @Override
+  public Reader getNCharacterStream(int columnIndex) throws SQLException {
+<span class="fc" id="L1320">    checkIfClosed();</span>
+<span class="fc" id="L1321">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getNCharacterStream(int columnIndex)&quot;);
+  }
+
+  @Override
+  public Reader getNCharacterStream(String columnLabel) throws SQLException {
+<span class="fc" id="L1327">    checkIfClosed();</span>
+<span class="fc" id="L1328">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - getNCharacterStream(String columnLabel)&quot;);
+  }
+
+  @Override
+  public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
+<span class="fc" id="L1334">    checkIfClosed();</span>
+<span class="fc" id="L1335">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNCharacterStream&quot;);
+  }
+
+  @Override
+  public void updateNCharacterStream(String columnLabel, Reader reader, long length)
+      throws SQLException {
+<span class="fc" id="L1342">    checkIfClosed();</span>
+<span class="fc" id="L1343">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNCharacterStream&quot;);
+  }
+
+  @Override
+  public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException {
+<span class="nc" id="L1349">    checkIfClosed();</span>
+<span class="nc" id="L1350">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateAsciiStream&quot;);
+  }
+
+  @Override
+  public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException {
+<span class="nc" id="L1356">    checkIfClosed();</span>
+<span class="nc" id="L1357">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBinaryStream&quot;);
+  }
+
+  @Override
+  public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
+<span class="nc" id="L1363">    checkIfClosed();</span>
+<span class="nc" id="L1364">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateCharacterStream&quot;);
+  }
+
+  @Override
+  public void updateAsciiStream(String columnLabel, InputStream x, long length)
+      throws SQLException {
+<span class="nc" id="L1371">    checkIfClosed();</span>
+<span class="nc" id="L1372">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateAsciiStream&quot;);
+  }
+
+  @Override
+  public void updateBinaryStream(String columnLabel, InputStream x, long length)
+      throws SQLException {
+<span class="nc" id="L1379">    checkIfClosed();</span>
+<span class="nc" id="L1380">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBinaryStream&quot;);
+  }
+
+  @Override
+  public void updateCharacterStream(String columnLabel, Reader reader, long length)
+      throws SQLException {
+<span class="nc" id="L1387">    checkIfClosed();</span>
+<span class="nc" id="L1388">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateCharacterStream&quot;);
+  }
+
+  @Override
+  public void updateBlob(int columnIndex, InputStream inputStream, long length)
+      throws SQLException {
+<span class="fc" id="L1395">    checkIfClosed();</span>
+<span class="fc" id="L1396">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBlob&quot;);
+  }
+
+  @Override
+  public void updateBlob(String columnLabel, InputStream inputStream, long length)
+      throws SQLException {
+<span class="fc" id="L1403">    checkIfClosed();</span>
+<span class="fc" id="L1404">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBlob&quot;);
+  }
+
+  @Override
+  public void updateClob(int columnIndex, Reader reader, long length) throws SQLException {
+<span class="fc" id="L1410">    checkIfClosed();</span>
+<span class="fc" id="L1411">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateClob&quot;);
+  }
+
+  @Override
+  public void updateClob(String columnLabel, Reader reader, long length) throws SQLException {
+<span class="fc" id="L1417">    checkIfClosed();</span>
+<span class="fc" id="L1418">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateClob&quot;);
+  }
+
+  @Override
+  public void updateNClob(int columnIndex, Reader reader, long length) throws SQLException {
+<span class="fc" id="L1424">    checkIfClosed();</span>
+<span class="fc" id="L1425">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNClob&quot;);
+  }
+
+  @Override
+  public void updateNClob(String columnLabel, Reader reader, long length) throws SQLException {
+<span class="fc" id="L1431">    checkIfClosed();</span>
+<span class="fc" id="L1432">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNClob&quot;);
+  }
+
+  @Override
+  public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException {
+<span class="fc" id="L1438">    checkIfClosed();</span>
+<span class="fc" id="L1439">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNCharacterStream&quot;);
+  }
+
+  @Override
+  public void updateNCharacterStream(String columnLabel, Reader reader) throws SQLException {
+<span class="fc" id="L1445">    checkIfClosed();</span>
+<span class="fc" id="L1446">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNCharacterStream&quot;);
+  }
+
+  @Override
+  public void updateAsciiStream(int columnIndex, InputStream x) throws SQLException {
+<span class="fc" id="L1452">    checkIfClosed();</span>
+<span class="fc" id="L1453">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateAsciiStream&quot;);
+  }
+
+  @Override
+  public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException {
+<span class="fc" id="L1459">    checkIfClosed();</span>
+<span class="fc" id="L1460">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBinaryStream&quot;);
+  }
+
+  @Override
+  public void updateCharacterStream(int columnIndex, Reader x) throws SQLException {
+<span class="fc" id="L1466">    checkIfClosed();</span>
+<span class="fc" id="L1467">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateCharacterStream&quot;);
+  }
+
+  @Override
+  public void updateAsciiStream(String columnLabel, InputStream x) throws SQLException {
+<span class="fc" id="L1473">    checkIfClosed();</span>
+<span class="fc" id="L1474">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateAsciiStream&quot;);
+  }
+
+  @Override
+  public void updateBinaryStream(String columnLabel, InputStream x) throws SQLException {
+<span class="fc" id="L1480">    checkIfClosed();</span>
+<span class="fc" id="L1481">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBinaryStream&quot;);
+  }
+
+  @Override
+  public void updateCharacterStream(String columnLabel, Reader reader) throws SQLException {
+<span class="fc" id="L1487">    checkIfClosed();</span>
+<span class="fc" id="L1488">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateCharacterStream&quot;);
+  }
+
+  @Override
+  public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException {
+<span class="fc" id="L1494">    checkIfClosed();</span>
+<span class="fc" id="L1495">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBlob&quot;);
+  }
+
+  @Override
+  public void updateBlob(String columnLabel, InputStream inputStream) throws SQLException {
+<span class="fc" id="L1501">    checkIfClosed();</span>
+<span class="fc" id="L1502">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateBlob&quot;);
+  }
+
+  @Override
+  public void updateClob(int columnIndex, Reader reader) throws SQLException {
+<span class="fc" id="L1508">    checkIfClosed();</span>
+<span class="fc" id="L1509">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateClob&quot;);
+  }
+
+  @Override
+  public void updateClob(String columnLabel, Reader reader) throws SQLException {
+<span class="fc" id="L1515">    checkIfClosed();</span>
+<span class="fc" id="L1516">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateClob&quot;);
+  }
+
+  @Override
+  public void updateNClob(int columnIndex, Reader reader) throws SQLException {
+<span class="fc" id="L1522">    checkIfClosed();</span>
+<span class="fc" id="L1523">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNClob&quot;);
+  }
+
+  @Override
+  public void updateNClob(String columnLabel, Reader reader) throws SQLException {
+<span class="fc" id="L1529">    checkIfClosed();</span>
+<span class="fc" id="L1530">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Databricks JDBC has ResultSet as CONCUR_READ_ONLY. Doesn't support update function : updateNClob&quot;);
+  }
+
+  @Override
+  public &lt;T&gt; T getObject(int columnIndex, Class&lt;T&gt; type) throws SQLException {
+<span class="nc" id="L1536">    checkIfClosed();</span>
+<span class="nc" id="L1537">    Object obj = getObjectInternal(columnIndex);</span>
+<span class="nc" id="L1538">    int columnType = resultSetMetaData.getColumnType(columnIndex);</span>
+    try {
+<span class="nc" id="L1540">      AbstractObjectConverter converter = getObjectConverter(obj, columnType);</span>
+<span class="nc" id="L1541">      return (T) getConvertedObject(type, converter);</span>
+<span class="nc" id="L1542">    } catch (Exception e) {</span>
+<span class="nc" id="L1543">      String errorMessage =</span>
+<span class="nc" id="L1544">          String.format(</span>
+              &quot;Exception occurred while converting object into corresponding return object type using getObject(int columnIndex, Class&lt;T&gt; type). ErrorMessage: %s&quot;,
+<span class="nc" id="L1546">              e.getMessage());</span>
+<span class="nc" id="L1547">      LOGGER.error(errorMessage);</span>
+<span class="nc" id="L1548">      throw new DatabricksSQLException(errorMessage, e);</span>
+    }
+  }
+
+  @Override
+  public &lt;T&gt; T getObject(String columnLabel, Class&lt;T&gt; type) throws SQLException {
+<span class="nc" id="L1554">    return getObject(getColumnNameIndex(columnLabel), type);</span>
+  }
+
+  @Override
+  public &lt;T&gt; T unwrap(Class&lt;T&gt; iface) throws SQLException {
+<span class="fc" id="L1559">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - unwrap(Class&lt;T&gt; iface)&quot;);
+  }
+
+  @Override
+  public boolean isWrapperFor(Class&lt;?&gt; iface) throws SQLException {
+<span class="fc" id="L1565">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksResultSet - isWrapperFor(Class&lt;?&gt; iface)&quot;);
+  }
+
+  @Override
+  public String statementId() {
+<span class="fc" id="L1571">    return statementId;</span>
+  }
+
+  @Override
+  public StatementStatus getStatementStatus() {
+<span class="fc" id="L1576">    return statementStatus;</span>
+  }
+
+  @Override
+  public long getUpdateCount() throws SQLException {
+<span class="nc" id="L1581">    checkIfClosed();</span>
+<span class="nc bnc" id="L1582" title="All 2 branches missed.">    if (updateCount != null) {</span>
+<span class="nc" id="L1583">      return updateCount;</span>
+    }
+<span class="nc bnc" id="L1585" title="All 4 branches missed.">    if (this.statementType == StatementType.METADATA || this.statementType == StatementType.QUERY) {</span>
+<span class="nc" id="L1586">      updateCount = 0L;</span>
+<span class="nc bnc" id="L1587" title="All 2 branches missed.">    } else if (hasUpdateCount()) {</span>
+<span class="nc" id="L1588">      long rowsUpdated = 0;</span>
+<span class="nc bnc" id="L1589" title="All 2 branches missed.">      while (next()) {</span>
+<span class="nc" id="L1590">        rowsUpdated += this.getLong(AFFECTED_ROWS_COUNT);</span>
+      }
+<span class="nc" id="L1592">      updateCount = rowsUpdated;</span>
+<span class="nc" id="L1593">    } else {</span>
+<span class="nc" id="L1594">      updateCount = 0L;</span>
+    }
+<span class="nc" id="L1596">    return updateCount;</span>
+  }
+
+  @Override
+  public boolean hasUpdateCount() throws SQLException {
+<span class="nc" id="L1601">    checkIfClosed();</span>
+<span class="nc bnc" id="L1602" title="All 2 branches missed.">    if (this.statementType == StatementType.UPDATE) {</span>
+<span class="nc" id="L1603">      return true;</span>
+    }
+<span class="nc bnc" id="L1605" title="All 2 branches missed.">    return this.resultSetMetaData.getColumnNameIndex(AFFECTED_ROWS_COUNT) &gt; -1</span>
+<span class="nc bnc" id="L1606" title="All 2 branches missed.">        &amp;&amp; this.resultSetMetaData.getTotalRows() == 1;</span>
+  }
+
+  private Object getObjectInternal(int columnIndex) throws SQLException {
+<span class="fc bfc" id="L1610" title="All 2 branches covered.">    if (columnIndex &lt;= 0) {</span>
+<span class="fc" id="L1611">      throw new DatabricksSQLException(&quot;Invalid column index&quot;);</span>
+    }
+<span class="fc" id="L1613">    Object object = executionResult.getObject(columnIndex - 1);</span>
+<span class="fc bfc" id="L1614" title="All 2 branches covered.">    this.wasNull = object == null;</span>
+<span class="fc" id="L1615">    return object;</span>
+  }
+
+  private int getColumnNameIndex(String columnName) {
+<span class="fc" id="L1619">    return this.resultSetMetaData.getColumnNameIndex(columnName);</span>
+  }
+
+  private void checkIfClosed() throws SQLException {
+<span class="fc bfc" id="L1623" title="All 2 branches covered.">    if (this.isClosed) {</span>
+<span class="fc" id="L1624">      throw new DatabricksSQLException(&quot;Operation not allowed - ResultSet is closed&quot;);</span>
+    }
+<span class="fc" id="L1626">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

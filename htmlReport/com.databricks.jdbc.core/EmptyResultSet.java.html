@@ -1,0 +1,1086 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EmptyResultSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core</a> &gt; <span class="el_source">EmptyResultSet.java</span></div><h1>EmptyResultSet.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core;
+
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.*;
+import java.util.Calendar;
+import java.util.Map;
+
+/** Empty implementation of ResultSet */
+class EmptyResultSet implements ResultSet {
+  private boolean isClosed;
+
+<span class="fc" id="L15">  EmptyResultSet() {</span>
+<span class="fc" id="L16">    isClosed = false;</span>
+<span class="fc" id="L17">  }</span>
+
+  private void checkIfClosed() throws SQLException {
+<span class="pc bpc" id="L20" title="1 of 2 branches missed.">    if (isClosed()) {</span>
+<span class="nc" id="L21">      throw new DatabricksSQLException(&quot;Empty result set is closed&quot;);</span>
+    }
+<span class="fc" id="L23">  }</span>
+
+  @Override
+  public boolean wasNull() throws SQLException {
+<span class="fc" id="L27">    checkIfClosed();</span>
+<span class="fc" id="L28">    return false;</span>
+  }
+
+  @Override
+  public boolean next() throws SQLException {
+<span class="fc" id="L33">    return false; // empty</span>
+  }
+
+  @Override
+  public void close() throws SQLException {
+<span class="fc" id="L38">    isClosed = true;</span>
+<span class="fc" id="L39">  }</span>
+
+  @Override
+  public boolean getBoolean(int columnIndex) throws SQLException {
+<span class="fc" id="L43">    checkIfClosed();</span>
+<span class="fc" id="L44">    return false;</span>
+  }
+
+  @Override
+  public int getInt(int columnIndex) throws SQLException {
+<span class="fc" id="L49">    checkIfClosed();</span>
+<span class="fc" id="L50">    return 0;</span>
+  }
+
+  @Override
+  public long getLong(int columnIndex) throws SQLException {
+<span class="fc" id="L55">    checkIfClosed();</span>
+<span class="fc" id="L56">    return 0L;</span>
+  }
+
+  @Override
+  public float getFloat(int columnIndex) throws SQLException {
+<span class="fc" id="L61">    checkIfClosed();</span>
+<span class="fc" id="L62">    return (float) 0;</span>
+  }
+
+  @Override
+  public double getDouble(int columnIndex) throws SQLException {
+<span class="fc" id="L67">    checkIfClosed();</span>
+<span class="fc" id="L68">    return (double) 0;</span>
+  }
+
+  @Override
+  public short getShort(int columnIndex) throws SQLException {
+<span class="fc" id="L73">    checkIfClosed();</span>
+<span class="fc" id="L74">    return (short) 0;</span>
+  }
+
+  @Override
+  public byte getByte(int columnIndex) throws SQLException {
+<span class="fc" id="L79">    checkIfClosed();</span>
+<span class="fc" id="L80">    return (byte) 0;</span>
+  }
+
+  @Override
+  public String getString(int columnIndex) throws SQLException {
+<span class="fc" id="L85">    checkIfClosed();</span>
+<span class="fc" id="L86">    return &quot;&quot;;</span>
+  }
+
+  @Override
+  public byte[] getBytes(int columnIndex) throws SQLException {
+<span class="fc" id="L91">    checkIfClosed();</span>
+<span class="fc" id="L92">    return new byte[0];</span>
+  }
+
+  @Override
+  public Date getDate(int columnIndex) throws SQLException {
+<span class="fc" id="L97">    checkIfClosed();</span>
+<span class="fc" id="L98">    return null;</span>
+  }
+
+  @Override
+  public Time getTime(int columnIndex) throws SQLException {
+<span class="fc" id="L103">    checkIfClosed();</span>
+<span class="fc" id="L104">    return null;</span>
+  }
+
+  @Override
+  public Timestamp getTimestamp(int columnIndex) throws SQLException {
+<span class="fc" id="L109">    checkIfClosed();</span>
+<span class="fc" id="L110">    return null;</span>
+  }
+
+  @Override
+  public InputStream getAsciiStream(int columnIndex) throws SQLException {
+<span class="fc" id="L115">    checkIfClosed();</span>
+<span class="fc" id="L116">    return null;</span>
+  }
+
+  @Deprecated
+  @Override
+  public InputStream getUnicodeStream(int columnIndex) throws SQLException {
+<span class="fc" id="L122">    checkIfClosed();</span>
+<span class="fc" id="L123">    return null;</span>
+  }
+
+  @Override
+  public InputStream getBinaryStream(int columnIndex) throws SQLException {
+<span class="fc" id="L128">    checkIfClosed();</span>
+<span class="fc" id="L129">    return null;</span>
+  }
+
+  @Override
+  public String getString(String columnLabel) throws SQLException {
+<span class="fc" id="L134">    checkIfClosed();</span>
+<span class="fc" id="L135">    return &quot;&quot;;</span>
+  }
+
+  @Override
+  public boolean getBoolean(String columnLabel) throws SQLException {
+<span class="fc" id="L140">    checkIfClosed();</span>
+<span class="fc" id="L141">    return false;</span>
+  }
+
+  @Override
+  public byte getByte(String columnLabel) throws SQLException {
+<span class="fc" id="L146">    checkIfClosed();</span>
+<span class="fc" id="L147">    return 0;</span>
+  }
+
+  @Override
+  public short getShort(String columnLabel) throws SQLException {
+<span class="fc" id="L152">    checkIfClosed();</span>
+<span class="fc" id="L153">    return 0;</span>
+  }
+
+  @Override
+  public int getInt(String columnLabel) throws SQLException {
+<span class="fc" id="L158">    checkIfClosed();</span>
+<span class="fc" id="L159">    return 0;</span>
+  }
+
+  @Override
+  public long getLong(String columnLabel) throws SQLException {
+<span class="fc" id="L164">    checkIfClosed();</span>
+<span class="fc" id="L165">    return 0;</span>
+  }
+
+  @Override
+  public float getFloat(String columnLabel) throws SQLException {
+<span class="fc" id="L170">    checkIfClosed();</span>
+<span class="fc" id="L171">    return 0;</span>
+  }
+
+  @Override
+  public double getDouble(String columnLabel) throws SQLException {
+<span class="fc" id="L176">    checkIfClosed();</span>
+<span class="fc" id="L177">    return 0;</span>
+  }
+
+  @Deprecated
+  @Override
+  public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
+<span class="fc" id="L183">    checkIfClosed();</span>
+<span class="fc" id="L184">    return null;</span>
+  }
+
+  @Override
+  public byte[] getBytes(String columnLabel) throws SQLException {
+<span class="fc" id="L189">    checkIfClosed();</span>
+<span class="fc" id="L190">    return new byte[0];</span>
+  }
+
+  @Override
+  public Date getDate(String columnLabel) throws SQLException {
+<span class="fc" id="L195">    checkIfClosed();</span>
+<span class="fc" id="L196">    return null;</span>
+  }
+
+  @Override
+  public Time getTime(String columnLabel) throws SQLException {
+<span class="fc" id="L201">    checkIfClosed();</span>
+<span class="fc" id="L202">    return null;</span>
+  }
+
+  @Override
+  public Timestamp getTimestamp(String columnLabel) throws SQLException {
+<span class="fc" id="L207">    checkIfClosed();</span>
+<span class="fc" id="L208">    return null;</span>
+  }
+
+  @Override
+  public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
+<span class="fc" id="L213">    checkIfClosed();</span>
+<span class="fc" id="L214">    return null;</span>
+  }
+
+  @Override
+  public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
+<span class="fc" id="L219">    checkIfClosed();</span>
+<span class="fc" id="L220">    return null;</span>
+  }
+
+  @Override
+  public boolean isBeforeFirst() throws SQLException {
+<span class="fc" id="L225">    checkIfClosed();</span>
+<span class="fc" id="L226">    return false;</span>
+  }
+
+  @Override
+  public boolean isAfterLast() throws SQLException {
+<span class="fc" id="L231">    checkIfClosed();</span>
+<span class="fc" id="L232">    return false;</span>
+  }
+
+  @Override
+  public boolean isFirst() throws SQLException {
+<span class="fc" id="L237">    checkIfClosed();</span>
+<span class="fc" id="L238">    return false;</span>
+  }
+
+  @Override
+  public boolean isLast() throws SQLException {
+<span class="fc" id="L243">    checkIfClosed();</span>
+<span class="fc" id="L244">    return false;</span>
+  }
+
+  @Override
+  public void beforeFirst() throws SQLException {
+<span class="fc" id="L249">    checkIfClosed();</span>
+<span class="fc" id="L250">  }</span>
+
+  @Override
+  public void afterLast() throws SQLException {
+<span class="fc" id="L254">    checkIfClosed();</span>
+<span class="fc" id="L255">  }</span>
+
+  @Override
+  public boolean first() throws SQLException {
+<span class="fc" id="L259">    checkIfClosed();</span>
+<span class="fc" id="L260">    return false;</span>
+  }
+
+  @Override
+  public boolean last() throws SQLException {
+<span class="fc" id="L265">    checkIfClosed();</span>
+<span class="fc" id="L266">    return false;</span>
+  }
+
+  @Override
+  public int getRow() throws SQLException {
+<span class="fc" id="L271">    checkIfClosed();</span>
+<span class="fc" id="L272">    return 0;</span>
+  }
+
+  @Override
+  public boolean absolute(int row) throws SQLException {
+<span class="fc" id="L277">    checkIfClosed();</span>
+<span class="fc" id="L278">    return false;</span>
+  }
+
+  @Override
+  public boolean relative(int rows) throws SQLException {
+<span class="fc" id="L283">    checkIfClosed();</span>
+<span class="fc" id="L284">    return false;</span>
+  }
+
+  @Override
+  public boolean previous() throws SQLException {
+<span class="fc" id="L289">    checkIfClosed();</span>
+<span class="fc" id="L290">    return false;</span>
+  }
+
+  @Override
+  public void setFetchDirection(int direction) throws SQLException {
+<span class="fc" id="L295">    checkIfClosed();</span>
+<span class="fc" id="L296">  }</span>
+
+  @Override
+  public int getFetchDirection() throws SQLException {
+<span class="fc" id="L300">    checkIfClosed();</span>
+<span class="fc" id="L301">    return 0;</span>
+  }
+
+  @Override
+  public void setFetchSize(int rows) throws SQLException {
+<span class="fc" id="L306">    checkIfClosed();</span>
+<span class="fc" id="L307">  }</span>
+
+  @Override
+  public int getFetchSize() throws SQLException {
+<span class="fc" id="L311">    checkIfClosed();</span>
+<span class="fc" id="L312">    return 0;</span>
+  }
+
+  @Override
+  public int getType() throws SQLException {
+<span class="fc" id="L317">    checkIfClosed();</span>
+<span class="fc" id="L318">    return 0;</span>
+  }
+
+  @Override
+  public int getConcurrency() throws SQLException {
+<span class="fc" id="L323">    checkIfClosed();</span>
+<span class="fc" id="L324">    return 0;</span>
+  }
+
+  @Override
+  public boolean rowUpdated() throws SQLException {
+<span class="fc" id="L329">    checkIfClosed();</span>
+<span class="fc" id="L330">    return false;</span>
+  }
+
+  @Override
+  public boolean rowInserted() throws SQLException {
+<span class="fc" id="L335">    checkIfClosed();</span>
+<span class="fc" id="L336">    return false;</span>
+  }
+
+  @Override
+  public boolean rowDeleted() throws SQLException {
+<span class="fc" id="L341">    checkIfClosed();</span>
+<span class="fc" id="L342">    return false;</span>
+  }
+
+  @Override
+  public void updateNull(int columnIndex) throws SQLException {
+<span class="fc" id="L347">    checkIfClosed();</span>
+<span class="fc" id="L348">  }</span>
+
+  @Override
+  public void updateBoolean(int columnIndex, boolean x) throws SQLException {
+<span class="fc" id="L352">    checkIfClosed();</span>
+<span class="fc" id="L353">  }</span>
+
+  @Override
+  public void updateByte(int columnIndex, byte x) throws SQLException {
+<span class="fc" id="L357">    checkIfClosed();</span>
+<span class="fc" id="L358">  }</span>
+
+  @Override
+  public void updateShort(int columnIndex, short x) throws SQLException {
+<span class="fc" id="L362">    checkIfClosed();</span>
+<span class="fc" id="L363">  }</span>
+
+  @Override
+  public void updateInt(int columnIndex, int x) throws SQLException {
+<span class="fc" id="L367">    checkIfClosed();</span>
+<span class="fc" id="L368">  }</span>
+
+  @Override
+  public void updateLong(int columnIndex, long x) throws SQLException {
+<span class="fc" id="L372">    checkIfClosed();</span>
+<span class="fc" id="L373">  }</span>
+
+  @Override
+  public void updateFloat(int columnIndex, float x) throws SQLException {
+<span class="fc" id="L377">    checkIfClosed();</span>
+<span class="fc" id="L378">  }</span>
+
+  @Override
+  public void updateDouble(int columnIndex, double x) throws SQLException {
+<span class="fc" id="L382">    checkIfClosed();</span>
+<span class="fc" id="L383">  }</span>
+
+  @Override
+  public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
+<span class="fc" id="L387">    checkIfClosed();</span>
+<span class="fc" id="L388">  }</span>
+
+  @Override
+  public void updateString(int columnIndex, String x) throws SQLException {
+<span class="fc" id="L392">    checkIfClosed();</span>
+<span class="fc" id="L393">  }</span>
+
+  @Override
+  public void updateBytes(int columnIndex, byte[] x) throws SQLException {
+<span class="fc" id="L397">    checkIfClosed();</span>
+<span class="fc" id="L398">  }</span>
+
+  @Override
+  public void updateDate(int columnIndex, Date x) throws SQLException {
+<span class="fc" id="L402">    checkIfClosed();</span>
+<span class="fc" id="L403">  }</span>
+
+  @Override
+  public void updateTime(int columnIndex, Time x) throws SQLException {
+<span class="fc" id="L407">    checkIfClosed();</span>
+<span class="fc" id="L408">  }</span>
+
+  @Override
+  public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException {
+<span class="fc" id="L412">    checkIfClosed();</span>
+<span class="fc" id="L413">  }</span>
+
+  @Override
+  public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException {
+<span class="fc" id="L417">    checkIfClosed();</span>
+<span class="fc" id="L418">  }</span>
+
+  @Override
+  public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException {
+<span class="fc" id="L422">    checkIfClosed();</span>
+<span class="fc" id="L423">  }</span>
+
+  @Override
+  public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
+<span class="fc" id="L427">    checkIfClosed();</span>
+<span class="fc" id="L428">  }</span>
+
+  @Override
+  public void updateObject(int columnIndex, Object x, int scaleOrLength) throws SQLException {
+<span class="fc" id="L432">    checkIfClosed();</span>
+<span class="fc" id="L433">  }</span>
+
+  @Override
+  public void updateObject(int columnIndex, Object x) throws SQLException {
+<span class="fc" id="L437">    checkIfClosed();</span>
+<span class="fc" id="L438">  }</span>
+
+  @Override
+  public void updateNull(String columnLabel) throws SQLException {
+<span class="fc" id="L442">    checkIfClosed();</span>
+<span class="fc" id="L443">  }</span>
+
+  @Override
+  public void updateBoolean(String columnLabel, boolean x) throws SQLException {
+<span class="fc" id="L447">    checkIfClosed();</span>
+<span class="fc" id="L448">  }</span>
+
+  @Override
+  public void updateByte(String columnLabel, byte x) throws SQLException {
+<span class="fc" id="L452">    checkIfClosed();</span>
+<span class="fc" id="L453">  }</span>
+
+  @Override
+  public void updateShort(String columnLabel, short x) throws SQLException {
+<span class="fc" id="L457">    checkIfClosed();</span>
+<span class="fc" id="L458">  }</span>
+
+  @Override
+  public void updateInt(String columnLabel, int x) throws SQLException {
+<span class="fc" id="L462">    checkIfClosed();</span>
+<span class="fc" id="L463">  }</span>
+
+  @Override
+  public void updateLong(String columnLabel, long x) throws SQLException {
+<span class="fc" id="L467">    checkIfClosed();</span>
+<span class="fc" id="L468">  }</span>
+
+  @Override
+  public void updateFloat(String columnLabel, float x) throws SQLException {
+<span class="fc" id="L472">    checkIfClosed();</span>
+<span class="fc" id="L473">  }</span>
+
+  @Override
+  public void updateDouble(String columnLabel, double x) throws SQLException {
+<span class="fc" id="L477">    checkIfClosed();</span>
+<span class="fc" id="L478">  }</span>
+
+  @Override
+  public void updateBigDecimal(String columnLabel, BigDecimal x) throws SQLException {
+<span class="fc" id="L482">    checkIfClosed();</span>
+<span class="fc" id="L483">  }</span>
+
+  @Override
+  public void updateString(String columnLabel, String x) throws SQLException {
+<span class="fc" id="L487">    checkIfClosed();</span>
+<span class="fc" id="L488">  }</span>
+
+  @Override
+  public void updateBytes(String columnLabel, byte[] x) throws SQLException {
+<span class="fc" id="L492">    checkIfClosed();</span>
+<span class="fc" id="L493">  }</span>
+
+  @Override
+  public void updateDate(String columnLabel, Date x) throws SQLException {
+<span class="fc" id="L497">    checkIfClosed();</span>
+<span class="fc" id="L498">  }</span>
+
+  @Override
+  public void updateTime(String columnLabel, Time x) throws SQLException {
+<span class="fc" id="L502">    checkIfClosed();</span>
+<span class="fc" id="L503">  }</span>
+
+  @Override
+  public void updateTimestamp(String columnLabel, Timestamp x) throws SQLException {
+<span class="fc" id="L507">    checkIfClosed();</span>
+<span class="fc" id="L508">  }</span>
+
+  @Override
+  public void updateAsciiStream(String columnLabel, InputStream x, int length) throws SQLException {
+<span class="fc" id="L512">    checkIfClosed();</span>
+<span class="fc" id="L513">  }</span>
+
+  @Override
+  public void updateBinaryStream(String columnLabel, InputStream x, int length)
+      throws SQLException {
+<span class="fc" id="L518">    checkIfClosed();</span>
+<span class="fc" id="L519">  }</span>
+
+  @Override
+  public void updateCharacterStream(String columnLabel, Reader reader, int length)
+      throws SQLException {
+<span class="fc" id="L524">    checkIfClosed();</span>
+<span class="fc" id="L525">  }</span>
+
+  @Override
+  public void updateObject(String columnLabel, Object x, int scaleOrLength) throws SQLException {
+<span class="fc" id="L529">    checkIfClosed();</span>
+<span class="fc" id="L530">  }</span>
+
+  @Override
+  public void updateObject(String columnLabel, Object x) throws SQLException {
+<span class="fc" id="L534">    checkIfClosed();</span>
+<span class="fc" id="L535">  }</span>
+
+  @Override
+  public void insertRow() throws SQLException {
+<span class="fc" id="L539">    checkIfClosed();</span>
+<span class="fc" id="L540">  }</span>
+
+  @Override
+  public void updateRow() throws SQLException {
+<span class="fc" id="L544">    checkIfClosed();</span>
+<span class="fc" id="L545">  }</span>
+
+  @Override
+  public void deleteRow() throws SQLException {
+<span class="fc" id="L549">    checkIfClosed();</span>
+<span class="fc" id="L550">  }</span>
+
+  @Override
+  public void refreshRow() throws SQLException {
+<span class="fc" id="L554">    checkIfClosed();</span>
+<span class="fc" id="L555">  }</span>
+
+  @Override
+  public void cancelRowUpdates() throws SQLException {
+<span class="fc" id="L559">    checkIfClosed();</span>
+<span class="fc" id="L560">  }</span>
+
+  @Override
+  public void moveToInsertRow() throws SQLException {
+<span class="fc" id="L564">    checkIfClosed();</span>
+<span class="fc" id="L565">  }</span>
+
+  @Override
+  public void moveToCurrentRow() throws SQLException {
+<span class="fc" id="L569">    checkIfClosed();</span>
+<span class="fc" id="L570">  }</span>
+
+  @Override
+  public Statement getStatement() throws SQLException {
+<span class="fc" id="L574">    checkIfClosed();</span>
+<span class="fc" id="L575">    return null;</span>
+  }
+
+  @Override
+  public Object getObject(int columnIndex, Map&lt;String, Class&lt;?&gt;&gt; map) throws SQLException {
+<span class="fc" id="L580">    checkIfClosed();</span>
+<span class="fc" id="L581">    return null;</span>
+  }
+
+  @Override
+  public Ref getRef(int columnIndex) throws SQLException {
+<span class="fc" id="L586">    checkIfClosed();</span>
+<span class="fc" id="L587">    return null;</span>
+  }
+
+  @Override
+  public Blob getBlob(int columnIndex) throws SQLException {
+<span class="fc" id="L592">    checkIfClosed();</span>
+<span class="fc" id="L593">    return null;</span>
+  }
+
+  @Override
+  public Clob getClob(int columnIndex) throws SQLException {
+<span class="fc" id="L598">    checkIfClosed();</span>
+<span class="fc" id="L599">    return null;</span>
+  }
+
+  @Override
+  public Array getArray(int columnIndex) throws SQLException {
+<span class="fc" id="L604">    checkIfClosed();</span>
+<span class="fc" id="L605">    return null;</span>
+  }
+
+  @Override
+  public Object getObject(String columnLabel, Map&lt;String, Class&lt;?&gt;&gt; map) throws SQLException {
+<span class="fc" id="L610">    checkIfClosed();</span>
+<span class="fc" id="L611">    return null;</span>
+  }
+
+  @Override
+  public Ref getRef(String columnLabel) throws SQLException {
+<span class="fc" id="L616">    checkIfClosed();</span>
+<span class="fc" id="L617">    return null;</span>
+  }
+
+  @Override
+  public Blob getBlob(String columnLabel) throws SQLException {
+<span class="fc" id="L622">    checkIfClosed();</span>
+<span class="fc" id="L623">    return null;</span>
+  }
+
+  @Override
+  public Clob getClob(String columnLabel) throws SQLException {
+<span class="fc" id="L628">    checkIfClosed();</span>
+<span class="fc" id="L629">    return null;</span>
+  }
+
+  @Override
+  public Array getArray(String columnLabel) throws SQLException {
+<span class="fc" id="L634">    checkIfClosed();</span>
+<span class="fc" id="L635">    return null;</span>
+  }
+
+  @Override
+  public Date getDate(int columnIndex, Calendar cal) throws SQLException {
+<span class="fc" id="L640">    checkIfClosed();</span>
+<span class="fc" id="L641">    return null;</span>
+  }
+
+  @Override
+  public Date getDate(String columnLabel, Calendar cal) throws SQLException {
+<span class="fc" id="L646">    checkIfClosed();</span>
+<span class="fc" id="L647">    return null;</span>
+  }
+
+  @Override
+  public Time getTime(int columnIndex, Calendar cal) throws SQLException {
+<span class="fc" id="L652">    checkIfClosed();</span>
+<span class="fc" id="L653">    return null;</span>
+  }
+
+  @Override
+  public Time getTime(String columnLabel, Calendar cal) throws SQLException {
+<span class="fc" id="L658">    checkIfClosed();</span>
+<span class="fc" id="L659">    return null;</span>
+  }
+
+  @Override
+  public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
+<span class="fc" id="L664">    checkIfClosed();</span>
+<span class="fc" id="L665">    return null;</span>
+  }
+
+  @Override
+  public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
+<span class="fc" id="L670">    checkIfClosed();</span>
+<span class="fc" id="L671">    return null;</span>
+  }
+
+  @Override
+  public URL getURL(int columnIndex) throws SQLException {
+<span class="fc" id="L676">    checkIfClosed();</span>
+<span class="fc" id="L677">    return null;</span>
+  }
+
+  @Override
+  public URL getURL(String columnLabel) throws SQLException {
+<span class="fc" id="L682">    checkIfClosed();</span>
+<span class="fc" id="L683">    return null;</span>
+  }
+
+  @Override
+  public void updateRef(int columnIndex, Ref x) throws SQLException {
+<span class="fc" id="L688">    checkIfClosed();</span>
+<span class="fc" id="L689">  }</span>
+
+  @Override
+  public void updateRef(String columnLabel, Ref x) throws SQLException {
+<span class="fc" id="L693">    checkIfClosed();</span>
+<span class="fc" id="L694">  }</span>
+
+  @Override
+  public void updateBlob(int columnIndex, Blob x) throws SQLException {
+<span class="fc" id="L698">    checkIfClosed();</span>
+<span class="fc" id="L699">  }</span>
+
+  @Override
+  public void updateBlob(String columnLabel, Blob x) throws SQLException {
+<span class="fc" id="L703">    checkIfClosed();</span>
+<span class="fc" id="L704">  }</span>
+
+  @Override
+  public void updateClob(int columnIndex, Clob x) throws SQLException {
+<span class="fc" id="L708">    checkIfClosed();</span>
+<span class="fc" id="L709">  }</span>
+
+  @Override
+  public void updateClob(String columnLabel, Clob x) throws SQLException {
+<span class="fc" id="L713">    checkIfClosed();</span>
+<span class="fc" id="L714">  }</span>
+
+  @Override
+  public void updateArray(int columnIndex, Array x) throws SQLException {
+<span class="fc" id="L718">    checkIfClosed();</span>
+<span class="fc" id="L719">  }</span>
+
+  @Override
+  public void updateArray(String columnLabel, Array x) throws SQLException {
+<span class="fc" id="L723">    checkIfClosed();</span>
+<span class="fc" id="L724">  }</span>
+
+  @Override
+  public RowId getRowId(int columnIndex) throws SQLException {
+<span class="fc" id="L728">    checkIfClosed();</span>
+<span class="fc" id="L729">    return null;</span>
+  }
+
+  @Override
+  public RowId getRowId(String columnLabel) throws SQLException {
+<span class="fc" id="L734">    checkIfClosed();</span>
+<span class="fc" id="L735">    return null;</span>
+  }
+
+  @Override
+  public void updateRowId(int columnIndex, RowId x) throws SQLException {
+<span class="fc" id="L740">    checkIfClosed();</span>
+<span class="fc" id="L741">  }</span>
+
+  @Override
+  public void updateRowId(String columnLabel, RowId x) throws SQLException {
+<span class="fc" id="L745">    checkIfClosed();</span>
+<span class="fc" id="L746">  }</span>
+
+  @Override
+  public int getHoldability() throws SQLException {
+<span class="fc" id="L750">    checkIfClosed();</span>
+<span class="fc" id="L751">    return 0;</span>
+  }
+
+  @Override
+  public boolean isClosed() throws SQLException {
+<span class="fc" id="L756">    return isClosed;</span>
+  }
+
+  @Override
+  public void updateNString(int columnIndex, String nString) throws SQLException {
+<span class="fc" id="L761">    checkIfClosed();</span>
+<span class="fc" id="L762">  }</span>
+
+  @Override
+  public void updateNString(String columnLabel, String nString) throws SQLException {
+<span class="fc" id="L766">    checkIfClosed();</span>
+<span class="fc" id="L767">  }</span>
+
+  @Override
+  public void updateNClob(int columnIndex, NClob nClob) throws SQLException {
+<span class="fc" id="L771">    checkIfClosed();</span>
+<span class="fc" id="L772">  }</span>
+
+  @Override
+  public void updateNClob(String columnLabel, NClob nClob) throws SQLException {
+<span class="fc" id="L776">    checkIfClosed();</span>
+<span class="fc" id="L777">  }</span>
+
+  @Override
+  public NClob getNClob(int columnIndex) throws SQLException {
+<span class="fc" id="L781">    checkIfClosed();</span>
+<span class="fc" id="L782">    return null;</span>
+  }
+
+  @Override
+  public NClob getNClob(String columnLabel) throws SQLException {
+<span class="fc" id="L787">    checkIfClosed();</span>
+<span class="fc" id="L788">    return null;</span>
+  }
+
+  @Override
+  public SQLXML getSQLXML(int columnIndex) throws SQLException {
+<span class="fc" id="L793">    checkIfClosed();</span>
+<span class="fc" id="L794">    return null;</span>
+  }
+
+  @Override
+  public SQLXML getSQLXML(String columnLabel) throws SQLException {
+<span class="fc" id="L799">    checkIfClosed();</span>
+<span class="fc" id="L800">    return null;</span>
+  }
+
+  @Override
+  public void updateSQLXML(int columnIndex, SQLXML xmlObject) throws SQLException {
+<span class="fc" id="L805">    checkIfClosed();</span>
+<span class="fc" id="L806">  }</span>
+
+  @Override
+  public void updateSQLXML(String columnLabel, SQLXML xmlObject) throws SQLException {
+<span class="fc" id="L810">    checkIfClosed();</span>
+<span class="fc" id="L811">  }</span>
+
+  @Override
+  public String getNString(int columnIndex) throws SQLException {
+<span class="fc" id="L815">    checkIfClosed();</span>
+<span class="fc" id="L816">    return null;</span>
+  }
+
+  @Override
+  public String getNString(String columnLabel) throws SQLException {
+<span class="fc" id="L821">    checkIfClosed();</span>
+<span class="fc" id="L822">    return null;</span>
+  }
+
+  @Override
+  public Reader getNCharacterStream(int columnIndex) throws SQLException {
+<span class="fc" id="L827">    checkIfClosed();</span>
+<span class="fc" id="L828">    return null;</span>
+  }
+
+  @Override
+  public Reader getNCharacterStream(String columnLabel) throws SQLException {
+<span class="fc" id="L833">    checkIfClosed();</span>
+<span class="fc" id="L834">    return null;</span>
+  }
+
+  @Override
+  public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
+<span class="fc" id="L839">    checkIfClosed();</span>
+<span class="fc" id="L840">  }</span>
+
+  @Override
+  public void updateNCharacterStream(String columnLabel, Reader reader, long length)
+      throws SQLException {
+<span class="fc" id="L845">    checkIfClosed();</span>
+<span class="fc" id="L846">  }</span>
+
+  @Override
+  public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException {
+<span class="fc" id="L850">    checkIfClosed();</span>
+<span class="fc" id="L851">  }</span>
+
+  @Override
+  public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException {
+<span class="fc" id="L855">    checkIfClosed();</span>
+<span class="fc" id="L856">  }</span>
+
+  @Override
+  public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
+<span class="fc" id="L860">    checkIfClosed();</span>
+<span class="fc" id="L861">  }</span>
+
+  @Override
+  public void updateAsciiStream(String columnLabel, InputStream x, long length)
+      throws SQLException {
+<span class="fc" id="L866">    checkIfClosed();</span>
+<span class="fc" id="L867">  }</span>
+
+  @Override
+  public void updateBinaryStream(String columnLabel, InputStream x, long length)
+      throws SQLException {
+<span class="fc" id="L872">    checkIfClosed();</span>
+<span class="fc" id="L873">  }</span>
+
+  @Override
+  public void updateCharacterStream(String columnLabel, Reader reader, long length)
+      throws SQLException {
+<span class="fc" id="L878">    checkIfClosed();</span>
+<span class="fc" id="L879">  }</span>
+
+  @Override
+  public void updateBlob(int columnIndex, InputStream inputStream, long length)
+      throws SQLException {
+<span class="fc" id="L884">    checkIfClosed();</span>
+<span class="fc" id="L885">  }</span>
+
+  @Override
+  public void updateBlob(String columnLabel, InputStream inputStream, long length)
+      throws SQLException {
+<span class="fc" id="L890">    checkIfClosed();</span>
+<span class="fc" id="L891">  }</span>
+
+  @Override
+  public void updateClob(int columnIndex, Reader reader, long length) throws SQLException {
+<span class="fc" id="L895">    checkIfClosed();</span>
+<span class="fc" id="L896">  }</span>
+
+  @Override
+  public void updateClob(String columnLabel, Reader reader, long length) throws SQLException {
+<span class="fc" id="L900">    checkIfClosed();</span>
+<span class="fc" id="L901">  }</span>
+
+  @Override
+  public void updateNClob(int columnIndex, Reader reader, long length) throws SQLException {
+<span class="fc" id="L905">    checkIfClosed();</span>
+<span class="fc" id="L906">  }</span>
+
+  @Override
+  public void updateNClob(String columnLabel, Reader reader, long length) throws SQLException {
+<span class="fc" id="L910">    checkIfClosed();</span>
+<span class="fc" id="L911">  }</span>
+
+  @Override
+  public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException {
+<span class="fc" id="L915">    checkIfClosed();</span>
+<span class="fc" id="L916">  }</span>
+
+  @Override
+  public void updateNCharacterStream(String columnLabel, Reader reader) throws SQLException {
+<span class="fc" id="L920">    checkIfClosed();</span>
+<span class="fc" id="L921">  }</span>
+
+  @Override
+  public void updateAsciiStream(int columnIndex, InputStream x) throws SQLException {
+<span class="fc" id="L925">    checkIfClosed();</span>
+<span class="fc" id="L926">  }</span>
+
+  @Override
+  public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException {
+<span class="fc" id="L930">    checkIfClosed();</span>
+<span class="fc" id="L931">  }</span>
+
+  @Override
+  public void updateCharacterStream(int columnIndex, Reader x) throws SQLException {
+<span class="fc" id="L935">    checkIfClosed();</span>
+<span class="fc" id="L936">  }</span>
+
+  @Override
+  public void updateAsciiStream(String columnLabel, InputStream x) throws SQLException {
+<span class="fc" id="L940">    checkIfClosed();</span>
+<span class="fc" id="L941">  }</span>
+
+  @Override
+  public void updateBinaryStream(String columnLabel, InputStream x) throws SQLException {
+<span class="fc" id="L945">    checkIfClosed();</span>
+<span class="fc" id="L946">  }</span>
+
+  @Override
+  public void updateCharacterStream(String columnLabel, Reader reader) throws SQLException {
+<span class="fc" id="L950">    checkIfClosed();</span>
+<span class="fc" id="L951">  }</span>
+
+  @Override
+  public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException {
+<span class="fc" id="L955">    checkIfClosed();</span>
+<span class="fc" id="L956">  }</span>
+
+  @Override
+  public void updateBlob(String columnLabel, InputStream inputStream) throws SQLException {
+<span class="fc" id="L960">    checkIfClosed();</span>
+<span class="fc" id="L961">  }</span>
+
+  @Override
+  public void updateClob(int columnIndex, Reader reader) throws SQLException {
+<span class="fc" id="L965">    checkIfClosed();</span>
+<span class="fc" id="L966">  }</span>
+
+  @Override
+  public void updateClob(String columnLabel, Reader reader) throws SQLException {
+<span class="fc" id="L970">    checkIfClosed();</span>
+<span class="fc" id="L971">  }</span>
+
+  @Override
+  public void updateNClob(int columnIndex, Reader reader) throws SQLException {
+<span class="fc" id="L975">    checkIfClosed();</span>
+<span class="fc" id="L976">  }</span>
+
+  @Override
+  public void updateNClob(String columnLabel, Reader reader) throws SQLException {
+<span class="fc" id="L980">    checkIfClosed();</span>
+<span class="fc" id="L981">  }</span>
+
+  @Override
+  public &lt;T&gt; T getObject(int columnIndex, Class&lt;T&gt; type) throws SQLException {
+<span class="fc" id="L985">    checkIfClosed();</span>
+<span class="fc" id="L986">    return null;</span>
+  }
+
+  @Override
+  public &lt;T&gt; T getObject(String columnLabel, Class&lt;T&gt; type) throws SQLException {
+<span class="fc" id="L991">    checkIfClosed();</span>
+<span class="fc" id="L992">    return null;</span>
+  }
+
+  @Deprecated
+  @Override
+  public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
+<span class="fc" id="L998">    checkIfClosed();</span>
+<span class="fc" id="L999">    return null;</span>
+  }
+
+  @Override
+  public InputStream getAsciiStream(String columnIndex) throws SQLException {
+<span class="fc" id="L1004">    checkIfClosed();</span>
+<span class="fc" id="L1005">    return null;</span>
+  }
+
+  @Deprecated
+  @Override
+  public InputStream getUnicodeStream(String columnLabel) throws SQLException {
+<span class="fc" id="L1011">    checkIfClosed();</span>
+<span class="fc" id="L1012">    return null;</span>
+  }
+
+  @Override
+  public InputStream getBinaryStream(String columnLabel) throws SQLException {
+<span class="fc" id="L1017">    checkIfClosed();</span>
+<span class="fc" id="L1018">    return null;</span>
+  }
+
+  @Override
+  public SQLWarning getWarnings() throws SQLException {
+<span class="fc" id="L1023">    checkIfClosed();</span>
+<span class="fc" id="L1024">    return null;</span>
+  }
+
+  @Override
+  public void clearWarnings() throws SQLException {
+<span class="fc" id="L1029">    checkIfClosed();</span>
+<span class="fc" id="L1030">  }</span>
+
+  @Override
+  public String getCursorName() throws SQLException {
+<span class="fc" id="L1034">    checkIfClosed();</span>
+<span class="fc" id="L1035">    return null;</span>
+  }
+
+  @Override
+  public ResultSetMetaData getMetaData() throws SQLException {
+<span class="fc" id="L1040">    checkIfClosed();</span>
+<span class="fc" id="L1041">    return new EmptyResultSetMetaData();</span>
+  }
+
+  @Override
+  public Object getObject(int columnIndex) throws SQLException {
+<span class="fc" id="L1046">    checkIfClosed();</span>
+<span class="fc" id="L1047">    return null;</span>
+  }
+
+  @Override
+  public Object getObject(String columnLabel) throws SQLException {
+<span class="fc" id="L1052">    checkIfClosed();</span>
+<span class="fc" id="L1053">    return null;</span>
+  }
+
+  @Override
+  public int findColumn(String columnLabel) throws SQLException {
+<span class="fc" id="L1058">    checkIfClosed();</span>
+<span class="fc" id="L1059">    return 0;</span>
+  }
+
+  @Override
+  public Reader getCharacterStream(int columnIndex) throws SQLException {
+<span class="fc" id="L1064">    checkIfClosed();</span>
+<span class="fc" id="L1065">    return null;</span>
+  }
+
+  @Override
+  public Reader getCharacterStream(String columnLabel) throws SQLException {
+<span class="fc" id="L1070">    checkIfClosed();</span>
+<span class="fc" id="L1071">    return null;</span>
+  }
+
+  @Override
+  public &lt;T&gt; T unwrap(Class&lt;T&gt; iface) throws SQLException {
+<span class="fc" id="L1076">    checkIfClosed();</span>
+<span class="fc" id="L1077">    return null;</span>
+  }
+
+  @Override
+  public boolean isWrapperFor(Class&lt;?&gt; iface) throws SQLException {
+<span class="fc" id="L1082">    checkIfClosed();</span>
+<span class="fc" id="L1083">    return false;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OAuthAuthenticator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core</a> &gt; <span class="el_source">OAuthAuthenticator.java</span></div><h1>OAuthAuthenticator.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core;
+
+import com.databricks.jdbc.driver.DatabricksJdbcConstants;
+import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.databricks.sdk.WorkspaceClient;
+import com.databricks.sdk.core.DatabricksConfig;
+
+public class OAuthAuthenticator {
+
+  private final IDatabricksConnectionContext connectionContext;
+
+<span class="fc" id="L12">  public OAuthAuthenticator(IDatabricksConnectionContext connectionContext) {</span>
+<span class="fc" id="L13">    this.connectionContext = connectionContext;</span>
+<span class="fc" id="L14">  }</span>
+
+  public WorkspaceClient getWorkspaceClient() throws DatabricksParsingException {
+<span class="fc" id="L17">    return new WorkspaceClient(getDatabricksConfig());</span>
+  }
+
+  public DatabricksConfig getDatabricksConfig() throws DatabricksParsingException {
+<span class="fc bfc" id="L21" title="All 2 branches covered.">    if (this.connectionContext.getAuthMech().equals(IDatabricksConnectionContext.AuthMech.PAT)) {</span>
+<span class="fc" id="L22">      return createAccessTokenConfig();</span>
+    }
+    // TODO(Madhav): Revisit these to set JDBC values
+<span class="fc" id="L25">    else if (this.connectionContext</span>
+<span class="fc" id="L26">        .getAuthMech()</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        .equals(IDatabricksConnectionContext.AuthMech.OAUTH)) {</span>
+<span class="pc bpc" id="L28" title="1 of 4 branches missed.">      switch (this.connectionContext.getAuthFlow()) {</span>
+        case TOKEN_PASSTHROUGH:
+<span class="fc" id="L30">          return createAccessTokenConfig();</span>
+        case CLIENT_CREDENTIALS:
+<span class="fc" id="L32">          return createM2MConfig();</span>
+        case BROWSER_BASED_AUTHENTICATION:
+<span class="fc" id="L34">          return createU2MConfig();</span>
+      }
+    }
+<span class="fc" id="L37">    return createAccessTokenConfig();</span>
+  }
+
+  public DatabricksConfig createU2MConfig() throws DatabricksParsingException {
+<span class="fc" id="L41">    DatabricksConfig config =</span>
+        new DatabricksConfig()
+<span class="fc" id="L43">            .setAuthType(DatabricksJdbcConstants.U2M_AUTH_TYPE)</span>
+<span class="fc" id="L44">            .setHost(connectionContext.getHostForOAuth())</span>
+<span class="fc" id="L45">            .setClientId(connectionContext.getClientId())</span>
+<span class="fc" id="L46">            .setClientSecret(connectionContext.getClientSecret())</span>
+<span class="fc" id="L47">            .setOAuthRedirectUrl(DatabricksJdbcConstants.U2M_AUTH_REDIRECT_URL);</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">    if (!config.isAzure()) {</span>
+<span class="fc" id="L49">      config.setScopes(connectionContext.getOAuthScopesForU2M());</span>
+    }
+<span class="fc" id="L51">    return config;</span>
+  }
+
+  public DatabricksConfig createAccessTokenConfig() throws DatabricksParsingException {
+<span class="fc" id="L55">    return new DatabricksConfig()</span>
+<span class="fc" id="L56">        .setAuthType(DatabricksJdbcConstants.ACCESS_TOKEN_AUTH_TYPE)</span>
+<span class="fc" id="L57">        .setHost(connectionContext.getHostUrl())</span>
+<span class="fc" id="L58">        .setToken(connectionContext.getToken());</span>
+  }
+
+  public DatabricksConfig createM2MConfig() throws DatabricksParsingException {
+<span class="fc" id="L62">    return new DatabricksConfig()</span>
+<span class="fc" id="L63">        .setAuthType(DatabricksJdbcConstants.M2M_AUTH_TYPE)</span>
+<span class="fc" id="L64">        .setHost(connectionContext.getHostForOAuth())</span>
+<span class="fc" id="L65">        .setClientId(connectionContext.getClientId())</span>
+<span class="fc" id="L66">        .setClientSecret(connectionContext.getClientSecret());</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

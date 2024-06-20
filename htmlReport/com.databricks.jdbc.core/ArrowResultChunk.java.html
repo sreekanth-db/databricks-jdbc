@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArrowResultChunk.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core</a> &gt; <span class="el_source">ArrowResultChunk.java</span></div><h1>ArrowResultChunk.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core;
+
+import static com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftHelper.createExternalLink;
+import static com.databricks.jdbc.commons.util.ValidationUtil.checkHTTPError;
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.IS_FAKE_SERVICE_TEST_PROP;
+
+import com.databricks.jdbc.client.DatabricksHttpException;
+import com.databricks.jdbc.client.IDatabricksHttpClient;
+import com.databricks.jdbc.client.impl.thrift.generated.TSparkArrowResultLink;
+import com.databricks.jdbc.client.sqlexec.ExternalLink;
+import com.databricks.jdbc.commons.util.DecompressionUtil;
+import com.databricks.jdbc.core.types.CompressionType;
+import com.databricks.sdk.service.sql.BaseChunkInfo;
+import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.channels.ClosedByInterruptException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
+import org.apache.arrow.vector.util.TransferPair;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class ArrowResultChunk {
+
+  /**
+   * The status of a chunk would proceed in following path:
+   *
+   * &lt;ul&gt;
+   *   &lt;li&gt;Create placeholder for chunk, along with the chunk cardinal
+   *   &lt;li&gt;Fetch chunk url
+   *   &lt;li&gt;Submit task for data download
+   *       &lt;ul&gt;
+   *         &lt;li&gt;Download has completed
+   *         &lt;li&gt;Download has failed and we will retry
+   *         &lt;li&gt;Download has failed and we gave up
+   *       &lt;/ul&gt;
+   *   &lt;li&gt;Data has been consumed and chunk is free to be released from memory
+   * &lt;/ul&gt;
+   *
+   * -&gt;
+   */
+<span class="fc" id="L54">  enum ChunkStatus {</span>
+    // Default status, though for the ArrowChunk, it should be initialized with Pending state
+<span class="fc" id="L56">    UNKNOWN,</span>
+    // This is a placeholder for chunk, we don't even have the Url
+<span class="fc" id="L58">    PENDING,</span>
+    // We have the Url for the chunk, and it is ready for download
+<span class="fc" id="L60">    URL_FETCHED,</span>
+    // Download task has been submitted
+<span class="fc" id="L62">    DOWNLOAD_IN_PROGRESS,</span>
+    // Data has been downloaded and ready for consumption
+<span class="fc" id="L64">    DOWNLOAD_SUCCEEDED,</span>
+    // Result Chunk was of type inline arrow and extract is successful
+<span class="fc" id="L66">    EXTRACT_SUCCEEDED,</span>
+    // Download has failed and it would be retried
+<span class="fc" id="L68">    DOWNLOAD_FAILED,</span>
+    // Result Chunk was of type inline arrow and extract has failed
+<span class="fc" id="L70">    EXTRACT_FAILED,</span>
+    // Download has failed and we have given up
+<span class="fc" id="L72">    DOWNLOAD_FAILED_ABORTED,</span>
+    // Download has been cancelled
+<span class="fc" id="L74">    CANCELLED,</span>
+    // Chunk memory has been consumed and released
+<span class="fc" id="L76">    CHUNK_RELEASED;</span>
+  }
+
+<span class="fc" id="L79">  private static final Integer SECONDS_BUFFER_FOR_EXPIRY = 60;</span>
+
+<span class="fc" id="L81">  private static final Logger LOGGER = LogManager.getLogger(ArrowResultChunk.class);</span>
+
+  private final long chunkIndex;
+  final long numRows;
+  final long rowOffset;
+  final Long byteCount;
+
+  private ExternalLink chunkLink;
+  private final String statementId;
+  private Long nextChunkIndex;
+  private Instant expiryTime;
+  private ChunkStatus status;
+  private Long downloadStartTime;
+  private Long downloadFinishTime;
+
+  public List&lt;List&lt;ValueVector&gt;&gt; recordBatchList;
+
+  private RootAllocator rootAllocator;
+  private String errorMessage;
+
+  private boolean isDataInitialized;
+
+  private VectorSchemaRoot vectorSchemaRoot;
+
+  private CompressionType compressionType;
+
+<span class="fc" id="L107">  ArrowResultChunk(BaseChunkInfo chunkInfo, String statementId, CompressionType compressionType) {</span>
+<span class="fc" id="L108">    this.chunkIndex = chunkInfo.getChunkIndex();</span>
+<span class="fc" id="L109">    this.numRows = chunkInfo.getRowCount();</span>
+<span class="fc" id="L110">    this.rowOffset = chunkInfo.getRowOffset();</span>
+<span class="fc" id="L111">    this.byteCount = chunkInfo.getByteCount();</span>
+<span class="fc" id="L112">    this.status = ChunkStatus.PENDING;</span>
+<span class="fc" id="L113">    this.rootAllocator = new RootAllocator(/* limit= */ Integer.MAX_VALUE);</span>
+<span class="fc" id="L114">    this.chunkLink = null;</span>
+<span class="fc" id="L115">    this.downloadStartTime = null;</span>
+<span class="fc" id="L116">    this.downloadFinishTime = null;</span>
+<span class="fc" id="L117">    this.statementId = statementId;</span>
+<span class="fc" id="L118">    isDataInitialized = false;</span>
+<span class="fc" id="L119">    this.errorMessage = null;</span>
+<span class="fc" id="L120">    this.vectorSchemaRoot = null;</span>
+<span class="fc" id="L121">    this.compressionType = compressionType;</span>
+<span class="fc" id="L122">  }</span>
+
+  ArrowResultChunk(
+      long rowCount, String statementId, CompressionType compressionType, InputStream stream)
+<span class="fc" id="L126">      throws DatabricksParsingException {</span>
+<span class="fc" id="L127">    this.chunkIndex = 0L;</span>
+<span class="fc" id="L128">    this.numRows = rowCount;</span>
+<span class="fc" id="L129">    this.rowOffset = 0L;</span>
+<span class="fc" id="L130">    this.byteCount = null; // Inline results don't have byteCount attached to its chunk</span>
+<span class="fc" id="L131">    this.status = ChunkStatus.PENDING;</span>
+<span class="fc" id="L132">    this.rootAllocator = new RootAllocator(/* limit= */ Integer.MAX_VALUE);</span>
+<span class="fc" id="L133">    this.chunkLink = null;</span>
+<span class="fc" id="L134">    this.statementId = statementId;</span>
+<span class="fc" id="L135">    isDataInitialized = true;</span>
+<span class="fc" id="L136">    this.errorMessage = null;</span>
+<span class="fc" id="L137">    this.vectorSchemaRoot = null;</span>
+    try {
+<span class="fc" id="L139">      getArrowDataFromInputStream(stream);</span>
+<span class="fc" id="L140">      this.status = ChunkStatus.EXTRACT_SUCCEEDED;</span>
+<span class="nc" id="L141">    } catch (Exception e) {</span>
+<span class="nc" id="L142">      handleFailure(e, ChunkStatus.EXTRACT_FAILED);</span>
+<span class="fc" id="L143">    }</span>
+<span class="fc" id="L144">    this.compressionType = compressionType;</span>
+<span class="fc" id="L145">  }</span>
+
+  ArrowResultChunk(
+      long chunkIndex,
+      TSparkArrowResultLink chunkInfo,
+      String statementId,
+<span class="fc" id="L151">      CompressionType compressionType) {</span>
+<span class="fc" id="L152">    this.chunkIndex = chunkIndex;</span>
+<span class="fc" id="L153">    this.numRows = chunkInfo.getRowCount();</span>
+<span class="fc" id="L154">    this.rowOffset = chunkInfo.getStartRowOffset();</span>
+<span class="fc" id="L155">    this.expiryTime = Instant.ofEpochMilli(chunkInfo.getExpiryTime());</span>
+<span class="fc" id="L156">    this.byteCount = chunkInfo.getBytesNum();</span>
+<span class="fc" id="L157">    this.status = ChunkStatus.URL_FETCHED; // URL has always been fetched in case of thrift</span>
+<span class="fc" id="L158">    this.rootAllocator = new RootAllocator(/* limit= */ Integer.MAX_VALUE);</span>
+<span class="fc" id="L159">    this.chunkLink = createExternalLink(chunkInfo, chunkIndex);</span>
+<span class="fc" id="L160">    this.downloadStartTime = null;</span>
+<span class="fc" id="L161">    this.downloadFinishTime = null;</span>
+<span class="fc" id="L162">    this.statementId = statementId;</span>
+<span class="fc" id="L163">    isDataInitialized = false;</span>
+<span class="fc" id="L164">    this.errorMessage = null;</span>
+<span class="fc" id="L165">    this.vectorSchemaRoot = null;</span>
+<span class="fc" id="L166">    this.compressionType = compressionType;</span>
+<span class="fc" id="L167">  }</span>
+
+  public static class ArrowResultChunkIterator {
+    private final ArrowResultChunk resultChunk;
+
+    // total number of record batches in the chunk
+    private int recordBatchesInChunk;
+
+    // index of record batch in chunk
+    private int recordBatchCursorInChunk;
+
+    // total number of rows in record batch under consideration
+    private int rowsInRecordBatch;
+
+    // current row index in current record batch
+    private int rowCursorInRecordBatch;
+
+    // total number of rows read
+    private int rowsReadByIterator;
+
+<span class="fc" id="L187">    ArrowResultChunkIterator(ArrowResultChunk resultChunk) {</span>
+<span class="fc" id="L188">      this.resultChunk = resultChunk;</span>
+<span class="fc" id="L189">      this.recordBatchesInChunk = resultChunk.getRecordBatchCountInChunk();</span>
+      // start before first batch
+<span class="fc" id="L191">      this.recordBatchCursorInChunk = -1;</span>
+      // initialize to -1
+<span class="fc" id="L193">      this.rowsInRecordBatch = -1;</span>
+      // start before first row
+<span class="fc" id="L195">      this.rowCursorInRecordBatch = -1;</span>
+      // initialize rows read to 0
+<span class="fc" id="L197">      this.rowsReadByIterator = 0;</span>
+<span class="fc" id="L198">    }</span>
+
+    /**
+     * Moves iterator to the next row of the chunk. Returns false if it is at the last row in the
+     * chunk.
+     */
+    public boolean nextRow() {
+<span class="fc bfc" id="L205" title="All 2 branches covered.">      if (!hasNextRow()) {</span>
+<span class="fc" id="L206">        return false;</span>
+      }
+      // Either not initialized or crossed record batch boundary
+<span class="fc bfc" id="L209" title="All 4 branches covered.">      if (rowsInRecordBatch &lt; 0 || ++rowCursorInRecordBatch == rowsInRecordBatch) {</span>
+        // reset rowCursor to 0
+<span class="fc" id="L211">        rowCursorInRecordBatch = 0;</span>
+        // Fetches number of rows in the record batch using the number of values in the first column
+        // vector
+<span class="fc" id="L214">        recordBatchCursorInChunk++;</span>
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">        while (recordBatchCursorInChunk &lt; recordBatchesInChunk</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">            &amp;&amp; resultChunk.recordBatchList.get(recordBatchCursorInChunk).get(0).getValueCount()</span>
+                == 0) {
+<span class="fc" id="L218">          recordBatchCursorInChunk++;</span>
+        }
+<span class="fc" id="L220">        rowsInRecordBatch =</span>
+<span class="fc" id="L221">            resultChunk.recordBatchList.get(recordBatchCursorInChunk).get(0).getValueCount();</span>
+      }
+<span class="fc" id="L223">      rowsReadByIterator++;</span>
+<span class="fc" id="L224">      return true;</span>
+    }
+
+    /** Returns whether the next row in the chunk exists. */
+    public boolean hasNextRow() {
+<span class="fc bfc" id="L229" title="All 2 branches covered.">      if (rowsReadByIterator &gt;= resultChunk.numRows) return false;</span>
+      // If there are more rows in record batch
+<span class="pc bpc" id="L231" title="1 of 4 branches missed.">      return (rowCursorInRecordBatch &lt; rowsInRecordBatch - 1)</span>
+          // or there are more record batches to be processed
+          || (recordBatchCursorInChunk &lt; recordBatchesInChunk - 1);
+    }
+
+    /** Returns object in the current row at the specified columnIndex. */
+    public Object getColumnObjectAtCurrentRow(int columnIndex) {
+<span class="fc" id="L238">      return this.resultChunk</span>
+<span class="fc" id="L239">          .getColumnVector(this.recordBatchCursorInChunk, columnIndex)</span>
+<span class="fc" id="L240">          .getObject(this.rowCursorInRecordBatch);</span>
+    }
+  }
+
+  @VisibleForTesting
+  void setIsDataInitialized(boolean isDataInitialized) {
+<span class="fc" id="L246">    this.isDataInitialized = isDataInitialized;</span>
+<span class="fc" id="L247">  }</span>
+
+  /** Sets link details for the given chunk. */
+  void setChunkLink(ExternalLink chunk) {
+<span class="fc" id="L251">    this.chunkLink = chunk;</span>
+<span class="fc" id="L252">    this.nextChunkIndex = chunk.getNextChunkIndex();</span>
+<span class="fc" id="L253">    this.expiryTime = Instant.parse(chunk.getExpiration());</span>
+<span class="fc" id="L254">    this.status = ChunkStatus.URL_FETCHED;</span>
+<span class="fc" id="L255">  }</span>
+
+  /** Updates status for the chunk */
+  void setStatus(ChunkStatus status) {
+<span class="fc" id="L259">    this.status = status;</span>
+<span class="fc" id="L260">  }</span>
+
+  /** Checks if the link is valid */
+  boolean isChunkLinkInvalid() {
+<span class="fc bfc" id="L264" title="All 2 branches covered.">    return status == ChunkStatus.PENDING</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">        || (!Boolean.parseBoolean(System.getProperty(IS_FAKE_SERVICE_TEST_PROP))</span>
+<span class="fc bfc" id="L266" title="All 2 branches covered.">            &amp;&amp; expiryTime.minusSeconds(SECONDS_BUFFER_FOR_EXPIRY).isBefore(Instant.now()));</span>
+  }
+
+  /** Returns the status for the chunk */
+  ChunkStatus getStatus() {
+<span class="fc" id="L271">    return this.status;</span>
+  }
+
+  void addHeaders(HttpGet getRequest, Map&lt;String, String&gt; headers) {
+<span class="pc bpc" id="L275" title="1 of 2 branches missed.">    if (headers != null) {</span>
+<span class="nc" id="L276">      headers.forEach(getRequest::addHeader);</span>
+    } else {
+<span class="fc" id="L278">      LOGGER.debug(</span>
+          &quot;No encryption headers present for chunk index [{}] and statement [{}]&quot;,
+<span class="fc" id="L280">          chunkIndex,</span>
+          statementId);
+    }
+<span class="fc" id="L283">  }</span>
+
+  public String getErrorMessage() {
+<span class="fc" id="L286">    return this.errorMessage;</span>
+  }
+
+  void downloadData(IDatabricksHttpClient httpClient)
+      throws DatabricksHttpException, DatabricksParsingException, IOException {
+<span class="fc" id="L291">    CloseableHttpResponse response = null;</span>
+    try {
+<span class="fc" id="L293">      this.downloadStartTime = Instant.now().toEpochMilli();</span>
+<span class="fc" id="L294">      URIBuilder uriBuilder = new URIBuilder(chunkLink.getExternalLink());</span>
+<span class="fc" id="L295">      HttpGet getRequest = new HttpGet(uriBuilder.build());</span>
+<span class="fc" id="L296">      addHeaders(getRequest, chunkLink.getHttpHeaders());</span>
+      // Retry would be done in http client, we should not bother about that here
+<span class="fc" id="L298">      response = httpClient.execute(getRequest);</span>
+<span class="fc" id="L299">      checkHTTPError(response);</span>
+<span class="fc" id="L300">      HttpEntity entity = response.getEntity();</span>
+<span class="fc" id="L301">      getArrowDataFromInputStream(entity.getContent());</span>
+<span class="fc" id="L302">      this.downloadFinishTime = Instant.now().toEpochMilli();</span>
+<span class="fc" id="L303">      this.setStatus(ChunkStatus.DOWNLOAD_SUCCEEDED);</span>
+<span class="fc" id="L304">    } catch (Exception e) {</span>
+<span class="nc" id="L305">      handleFailure(e, ChunkStatus.DOWNLOAD_FAILED);</span>
+<span class="nc" id="L306">      throw new DatabricksHttpException(errorMessage, e);</span>
+    } finally {
+<span class="fc bfc" id="L308" title="All 2 branches covered.">      if (response != null) {</span>
+<span class="fc" id="L309">        response.close();</span>
+      }
+    }
+<span class="fc" id="L312">  }</span>
+
+  public void getArrowDataFromInputStream(InputStream inputStream) throws DatabricksSQLException {
+<span class="fc" id="L315">    LOGGER.debug(</span>
+<span class="fc" id="L316">        &quot;Parsing data for chunk index [{}] and statement [{}]&quot;, this.chunkIndex, this.statementId);</span>
+<span class="fc" id="L317">    InputStream decompressedStream =</span>
+<span class="fc" id="L318">        DecompressionUtil.decompress(</span>
+            inputStream,
+            this.compressionType,
+<span class="fc" id="L321">            String.format(</span>
+                &quot;Data fetch failed for chunk index [%d] and statement [%s] as decompression was unsuccessful. Algorithm : [%s]&quot;,
+<span class="fc" id="L323">                this.chunkIndex, this.statementId, this.compressionType));</span>
+<span class="fc" id="L324">    this.isDataInitialized = true;</span>
+    // add check to see if input stream has been populated
+<span class="fc" id="L326">    initializeRecordBatch(decompressedStream);</span>
+<span class="fc" id="L327">  }</span>
+
+  private void initializeRecordBatch(InputStream decompressedStream)
+      throws DatabricksParsingException {
+<span class="fc" id="L331">    this.recordBatchList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L332">    ArrowStreamReader arrowStreamReader =</span>
+        new ArrowStreamReader(decompressedStream, this.rootAllocator);
+<span class="fc" id="L334">    List&lt;ValueVector&gt; vectors = new ArrayList&lt;&gt;();</span>
+    try {
+<span class="fc" id="L336">      this.vectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();</span>
+<span class="fc bfc" id="L337" title="All 2 branches covered.">      while (arrowStreamReader.loadNextBatch()) {</span>
+<span class="fc" id="L338">        this.recordBatchList.add(getVectorsFromSchemaRoot());</span>
+<span class="fc" id="L339">        vectorSchemaRoot.clear();</span>
+      }
+<span class="fc" id="L341">      LOGGER.debug(</span>
+<span class="fc" id="L342">          &quot;Data parsed for chunk index [{}] and statement [{}]&quot;, this.chunkIndex, this.statementId);</span>
+<span class="nc" id="L343">    } catch (ClosedByInterruptException e) {</span>
+<span class="nc" id="L344">      LOGGER.debug(&quot;Data parsing interrupted when loading Arrow Result&quot;, e);</span>
+<span class="nc" id="L345">      vectors.forEach(ValueVector::close);</span>
+<span class="nc" id="L346">      purgeArrowData();</span>
+      // no need to throw an exception here, this is expected if statement is closed when loading
+      // data
+<span class="nc" id="L349">    } catch (Exception e) {</span>
+<span class="nc" id="L350">      vectors.forEach(ValueVector::close);</span>
+<span class="nc" id="L351">      handleFailure(e, ChunkStatus.DOWNLOAD_FAILED);</span>
+<span class="pc" id="L352">    }</span>
+<span class="fc" id="L353">  }</span>
+
+  private List&lt;ValueVector&gt; getVectorsFromSchemaRoot() {
+<span class="fc" id="L356">    return vectorSchemaRoot.getFieldVectors().stream()</span>
+<span class="fc" id="L357">        .map(</span>
+            fieldVector -&gt; {
+<span class="fc" id="L359">              TransferPair transferPair = fieldVector.getTransferPair(rootAllocator);</span>
+<span class="fc" id="L360">              transferPair.transfer();</span>
+<span class="fc" id="L361">              return transferPair.getTo();</span>
+            })
+<span class="fc" id="L363">        .collect(Collectors.toList());</span>
+  }
+
+  void handleFailure(Exception exception, ChunkStatus failedStatus)
+      throws DatabricksParsingException {
+<span class="fc" id="L368">    String errMsg =</span>
+<span class="fc" id="L369">        String.format(</span>
+            &quot;Data parsing failed for chunk index [%d] and statement [%s]&quot;,
+<span class="fc" id="L371">            this.chunkIndex, this.statementId);</span>
+<span class="fc" id="L372">    LOGGER.error(errMsg, exception);</span>
+<span class="fc" id="L373">    this.setStatus(failedStatus);</span>
+<span class="nc" id="L374">    purgeArrowData();</span>
+<span class="nc" id="L375">    throw new DatabricksParsingException(errMsg, exception);</span>
+  }
+
+  void purgeArrowData() {
+<span class="nc" id="L379">    this.recordBatchList.forEach(vectors -&gt; vectors.forEach(ValueVector::close));</span>
+<span class="nc" id="L380">    this.recordBatchList.clear();</span>
+<span class="nc bnc" id="L381" title="All 2 branches missed.">    if (this.vectorSchemaRoot != null) {</span>
+<span class="nc" id="L382">      this.vectorSchemaRoot.clear();</span>
+<span class="nc" id="L383">      this.vectorSchemaRoot = null;</span>
+    }
+<span class="nc" id="L385">  }</span>
+
+  /**
+   * Releases chunk from memory
+   *
+   * @return true if chunk is released, false if it was already released
+   */
+  synchronized boolean releaseChunk() {
+<span class="fc bfc" id="L393" title="All 2 branches covered.">    if (status == ChunkStatus.CHUNK_RELEASED) {</span>
+<span class="fc" id="L394">      return false;</span>
+    }
+<span class="fc bfc" id="L396" title="All 2 branches covered.">    if (isDataInitialized) this.recordBatchList.clear();</span>
+<span class="fc" id="L397">    this.setStatus(ChunkStatus.CHUNK_RELEASED);</span>
+<span class="fc" id="L398">    return true;</span>
+  }
+
+  /** Returns number of recordBatches in the chunk. */
+  int getRecordBatchCountInChunk() {
+<span class="fc bfc" id="L403" title="All 2 branches covered.">    return this.isDataInitialized ? this.recordBatchList.size() : 0;</span>
+  }
+
+  public ArrowResultChunkIterator getChunkIterator() {
+<span class="fc" id="L407">    return new ArrowResultChunkIterator(this);</span>
+  }
+
+  private ValueVector getColumnVector(int recordBatchIndex, int columnIndex) {
+<span class="fc" id="L411">    return this.recordBatchList.get(recordBatchIndex).get(columnIndex);</span>
+  }
+
+  /** Returns the chunk download link */
+  String getChunkUrl() {
+<span class="fc" id="L416">    return chunkLink.getExternalLink();</span>
+  }
+
+  /** Returns index for current chunk */
+  Long getChunkIndex() {
+<span class="fc" id="L421">    return this.chunkIndex;</span>
+  }
+
+  Long getDownloadFinishTime() {
+<span class="nc" id="L425">    return this.downloadFinishTime;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

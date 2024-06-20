@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InlineJsonResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core</a> &gt; <span class="el_source">InlineJsonResult.java</span></div><h1>InlineJsonResult.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core;
+
+import com.databricks.jdbc.client.sqlexec.ResultData;
+import com.databricks.jdbc.client.sqlexec.ResultManifest;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class InlineJsonResult implements IExecutionResult {
+
+  private long currentRow;
+  private List&lt;List&lt;String&gt;&gt; data;
+
+  private boolean isClosed;
+
+<span class="fc" id="L16">  InlineJsonResult(ResultManifest resultManifest, ResultData resultData) {</span>
+<span class="fc" id="L17">    this.data = getDataList(resultData.getDataArray());</span>
+<span class="fc" id="L18">    this.currentRow = -1;</span>
+<span class="fc" id="L19">    this.isClosed = false;</span>
+<span class="fc" id="L20">  }</span>
+
+<span class="fc" id="L22">  InlineJsonResult(Object[][] rows) {</span>
+<span class="fc" id="L23">    this.data =</span>
+<span class="fc" id="L24">        Arrays.stream(rows)</span>
+<span class="fc" id="L25">            .map(</span>
+                a -&gt;
+<span class="fc" id="L27">                    Arrays.stream(a)</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">                        .map(o -&gt; o == null ? null : o.toString())</span>
+<span class="fc" id="L29">                        .collect(Collectors.toList()))</span>
+<span class="fc" id="L30">            .collect(Collectors.toList());</span>
+<span class="fc" id="L31">    this.currentRow = -1;</span>
+<span class="fc" id="L32">    this.isClosed = false;</span>
+<span class="fc" id="L33">  }</span>
+
+<span class="fc" id="L35">  InlineJsonResult(List&lt;List&lt;Object&gt;&gt; rows) {</span>
+<span class="fc" id="L36">    this.data =</span>
+<span class="fc" id="L37">        rows.stream()</span>
+<span class="fc" id="L38">            .map(</span>
+                a -&gt;
+<span class="fc" id="L40">                    a.stream()</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">                        .map(o -&gt; o == null ? null : o.toString())</span>
+<span class="fc" id="L42">                        .collect(Collectors.toList()))</span>
+<span class="fc" id="L43">            .collect(Collectors.toList());</span>
+<span class="fc" id="L44">    this.currentRow = -1;</span>
+<span class="fc" id="L45">    this.isClosed = false;</span>
+<span class="fc" id="L46">  }</span>
+
+  private static List&lt;List&lt;String&gt;&gt; getDataList(Collection&lt;Collection&lt;String&gt;&gt; dataArray) {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">    if (dataArray == null) {</span>
+<span class="fc" id="L50">      return new ArrayList&lt;&gt;();</span>
+    }
+<span class="fc" id="L52">    List&lt;List&lt;String&gt;&gt; dataList = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">    for (Collection&lt;String&gt; innerCollection : dataArray) {</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">      if (innerCollection == null) {</span>
+<span class="nc" id="L55">        dataList.add(Collections.emptyList());</span>
+      } else {
+<span class="nc" id="L57">        dataList.add(new ArrayList&lt;&gt;(innerCollection));</span>
+      }
+<span class="nc" id="L59">    }</span>
+<span class="fc" id="L60">    return dataList;</span>
+  }
+
+  @Override
+  public Object getObject(int columnIndex) throws SQLException {
+<span class="nc bnc" id="L65" title="All 2 branches missed.">    if (isClosed()) {</span>
+<span class="nc" id="L66">      throw new DatabricksSQLException(&quot;Method called on closed result&quot;);</span>
+    }
+<span class="nc bnc" id="L68" title="All 2 branches missed.">    if (currentRow == -1) {</span>
+<span class="nc" id="L69">      throw new DatabricksSQLException(&quot;Cursor is before first row&quot;);</span>
+    }
+<span class="nc bnc" id="L71" title="All 2 branches missed.">    if (columnIndex &lt; data.get((int) currentRow).size()) {</span>
+<span class="nc" id="L72">      return data.get((int) currentRow).get(columnIndex);</span>
+    }
+<span class="nc" id="L74">    throw new DatabricksSQLException(&quot;Column index out of bounds &quot; + columnIndex);</span>
+  }
+
+  @Override
+  public synchronized long getCurrentRow() {
+<span class="nc" id="L79">    return currentRow;</span>
+  }
+
+  @Override
+  public synchronized boolean next() {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">    if (hasNext()) {</span>
+<span class="nc" id="L85">      currentRow++;</span>
+<span class="nc" id="L86">      return true;</span>
+    }
+<span class="fc" id="L88">    return false;</span>
+  }
+
+  @Override
+  public synchronized boolean hasNext() {
+<span class="pc bpc" id="L93" title="2 of 4 branches missed.">    return !this.isClosed() &amp;&amp; currentRow &lt; data.size() - 1;</span>
+  }
+
+  @Override
+  public void close() {
+<span class="nc" id="L98">    this.isClosed = true;</span>
+<span class="nc" id="L99">    this.data = null;</span>
+<span class="nc" id="L100">  }</span>
+
+  private boolean isClosed() {
+<span class="fc" id="L103">    return isClosed;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

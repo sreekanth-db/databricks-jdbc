@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabricksUCVolumeClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.client.impl.sdk</a> &gt; <span class="el_source">DatabricksUCVolumeClient.java</span></div><h1>DatabricksUCVolumeClient.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.client.impl.sdk;
+
+import com.databricks.jdbc.client.IDatabricksUCVolumeClient;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+/** Implementation for DatabricksUCVolumeClient */
+public class DatabricksUCVolumeClient implements IDatabricksUCVolumeClient {
+
+  private final Connection connection;
+
+<span class="fc" id="L15">  private static final Logger LOGGER = LogManager.getLogger(DatabricksSdkClient.class);</span>
+
+  private static final String UC_VOLUME_COLUMN_NAME =
+      &quot;name&quot;; // Column name for the file names within a volume
+
+  private static final String UC_VOLUME_NAME =
+      &quot;volume_name&quot;; // Column name for the volume names within a schema
+
+<span class="fc" id="L23">  public DatabricksUCVolumeClient(Connection connection) {</span>
+<span class="fc" id="L24">    this.connection = connection;</span>
+<span class="fc" id="L25">  }</span>
+
+  private String createListQuery(String catalog, String schema, String volume) {
+<span class="fc" id="L28">    return String.format(&quot;LIST '/Volumes/%s/%s/%s/'&quot;, catalog, schema, volume);</span>
+  }
+
+  private String createShowVolumesQuery(String catalog, String schema) {
+<span class="fc" id="L32">    return String.format(&quot;SHOW VOLUMES IN %s.%s&quot;, catalog, schema);</span>
+  }
+
+  public boolean prefixExists(String catalog, String schema, String volume, String prefix)
+      throws SQLException {
+<span class="nc" id="L37">    return prefixExists(catalog, schema, volume, prefix, true);</span>
+  }
+
+  @Override
+  public boolean prefixExists(
+      String catalog, String schema, String volume, String prefix, boolean caseSensitive)
+      throws SQLException {
+
+<span class="nc" id="L45">    LOGGER.info(</span>
+        &quot;Entering prefixExists method with parameters: catalog={}, schema={}, volume={}, prefix={}, caseSensitive={}&quot;,
+        catalog,
+        schema,
+        volume,
+        prefix,
+<span class="nc" id="L51">        caseSensitive);</span>
+
+    // Extract the sub-folder and append to volume to use LIST at the correct location, prefix is
+    // checked for after listing
+<span class="nc" id="L55">    int lastSlashIndex = prefix.lastIndexOf(&quot;/&quot;);</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">    if (lastSlashIndex != -1) {</span>
+<span class="nc" id="L57">      String folder = prefix.substring(0, lastSlashIndex);</span>
+<span class="nc" id="L58">      volume = volume + &quot;/&quot; + folder;</span>
+<span class="nc" id="L59">      prefix = prefix.substring(lastSlashIndex + 1);</span>
+    }
+
+<span class="nc" id="L62">    String listFilesSQLQuery = createListQuery(catalog, schema, volume);</span>
+
+<span class="nc" id="L64">    try (Statement statement = connection.createStatement()) {</span>
+<span class="nc" id="L65">      ResultSet resultSet = statement.executeQuery(listFilesSQLQuery);</span>
+<span class="nc" id="L66">      LOGGER.info(&quot;SQL query executed successfully&quot;);</span>
+
+<span class="nc" id="L68">      boolean exists = false;</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">      while (resultSet.next()) {</span>
+<span class="nc" id="L70">        String fileName = resultSet.getString(&quot;name&quot;);</span>
+<span class="nc bnc" id="L71" title="All 4 branches missed.">        if (fileName.regionMatches(</span>
+            /* ignoreCase= */ !caseSensitive,
+            /* targetOffset= */ 0,
+            /* StringToCheck= */ prefix,
+            /* sourceOffset= */ 0,
+<span class="nc" id="L76">            /* lengthToMatch= */ prefix.length())) {</span>
+<span class="nc" id="L77">          exists = true;</span>
+<span class="nc" id="L78">          break;</span>
+        }
+<span class="nc" id="L80">      }</span>
+<span class="nc" id="L81">      return exists;</span>
+<span class="nc" id="L82">    } catch (SQLException e) {</span>
+<span class="nc" id="L83">      LOGGER.error(&quot;SQL query execution failed&quot;, e);</span>
+<span class="nc" id="L84">      throw e;</span>
+    }
+  }
+
+  @Override
+  public boolean objectExists(
+      String catalog, String schema, String volume, String objectPath, boolean caseSensitive)
+      throws SQLException {
+
+<span class="fc" id="L93">    LOGGER.info(</span>
+        &quot;Entering objectExists method with parameters: catalog={}, schema={}, volume={}, objectPath={}, caseSensitive={}&quot;,
+        catalog,
+        schema,
+        volume,
+        objectPath,
+<span class="fc" id="L99">        caseSensitive);</span>
+
+    // Extract the sub-folder and append to volume to use LIST at the correct location, objectName
+    // is checked for after listing
+    String objectName;
+
+<span class="fc" id="L105">    int lastSlashIndex = objectPath.lastIndexOf(&quot;/&quot;);</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">    if (lastSlashIndex != -1) {</span>
+<span class="nc" id="L107">      String folder = objectPath.substring(0, lastSlashIndex);</span>
+<span class="nc" id="L108">      volume = volume + &quot;/&quot; + folder;</span>
+<span class="nc" id="L109">      objectName = objectPath.substring(lastSlashIndex + 1);</span>
+<span class="nc" id="L110">    } else {</span>
+<span class="fc" id="L111">      objectName = objectPath;</span>
+    }
+
+<span class="fc" id="L114">    String listFilesSQLQuery = createListQuery(catalog, schema, volume);</span>
+
+<span class="fc" id="L116">    try (Statement statement = connection.createStatement()) {</span>
+<span class="fc" id="L117">      ResultSet resultSet = statement.executeQuery(listFilesSQLQuery);</span>
+<span class="fc" id="L118">      LOGGER.info(&quot;SQL query executed successfully&quot;);</span>
+
+<span class="fc" id="L120">      boolean exists = false;</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">      while (resultSet.next()) {</span>
+<span class="fc" id="L122">        String fileName = resultSet.getString(UC_VOLUME_COLUMN_NAME);</span>
+<span class="fc bfc" id="L123" title="All 4 branches covered.">        if (fileName.regionMatches(</span>
+            /* ignoreCase= */ !caseSensitive,
+            /* targetOffset= */ 0,
+            /* StringToCheck= */ objectName,
+            /* sourceOffset= */ 0,
+<span class="fc" id="L128">            /* lengthToMatch= */ objectName.length())) {</span>
+<span class="fc" id="L129">          exists = true;</span>
+<span class="fc" id="L130">          break;</span>
+        }
+<span class="fc" id="L132">      }</span>
+<span class="fc" id="L133">      return exists;</span>
+<span class="nc" id="L134">    } catch (SQLException e) {</span>
+<span class="nc" id="L135">      LOGGER.error(&quot;SQL query execution failed&quot;, e);</span>
+<span class="nc" id="L136">      throw e;</span>
+    }
+  }
+
+  public boolean objectExists(String catalog, String schema, String volume, String objectPath)
+      throws SQLException {
+<span class="fc" id="L142">    return objectExists(catalog, schema, volume, objectPath, true);</span>
+  }
+
+  @Override
+  public boolean volumeExists(
+      String catalog, String schema, String volumeName, boolean caseSensitive) throws SQLException {
+
+<span class="fc" id="L149">    LOGGER.info(</span>
+        &quot;Entering volumeExists method with parameters: catalog={}, schema={}, volumeName={}, caseSensitive={}&quot;,
+        catalog,
+        schema,
+        volumeName,
+<span class="fc" id="L154">        caseSensitive);</span>
+
+<span class="fc" id="L156">    String showVolumesSQLQuery = createShowVolumesQuery(catalog, schema);</span>
+
+<span class="fc" id="L158">    try (Statement statement = connection.createStatement()) {</span>
+<span class="fc" id="L159">      ResultSet resultSet = statement.executeQuery(showVolumesSQLQuery);</span>
+<span class="fc" id="L160">      LOGGER.info(&quot;SQL query executed successfully&quot;);</span>
+
+<span class="fc" id="L162">      boolean exists = false;</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">      while (resultSet.next()) {</span>
+<span class="fc" id="L164">        String volume = resultSet.getString(UC_VOLUME_NAME);</span>
+<span class="fc bfc" id="L165" title="All 4 branches covered.">        if (volume.regionMatches(</span>
+            /* ignoreCase= */ !caseSensitive,
+            /* targetOffset= */ 0,
+            /* other= */ volumeName,
+            /* sourceOffset= */ 0,
+<span class="fc" id="L170">            /* len= */ volumeName.length())) {</span>
+<span class="fc" id="L171">          exists = true;</span>
+<span class="fc" id="L172">          break;</span>
+        }
+<span class="fc" id="L174">      }</span>
+<span class="fc" id="L175">      return exists;</span>
+<span class="nc" id="L176">    } catch (SQLException e) {</span>
+<span class="nc" id="L177">      LOGGER.error(&quot;SQL query execution failed&quot;, e);</span>
+<span class="nc" id="L178">      throw e;</span>
+    }
+  }
+
+  public boolean volumeExists(String catalog, String schema, String volumeName)
+      throws SQLException {
+<span class="nc" id="L184">    return volumeExists(catalog, schema, volumeName, true);</span>
+  }
+
+  @Override
+  public List&lt;String&gt; listObjects(
+      String catalog, String schema, String volume, String prefix, boolean caseSensitive)
+      throws SQLException {
+
+<span class="fc" id="L192">    LOGGER.info(</span>
+        &quot;Entering listObjects method with parameters: catalog={}, schema={}, volume={}, prefix={}, caseSensitive={}&quot;,
+        catalog,
+        schema,
+        volume,
+        prefix,
+<span class="fc" id="L198">        caseSensitive);</span>
+
+    // Extract the sub-folder and append to volume to use LIST at the correct location, prefix is
+    // checked for after listing
+<span class="fc" id="L202">    int lastSlashIndex = prefix.lastIndexOf(&quot;/&quot;);</span>
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">    if (lastSlashIndex != -1) {</span>
+<span class="nc" id="L204">      String folder = prefix.substring(0, lastSlashIndex);</span>
+<span class="nc" id="L205">      volume = volume + &quot;/&quot; + folder;</span>
+<span class="nc" id="L206">      prefix = prefix.substring(lastSlashIndex + 1);</span>
+    }
+
+<span class="fc" id="L209">    String listFilesSQLQuery = createListQuery(catalog, schema, volume);</span>
+
+<span class="fc" id="L211">    try (Statement statement = connection.createStatement()) {</span>
+<span class="fc" id="L212">      ResultSet resultSet = statement.executeQuery(listFilesSQLQuery);</span>
+<span class="fc" id="L213">      LOGGER.info(&quot;SQL query executed successfully&quot;);</span>
+
+<span class="fc" id="L215">      List&lt;String&gt; filenames = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">      while (resultSet.next()) {</span>
+<span class="fc" id="L217">        String fileName = resultSet.getString(&quot;name&quot;);</span>
+<span class="pc bpc" id="L218" title="1 of 4 branches missed.">        if (fileName.regionMatches(</span>
+            /* ignoreCase= */ !caseSensitive,
+            /* targetOffset= */ 0,
+            /* StringToCheck= */ prefix,
+            /* sourceOffset= */ 0,
+<span class="fc" id="L223">            /* lengthToMatch= */ prefix.length())) {</span>
+<span class="fc" id="L224">          filenames.add(fileName);</span>
+        }
+<span class="fc" id="L226">      }</span>
+<span class="fc" id="L227">      return filenames;</span>
+<span class="nc" id="L228">    } catch (SQLException e) {</span>
+<span class="nc" id="L229">      LOGGER.error(&quot;SQL query execution failed&quot;, e);</span>
+<span class="nc" id="L230">      throw e;</span>
+    }
+  }
+
+  public List&lt;String&gt; listObjects(String catalog, String schema, String volume, String prefix)
+      throws SQLException {
+<span class="nc" id="L236">    return listObjects(catalog, schema, volume, prefix, true);</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

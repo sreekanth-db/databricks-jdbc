@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ResultData.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.client.sqlexec</a> &gt; <span class="el_source">ResultData.java</span></div><h1>ResultData.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.client.sqlexec;
+
+import com.databricks.sdk.support.ToStringer;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Collection;
+import java.util.Objects;
+
+/*Todo: This file is picked from databricks-sdk-java. Remove this once arclight changes are included in API-SPEC */
+
+<span class="nc" id="L10">public class ResultData {</span>
+
+  @JsonProperty(&quot;byte_count&quot;)
+  private Long byteCount;
+
+  @JsonProperty(&quot;chunk_index&quot;)
+  private Long chunkIndex;
+
+  @JsonProperty(&quot;data_array&quot;)
+  private Collection&lt;Collection&lt;String&gt;&gt; dataArray;
+
+  /** */
+  @JsonProperty(&quot;external_links&quot;)
+  private Collection&lt;ExternalLink&gt; externalLinks;
+
+  @JsonProperty(&quot;next_chunk_index&quot;)
+  private Long nextChunkIndex;
+
+  @JsonProperty(&quot;next_chunk_internal_link&quot;)
+  private String nextChunkInternalLink;
+
+  @JsonProperty(&quot;row_count&quot;)
+  private Long rowCount;
+
+  @JsonProperty(&quot;row_offset&quot;)
+  private Long rowOffset;
+
+  @JsonProperty(&quot;volume_operation_info&quot;)
+  private VolumeOperationInfo volumeOperationInfo;
+
+  public ResultData setByteCount(Long byteCount) {
+<span class="nc" id="L41">    this.byteCount = byteCount;</span>
+<span class="nc" id="L42">    return this;</span>
+  }
+
+  public Long getByteCount() {
+<span class="nc" id="L46">    return byteCount;</span>
+  }
+
+  public ResultData setChunkIndex(Long chunkIndex) {
+<span class="nc" id="L50">    this.chunkIndex = chunkIndex;</span>
+<span class="nc" id="L51">    return this;</span>
+  }
+
+  public Long getChunkIndex() {
+<span class="nc" id="L55">    return chunkIndex;</span>
+  }
+
+  public ResultData setDataArray(Collection&lt;Collection&lt;String&gt;&gt; dataArray) {
+<span class="nc" id="L59">    this.dataArray = dataArray;</span>
+<span class="nc" id="L60">    return this;</span>
+  }
+
+  public Collection&lt;Collection&lt;String&gt;&gt; getDataArray() {
+<span class="nc" id="L64">    return dataArray;</span>
+  }
+
+  public ResultData setExternalLinks(Collection&lt;ExternalLink&gt; externalLinks) {
+<span class="nc" id="L68">    this.externalLinks = externalLinks;</span>
+<span class="nc" id="L69">    return this;</span>
+  }
+
+  public Collection&lt;ExternalLink&gt; getExternalLinks() {
+<span class="nc" id="L73">    return externalLinks;</span>
+  }
+
+  public ResultData setNextChunkIndex(Long nextChunkIndex) {
+<span class="nc" id="L77">    this.nextChunkIndex = nextChunkIndex;</span>
+<span class="nc" id="L78">    return this;</span>
+  }
+
+  public Long getNextChunkIndex() {
+<span class="nc" id="L82">    return nextChunkIndex;</span>
+  }
+
+  public ResultData setNextChunkInternalLink(String nextChunkInternalLink) {
+<span class="nc" id="L86">    this.nextChunkInternalLink = nextChunkInternalLink;</span>
+<span class="nc" id="L87">    return this;</span>
+  }
+
+  public String getNextChunkInternalLink() {
+<span class="nc" id="L91">    return nextChunkInternalLink;</span>
+  }
+
+  public ResultData setRowCount(Long rowCount) {
+<span class="nc" id="L95">    this.rowCount = rowCount;</span>
+<span class="nc" id="L96">    return this;</span>
+  }
+
+  public Long getRowCount() {
+<span class="nc" id="L100">    return rowCount;</span>
+  }
+
+  public ResultData setRowOffset(Long rowOffset) {
+<span class="nc" id="L104">    this.rowOffset = rowOffset;</span>
+<span class="nc" id="L105">    return this;</span>
+  }
+
+  public Long getRowOffset() {
+<span class="nc" id="L109">    return rowOffset;</span>
+  }
+
+  public ResultData setVolumeOperationInfo(VolumeOperationInfo volumeOperationInfo) {
+<span class="nc" id="L113">    this.volumeOperationInfo = volumeOperationInfo;</span>
+<span class="nc" id="L114">    return this;</span>
+  }
+
+  public VolumeOperationInfo getVolumeOperationInfo() {
+<span class="nc" id="L118">    return volumeOperationInfo;</span>
+  }
+
+  @Override
+  public boolean equals(Object o) {
+<span class="nc bnc" id="L123" title="All 2 branches missed.">    if (this == o) return true;</span>
+<span class="nc bnc" id="L124" title="All 4 branches missed.">    if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="nc" id="L125">    ResultData that = (ResultData) o;</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">    return Objects.equals(byteCount, that.byteCount)</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        &amp;&amp; Objects.equals(chunkIndex, that.chunkIndex)</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        &amp;&amp; Objects.equals(dataArray, that.dataArray)</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        &amp;&amp; Objects.equals(externalLinks, that.externalLinks)</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        &amp;&amp; Objects.equals(nextChunkIndex, that.nextChunkIndex)</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        &amp;&amp; Objects.equals(nextChunkInternalLink, that.nextChunkInternalLink)</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        &amp;&amp; Objects.equals(rowCount, that.rowCount)</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        &amp;&amp; Objects.equals(rowOffset, that.rowOffset);</span>
+  }
+
+  @Override
+  public int hashCode() {
+<span class="nc" id="L138">    return Objects.hash(</span>
+        byteCount,
+        chunkIndex,
+        dataArray,
+        externalLinks,
+        nextChunkIndex,
+        nextChunkInternalLink,
+        rowCount,
+        rowOffset);
+  }
+
+  @Override
+  public String toString() {
+<span class="nc" id="L151">    return new ToStringer(ResultData.class)</span>
+<span class="nc" id="L152">        .add(&quot;byteCount&quot;, byteCount)</span>
+<span class="nc" id="L153">        .add(&quot;chunkIndex&quot;, chunkIndex)</span>
+<span class="nc" id="L154">        .add(&quot;dataArray&quot;, dataArray)</span>
+<span class="nc" id="L155">        .add(&quot;externalLinks&quot;, externalLinks)</span>
+<span class="nc" id="L156">        .add(&quot;nextChunkIndex&quot;, nextChunkIndex)</span>
+<span class="nc" id="L157">        .add(&quot;nextChunkInternalLink&quot;, nextChunkInternalLink)</span>
+<span class="nc" id="L158">        .add(&quot;rowCount&quot;, rowCount)</span>
+<span class="nc" id="L159">        .add(&quot;rowOffset&quot;, rowOffset)</span>
+<span class="nc" id="L160">        .toString();</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

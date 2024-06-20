@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WildcardUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.commons.util</a> &gt; <span class="el_source">WildcardUtil.java</span></div><h1>WildcardUtil.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.commons.util;
+
+/**
+ * This class consists of utility functions with respect to wildcard strings that are required in
+ * building SQL queries
+ */
+<span class="fc" id="L7">public class WildcardUtil {</span>
+  private static final String ASTERISK = &quot;*&quot;;
+
+  /**
+   * This function checks if the input string is a &quot;match anything&quot; string i.e. &quot;*&quot;
+   *
+   * @param s the input string
+   * @return true if the input string is &quot;*&quot;
+   */
+  public static boolean isMatchAnything(String s) {
+<span class="fc" id="L17">    return ASTERISK.equals(s);</span>
+  }
+
+  public static boolean isNullOrEmpty(String s) {
+<span class="fc bfc" id="L21" title="All 4 branches covered.">    return s == null || s.trim().isEmpty();</span>
+  }
+
+  /**
+   * This function checks if the input string is a wildcard string
+   *
+   * @param s the input string
+   * @return true if the input string is wildcard
+   */
+  public static boolean isWildcard(String s) {
+<span class="fc bfc" id="L31" title="All 4 branches covered.">    return s != null &amp;&amp; s.contains(ASTERISK);</span>
+  }
+
+  public static String jdbcPatternToHive(String pattern) {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">    if (pattern == null) {</span>
+<span class="fc" id="L36">      return null;</span>
+    }
+<span class="fc" id="L38">    StringBuilder builder = new StringBuilder();</span>
+<span class="fc" id="L39">    boolean escapeNext = false; // Flag to check if the next character is escaped</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">    for (int i = 0; i &lt; pattern.length(); i++) {</span>
+<span class="fc" id="L41">      char ch = pattern.charAt(i);</span>
+
+<span class="fc bfc" id="L43" title="All 2 branches covered.">      if (ch == '\\') {</span>
+        // Check if it's an escaped backslash
+<span class="pc bpc" id="L45" title="1 of 4 branches missed.">        if (i + 1 &lt; pattern.length() &amp;&amp; pattern.charAt(i + 1) == '\\') {</span>
+<span class="fc" id="L46">          builder.append(&quot;\\\\&quot;);</span>
+<span class="fc" id="L47">          i++; // Skip the next backslash since it's part of the escape sequence</span>
+        } else {
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">          escapeNext = !escapeNext; // Toggle escape state for next character</span>
+        }
+<span class="fc bfc" id="L51" title="All 2 branches covered.">      } else if (escapeNext) {</span>
+        // If the current character is escaped, add it directly
+<span class="fc" id="L53">        builder.append(ch);</span>
+<span class="fc" id="L54">        escapeNext = false; // Reset escape state</span>
+      } else {
+        // Handle unescaped wildcards
+<span class="fc bfc" id="L57" title="All 3 branches covered.">        switch (ch) {</span>
+          case '%':
+<span class="fc" id="L59">            builder.append(&quot;*&quot;);</span>
+<span class="fc" id="L60">            break;</span>
+          case '_':
+<span class="fc" id="L62">            builder.append(&quot;.&quot;);</span>
+<span class="fc" id="L63">            break;</span>
+          default:
+<span class="fc" id="L65">            builder.append(ch);</span>
+            break;
+        }
+      }
+    }
+<span class="fc" id="L70">    return builder.toString();</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

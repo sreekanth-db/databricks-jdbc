@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConverterHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core.converters</a> &gt; <span class="el_source">ConverterHelper.java</span></div><h1>ConverterHelper.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core.converters;
+
+import com.databricks.jdbc.core.DatabricksSQLException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.LocalDate;
+import java.util.Calendar;
+import java.util.Date;
+
+<span class="nc" id="L12">public class ConverterHelper {</span>
+
+  public static Object getConvertedObject(Class&lt;?&gt; javaType, AbstractObjectConverter converter)
+      throws DatabricksSQLException {
+<span class="fc bfc" id="L16" title="All 2 branches covered.">    if (javaType == String.class) {</span>
+<span class="fc" id="L17">      return converter.convertToString();</span>
+<span class="fc bfc" id="L18" title="All 2 branches covered.">    } else if (javaType == BigDecimal.class) {</span>
+<span class="fc" id="L19">      return converter.convertToBigDecimal();</span>
+<span class="fc bfc" id="L20" title="All 4 branches covered.">    } else if (javaType == Boolean.class || javaType == boolean.class) {</span>
+<span class="fc" id="L21">      return converter.convertToBoolean();</span>
+<span class="fc bfc" id="L22" title="All 4 branches covered.">    } else if (javaType == Integer.class || javaType == int.class) {</span>
+<span class="fc" id="L23">      return converter.convertToInt();</span>
+<span class="fc bfc" id="L24" title="All 4 branches covered.">    } else if (javaType == Long.class || javaType == long.class) {</span>
+<span class="fc" id="L25">      return converter.convertToLong();</span>
+<span class="fc bfc" id="L26" title="All 4 branches covered.">    } else if (javaType == Float.class || javaType == float.class) {</span>
+<span class="fc" id="L27">      return converter.convertToFloat();</span>
+<span class="fc bfc" id="L28" title="All 4 branches covered.">    } else if (javaType == Double.class || javaType == double.class) {</span>
+<span class="fc" id="L29">      return converter.convertToDouble();</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">    } else if (javaType == LocalDate.class) {</span>
+<span class="fc" id="L31">      return converter.convertToLocalDate();</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">    } else if (javaType == BigInteger.class) {</span>
+<span class="fc" id="L33">      return converter.convertToBigInteger();</span>
+<span class="pc bpc" id="L34" title="1 of 4 branches missed.">    } else if (javaType == Date.class || javaType == java.sql.Date.class) {</span>
+<span class="fc" id="L35">      return converter.convertToDate();</span>
+<span class="fc bfc" id="L36" title="All 4 branches covered.">    } else if (javaType == Timestamp.class || javaType == Calendar.class) {</span>
+<span class="fc" id="L37">      return converter.convertToTimestamp();</span>
+<span class="fc bfc" id="L38" title="All 4 branches covered.">    } else if (javaType == byte.class || javaType == Byte.class) {</span>
+<span class="fc" id="L39">      return converter.convertToShort();</span>
+    }
+    // TODO : add more types if required.
+<span class="fc" id="L42">    return converter.convertToString(); // By default, convert to string</span>
+  }
+
+  public static AbstractObjectConverter getObjectConverter(Object object, int columnType)
+      throws DatabricksSQLException {
+<span class="fc bfc" id="L47" title="All 12 branches covered.">    switch (columnType) {</span>
+      case Types.TINYINT:
+<span class="fc" id="L49">        return new ByteConverter(object);</span>
+      case Types.SMALLINT:
+<span class="fc" id="L51">        return new ShortConverter(object);</span>
+      case Types.INTEGER:
+<span class="fc" id="L53">        return new IntConverter(object);</span>
+      case Types.BIGINT:
+<span class="fc" id="L55">        return new LongConverter(object);</span>
+      case Types.FLOAT:
+<span class="fc" id="L57">        return new FloatConverter(object);</span>
+      case Types.DOUBLE:
+<span class="fc" id="L59">        return new DoubleConverter(object);</span>
+      case Types.DECIMAL:
+<span class="fc" id="L61">        return new BigDecimalConverter(object);</span>
+      case Types.BOOLEAN:
+<span class="fc" id="L63">        return new BooleanConverter(object);</span>
+      case Types.DATE:
+<span class="fc" id="L65">        return new DateConverter(object);</span>
+      case Types.TIMESTAMP:
+<span class="fc" id="L67">        return new TimestampConverter(object);</span>
+      case Types.BINARY:
+<span class="fc" id="L69">        return new ByteArrayConverter(object);</span>
+      case Types.VARCHAR:
+      case Types.CHAR:
+      default:
+<span class="fc" id="L73">        return new StringConverter(object);</span>
+    }
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

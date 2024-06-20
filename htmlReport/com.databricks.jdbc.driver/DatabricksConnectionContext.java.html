@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabricksConnectionContext.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.driver</a> &gt; <span class="el_source">DatabricksConnectionContext.java</span></div><h1>DatabricksConnectionContext.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.driver;
+
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
+
+import com.databricks.jdbc.client.DatabricksClientType;
+import com.databricks.jdbc.core.DatabricksParsingException;
+import com.databricks.jdbc.core.DatabricksSQLException;
+import com.databricks.jdbc.core.types.AllPurposeCluster;
+import com.databricks.jdbc.core.types.CompressionType;
+import com.databricks.jdbc.core.types.ComputeResource;
+import com.databricks.jdbc.core.types.Warehouse;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.stream.Collectors;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class DatabricksConnectionContext implements IDatabricksConnectionContext {
+
+<span class="fc" id="L24">  private static final Logger LOGGER = LogManager.getLogger(DatabricksConnectionContext.class);</span>
+  private final String host;
+  private final int port;
+  private final String schema;
+  private final ComputeResource computeResource;
+  @VisibleForTesting final ImmutableMap&lt;String, String&gt; parameters;
+
+  /**
+   * Parses connection Url and properties into a Databricks specific connection context
+   *
+   * @param url Databricks server connection Url
+   * @param properties connection properties
+   * @return a connection context
+   */
+  public static IDatabricksConnectionContext parse(String url, Properties properties)
+      throws DatabricksSQLException {
+<span class="fc bfc" id="L40" title="All 2 branches covered.">    if (!isValid(url)) {</span>
+      // TODO: handle exceptions properly
+<span class="fc" id="L42">      throw new DatabricksParsingException(&quot;Invalid url &quot; + url);</span>
+    }
+<span class="fc" id="L44">    Matcher urlMatcher = JDBC_URL_PATTERN.matcher(url);</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">    if (urlMatcher.find()) {</span>
+<span class="fc" id="L46">      String hostUrlVal = urlMatcher.group(1);</span>
+<span class="fc" id="L47">      String urlMinusHost = urlMatcher.group(2);</span>
+<span class="fc" id="L48">      String[] hostAndPort = hostUrlVal.split(DatabricksJdbcConstants.PORT_DELIMITER);</span>
+<span class="fc" id="L49">      String hostValue = hostAndPort[0];</span>
+      int portValue =
+<span class="fc bfc" id="L51" title="All 2 branches covered.">          hostAndPort.length == 2</span>
+<span class="fc" id="L52">              ? Integer.valueOf(hostAndPort[1])</span>
+<span class="fc" id="L53">              : DatabricksJdbcConstants.DEFAULT_PORT;</span>
+
+<span class="fc" id="L55">      ImmutableMap.Builder&lt;String, String&gt; parametersBuilder = ImmutableMap.builder();</span>
+<span class="fc" id="L56">      String[] urlParts = urlMinusHost.split(DatabricksJdbcConstants.URL_DELIMITER);</span>
+<span class="fc" id="L57">      String schema = urlParts[0];</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">      if (nullOrEmptyString(schema)) {</span>
+<span class="fc" id="L59">        schema = DEFAULT_SCHEMA;</span>
+      }
+<span class="fc bfc" id="L61" title="All 2 branches covered.">      for (int urlPartIndex = 1; urlPartIndex &lt; urlParts.length; urlPartIndex++) {</span>
+<span class="fc" id="L62">        String[] pair = urlParts[urlPartIndex].split(DatabricksJdbcConstants.PAIR_DELIMITER);</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">        if (pair.length == 1) {</span>
+<span class="nc" id="L64">          pair = new String[] {pair[0], &quot;&quot;};</span>
+        }
+<span class="fc" id="L66">        parametersBuilder.put(pair[0].toLowerCase(), pair[1]);</span>
+      }
+<span class="fc bfc" id="L68" title="All 2 branches covered.">      for (Map.Entry&lt;Object, Object&gt; entry : properties.entrySet()) {</span>
+<span class="fc" id="L69">        parametersBuilder.put(entry.getKey().toString().toLowerCase(), entry.getValue().toString());</span>
+<span class="fc" id="L70">      }</span>
+<span class="fc" id="L71">      return new DatabricksConnectionContext(</span>
+<span class="fc" id="L72">          hostValue, portValue, schema, parametersBuilder.build());</span>
+    } else {
+      // Should never reach here, since we have already checked for url validity
+<span class="nc" id="L75">      throw new IllegalArgumentException(&quot;Invalid url &quot; + &quot;incorrect&quot;);</span>
+    }
+  }
+
+  private static void handleInvalidUrl(String url) throws DatabricksParsingException {
+<span class="nc" id="L80">    throw new DatabricksParsingException(&quot;Invalid url incorrect: &quot; + url);</span>
+  }
+
+  private DatabricksConnectionContext(
+      String host, int port, String schema, ImmutableMap&lt;String, String&gt; parameters)
+<span class="fc" id="L85">      throws DatabricksSQLException {</span>
+<span class="fc" id="L86">    this.host = host;</span>
+<span class="fc" id="L87">    this.port = port;</span>
+<span class="fc" id="L88">    this.schema = schema;</span>
+<span class="fc" id="L89">    this.parameters = parameters;</span>
+<span class="fc" id="L90">    this.computeResource = buildCompute();</span>
+<span class="fc" id="L91">  }</span>
+
+  public static boolean isValid(String url) {
+<span class="fc bfc" id="L94" title="All 2 branches covered.">    if (!JDBC_URL_PATTERN.matcher(url).matches()) {</span>
+<span class="fc" id="L95">      return false;</span>
+    }
+<span class="fc bfc" id="L97" title="All 2 branches covered.">    return HTTP_CLUSTER_PATH_PATTERN.matcher(url).matches()</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        || HTTP_WAREHOUSE_PATH_PATTERN.matcher(url).matches()</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        || HTTP_ENDPOINT_PATH_PATTERN.matcher(url).matches()</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        || TEST_PATH_PATTERN.matcher(url).matches()</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        || BASE_PATTERN.matcher(url).matches()</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">        || HTTP_CLI_PATTERN.matcher(url).matches();</span>
+  }
+
+  @Override
+  public String getHostUrl() throws DatabricksParsingException {
+<span class="fc" id="L107">    LOGGER.debug(&quot;public String getHostUrl()&quot;);</span>
+    // Determine the schema based on the transport mode
+    String schema =
+<span class="pc bpc" id="L110" title="1 of 4 branches missed.">        (getSSLMode() != null &amp;&amp; getSSLMode().equals(&quot;0&quot;))</span>
+<span class="fc" id="L111">            ? DatabricksJdbcConstants.HTTP_SCHEMA</span>
+<span class="fc" id="L112">            : DatabricksJdbcConstants.HTTPS_SCHEMA;</span>
+
+<span class="fc" id="L114">    schema = schema.replace(&quot;://&quot;, &quot;&quot;);</span>
+
+    try {
+<span class="fc" id="L117">      URIBuilder uriBuilder = new URIBuilder().setScheme(schema).setHost(this.host);</span>
+
+      // Conditionally add the port if it is specified
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">      if (port != 0) {</span>
+<span class="fc" id="L121">        uriBuilder.setPort(port);</span>
+      }
+
+      // Build the URI and convert to string
+<span class="fc" id="L125">      return uriBuilder.build().toString();</span>
+<span class="nc" id="L126">    } catch (Exception e) {</span>
+<span class="nc" id="L127">      LOGGER.debug(&quot;URI Building failed with exception: &quot; + e.getMessage());</span>
+<span class="nc" id="L128">      throw new DatabricksParsingException(&quot;URI Building failed with exception: &quot; + e.getMessage());</span>
+    }
+  }
+
+  private String getSSLMode() {
+<span class="fc" id="L133">    return getParameter(DatabricksJdbcConstants.SSL);</span>
+  }
+
+  @Override
+  public ComputeResource getComputeResource() {
+<span class="fc" id="L138">    return computeResource;</span>
+  }
+
+  private ComputeResource buildCompute() throws DatabricksSQLException {
+<span class="fc" id="L142">    String httpPath = getHttpPath();</span>
+<span class="fc" id="L143">    Matcher urlMatcher = HTTP_WAREHOUSE_PATH_PATTERN.matcher(httpPath);</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">    if (urlMatcher.find()) {</span>
+<span class="fc" id="L145">      return new Warehouse(urlMatcher.group(1));</span>
+    }
+<span class="fc" id="L147">    urlMatcher = HTTP_ENDPOINT_PATH_PATTERN.matcher(httpPath);</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">    if (urlMatcher.find()) {</span>
+<span class="fc" id="L149">      return new Warehouse(urlMatcher.group(1));</span>
+    }
+<span class="fc" id="L151">    urlMatcher = HTTP_CLUSTER_PATH_PATTERN.matcher(httpPath);</span>
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">    if (urlMatcher.find()) {</span>
+<span class="fc" id="L153">      return new AllPurposeCluster(urlMatcher.group(1), urlMatcher.group(2));</span>
+    }
+<span class="nc" id="L155">    urlMatcher = HTTP_PATH_CLI_PATTERN.matcher(httpPath);</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">    if (urlMatcher.find()) {</span>
+<span class="nc" id="L157">      return new AllPurposeCluster(&quot;default&quot;, &quot;default&quot;);</span>
+    }
+    // the control should never reach here, as the parsing already ensured the URL is valid
+<span class="nc" id="L160">    throw new DatabricksParsingException(&quot;Invalid HTTP Path provided &quot; + this.getHttpPath());</span>
+  }
+
+  public String getHttpPath() {
+<span class="fc" id="L164">    LOGGER.debug(&quot;String getHttpPath()&quot;);</span>
+<span class="fc" id="L165">    return getParameter(DatabricksJdbcConstants.HTTP_PATH);</span>
+  }
+
+  @Override
+  public String getHostForOAuth() {
+<span class="fc" id="L170">    return this.host;</span>
+  }
+
+  @Override
+  public String getToken() {
+    // TODO: decide on token/password from published specs
+<span class="fc bfc" id="L176" title="All 2 branches covered.">    return getParameter(DatabricksJdbcConstants.PWD) == null</span>
+<span class="fc" id="L177">        ? getParameter(DatabricksJdbcConstants.PASSWORD)</span>
+<span class="fc" id="L178">        : getParameter(DatabricksJdbcConstants.PWD);</span>
+  }
+
+  @Override
+  public int getAsyncExecPollInterval() {
+<span class="fc bfc" id="L183" title="All 2 branches covered.">    return getParameter(POLL_INTERVAL) == null</span>
+<span class="fc" id="L184">        ? POLL_INTERVAL_DEFAULT</span>
+<span class="fc" id="L185">        : Integer.parseInt(getParameter(DatabricksJdbcConstants.POLL_INTERVAL));</span>
+  }
+
+  @Override
+  public Boolean getDirectResultMode() {
+<span class="fc bfc" id="L190" title="All 4 branches covered.">    return getParameter(DIRECT_RESULT) == null || Objects.equals(getParameter(DIRECT_RESULT), &quot;1&quot;);</span>
+  }
+
+  public String getCloud() throws DatabricksParsingException {
+<span class="fc" id="L194">    String hostURL = getHostUrl();</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">    if (hostURL.contains(&quot;azuredatabricks.net&quot;)</span>
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">        || hostURL.contains(&quot;.databricks.azure.cn&quot;)</span>
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">        || hostURL.contains(&quot;.databricks.azure.us&quot;)) {</span>
+<span class="fc" id="L198">      return &quot;AAD&quot;;</span>
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">    } else if (hostURL.contains(&quot;.cloud.databricks.com&quot;)) {</span>
+<span class="fc" id="L200">      return &quot;AWS&quot;;</span>
+    }
+<span class="nc" id="L202">    return &quot;OTHER&quot;;</span>
+  }
+
+  @Override
+  public String getClientId() throws DatabricksParsingException {
+<span class="fc" id="L207">    String clientId = getParameter(DatabricksJdbcConstants.CLIENT_ID);</span>
+<span class="pc bpc" id="L208" title="1 of 2 branches missed.">    if (nullOrEmptyString(clientId)) {</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">      if (getCloud().equals(&quot;AWS&quot;)) {</span>
+<span class="fc" id="L210">        return DatabricksJdbcConstants.AWS_CLIENT_ID;</span>
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">      } else if (getCloud().equals(&quot;AAD&quot;)) {</span>
+<span class="fc" id="L212">        return DatabricksJdbcConstants.AAD_CLIENT_ID;</span>
+      }
+    }
+<span class="nc" id="L215">    return clientId;</span>
+  }
+
+  @Override
+  public List&lt;String&gt; getOAuthScopesForU2M() throws DatabricksParsingException {
+<span class="fc bfc" id="L220" title="All 2 branches covered.">    if (getCloud().equals(&quot;AWS&quot;)) {</span>
+<span class="fc" id="L221">      return Arrays.asList(</span>
+          DatabricksJdbcConstants.SQL_SCOPE, DatabricksJdbcConstants.OFFLINE_ACCESS_SCOPE);
+    } else {
+      // Default scope is already being set for Azure in databricks-sdk.
+<span class="fc" id="L225">      return null;</span>
+    }
+  }
+
+  @Override
+  public String getClientSecret() {
+<span class="fc" id="L231">    return getParameter(DatabricksJdbcConstants.CLIENT_SECRET);</span>
+  }
+
+  private String getParameter(String key) {
+<span class="fc" id="L235">    return this.parameters.getOrDefault(key.toLowerCase(), null);</span>
+  }
+
+  private String getParameter(String key, String defaultValue) {
+<span class="fc" id="L239">    return this.parameters.getOrDefault(key.toLowerCase(), defaultValue);</span>
+  }
+
+  @Override
+  public AuthFlow getAuthFlow() {
+<span class="fc" id="L244">    String authFlow = getParameter(DatabricksJdbcConstants.AUTH_FLOW);</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">    if (nullOrEmptyString(authFlow)) return AuthFlow.TOKEN_PASSTHROUGH;</span>
+<span class="fc" id="L246">    return AuthFlow.values()[Integer.parseInt(authFlow)];</span>
+  }
+
+  @Override
+  public AuthMech getAuthMech() {
+<span class="fc" id="L251">    String authMech = getParameter(DatabricksJdbcConstants.AUTH_MECH);</span>
+<span class="fc" id="L252">    return AuthMech.parseAuthMech(authMech);</span>
+  }
+
+  @Override
+  public Level getLogLevel() {
+<span class="fc" id="L257">    String logLevel = getParameter(DatabricksJdbcConstants.LOG_LEVEL);</span>
+<span class="fc bfc" id="L258" title="All 2 branches covered.">    if (nullOrEmptyString(logLevel)) {</span>
+<span class="fc" id="L259">      LOGGER.debug(&quot;No logLevel given in the input, defaulting to info.&quot;);</span>
+<span class="fc" id="L260">      return DEFAULT_LOG_LEVEL;</span>
+    }
+    try {
+<span class="fc" id="L263">      return getLogLevel(Integer.parseInt(logLevel));</span>
+<span class="fc" id="L264">    } catch (NumberFormatException e) {</span>
+<span class="fc" id="L265">      LOGGER.debug(&quot;Input log level is not an integer, parsing string.&quot;);</span>
+<span class="fc" id="L266">      logLevel = logLevel.toUpperCase();</span>
+    }
+
+    try {
+<span class="fc" id="L270">      return Level.valueOf(logLevel);</span>
+<span class="fc" id="L271">    } catch (Exception e) {</span>
+<span class="fc" id="L272">      LOGGER.debug(&quot;Invalid logLevel given in the input, defaulting to info.&quot;);</span>
+<span class="fc" id="L273">      return DEFAULT_LOG_LEVEL;</span>
+    }
+  }
+
+  @Override
+  public String getLogPathString() {
+<span class="fc" id="L279">    String parameter = getParameter(LOG_PATH);</span>
+<span class="fc bfc" id="L280" title="All 2 branches covered.">    return (parameter == null) ? DEFAULT_LOG_PATH : parameter;</span>
+  }
+
+  @Override
+  public int getLogFileSize() {
+<span class="nc" id="L285">    String parameter = getParameter(LOG_FILE_SIZE);</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">    return (parameter == null) ? DEFAULT_LOG_FILE_SIZE_IN_MB : Integer.parseInt(parameter);</span>
+  }
+
+  @Override
+  public int getLogFileCount() {
+<span class="nc" id="L291">    String parameter = getParameter(LOG_FILE_COUNT);</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">    return (parameter == null) ? DEFAULT_LOG_FILE_COUNT : Integer.parseInt(parameter);</span>
+  }
+
+  @Override
+  public String getClientUserAgent() {
+<span class="fc" id="L297">    String customerUserAgent = getParameter(DatabricksJdbcConstants.USER_AGENT_ENTRY);</span>
+    String clientAgent =
+<span class="fc bfc" id="L299" title="All 2 branches covered.">        getClientType().equals(DatabricksClientType.SQL_EXEC)</span>
+<span class="fc" id="L300">            ? DatabricksJdbcConstants.USER_AGENT_SEA_CLIENT</span>
+<span class="fc" id="L301">            : DatabricksJdbcConstants.USER_AGENT_THRIFT_CLIENT;</span>
+<span class="fc bfc" id="L302" title="All 2 branches covered.">    return nullOrEmptyString(customerUserAgent)</span>
+<span class="fc" id="L303">        ? clientAgent</span>
+<span class="fc" id="L304">        : clientAgent + &quot; &quot; + customerUserAgent;</span>
+  }
+
+  // TODO: Make use of compression type
+  @Override
+  public CompressionType getCompressionType() {
+<span class="fc" id="L310">    String compressionType =</span>
+<span class="fc" id="L311">        Optional.ofNullable(getParameter(DatabricksJdbcConstants.LZ4_COMPRESSION_FLAG))</span>
+<span class="fc" id="L312">            .orElse(getParameter(DatabricksJdbcConstants.COMPRESSION_FLAG));</span>
+<span class="fc" id="L313">    return CompressionType.parseCompressionType(compressionType);</span>
+  }
+
+  @Override
+  public DatabricksClientType getClientType() {
+<span class="fc bfc" id="L318" title="All 2 branches covered.">    if (computeResource instanceof AllPurposeCluster) {</span>
+<span class="fc" id="L319">      return DatabricksClientType.THRIFT;</span>
+    }
+<span class="fc" id="L321">    String useThriftClient = getParameter(DatabricksJdbcConstants.USE_THRIFT_CLIENT);</span>
+<span class="fc bfc" id="L322" title="All 4 branches covered.">    if (useThriftClient != null &amp;&amp; useThriftClient.equals(&quot;1&quot;)) {</span>
+<span class="fc" id="L323">      return DatabricksClientType.THRIFT;</span>
+    }
+<span class="fc" id="L325">    return DatabricksClientType.SQL_EXEC;</span>
+  }
+
+  @Override
+  public Boolean getUseLegacyMetadata() {
+    // Defaults to use legacy metadata client
+<span class="fc" id="L331">    return Objects.equals(getParameter(USE_LEGACY_METADATA, &quot;0&quot;), &quot;1&quot;);</span>
+  }
+
+  @Override
+  public int getCloudFetchThreadPoolSize() {
+    try {
+<span class="fc" id="L337">      return Integer.parseInt(</span>
+<span class="fc" id="L338">          getParameter(</span>
+<span class="fc" id="L339">              CLOUD_FETCH_THREAD_POOL_SIZE, String.valueOf(CLOUD_FETCH_THREAD_POOL_SIZE_DEFAULT)));</span>
+<span class="nc" id="L340">    } catch (NumberFormatException e) {</span>
+<span class="nc" id="L341">      LOGGER.debug(&quot;Invalid thread pool size, defaulting to default thread pool size.&quot;);</span>
+<span class="nc" id="L342">      return CLOUD_FETCH_THREAD_POOL_SIZE_DEFAULT;</span>
+    }
+  }
+
+  private static boolean nullOrEmptyString(String s) {
+<span class="fc bfc" id="L347" title="All 4 branches covered.">    return s == null || s.isEmpty();</span>
+  }
+
+  @Override
+  public String getCatalog() {
+<span class="fc" id="L352">    return Optional.ofNullable(getParameter(CATALOG, getParameter(CONN_CATALOG)))</span>
+<span class="fc" id="L353">        .orElse(DEFAULT_CATALOG);</span>
+  }
+
+  @Override
+  public String getSchema() {
+<span class="fc" id="L358">    return Optional.ofNullable(getParameter(CONN_SCHEMA, getParameter(SCHEMA)))</span>
+<span class="fc" id="L359">        .orElse(DEFAULT_SCHEMA);</span>
+  }
+
+  @Override
+  public Map&lt;String, String&gt; getSessionConfigs() {
+<span class="fc" id="L364">    return this.parameters.entrySet().stream()</span>
+<span class="fc" id="L365">        .filter(</span>
+            e -&gt;
+<span class="fc" id="L367">                ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.keySet().stream()</span>
+<span class="fc" id="L368">                    .anyMatch(allowedConf -&gt; allowedConf.toLowerCase().equals(e.getKey())))</span>
+<span class="fc" id="L369">        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));</span>
+  }
+
+  @Override
+  public boolean isAllPurposeCluster() {
+<span class="fc" id="L374">    return this.computeResource instanceof AllPurposeCluster;</span>
+  }
+
+  @Override
+  public String getProxyHost() {
+<span class="fc" id="L379">    return getParameter(DatabricksJdbcConstants.PROXY_HOST);</span>
+  }
+
+  @Override
+  public int getProxyPort() {
+<span class="fc" id="L384">    return Integer.parseInt(getParameter(DatabricksJdbcConstants.PROXY_PORT));</span>
+  }
+
+  @Override
+  public String getProxyUser() {
+<span class="fc" id="L389">    return getParameter(DatabricksJdbcConstants.PROXY_USER);</span>
+  }
+
+  @Override
+  public String getProxyPassword() {
+<span class="fc" id="L394">    return getParameter(DatabricksJdbcConstants.PROXY_PWD);</span>
+  }
+
+  @Override
+  public Boolean getUseProxy() {
+<span class="fc" id="L399">    return Objects.equals(getParameter(USE_PROXY), &quot;1&quot;);</span>
+  }
+
+  @Override
+  public Boolean getUseProxyAuth() {
+<span class="fc" id="L404">    return Objects.equals(getParameter(USE_PROXY_AUTH), &quot;1&quot;);</span>
+  }
+
+  @Override
+  public Boolean getUseSystemProxy() {
+<span class="fc" id="L409">    return Objects.equals(getParameter(USE_SYSTEM_PROXY), &quot;1&quot;);</span>
+  }
+
+  @Override
+  public Boolean getUseCloudFetchProxy() {
+<span class="fc" id="L414">    return Objects.equals(getParameter(USE_CF_PROXY), &quot;1&quot;);</span>
+  }
+
+  @Override
+  public String getCloudFetchProxyHost() {
+<span class="fc" id="L419">    return getParameter(CF_PROXY_HOST);</span>
+  }
+
+  @Override
+  public int getCloudFetchProxyPort() {
+<span class="fc" id="L424">    return Integer.parseInt(getParameter(CF_PROXY_PORT));</span>
+  }
+
+  @Override
+  public String getCloudFetchProxyUser() {
+<span class="fc" id="L429">    return getParameter(CF_PROXY_USER);</span>
+  }
+
+  @Override
+  public String getCloudFetchProxyPassword() {
+<span class="fc" id="L434">    return getParameter(CF_PROXY_PWD);</span>
+  }
+
+  @Override
+  public Boolean getUseCloudFetchProxyAuth() {
+<span class="fc" id="L439">    return Objects.equals(getParameter(USE_CF_PROXY_AUTH), &quot;1&quot;);</span>
+  }
+
+  @Override
+  public Boolean shouldEnableArrow() {
+<span class="fc" id="L444">    return Objects.equals(getParameter(ENABLE_ARROW, &quot;1&quot;), &quot;1&quot;);</span>
+  }
+
+  @Override
+  public String getEndpointURL() throws DatabricksParsingException {
+<span class="fc" id="L449">    return String.format(&quot;%s/%s&quot;, this.getHostUrl(), this.getHttpPath());</span>
+  }
+
+  @VisibleForTesting
+  static Level getLogLevel(int level) {
+<span class="fc bfc" id="L454" title="All 8 branches covered.">    switch (level) {</span>
+      case 0:
+<span class="fc" id="L456">        return Level.OFF;</span>
+      case 1:
+<span class="fc" id="L458">        return Level.FATAL;</span>
+      case 2:
+<span class="fc" id="L460">        return Level.ERROR;</span>
+      case 3:
+<span class="fc" id="L462">        return Level.WARN;</span>
+      case 4:
+<span class="fc" id="L464">        return Level.INFO;</span>
+      case 5:
+<span class="fc" id="L466">        return Level.DEBUG;</span>
+      case 6:
+<span class="fc" id="L468">        return Level.TRACE;</span>
+      default:
+<span class="fc" id="L470">        LOGGER.debug(&quot;Invalid logLevel, defaulting to default log level.&quot;);</span>
+<span class="fc" id="L471">        return DEFAULT_LOG_LEVEL;</span>
+    }
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

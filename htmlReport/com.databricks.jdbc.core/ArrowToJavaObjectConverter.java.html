@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArrowToJavaObjectConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core</a> &gt; <span class="el_source">ArrowToJavaObjectConverter.java</span></div><h1>ArrowToJavaObjectConverter.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core;
+
+import com.databricks.sdk.service.sql.ColumnInfoTypeName;
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.List;
+import org.apache.arrow.vector.util.Text;
+
+<span class="nc" id="L16">public class ArrowToJavaObjectConverter {</span>
+<span class="fc" id="L17">  private static List&lt;DateTimeFormatter&gt; DATE_FORMATTERS =</span>
+<span class="fc" id="L18">      Arrays.asList(</span>
+<span class="fc" id="L19">          DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd&quot;),</span>
+<span class="fc" id="L20">          DateTimeFormatter.ofPattern(&quot;yyyy/MM/dd&quot;),</span>
+          DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+<span class="fc" id="L22">          DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd HH:mm:ss&quot;),</span>
+<span class="fc" id="L23">          DateTimeFormatter.ofPattern(&quot;yyyy/MM/dd HH:mm:ss&quot;));</span>
+
+  // TODO (Madhav): Check Arrow to JSON conversion
+  public static Object convert(Object object, ColumnInfoTypeName requiredType)
+      throws DatabricksSQLException {
+<span class="fc bfc" id="L28" title="All 2 branches covered.">    if (object == null) {</span>
+<span class="fc" id="L29">      return null;</span>
+    }
+<span class="pc bpc" id="L31" title="2 of 15 branches missed.">    switch (requiredType) {</span>
+      case BYTE:
+<span class="fc" id="L33">        return convertToByte(object);</span>
+      case SHORT:
+<span class="fc" id="L35">        return convertToShort(object);</span>
+      case INT:
+<span class="fc" id="L37">        return convertToInteger(object);</span>
+      case LONG:
+<span class="fc" id="L39">        return convertToLong(object);</span>
+      case FLOAT:
+<span class="fc" id="L41">        return convertToFloat(object);</span>
+      case DOUBLE:
+<span class="fc" id="L43">        return convertToDouble(object);</span>
+      case DECIMAL:
+<span class="fc" id="L45">        return convertToBigDecimal(object);</span>
+      case BINARY:
+<span class="fc" id="L47">        return convertToByteArray(object);</span>
+      case BOOLEAN:
+<span class="fc" id="L49">        return convertToBoolean(object);</span>
+      case CHAR:
+<span class="fc" id="L51">        return convertToChar(object);</span>
+      case STRING:
+        // Struct and Array are present in Arrow data in the VARCHAR ValueVector format
+      case STRUCT:
+      case ARRAY:
+<span class="fc" id="L56">        return convertToString(object);</span>
+      case DATE:
+<span class="fc" id="L58">        return convertToDate(object);</span>
+      case TIMESTAMP:
+<span class="fc" id="L60">        return convertToTimestamp(object);</span>
+      case NULL:
+<span class="nc" id="L62">        return null;</span>
+      default:
+<span class="nc" id="L64">        throw new DatabricksSQLException(&quot;Unsupported type&quot;);</span>
+    }
+  }
+
+  private static Object convertToTimestamp(Object object) throws DatabricksSQLException {
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">    if (object instanceof Text) {</span>
+<span class="nc" id="L70">      return convertArrowTextToTimestamp(object.toString());</span>
+    }
+    // Divide by 1000 since we need to convert from microseconds to milliseconds.
+    Instant instant =
+<span class="fc" id="L74">        Instant.ofEpochMilli(</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">            object instanceof Integer ? ((int) object) / 1000 : ((long) object) / 1000);</span>
+<span class="fc" id="L76">    return Timestamp.from(instant);</span>
+  }
+
+  private static Object convertArrowTextToTimestamp(String arrowText)
+      throws DatabricksSQLException {
+<span class="nc" id="L81">    LocalDateTime localDateTime = parseDate(arrowText);</span>
+<span class="nc" id="L82">    return Timestamp.valueOf(localDateTime);</span>
+  }
+
+  private static LocalDateTime parseDate(String text) throws DatabricksSQLException {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">    for (DateTimeFormatter formatter : DATE_FORMATTERS) {</span>
+      try {
+<span class="nc" id="L88">        return LocalDateTime.parse(text, formatter);</span>
+<span class="nc" id="L89">      } catch (DateTimeParseException e) {</span>
+        // Continue to try the next format
+      }
+<span class="nc" id="L92">    }</span>
+<span class="nc" id="L93">    throw new DatabricksSQLException(&quot;Unsupported text for conversion: &quot; + text);</span>
+  }
+
+  private static Date convertToDate(Object object) throws DatabricksSQLException {
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">    if (object instanceof Text) {</span>
+<span class="nc" id="L98">      LocalDateTime localDateTime = parseDate(object.toString());</span>
+<span class="nc" id="L99">      return java.sql.Date.valueOf(localDateTime.toLocalDate());</span>
+    }
+<span class="fc" id="L101">    LocalDate localDate = LocalDate.ofEpochDay((int) object);</span>
+<span class="fc" id="L102">    return Date.valueOf(localDate);</span>
+  }
+
+  private static char convertToChar(Object object) throws DatabricksSQLException {
+<span class="fc" id="L106">    return (object.toString()).charAt(0);</span>
+  }
+
+  private static String convertToString(Object object) throws DatabricksSQLException {
+<span class="fc" id="L110">    return object.toString();</span>
+  }
+
+  private static boolean convertToBoolean(Object object) throws DatabricksSQLException {
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">    if (object instanceof Text) {</span>
+<span class="nc" id="L115">      return Boolean.parseBoolean(object.toString());</span>
+    }
+<span class="fc" id="L117">    return (boolean) object;</span>
+  }
+
+  private static byte[] convertToByteArray(Object object) throws DatabricksSQLException {
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">    if (object instanceof Text) {</span>
+<span class="nc" id="L122">      return object.toString().getBytes();</span>
+    }
+<span class="fc" id="L124">    return (byte[]) object;</span>
+  }
+
+  private static byte convertToByte(Object object) throws DatabricksSQLException {
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">    if (object instanceof Text) {</span>
+<span class="nc" id="L129">      return Byte.parseByte(object.toString());</span>
+    }
+<span class="fc" id="L131">    return (byte) object;</span>
+  }
+
+  private static short convertToShort(Object object) throws DatabricksSQLException {
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">    if (object instanceof Text) {</span>
+<span class="nc" id="L136">      return Short.parseShort(object.toString());</span>
+    }
+<span class="fc" id="L138">    return (short) object;</span>
+  }
+
+  private static BigDecimal convertToBigDecimal(Object object) throws DatabricksSQLException {
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">    if (object instanceof Text) {</span>
+<span class="nc" id="L143">      return new BigDecimal(object.toString());</span>
+    }
+<span class="fc" id="L145">    return (BigDecimal) object;</span>
+  }
+
+  private static double convertToDouble(Object object) throws DatabricksSQLException {
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">    if (object instanceof Text) {</span>
+<span class="nc" id="L150">      return Double.parseDouble(object.toString());</span>
+    }
+<span class="fc" id="L152">    return (double) object;</span>
+  }
+
+  private static float convertToFloat(Object object) throws DatabricksSQLException {
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">    if (object instanceof Text) {</span>
+<span class="nc" id="L157">      return Float.parseFloat(object.toString());</span>
+    }
+<span class="fc" id="L159">    return (float) object;</span>
+  }
+
+  private static int convertToInteger(Object object) throws DatabricksSQLException {
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">    if (object instanceof Text) {</span>
+<span class="nc" id="L164">      Integer.parseInt(object.toString());</span>
+    }
+<span class="fc" id="L166">    return (int) object;</span>
+  }
+
+  private static long convertToLong(Object object) throws DatabricksSQLException {
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">    if (object instanceof Text) {</span>
+<span class="nc" id="L171">      Long.parseLong(object.toString());</span>
+    }
+<span class="fc" id="L173">    return (long) object;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

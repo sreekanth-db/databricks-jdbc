@@ -45,8 +45,9 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     checkIfClosed();
-    if(!shouldReturnResultSet(sql)) {
-      throw new DatabricksSQLException("A ResultSet was expected but not generated from query: " + sql);
+    if (!shouldReturnResultSet(sql)) {
+      throw new DatabricksSQLException(
+          "A ResultSet was expected but not generated from query: " + sql);
     }
     return executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.QUERY);
   }
@@ -192,7 +193,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
           System.out.print(columnValue + "\t\t");
         } catch (Exception e) {
           System.out.print(
-                  "NULL\t\t"); // It is possible for certain columns to be non-existent (edge case)
+              "NULL\t\t"); // It is possible for certain columns to be non-existent (edge case)
         }
       }
       System.out.println();
@@ -512,11 +513,11 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
     String trimmedQuery = query.trim().replaceAll("^(--.*|/\\*.*?\\*/)*", "").trim();
 
     // Check if the query matches any of the patterns that return a ResultSet
-    if (SELECT_PATTERN.matcher(trimmedQuery).find() ||
-            SHOW_PATTERN.matcher(trimmedQuery).find() ||
-            DESCRIBE_PATTERN.matcher(trimmedQuery).find() ||
-            EXPLAIN_PATTERN.matcher(trimmedQuery).find() ||
-            WITH_PATTERN.matcher(trimmedQuery).find()) {
+    if (SELECT_PATTERN.matcher(trimmedQuery).find()
+        || SHOW_PATTERN.matcher(trimmedQuery).find()
+        || DESCRIBE_PATTERN.matcher(trimmedQuery).find()
+        || EXPLAIN_PATTERN.matcher(trimmedQuery).find()
+        || WITH_PATTERN.matcher(trimmedQuery).find()) {
       return true;
     }
 

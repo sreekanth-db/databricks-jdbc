@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabricksThriftServiceClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.client.impl.thrift</a> &gt; <span class="el_source">DatabricksThriftServiceClient.java</span></div><h1>DatabricksThriftServiceClient.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.client.impl.thrift;
+
+import static com.databricks.jdbc.client.impl.helper.MetadataResultSetBuilder.*;
+import static com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftHelper.*;
+import static com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftHelper.byteBufferToString;
+import static com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftHelper.verifySuccessStatus;
+import static com.databricks.jdbc.commons.EnvironmentVariables.JDBC_THRIFT_VERSION;
+
+import com.databricks.jdbc.client.DatabricksClient;
+import com.databricks.jdbc.client.DatabricksMetadataClient;
+import com.databricks.jdbc.client.StatementType;
+import com.databricks.jdbc.client.impl.helper.MetadataResultSetBuilder;
+import com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftAccessor;
+import com.databricks.jdbc.client.impl.thrift.generated.*;
+import com.databricks.jdbc.client.sqlexec.ExternalLink;
+import com.databricks.jdbc.commons.CommandName;
+import com.databricks.jdbc.commons.MetricsList;
+import com.databricks.jdbc.core.*;
+import com.databricks.jdbc.core.types.ComputeResource;
+import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.databricks.jdbc.telemetry.DatabricksMetrics;
+import com.google.common.annotations.VisibleForTesting;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class DatabricksThriftServiceClient implements DatabricksClient, DatabricksMetadataClient {
+
+<span class="fc" id="L31">  private static final Logger LOGGER = LogManager.getLogger(DatabricksThriftServiceClient.class);</span>
+
+  private final DatabricksThriftAccessor thriftAccessor;
+  private final IDatabricksConnectionContext connectionContext;
+
+  public DatabricksThriftServiceClient(IDatabricksConnectionContext connectionContext)
+<span class="nc" id="L37">      throws DatabricksParsingException {</span>
+<span class="nc" id="L38">    this.connectionContext = connectionContext;</span>
+<span class="nc" id="L39">    this.thriftAccessor = new DatabricksThriftAccessor(connectionContext);</span>
+<span class="nc" id="L40">  }</span>
+
+  @VisibleForTesting
+  DatabricksThriftServiceClient(
+<span class="fc" id="L44">      DatabricksThriftAccessor thriftAccessor, IDatabricksConnectionContext connectionContext) {</span>
+<span class="fc" id="L45">    this.thriftAccessor = thriftAccessor;</span>
+<span class="fc" id="L46">    this.connectionContext = connectionContext;</span>
+<span class="fc" id="L47">  }</span>
+
+  private TNamespace getNamespace(String catalog, String schema) {
+<span class="fc" id="L50">    return new TNamespace().setCatalogName(catalog).setSchemaName(schema);</span>
+  }
+
+  @Override
+  public ImmutableSessionInfo createSession(
+      ComputeResource cluster, String catalog, String schema, Map&lt;String, String&gt; sessionConf)
+      throws DatabricksSQLException {
+<span class="fc" id="L57">    LOGGER.debug(</span>
+        &quot;public Session createSession(Compute cluster = {}, String catalog = {}, String schema = {}, Map&lt;String, String&gt; sessionConf = {})&quot;,
+<span class="fc" id="L59">        cluster.toString(),</span>
+        catalog,
+        schema,
+        sessionConf);
+<span class="fc" id="L63">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L64">    TOpenSessionReq openSessionReq =</span>
+        new TOpenSessionReq()
+<span class="fc" id="L66">            .setInitialNamespace(getNamespace(catalog, schema))</span>
+<span class="fc" id="L67">            .setConfiguration(sessionConf)</span>
+<span class="fc" id="L68">            .setCanUseMultipleCatalogs(true)</span>
+<span class="fc" id="L69">            .setClient_protocol_i64(JDBC_THRIFT_VERSION.getValue());</span>
+<span class="fc" id="L70">    TOpenSessionResp response =</span>
+        (TOpenSessionResp)
+<span class="fc" id="L72">            thriftAccessor.getThriftResponse(openSessionReq, CommandName.OPEN_SESSION, null);</span>
+<span class="fc" id="L73">    verifySuccessStatus(response.status.getStatusCode(), response.toString());</span>
+<span class="fc" id="L74">    String sessionId = byteBufferToString(response.sessionHandle.getSessionId().guid);</span>
+<span class="fc" id="L75">    LOGGER.info(&quot;Session created with ID {}&quot;, sessionId);</span>
+
+    ImmutableSessionInfo sessionInfo =
+<span class="fc" id="L78">        ImmutableSessionInfo.builder()</span>
+<span class="fc" id="L79">            .sessionId(sessionId)</span>
+<span class="fc" id="L80">            .sessionHandle(response.sessionHandle)</span>
+<span class="fc" id="L81">            .computeResource(cluster)</span>
+<span class="fc" id="L82">            .build();</span>
+<span class="fc" id="L83">    DatabricksMetrics.record(</span>
+<span class="fc" id="L84">        MetricsList.CREATE_SESSION_THRIFT.name(),</span>
+<span class="fc" id="L85">        (double) (System.currentTimeMillis() - startTime));</span>
+<span class="fc" id="L86">    return sessionInfo;</span>
+  }
+
+  @Override
+  public void deleteSession(IDatabricksSession session, ComputeResource cluster)
+      throws DatabricksSQLException {
+<span class="fc" id="L92">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L93">    LOGGER.debug(</span>
+        &quot;public void deleteSession(Session session = {}, Compute cluster = {})&quot;,
+<span class="fc" id="L95">        session.toString(),</span>
+<span class="fc" id="L96">        cluster.toString());</span>
+<span class="fc" id="L97">    TCloseSessionReq closeSessionReq =</span>
+<span class="fc" id="L98">        new TCloseSessionReq().setSessionHandle(session.getSessionInfo().sessionHandle());</span>
+<span class="fc" id="L99">    TCloseSessionResp response =</span>
+        (TCloseSessionResp)
+<span class="fc" id="L101">            thriftAccessor.getThriftResponse(closeSessionReq, CommandName.CLOSE_SESSION, null);</span>
+<span class="fc" id="L102">    verifySuccessStatus(response.status.getStatusCode(), response.toString());</span>
+<span class="fc" id="L103">    DatabricksMetrics.record(</span>
+<span class="fc" id="L104">        MetricsList.DELETE_SESSION_THRIFT.name(),</span>
+<span class="fc" id="L105">        (double) (System.currentTimeMillis() - startTime));</span>
+<span class="fc" id="L106">  }</span>
+
+  @Override
+  public DatabricksResultSet executeStatement(
+      String sql,
+      ComputeResource computeResource,
+      Map&lt;Integer, ImmutableSqlParameter&gt; parameters,
+      StatementType statementType,
+      IDatabricksSession session,
+      IDatabricksStatement parentStatement)
+      throws SQLException {
+    // Note that prepared statement is not supported by SEA/Thrift flow.
+<span class="fc" id="L118">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L119">    LOGGER.debug(</span>
+        &quot;public DatabricksResultSet executeStatement(String sql = {}, Compute cluster = {}, Map&lt;Integer, ImmutableSqlParameter&gt; parameters = {}, StatementType statementType = {}, IDatabricksSession session)&quot;,
+        sql,
+<span class="fc" id="L122">        computeResource.toString(),</span>
+<span class="fc" id="L123">        parameters.toString(),</span>
+        statementType);
+<span class="fc" id="L125">    TExecuteStatementReq request =</span>
+        new TExecuteStatementReq()
+<span class="fc" id="L127">            .setStatement(sql)</span>
+<span class="fc" id="L128">            .setSessionHandle(session.getSessionInfo().sessionHandle())</span>
+<span class="fc" id="L129">            .setCanReadArrowResult(this.connectionContext.shouldEnableArrow())</span>
+<span class="fc" id="L130">            .setCanDownloadResult(true);</span>
+<span class="fc" id="L131">    DatabricksResultSet resultSet =</span>
+<span class="fc" id="L132">        thriftAccessor.execute(request, parentStatement, session, statementType);</span>
+<span class="fc" id="L133">    DatabricksMetrics.record(</span>
+<span class="fc" id="L134">        MetricsList.EXECUTE_STATEMENT_THRIFT.name(),</span>
+<span class="fc" id="L135">        (double) (System.currentTimeMillis() - startTime));</span>
+<span class="fc" id="L136">    return resultSet;</span>
+  }
+
+  @Override
+  public void closeStatement(String statementId) throws DatabricksSQLException {
+<span class="fc" id="L141">    LOGGER.debug(</span>
+        &quot;public void closeStatement(String statementId = {}) for all purpose cluster&quot;, statementId);
+<span class="fc" id="L143">    throw new DatabricksSQLFeatureNotImplementedException(</span>
+        &quot;closeStatement for all purpose cluster not implemented&quot;);
+  }
+
+  @Override
+  public void cancelStatement(String statementId) throws DatabricksSQLException {
+<span class="nc" id="L149">    LOGGER.debug(</span>
+        &quot;public void cancelStatement(String statementId = {}) for all purpose cluster&quot;,
+        statementId);
+<span class="nc" id="L152">    throw new DatabricksSQLFeatureNotImplementedException(</span>
+        &quot;abortStatement for all purpose cluster not implemented&quot;);
+  }
+
+  @Override
+  public Collection&lt;ExternalLink&gt; getResultChunks(String statementId, long chunkIndex)
+      throws DatabricksSQLException {
+<span class="fc" id="L159">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L160">    String context =</span>
+<span class="fc" id="L161">        String.format(</span>
+            &quot;public Optional&lt;ExternalLink&gt; getResultChunk(String statementId = {%s}, long chunkIndex = {%s}) for all purpose cluster&quot;,
+<span class="fc" id="L163">            statementId, chunkIndex);</span>
+<span class="fc" id="L164">    LOGGER.debug(context);</span>
+<span class="fc" id="L165">    THandleIdentifier handleIdentifier = new THandleIdentifier().setGuid(statementId.getBytes());</span>
+<span class="fc" id="L166">    TOperationHandle operationHandle =</span>
+<span class="fc" id="L167">        new TOperationHandle().setOperationId(handleIdentifier).setHasResultSet(false);</span>
+<span class="fc" id="L168">    TFetchResultsResp fetchResultsResp = thriftAccessor.getResultSetResp(operationHandle, context);</span>
+<span class="fc bfc" id="L169" title="All 4 branches covered.">    if (chunkIndex &lt; 0 || fetchResultsResp.getResults().getResultLinksSize() &lt;= chunkIndex) {</span>
+<span class="fc" id="L170">      String error = String.format(&quot;Out of bounds error for chunkIndex. Context: %s&quot;, context);</span>
+<span class="fc" id="L171">      LOGGER.error(error);</span>
+<span class="fc" id="L172">      throw new DatabricksSQLException(error);</span>
+    }
+<span class="fc" id="L174">    AtomicInteger index = new AtomicInteger(0);</span>
+<span class="fc" id="L175">    List&lt;ExternalLink&gt; externalLinks = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L176">    fetchResultsResp</span>
+<span class="fc" id="L177">        .getResults()</span>
+<span class="fc" id="L178">        .getResultLinks()</span>
+<span class="fc" id="L179">        .forEach(</span>
+            resultLink -&gt; {
+<span class="fc" id="L181">              externalLinks.add(createExternalLink(resultLink, index.getAndIncrement()));</span>
+<span class="fc" id="L182">            });</span>
+<span class="fc" id="L183">    DatabricksMetrics.record(</span>
+<span class="fc" id="L184">        MetricsList.GET_RESULT_CHUNK_THRIFT.name(),</span>
+<span class="fc" id="L185">        (double) (System.currentTimeMillis() - startTime));</span>
+<span class="fc" id="L186">    return externalLinks;</span>
+  }
+
+  @Override
+  public DatabricksResultSet listTypeInfo(IDatabricksSession session)
+      throws DatabricksSQLException {
+<span class="fc" id="L192">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L193">    LOGGER.debug(&quot;public ResultSet getTypeInfo()&quot;);</span>
+<span class="fc" id="L194">    TGetTypeInfoReq request =</span>
+<span class="fc" id="L195">        new TGetTypeInfoReq().setSessionHandle(session.getSessionInfo().sessionHandle());</span>
+<span class="fc" id="L196">    TFetchResultsResp response =</span>
+        (TFetchResultsResp)
+<span class="fc" id="L198">            thriftAccessor.getThriftResponse(request, CommandName.LIST_TYPE_INFO, null);</span>
+<span class="fc" id="L199">    DatabricksResultSet resultSet =</span>
+<span class="fc" id="L200">        getTypeInfoResult(extractValues(response.getResults().getColumns()));</span>
+<span class="fc" id="L201">    DatabricksMetrics.record(</span>
+<span class="fc" id="L202">        MetricsList.LIST_TYPE_INFO_THRIFT.name(),</span>
+<span class="fc" id="L203">        (double) (System.currentTimeMillis() - startTime));</span>
+<span class="fc" id="L204">    return resultSet;</span>
+  }
+
+  @Override
+  public DatabricksResultSet listCatalogs(IDatabricksSession session) throws SQLException {
+<span class="fc" id="L209">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L210">    String context =</span>
+<span class="fc" id="L211">        String.format(</span>
+<span class="fc" id="L212">            &quot;Fetching catalogs for all purpose cluster. Session {%s}&quot;, session.toString());</span>
+<span class="fc" id="L213">    LOGGER.debug(context);</span>
+<span class="fc" id="L214">    TGetCatalogsReq request =</span>
+<span class="fc" id="L215">        new TGetCatalogsReq().setSessionHandle(session.getSessionInfo().sessionHandle());</span>
+<span class="fc" id="L216">    TFetchResultsResp response =</span>
+        (TFetchResultsResp)
+<span class="fc" id="L218">            thriftAccessor.getThriftResponse(request, CommandName.LIST_CATALOGS, null);</span>
+<span class="fc" id="L219">    DatabricksResultSet resultSet =</span>
+<span class="fc" id="L220">        getCatalogsResult(extractValuesColumnar(response.getResults().getColumns()));</span>
+<span class="fc" id="L221">    DatabricksMetrics.record(</span>
+<span class="fc" id="L222">        MetricsList.LIST_CATALOGS_THRIFT.name(), (double) (System.currentTimeMillis() - startTime));</span>
+<span class="fc" id="L223">    return resultSet;</span>
+  }
+
+  @Override
+  public DatabricksResultSet listSchemas(
+      IDatabricksSession session, String catalog, String schemaNamePattern) throws SQLException {
+<span class="fc" id="L229">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L230">    String context =</span>
+<span class="fc" id="L231">        String.format(</span>
+            &quot;Fetching schemas for all purpose cluster. Session {%s}, catalog {%s}, schemaNamePattern {%s}&quot;,
+<span class="fc" id="L233">            session.toString(), catalog, schemaNamePattern);</span>
+<span class="fc" id="L234">    LOGGER.debug(context);</span>
+<span class="fc" id="L235">    TGetSchemasReq request =</span>
+        new TGetSchemasReq()
+<span class="fc" id="L237">            .setSessionHandle(session.getSessionInfo().sessionHandle())</span>
+<span class="fc" id="L238">            .setCatalogName(catalog);</span>
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">    if (schemaNamePattern != null) {</span>
+<span class="fc" id="L240">      request.setSchemaName(schemaNamePattern);</span>
+    }
+<span class="fc" id="L242">    TFetchResultsResp response =</span>
+        (TFetchResultsResp)
+<span class="fc" id="L244">            thriftAccessor.getThriftResponse(request, CommandName.LIST_SCHEMAS, null);</span>
+<span class="fc" id="L245">    DatabricksResultSet resultSet =</span>
+<span class="fc" id="L246">        getSchemasResult(extractValuesColumnar(response.getResults().getColumns()));</span>
+<span class="fc" id="L247">    DatabricksMetrics.record(</span>
+<span class="fc" id="L248">        MetricsList.LIST_SCHEMAS_THRIFT.name(), (double) (System.currentTimeMillis() - startTime));</span>
+<span class="fc" id="L249">    return resultSet;</span>
+  }
+
+  @Override
+  public DatabricksResultSet listTables(
+      IDatabricksSession session,
+      String catalog,
+      String schemaNamePattern,
+      String tableNamePattern,
+      String[] tableTypes)
+      throws SQLException {
+<span class="fc" id="L260">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L261">    String context =</span>
+<span class="fc" id="L262">        String.format(</span>
+            &quot;Fetching tables for all purpose cluster. Session {%s}, catalog {%s}, schemaNamePattern {%s}, tableNamePattern {%s}&quot;,
+<span class="fc" id="L264">            session.toString(), catalog, schemaNamePattern, tableNamePattern);</span>
+<span class="fc" id="L265">    LOGGER.debug(context);</span>
+<span class="fc" id="L266">    TGetTablesReq request =</span>
+        new TGetTablesReq()
+<span class="fc" id="L268">            .setSessionHandle(session.getSessionInfo().sessionHandle())</span>
+<span class="fc" id="L269">            .setCatalogName(catalog)</span>
+<span class="fc" id="L270">            .setSchemaName(schemaNamePattern)</span>
+<span class="fc" id="L271">            .setTableName(tableNamePattern);</span>
+<span class="pc bpc" id="L272" title="1 of 2 branches missed.">    if (tableTypes != null) {</span>
+<span class="fc" id="L273">      request.setTableTypes(Arrays.asList(tableTypes));</span>
+    }
+<span class="fc" id="L275">    TFetchResultsResp response =</span>
+        (TFetchResultsResp)
+<span class="fc" id="L277">            thriftAccessor.getThriftResponse(request, CommandName.LIST_TABLES, null);</span>
+<span class="fc" id="L278">    DatabricksResultSet resultSet =</span>
+<span class="fc" id="L279">        getTablesResult(extractValuesColumnar(response.getResults().getColumns()));</span>
+<span class="fc" id="L280">    DatabricksMetrics.record(</span>
+<span class="fc" id="L281">        MetricsList.LIST_TABLES_THRIFT.name(), (double) (System.currentTimeMillis() - startTime));</span>
+<span class="fc" id="L282">    return resultSet;</span>
+  }
+
+  @Override
+  public DatabricksResultSet listTableTypes(IDatabricksSession session)
+      throws DatabricksSQLException {
+<span class="fc" id="L288">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L289">    LOGGER.debug(&quot;Fetching table types for all purpose cluster. Session {}&quot;, session.toString());</span>
+<span class="fc" id="L290">    return MetadataResultSetBuilder.getTableTypesResult();</span>
+  }
+
+  @Override
+  public DatabricksResultSet listColumns(
+      IDatabricksSession session,
+      String catalog,
+      String schemaNamePattern,
+      String tableNamePattern,
+      String columnNamePattern)
+      throws DatabricksSQLException {
+<span class="fc" id="L301">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L302">    String context =</span>
+<span class="fc" id="L303">        String.format(</span>
+            &quot;Fetching columns for all purpose cluster. Session {%s}, catalog {%s}, schemaNamePattern {%s}, tableNamePattern {%s}, columnNamePattern {%s}&quot;,
+<span class="fc" id="L305">            session.toString(), catalog, schemaNamePattern, tableNamePattern, columnNamePattern);</span>
+<span class="fc" id="L306">    LOGGER.debug(context);</span>
+<span class="fc" id="L307">    TGetColumnsReq request =</span>
+        new TGetColumnsReq()
+<span class="fc" id="L309">            .setSessionHandle(session.getSessionInfo().sessionHandle())</span>
+<span class="fc" id="L310">            .setCatalogName(catalog)</span>
+<span class="fc" id="L311">            .setSchemaName(schemaNamePattern)</span>
+<span class="fc" id="L312">            .setTableName(tableNamePattern)</span>
+<span class="fc" id="L313">            .setColumnName(columnNamePattern);</span>
+<span class="fc" id="L314">    TFetchResultsResp response =</span>
+        (TFetchResultsResp)
+<span class="fc" id="L316">            thriftAccessor.getThriftResponse(request, CommandName.LIST_COLUMNS, null);</span>
+<span class="fc" id="L317">    DatabricksResultSet resultSet =</span>
+<span class="fc" id="L318">        getColumnsResult(extractValuesColumnar(response.getResults().getColumns()));</span>
+<span class="fc" id="L319">    DatabricksMetrics.record(</span>
+<span class="fc" id="L320">        MetricsList.LIST_COLUMNS_THRIFT.name(), (double) (System.currentTimeMillis() - startTime));</span>
+<span class="fc" id="L321">    return resultSet;</span>
+  }
+
+  @Override
+  public DatabricksResultSet listFunctions(
+      IDatabricksSession session,
+      String catalog,
+      String schemaNamePattern,
+      String functionNamePattern)
+      throws DatabricksSQLException {
+<span class="fc" id="L331">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L332">    String context =</span>
+<span class="fc" id="L333">        String.format(</span>
+            &quot;Fetching functions for all purpose cluster. Session {%s}, catalog {%s}, schemaNamePattern {%s}, functionNamePattern {%s}.&quot;,
+<span class="fc" id="L335">            session.toString(), catalog, schemaNamePattern, functionNamePattern);</span>
+<span class="fc" id="L336">    LOGGER.debug(context);</span>
+<span class="fc" id="L337">    TGetFunctionsReq request =</span>
+        new TGetFunctionsReq()
+<span class="fc" id="L339">            .setSessionHandle(session.getSessionInfo().sessionHandle())</span>
+<span class="fc" id="L340">            .setCatalogName(catalog)</span>
+<span class="fc" id="L341">            .setSchemaName(schemaNamePattern)</span>
+<span class="fc" id="L342">            .setFunctionName(functionNamePattern);</span>
+<span class="fc" id="L343">    TFetchResultsResp response =</span>
+        (TFetchResultsResp)
+<span class="fc" id="L345">            thriftAccessor.getThriftResponse(request, CommandName.LIST_FUNCTIONS, null);</span>
+<span class="fc" id="L346">    DatabricksResultSet resultSet =</span>
+<span class="fc" id="L347">        getFunctionsResult(extractValues(response.getResults().getColumns()));</span>
+<span class="fc" id="L348">    DatabricksMetrics.record(</span>
+<span class="fc" id="L349">        MetricsList.LIST_FUNCTIONS_THRIFT.name(),</span>
+<span class="fc" id="L350">        (double) (System.currentTimeMillis() - startTime));</span>
+<span class="fc" id="L351">    return resultSet;</span>
+  }
+
+  @Override
+  public DatabricksResultSet listPrimaryKeys(
+      IDatabricksSession session, String catalog, String schema, String table) throws SQLException {
+<span class="fc" id="L357">    long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L358">    String context =</span>
+<span class="fc" id="L359">        String.format(</span>
+            &quot;Fetching primary keys for all purpose cluster. session {%s}, catalog {%s}, schema {%s}, table {%s}&quot;,
+<span class="fc" id="L361">            session.toString(), catalog, schema, table);</span>
+<span class="fc" id="L362">    LOGGER.debug(context);</span>
+<span class="fc" id="L363">    TGetPrimaryKeysReq request =</span>
+        new TGetPrimaryKeysReq()
+<span class="fc" id="L365">            .setSessionHandle(session.getSessionInfo().sessionHandle())</span>
+<span class="fc" id="L366">            .setCatalogName(catalog)</span>
+<span class="fc" id="L367">            .setSchemaName(schema)</span>
+<span class="fc" id="L368">            .setTableName(table);</span>
+<span class="fc" id="L369">    TFetchResultsResp response =</span>
+        (TFetchResultsResp)
+<span class="fc" id="L371">            thriftAccessor.getThriftResponse(request, CommandName.LIST_PRIMARY_KEYS, null);</span>
+<span class="fc" id="L372">    DatabricksResultSet resultSet =</span>
+<span class="fc" id="L373">        getPrimaryKeysResult(extractValues(response.getResults().getColumns()));</span>
+<span class="fc" id="L374">    DatabricksMetrics.record(</span>
+<span class="fc" id="L375">        MetricsList.LIST_PRIMARY_KEYS_THRIFT.name(),</span>
+<span class="fc" id="L376">        (double) (System.currentTimeMillis() - startTime));</span>
+<span class="fc" id="L377">    return resultSet;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

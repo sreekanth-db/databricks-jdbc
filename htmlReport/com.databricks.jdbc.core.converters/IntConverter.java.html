@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core.converters</a> &gt; <span class="el_source">IntConverter.java</span></div><h1>IntConverter.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core.converters;
+
+import com.databricks.jdbc.core.DatabricksSQLException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class IntConverter extends AbstractObjectConverter {
+
+<span class="fc" id="L16">  private static final Logger LOGGER = LogManager.getLogger(IntConverter.class);</span>
+  private int object;
+
+  public IntConverter(Object object) throws DatabricksSQLException {
+<span class="fc" id="L20">    super(object);</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">    if (object instanceof String) {</span>
+<span class="fc" id="L22">      this.object = Integer.parseInt((String) object);</span>
+    } else {
+<span class="fc" id="L24">      this.object = (int) object;</span>
+    }
+<span class="fc" id="L26">  }</span>
+
+  @Override
+  public BigInteger convertToBigInteger() throws DatabricksSQLException {
+<span class="nc" id="L30">    return BigInteger.valueOf(this.object);</span>
+  }
+
+  @Override
+  public int convertToInt() throws DatabricksSQLException {
+<span class="fc" id="L35">    return this.object;</span>
+  }
+
+  @Override
+  public boolean convertToBoolean() throws DatabricksSQLException {
+<span class="fc bfc" id="L40" title="All 2 branches covered.">    return (this.object == 0 ? false : true);</span>
+  }
+
+  @Override
+  public byte convertToByte() throws DatabricksSQLException {
+<span class="fc bfc" id="L45" title="All 4 branches covered.">    if (this.object &gt;= Byte.MIN_VALUE &amp;&amp; this.object &lt;= Byte.MAX_VALUE) {</span>
+<span class="fc" id="L46">      return (byte) this.object;</span>
+    }
+<span class="fc" id="L48">    throw new DatabricksSQLException(&quot;Invalid conversion&quot;);</span>
+  }
+
+  @Override
+  public short convertToShort() throws DatabricksSQLException {
+<span class="pc bpc" id="L53" title="1 of 4 branches missed.">    if (this.object &gt;= Short.MIN_VALUE &amp;&amp; this.object &lt;= Short.MAX_VALUE) {</span>
+<span class="fc" id="L54">      return (short) this.object;</span>
+    }
+<span class="fc" id="L56">    throw new DatabricksSQLException(&quot;Invalid conversion&quot;);</span>
+  }
+
+  @Override
+  public long convertToLong() throws DatabricksSQLException {
+<span class="fc" id="L61">    return (long) this.object;</span>
+  }
+
+  @Override
+  public float convertToFloat() throws DatabricksSQLException {
+<span class="fc" id="L66">    return (float) this.object;</span>
+  }
+
+  @Override
+  public double convertToDouble() throws DatabricksSQLException {
+<span class="fc" id="L71">    return (double) this.object;</span>
+  }
+
+  @Override
+  public BigDecimal convertToBigDecimal() throws DatabricksSQLException {
+<span class="fc" id="L76">    return BigDecimal.valueOf((long) this.object);</span>
+  }
+
+  @Override
+  public byte[] convertToByteArray() throws DatabricksSQLException {
+<span class="fc" id="L81">    return ByteBuffer.allocate(4).putInt(this.object).array();</span>
+  }
+
+  @Override
+  public String convertToString() throws DatabricksSQLException {
+<span class="fc" id="L86">    return String.valueOf(this.object);</span>
+  }
+
+  @Override
+  public Date convertToDate() throws DatabricksSQLException {
+<span class="fc" id="L91">    LocalDate localDate = LocalDate.ofEpochDay(this.object);</span>
+<span class="fc" id="L92">    return Date.valueOf(localDate);</span>
+  }
+
+  @Override
+  public Timestamp convertToTimestamp() throws DatabricksSQLException {
+<span class="fc" id="L97">    return convertToTimestamp(super.DEFAULT_TIMESTAMP_SCALE);</span>
+  }
+
+  @Override
+  public Timestamp convertToTimestamp(int scale) throws DatabricksSQLException {
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">    if (scale &gt; 9) {</span>
+<span class="nc" id="L103">      throw new DatabricksSQLException(&quot;Unsupported scale&quot;);</span>
+    }
+<span class="fc" id="L105">    long nanoseconds = (long) this.object * super.POWERS_OF_TEN[9 - scale];</span>
+<span class="fc" id="L106">    Time time = new Time(nanoseconds / super.POWERS_OF_TEN[6]);</span>
+<span class="fc" id="L107">    LOGGER.info(&quot;check timestamp &quot; + time.toString() + &quot; &quot; + time.toLocalTime().toString());</span>
+<span class="fc" id="L108">    return new Timestamp(time.getTime());</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommandBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.client.impl.helper</a> &gt; <span class="el_source">CommandBuilder.java</span></div><h1>CommandBuilder.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.client.impl.helper;
+
+import static com.databricks.jdbc.client.impl.helper.CommandConstants.*;
+import static com.databricks.jdbc.commons.util.ValidationUtil.throwErrorIfNull;
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
+
+import com.databricks.jdbc.commons.util.WildcardUtil;
+import com.databricks.jdbc.core.DatabricksSQLFeatureNotSupportedException;
+import com.databricks.jdbc.core.IDatabricksSession;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class CommandBuilder {
+<span class="fc" id="L17">  private static final Logger LOGGER = LogManager.getLogger(CommandBuilder.class);</span>
+<span class="fc" id="L18">  private String catalogName = null;</span>
+<span class="fc" id="L19">  private String schemaName = null;</span>
+<span class="fc" id="L20">  private String tableName = null;</span>
+<span class="fc" id="L21">  private String schemaPattern = null;</span>
+<span class="fc" id="L22">  private String tablePattern = null;</span>
+<span class="fc" id="L23">  private String columnPattern = null;</span>
+<span class="fc" id="L24">  private String functionPattern = null;</span>
+
+  private final String sessionContext;
+
+<span class="fc" id="L28">  public CommandBuilder(String catalogName, IDatabricksSession session) throws SQLException {</span>
+<span class="fc" id="L29">    this.sessionContext = session.toString();</span>
+<span class="fc" id="L30">    this.catalogName = catalogName;</span>
+<span class="fc" id="L31">  }</span>
+
+<span class="fc" id="L33">  public CommandBuilder(IDatabricksSession session) {</span>
+<span class="fc" id="L34">    this.sessionContext = session.toString();</span>
+<span class="fc" id="L35">  }</span>
+
+  public CommandBuilder setSchema(String schemaName) {
+<span class="fc" id="L38">    this.schemaName = schemaName;</span>
+<span class="fc" id="L39">    return this;</span>
+  }
+
+  public CommandBuilder setTable(String tableName) {
+<span class="fc" id="L43">    this.tableName = tableName;</span>
+<span class="fc" id="L44">    return this;</span>
+  }
+
+  public CommandBuilder setSchemaPattern(String pattern) {
+<span class="fc" id="L48">    this.schemaPattern = WildcardUtil.jdbcPatternToHive(pattern);</span>
+<span class="fc" id="L49">    LOGGER.debug(&quot;Schema pattern conversion {} -&gt; {}&quot;, pattern, schemaPattern);</span>
+<span class="fc" id="L50">    return this;</span>
+  }
+
+  public CommandBuilder setTablePattern(String pattern) {
+<span class="fc" id="L54">    this.tablePattern = WildcardUtil.jdbcPatternToHive(pattern);</span>
+<span class="fc" id="L55">    LOGGER.debug(&quot;Table pattern conversion {} -&gt; {}&quot;, pattern, tablePattern);</span>
+<span class="fc" id="L56">    return this;</span>
+  }
+
+  public CommandBuilder setColumnPattern(String pattern) {
+<span class="fc" id="L60">    this.columnPattern = WildcardUtil.jdbcPatternToHive(pattern);</span>
+<span class="fc" id="L61">    LOGGER.debug(&quot;Column pattern conversion {} -&gt; {}&quot;, pattern, columnPattern);</span>
+<span class="fc" id="L62">    return this;</span>
+  }
+
+  public CommandBuilder setFunctionPattern(String pattern) {
+<span class="fc" id="L66">    this.functionPattern = WildcardUtil.jdbcPatternToHive(pattern);</span>
+<span class="fc" id="L67">    LOGGER.debug(&quot;Function pattern conversion {} -&gt; {}&quot;, pattern, functionPattern);</span>
+<span class="fc" id="L68">    return this;</span>
+  }
+
+  private String fetchCatalogSQL() {
+<span class="fc" id="L72">    return SHOW_CATALOGS_SQL;</span>
+  }
+
+  private String fetchSchemaSQL() throws SQLException {
+<span class="fc" id="L76">    String contextString =</span>
+<span class="fc" id="L77">        String.format(</span>
+            &quot;Building command for fetching schema. Catalog %s, SchemaPattern %s and session context %s&quot;,
+            catalogName, schemaPattern, sessionContext);
+<span class="fc" id="L80">    LOGGER.debug(contextString);</span>
+<span class="fc" id="L81">    throwErrorIfNull(Collections.singletonMap(CATALOG, catalogName), contextString);</span>
+<span class="fc" id="L82">    String showSchemaSQL = String.format(SHOW_SCHEMA_IN_CATALOG_SQL, catalogName);</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">    if (!WildcardUtil.isNullOrEmpty(schemaPattern)) {</span>
+<span class="fc" id="L84">      showSchemaSQL += String.format(LIKE_SQL, schemaPattern);</span>
+    }
+<span class="fc" id="L86">    return showSchemaSQL;</span>
+  }
+
+  private String fetchTablesSQL() throws SQLException {
+<span class="fc" id="L90">    String contextString =</span>
+<span class="fc" id="L91">        String.format(</span>
+            &quot;Building command for fetching tables. Catalog %s, SchemaPattern %s, TablePattern %s and session context %s&quot;,
+            catalogName, schemaPattern, tablePattern, sessionContext);
+<span class="fc" id="L94">    LOGGER.debug(contextString);</span>
+<span class="fc" id="L95">    throwErrorIfNull(Collections.singletonMap(CATALOG, catalogName), contextString);</span>
+<span class="fc" id="L96">    String showTablesSQL = String.format(SHOW_TABLES_SQL, catalogName);</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">    if (!WildcardUtil.isNullOrEmpty(schemaPattern)) {</span>
+<span class="fc" id="L98">      showTablesSQL += String.format(SCHEMA_LIKE_SQL, schemaPattern);</span>
+    }
+<span class="fc bfc" id="L100" title="All 2 branches covered.">    if (!WildcardUtil.isNullOrEmpty(tablePattern)) {</span>
+<span class="fc" id="L101">      showTablesSQL += String.format(LIKE_SQL, tablePattern);</span>
+    }
+<span class="fc" id="L103">    return showTablesSQL;</span>
+  }
+
+  private String fetchColumnsSQL() throws SQLException {
+<span class="fc" id="L107">    String contextString =</span>
+<span class="fc" id="L108">        String.format(</span>
+            &quot;Building command for fetching columns. Catalog %s, SchemaPattern %s, TablePattern %s, ColumnPattern %s and session context : %s&quot;,
+            catalogName, schemaPattern, tablePattern, columnPattern, sessionContext);
+<span class="fc" id="L111">    LOGGER.debug(contextString);</span>
+<span class="fc" id="L112">    throwErrorIfNull(Collections.singletonMap(CATALOG, catalogName), contextString);</span>
+<span class="fc" id="L113">    String showColumnsSQL = String.format(SHOW_COLUMNS_SQL, catalogName);</span>
+
+<span class="fc bfc" id="L115" title="All 2 branches covered.">    if (!WildcardUtil.isNullOrEmpty(schemaPattern)) {</span>
+<span class="fc" id="L116">      showColumnsSQL += String.format(SCHEMA_LIKE_SQL, schemaPattern);</span>
+    }
+
+<span class="fc bfc" id="L119" title="All 2 branches covered.">    if (!WildcardUtil.isNullOrEmpty(tablePattern)) {</span>
+<span class="fc" id="L120">      showColumnsSQL += String.format(TABLE_LIKE_SQL, tablePattern);</span>
+    }
+
+<span class="fc bfc" id="L123" title="All 2 branches covered.">    if (!WildcardUtil.isNullOrEmpty(columnPattern)) {</span>
+<span class="fc" id="L124">      showColumnsSQL += String.format(LIKE_SQL, columnPattern);</span>
+    }
+<span class="fc" id="L126">    return showColumnsSQL;</span>
+  }
+
+  private String fetchFunctionsSQL() throws SQLException {
+<span class="fc" id="L130">    String contextString =</span>
+<span class="fc" id="L131">        String.format(</span>
+            &quot;Building command for fetching functions. Catalog %s, SchemaPattern %s, FunctionPattern %s. With session context %s&quot;,
+            catalogName, schemaPattern, functionPattern, sessionContext);
+
+<span class="fc" id="L135">    LOGGER.debug(contextString);</span>
+<span class="fc" id="L136">    throwErrorIfNull(Collections.singletonMap(CATALOG, catalogName), contextString);</span>
+<span class="fc" id="L137">    String showFunctionsSQL = String.format(SHOW_FUNCTIONS_SQL, catalogName);</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">    if (!WildcardUtil.isNullOrEmpty(schemaPattern)) {</span>
+<span class="fc" id="L139">      showFunctionsSQL += String.format(SCHEMA_LIKE_SQL, schemaPattern);</span>
+    }
+<span class="fc bfc" id="L141" title="All 2 branches covered.">    if (!WildcardUtil.isNullOrEmpty(functionPattern)) {</span>
+<span class="fc" id="L142">      showFunctionsSQL += String.format(LIKE_SQL, functionPattern);</span>
+    }
+<span class="fc" id="L144">    return showFunctionsSQL;</span>
+  }
+
+  private String fetchTableTypesSQL() {
+<span class="nc" id="L148">    return SHOW_TABLE_TYPES_SQL;</span>
+  }
+
+  private String fetchPrimaryKeysSQL() throws SQLException {
+<span class="fc" id="L152">    String contextString =</span>
+<span class="fc" id="L153">        String.format(</span>
+            &quot;Building command for fetching primary keys. Catalog %s, Schema %s, Table %s. With session context: %s&quot;,
+            catalogName, schemaName, tableName, sessionContext);
+<span class="fc" id="L156">    LOGGER.debug(contextString);</span>
+<span class="fc" id="L157">    HashMap&lt;String, String&gt; hashMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L158">    hashMap.put(CATALOG, catalogName);</span>
+<span class="fc" id="L159">    hashMap.put(SCHEMA, schemaName);</span>
+<span class="fc" id="L160">    hashMap.put(TABLE, tableName);</span>
+<span class="fc" id="L161">    throwErrorIfNull(hashMap, contextString);</span>
+<span class="fc" id="L162">    return String.format(SHOW_PRIMARY_KEYS_SQL, catalogName, schemaName, tableName);</span>
+  }
+
+  public String getSQLString(CommandName command) throws SQLException {
+<span class="pc bpc" id="L166" title="2 of 8 branches missed.">    switch (command) {</span>
+      case LIST_CATALOGS:
+<span class="fc" id="L168">        return fetchCatalogSQL();</span>
+      case LIST_PRIMARY_KEYS:
+<span class="fc" id="L170">        return fetchPrimaryKeysSQL();</span>
+      case LIST_SCHEMAS:
+<span class="fc" id="L172">        return fetchSchemaSQL();</span>
+      case LIST_TABLE_TYPES:
+<span class="nc" id="L174">        return fetchTableTypesSQL();</span>
+      case LIST_TABLES:
+<span class="fc" id="L176">        return fetchTablesSQL();</span>
+      case LIST_FUNCTIONS:
+<span class="fc" id="L178">        return fetchFunctionsSQL();</span>
+      case LIST_COLUMNS:
+<span class="fc" id="L180">        return fetchColumnsSQL();</span>
+    }
+<span class="nc" id="L182">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+<span class="nc" id="L183">        String.format(&quot;Invalid command issued %s. Context: %s&quot;, command, sessionContext));</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

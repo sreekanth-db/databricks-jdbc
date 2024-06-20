@@ -1,0 +1,597 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabricksConnection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core</a> &gt; <span class="el_source">DatabricksConnection.java</span></div><h1>DatabricksConnection.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core;
+
+import com.databricks.jdbc.client.DatabricksClient;
+import com.databricks.jdbc.commons.util.ValidationUtil;
+import com.databricks.jdbc.driver.DatabricksDriver;
+import com.databricks.jdbc.driver.DatabricksJdbcConstants;
+import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.google.common.annotations.VisibleForTesting;
+import java.sql.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+/** Implementation for Databricks specific connection. */
+public class DatabricksConnection implements IDatabricksConnection, Connection {
+
+<span class="fc" id="L23">  private static final Logger LOGGER = LogManager.getLogger(DatabricksConnection.class);</span>
+  private final IDatabricksSession session;
+<span class="pc" id="L25">  private final Set&lt;IDatabricksStatement&gt; statementSet = ConcurrentHashMap.newKeySet();</span>
+<span class="pc" id="L26">  private SQLWarning warnings = null;</span>
+
+  /**
+   * Creates an instance of Databricks connection for given connection context.
+   *
+   * @param connectionContext underlying connection context
+   */
+  public DatabricksConnection(IDatabricksConnectionContext connectionContext)
+<span class="nc" id="L34">      throws DatabricksSQLException {</span>
+<span class="nc" id="L35">    this.session = new DatabricksSession(connectionContext);</span>
+<span class="nc" id="L36">    this.session.open();</span>
+<span class="nc" id="L37">  }</span>
+
+  @VisibleForTesting
+  public DatabricksConnection(
+      IDatabricksConnectionContext connectionContext, DatabricksClient databricksClient)
+<span class="fc" id="L42">      throws DatabricksSQLException {</span>
+<span class="fc" id="L43">    this.session = new DatabricksSession(connectionContext, databricksClient);</span>
+<span class="fc" id="L44">    this.session.open();</span>
+<span class="fc" id="L45">    DatabricksDriver.setUserAgent(connectionContext);</span>
+<span class="fc" id="L46">  }</span>
+
+  @Override
+  public IDatabricksSession getSession() {
+<span class="fc" id="L50">    return session;</span>
+  }
+
+  @Override
+  public Statement createStatement() {
+<span class="fc" id="L55">    LOGGER.debug(&quot;public Statement createStatement()&quot;);</span>
+<span class="fc" id="L56">    DatabricksStatement statement = new DatabricksStatement(this);</span>
+<span class="fc" id="L57">    statementSet.add(statement);</span>
+<span class="fc" id="L58">    return statement;</span>
+  }
+
+  @Override
+  public PreparedStatement prepareStatement(String sql) throws SQLException {
+<span class="fc" id="L63">    LOGGER.debug(&quot;public PreparedStatement prepareStatement(String sql = {})&quot;, sql);</span>
+<span class="fc" id="L64">    DatabricksPreparedStatement statement = new DatabricksPreparedStatement(this, sql);</span>
+<span class="fc" id="L65">    statementSet.add(statement);</span>
+<span class="fc" id="L66">    return statement;</span>
+  }
+
+  @Override
+  public CallableStatement prepareCall(String sql) throws SQLException {
+<span class="fc" id="L71">    LOGGER.debug(&quot;public CallableStatement prepareCall(String sql = {})&quot;, sql);</span>
+<span class="fc" id="L72">    throw new DatabricksSQLFeatureNotSupportedException(&quot;Not Supported&quot;);</span>
+  }
+
+  @Override
+  public String nativeSQL(String sql) throws SQLException {
+<span class="fc" id="L77">    LOGGER.debug(&quot;public String nativeSQL(String sql = {})&quot;, sql);</span>
+<span class="fc" id="L78">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - nativeSQL(String sql)&quot;);
+  }
+
+  @Override
+  public void setAutoCommit(boolean autoCommit) throws SQLException {
+<span class="fc" id="L84">    LOGGER.debug(&quot;public void setAutoCommit(boolean autoCommit = {})&quot;, autoCommit);</span>
+<span class="fc" id="L85">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - setAutoCommit(boolean autoCommit)&quot;);
+  }
+
+  @Override
+  public boolean getAutoCommit() throws SQLException {
+<span class="fc" id="L91">    LOGGER.debug(&quot;public boolean getAutoCommit()&quot;);</span>
+<span class="fc" id="L92">    throwExceptionIfConnectionIsClosed();</span>
+<span class="fc" id="L93">    return true;</span>
+  }
+
+  @Override
+  public void commit() throws SQLException {
+<span class="fc" id="L98">    LOGGER.debug(&quot;public void commit()&quot;);</span>
+<span class="fc" id="L99">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - commit()&quot;);
+  }
+
+  @Override
+  public void rollback() throws SQLException {
+<span class="fc" id="L105">    LOGGER.debug(&quot;public void rollback()&quot;);</span>
+<span class="fc" id="L106">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - rollback()&quot;);
+  }
+
+  @Override
+  public void close() throws SQLException {
+<span class="fc" id="L112">    LOGGER.debug(&quot;public void close()&quot;);</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">    for (IDatabricksStatement statement : statementSet) {</span>
+<span class="fc" id="L114">      statement.close(false);</span>
+<span class="fc" id="L115">      statementSet.remove(statement);</span>
+<span class="fc" id="L116">    }</span>
+
+<span class="fc" id="L118">    this.session.close();</span>
+<span class="fc" id="L119">  }</span>
+
+  @Override
+  public boolean isClosed() throws SQLException {
+<span class="fc" id="L123">    LOGGER.debug(&quot;public boolean isClosed()&quot;);</span>
+<span class="pc bpc" id="L124" title="1 of 4 branches missed.">    return session == null || !session.isOpen();</span>
+  }
+
+  @Override
+  public DatabaseMetaData getMetaData() throws SQLException {
+<span class="nc" id="L129">    LOGGER.debug(&quot;public DatabaseMetaData getMetaData()&quot;);</span>
+<span class="nc" id="L130">    return new DatabricksDatabaseMetaData(this);</span>
+  }
+
+  @Override
+  public void setReadOnly(boolean readOnly) throws SQLException {
+<span class="fc" id="L135">    LOGGER.debug(&quot;public void setReadOnly(boolean readOnly = {})&quot;, readOnly);</span>
+<span class="fc" id="L136">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - setReadOnly(boolean readOnly)&quot;);
+  }
+
+  @Override
+  public boolean isReadOnly() throws SQLException {
+<span class="fc" id="L142">    LOGGER.debug(&quot;public boolean isReadOnly()&quot;);</span>
+<span class="fc" id="L143">    throwExceptionIfConnectionIsClosed();</span>
+<span class="fc" id="L144">    return false;</span>
+  }
+
+  @Override
+  public void setCatalog(String catalog) throws SQLException {
+<span class="fc" id="L149">    LOGGER.debug(&quot;public void setCatalog(String catalog + {})&quot;, catalog);</span>
+<span class="fc" id="L150">    this.session.setCatalog(catalog);</span>
+<span class="fc" id="L151">    Statement statement = this.createStatement();</span>
+<span class="fc" id="L152">    statement.execute(&quot;SET CATALOG &quot; + catalog);</span>
+<span class="fc" id="L153">  }</span>
+
+  @Override
+  public String getCatalog() throws SQLException {
+<span class="fc" id="L157">    LOGGER.debug(&quot;public String getCatalog()&quot;);</span>
+<span class="fc" id="L158">    return this.session.getCatalog();</span>
+  }
+
+  @Override
+  public void setTransactionIsolation(int level) throws SQLException {
+<span class="fc" id="L163">    LOGGER.debug(&quot;public void setTransactionIsolation(int level = {})&quot;, level);</span>
+<span class="fc" id="L164">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - setTransactionIsolation(int level)&quot;);
+  }
+
+  @Override
+  public int getTransactionIsolation() throws SQLException {
+<span class="fc" id="L170">    LOGGER.debug(&quot;public int getTransactionIsolation()&quot;);</span>
+<span class="fc" id="L171">    throwExceptionIfConnectionIsClosed();</span>
+<span class="fc" id="L172">    return Connection.TRANSACTION_READ_UNCOMMITTED;</span>
+  }
+
+  @Override
+  public SQLWarning getWarnings() throws SQLException {
+<span class="fc" id="L177">    LOGGER.debug(&quot;public SQLWarning getWarnings()&quot;);</span>
+<span class="fc" id="L178">    throwExceptionIfConnectionIsClosed();</span>
+<span class="fc" id="L179">    return warnings;</span>
+  }
+
+  @Override
+  public void clearWarnings() throws SQLException {
+<span class="fc" id="L184">    LOGGER.debug(&quot;public void clearWarnings()&quot;);</span>
+<span class="fc" id="L185">    throwExceptionIfConnectionIsClosed();</span>
+<span class="fc" id="L186">    warnings = null;</span>
+<span class="fc" id="L187">  }</span>
+
+  @Override
+  public Statement createStatement(int resultSetType, int resultSetConcurrency)
+      throws SQLException {
+<span class="fc" id="L192">    LOGGER.debug(</span>
+        &quot;public Statement createStatement(int resultSetType = {}, int resultSetConcurrency = {})&quot;,
+<span class="fc" id="L194">        resultSetType,</span>
+<span class="fc" id="L195">        resultSetConcurrency);</span>
+<span class="pc bpc" id="L196" title="1 of 4 branches missed.">    if (resultSetType != ResultSet.TYPE_FORWARD_ONLY</span>
+        || resultSetConcurrency != ResultSet.CONCUR_READ_ONLY) {
+<span class="fc" id="L198">      throw new DatabricksSQLFeatureNotSupportedException(</span>
+          &quot;Only ResultSet.TYPE_FORWARD_ONLY and ResultSet.CONCUR_READ_ONLY are supported&quot;);
+    }
+<span class="fc" id="L201">    return createStatement();</span>
+  }
+
+  @Override
+  public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
+      throws SQLException {
+<span class="fc" id="L207">    LOGGER.debug(</span>
+        &quot;public PreparedStatement prepareStatement(String sql = {}, int resultSetType = {}, int resultSetConcurrency = {})&quot;,
+        sql,
+<span class="fc" id="L210">        resultSetType,</span>
+<span class="fc" id="L211">        resultSetConcurrency);</span>
+<span class="pc bpc" id="L212" title="1 of 4 branches missed.">    if (resultSetType != ResultSet.TYPE_FORWARD_ONLY</span>
+        || resultSetConcurrency != ResultSet.CONCUR_READ_ONLY) {
+<span class="fc" id="L214">      throw new DatabricksSQLFeatureNotSupportedException(</span>
+          &quot;Only ResultSet.TYPE_FORWARD_ONLY and ResultSet.CONCUR_READ_ONLY are supported&quot;);
+    }
+<span class="fc" id="L217">    return prepareStatement(sql);</span>
+  }
+
+  @Override
+  public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
+      throws SQLException {
+<span class="fc" id="L223">    LOGGER.debug(</span>
+        &quot;public CallableStatement prepareCall(String sql = {}, int resultSetType = {}, int resultSetConcurrency = {})&quot;,
+        sql,
+<span class="fc" id="L226">        resultSetType,</span>
+<span class="fc" id="L227">        resultSetConcurrency);</span>
+<span class="fc" id="L228">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - prepareCall(String sql, int resultSetType, int resultSetConcurrency)&quot;);
+  }
+
+  @Override
+  public Map&lt;String, Class&lt;?&gt;&gt; getTypeMap() throws SQLException {
+<span class="fc" id="L234">    LOGGER.debug(&quot;public Map&lt;String, Class&lt;?&gt;&gt; getTypeMap()&quot;);</span>
+<span class="fc" id="L235">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - getTypeMap()&quot;);
+  }
+
+  @Override
+  public void setTypeMap(Map&lt;String, Class&lt;?&gt;&gt; map) throws SQLException {
+<span class="fc" id="L241">    LOGGER.debug(&quot;public void setTypeMap(Map&lt;String, Class&lt;?&gt;&gt; map)&quot;);</span>
+<span class="fc" id="L242">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - setTypeMap(Map&lt;String, Class&lt;?&gt;&gt; map)&quot;);
+  }
+
+  @Override
+  public void setHoldability(int holdability) throws SQLException {
+<span class="fc" id="L248">    LOGGER.debug(&quot;public void setHoldability(int holdability = {})&quot;, holdability);</span>
+<span class="fc" id="L249">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - setHoldability(int holdability)&quot;);
+  }
+
+  @Override
+  public int getHoldability() throws SQLException {
+<span class="fc" id="L255">    LOGGER.debug(&quot;public int getHoldability()&quot;);</span>
+<span class="fc" id="L256">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - getHoldability()&quot;);
+  }
+
+  @Override
+  public Savepoint setSavepoint() throws SQLException {
+<span class="fc" id="L262">    LOGGER.debug(&quot;public Savepoint setSavepoint()&quot;);</span>
+<span class="fc" id="L263">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - setSavepoint()&quot;);
+  }
+
+  @Override
+  public Savepoint setSavepoint(String name) throws SQLException {
+<span class="fc" id="L269">    LOGGER.debug(&quot;public Savepoint setSavepoint(String name = {})&quot;, name);</span>
+<span class="fc" id="L270">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - setSavepoint(String name)&quot;);
+  }
+
+  @Override
+  public void rollback(Savepoint savepoint) throws SQLException {
+<span class="fc" id="L276">    LOGGER.debug(&quot;public void rollback(Savepoint savepoint)&quot;);</span>
+<span class="fc" id="L277">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - rollback(Savepoint savepoint)&quot;);
+  }
+
+  @Override
+  public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+<span class="fc" id="L283">    LOGGER.debug(&quot;public void releaseSavepoint(Savepoint savepoint)&quot;);</span>
+<span class="fc" id="L284">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - releaseSavepoint(Savepoint savepoint)&quot;);
+  }
+
+  @Override
+  public Statement createStatement(
+      int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+<span class="fc" id="L291">    LOGGER.debug(</span>
+        &quot;public Statement createStatement(int resultSetType = {}, int resultSetConcurrency = {}, int resultSetHoldability = {})&quot;,
+<span class="fc" id="L293">        resultSetType,</span>
+<span class="fc" id="L294">        resultSetConcurrency,</span>
+<span class="fc" id="L295">        resultSetHoldability);</span>
+<span class="fc" id="L296">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)&quot;);
+  }
+
+  @Override
+  public PreparedStatement prepareStatement(
+      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+      throws SQLException {
+<span class="fc" id="L304">    LOGGER.debug(</span>
+        &quot;public PreparedStatement prepareStatement(String sql = {}, int resultSetType = {}, int resultSetConcurrency = {}, int resultSetHoldability = {})&quot;,
+        sql,
+<span class="fc" id="L307">        resultSetType,</span>
+<span class="fc" id="L308">        resultSetConcurrency,</span>
+<span class="fc" id="L309">        resultSetHoldability);</span>
+<span class="fc" id="L310">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)&quot;);
+  }
+
+  @Override
+  public CallableStatement prepareCall(
+      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+      throws SQLException {
+<span class="fc" id="L318">    LOGGER.debug(</span>
+        &quot;public CallableStatement prepareCall(String sql = {}, int resultSetType = {}, int resultSetConcurrency = {}, int resultSetHoldability = {})&quot;,
+        sql,
+<span class="fc" id="L321">        resultSetType,</span>
+<span class="fc" id="L322">        resultSetConcurrency,</span>
+<span class="fc" id="L323">        resultSetHoldability);</span>
+<span class="fc" id="L324">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)&quot;);
+  }
+
+  @Override
+  public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
+<span class="fc" id="L330">    LOGGER.debug(</span>
+        &quot;public PreparedStatement prepareStatement(String sql = {}, int autoGeneratedKeys = {})&quot;,
+        sql,
+<span class="fc" id="L333">        autoGeneratedKeys);</span>
+<span class="fc" id="L334">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - prepareStatement(String sql, int autoGeneratedKeys)&quot;);
+  }
+
+  @Override
+  public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
+<span class="fc" id="L340">    LOGGER.debug(</span>
+        &quot;public PreparedStatement prepareStatement(String sql = {}, int[] columnIndexes = {})&quot;,
+        sql,
+        columnIndexes);
+<span class="fc" id="L344">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - prepareStatement(String sql, int[] columnIndexes)&quot;);
+  }
+
+  @Override
+  public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
+<span class="fc" id="L350">    LOGGER.debug(</span>
+        &quot;public PreparedStatement prepareStatement(String sql = {}, String[] columnNames = {})&quot;,
+        sql,
+        columnNames);
+<span class="fc" id="L354">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - prepareStatement(String sql, String[] columnNames)&quot;);
+  }
+
+  @Override
+  public Clob createClob() throws SQLException {
+<span class="fc" id="L360">    LOGGER.debug(&quot;public Clob createClob()&quot;);</span>
+<span class="fc" id="L361">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - createClob()&quot;);
+  }
+
+  @Override
+  public Blob createBlob() throws SQLException {
+<span class="fc" id="L367">    LOGGER.debug(&quot;public Blob createBlob()&quot;);</span>
+<span class="fc" id="L368">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - createBlob()&quot;);
+  }
+
+  @Override
+  public NClob createNClob() throws SQLException {
+<span class="fc" id="L374">    LOGGER.debug(&quot;public NClob createNClob()&quot;);</span>
+<span class="fc" id="L375">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - createNClob()&quot;);
+  }
+
+  @Override
+  public SQLXML createSQLXML() throws SQLException {
+<span class="fc" id="L381">    LOGGER.debug(&quot;public SQLXML createSQLXML()&quot;);</span>
+<span class="fc" id="L382">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - createSQLXML()&quot;);
+  }
+
+  @Override
+  public boolean isValid(int timeout) throws SQLException {
+<span class="nc" id="L388">    LOGGER.debug(&quot;public boolean isValid(int timeout = {})&quot;, timeout);</span>
+<span class="nc" id="L389">    ValidationUtil.checkIfPositive(timeout, &quot;timeout&quot;);</span>
+    try {
+<span class="nc" id="L391">      DatabricksStatement statement = new DatabricksStatement(this);</span>
+<span class="nc" id="L392">      statement.setQueryTimeout(timeout);</span>
+      // simple query to check whether connection is working
+<span class="nc" id="L394">      statement.execute(&quot;SELECT 1&quot;);</span>
+<span class="nc" id="L395">      return true;</span>
+<span class="nc" id="L396">    } catch (Exception e) {</span>
+<span class="nc" id="L397">      return false;</span>
+    }
+  }
+
+  /**
+   * This function creates the exception message for the failed setClientInfo command
+   *
+   * @param failedProperties contains the map for the failed properties
+   * @return the exception message
+   */
+  public static String getFailedPropertiesExceptionMessage(
+      Map&lt;String, ClientInfoStatus&gt; failedProperties) {
+<span class="nc" id="L409">    return failedProperties.entrySet().stream()</span>
+<span class="nc" id="L410">        .map(e -&gt; String.format(&quot;Setting config %s failed with %s&quot;, e.getKey(), e.getValue()))</span>
+<span class="nc" id="L411">        .collect(Collectors.joining(&quot;\n&quot;));</span>
+  }
+
+  /**
+   * This function determines the reason for the failure of setting a session config form the
+   * exception message
+   *
+   * @param key for which set command failed
+   * @param value for which set command failed
+   * @param e exception thrown by the set command
+   * @return the reason for the failure in ClientInfoStatus
+   */
+  public static ClientInfoStatus determineClientInfoStatus(String key, String value, Throwable e) {
+<span class="nc" id="L424">    String invalidConfigMessage = String.format(&quot;Configuration %s is not available&quot;, key);</span>
+<span class="nc" id="L425">    String invalidValueMessage = String.format(&quot;Unsupported configuration %s=%s&quot;, key, value);</span>
+<span class="nc" id="L426">    String errorMessage = e.getCause().getMessage();</span>
+<span class="nc bnc" id="L427" title="All 2 branches missed.">    if (errorMessage.contains(invalidConfigMessage))</span>
+<span class="nc" id="L428">      return ClientInfoStatus.REASON_UNKNOWN_PROPERTY;</span>
+<span class="nc bnc" id="L429" title="All 2 branches missed.">    else if (errorMessage.contains(invalidValueMessage))</span>
+<span class="nc" id="L430">      return ClientInfoStatus.REASON_VALUE_INVALID;</span>
+<span class="nc" id="L431">    return ClientInfoStatus.REASON_UNKNOWN;</span>
+  }
+
+  /**
+   * This function sets the session config for the given key and value. If the setting fails, the
+   * key and the reason for failure are added to the failedProperties map.
+   *
+   * @param key for the session conf
+   * @param value for the session conf
+   * @param failedProperties to add the key to, if the set command fails
+   */
+  public void setSessionConfig(
+      String key, String value, Map&lt;String, ClientInfoStatus&gt; failedProperties) {
+<span class="fc" id="L444">    LOGGER.debug(&quot;public void setSessionConfig(String key = {}, String value = {})&quot;, key, value);</span>
+    try {
+<span class="fc" id="L446">      this.createStatement().execute(String.format(&quot;SET %s = %s&quot;, key, value));</span>
+<span class="fc" id="L447">      this.session.setSessionConfig(key, value);</span>
+<span class="nc" id="L448">    } catch (SQLException e) {</span>
+<span class="nc" id="L449">      ClientInfoStatus status = determineClientInfoStatus(key, value, e);</span>
+<span class="nc" id="L450">      failedProperties.put(key, status);</span>
+<span class="fc" id="L451">    }</span>
+<span class="fc" id="L452">  }</span>
+
+  @Override
+  public void setClientInfo(String name, String value) throws SQLClientInfoException {
+<span class="fc" id="L456">    LOGGER.debug(&quot;public void setClientInfo(String name = {}, String value = {})&quot;, name, value);</span>
+<span class="fc" id="L457">    if (DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.keySet().stream()</span>
+<span class="fc" id="L458">        .map(String::toLowerCase)</span>
+<span class="fc bfc" id="L459" title="All 2 branches covered.">        .anyMatch(s -&gt; s.equalsIgnoreCase(name))) {</span>
+<span class="fc" id="L460">      Map&lt;String, ClientInfoStatus&gt; failedProperties = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L461">      setSessionConfig(name, value, failedProperties);</span>
+<span class="pc bpc" id="L462" title="1 of 2 branches missed.">      if (!failedProperties.isEmpty()) {</span>
+<span class="nc" id="L463">        throw new DatabricksSQLClientInfoException(</span>
+<span class="nc" id="L464">            getFailedPropertiesExceptionMessage(failedProperties), failedProperties);</span>
+      }
+<span class="fc" id="L466">    } else {</span>
+<span class="fc" id="L467">      if (DatabricksJdbcConstants.ALLOWED_CLIENT_INFO_PROPERTIES.stream()</span>
+<span class="fc" id="L468">          .map(String::toLowerCase)</span>
+<span class="pc bpc" id="L469" title="1 of 2 branches missed.">          .anyMatch(s -&gt; s.equalsIgnoreCase(name))) {</span>
+<span class="nc" id="L470">        this.session.setClientInfoProperty(name.toLowerCase(), value);</span>
+      } else {
+<span class="fc" id="L472">        throw new DatabricksSQLClientInfoException(</span>
+<span class="fc" id="L473">            String.format(</span>
+                &quot;Setting client info for %s failed with %s&quot;,
+                name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY),
+<span class="fc" id="L476">            Map.of(name, ClientInfoStatus.REASON_UNKNOWN_PROPERTY));</span>
+      }
+    }
+<span class="fc" id="L479">  }</span>
+
+  @Override
+  public void setClientInfo(Properties properties) throws SQLClientInfoException {
+<span class="fc" id="L483">    LOGGER.debug(&quot;public void setClientInfo(Properties properties)&quot;);</span>
+<span class="fc bfc" id="L484" title="All 2 branches covered.">    for (Map.Entry&lt;Object, Object&gt; entry : properties.entrySet()) {</span>
+<span class="fc" id="L485">      setClientInfo((String) entry.getKey(), (String) entry.getValue());</span>
+<span class="fc" id="L486">    }</span>
+<span class="fc" id="L487">  }</span>
+
+  @Override
+  public String getClientInfo(String name) throws SQLException {
+<span class="fc" id="L491">    LOGGER.debug(&quot;public String getClientInfo(String name = {})&quot;, name);</span>
+    // Return session conf if set
+<span class="fc bfc" id="L493" title="All 2 branches covered.">    if (this.session.getSessionConfigs().containsKey(name)) {</span>
+<span class="fc" id="L494">      return this.session.getSessionConfigs().get(name);</span>
+<span class="pc bpc" id="L495" title="1 of 2 branches missed.">    } else if (this.session.getClientInfoProperties().containsKey(name.toLowerCase())) {</span>
+<span class="nc" id="L496">      return this.session.getClientInfoProperties().get(name.toLowerCase());</span>
+    }
+
+    // Else return default value or null if the conf name is invalid
+<span class="fc" id="L500">    return DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.getOrDefault(</span>
+        name, null);
+  }
+
+  @Override
+  public Properties getClientInfo() throws SQLException {
+<span class="fc" id="L506">    LOGGER.debug(&quot;public Properties getClientInfo()&quot;);</span>
+<span class="fc" id="L507">    Properties properties = new Properties();</span>
+    // Put in default values first
+<span class="fc" id="L509">    properties.putAll(DatabricksJdbcConstants.ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP);</span>
+    // Then override with session confs
+<span class="fc" id="L511">    properties.putAll(this.session.getSessionConfigs());</span>
+    // Add all client info properties
+<span class="fc" id="L513">    properties.putAll(this.session.getClientInfoProperties());</span>
+<span class="fc" id="L514">    return properties;</span>
+  }
+
+  @Override
+  public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+<span class="fc" id="L519">    LOGGER.debug(&quot;public Array createArrayOf(String typeName, Object[] elements)&quot;);</span>
+<span class="fc" id="L520">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - createArrayOf(String typeName, Object[] elements)&quot;);
+  }
+
+  @Override
+  public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+<span class="fc" id="L526">    LOGGER.debug(&quot;public Struct createStruct(String typeName, Object[] attributes)&quot;);</span>
+<span class="fc" id="L527">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - createStruct(String typeName, Object[] attributes)&quot;);
+  }
+
+  @Override
+  public void setSchema(String schema) throws SQLException {
+<span class="fc" id="L533">    LOGGER.debug(&quot;public void setSchema(String schema = {})&quot;, schema);</span>
+<span class="fc" id="L534">    session.setSchema(schema);</span>
+<span class="fc" id="L535">    Statement statement = this.createStatement();</span>
+<span class="fc" id="L536">    statement.execute(&quot;USE SCHEMA &quot; + schema);</span>
+<span class="fc" id="L537">  }</span>
+
+  @Override
+  public String getSchema() throws SQLException {
+<span class="fc" id="L541">    LOGGER.debug(&quot;public String getSchema()&quot;);</span>
+<span class="fc" id="L542">    return session.getSchema();</span>
+  }
+
+  @Override
+  public void abort(Executor executor) throws SQLException {
+<span class="fc" id="L547">    LOGGER.debug(&quot;public void abort(Executor executor)&quot;);</span>
+<span class="fc" id="L548">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - abort(Executor executor)&quot;);
+  }
+
+  @Override
+  public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+<span class="fc" id="L554">    LOGGER.debug(&quot;public void setNetworkTimeout(Executor executor, int milliseconds)&quot;);</span>
+<span class="fc" id="L555">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - setNetworkTimeout(Executor executor, int milliseconds)&quot;);
+  }
+
+  @Override
+  public int getNetworkTimeout() throws SQLException {
+<span class="fc" id="L561">    LOGGER.debug(&quot;public int getNetworkTimeout()&quot;);</span>
+<span class="fc" id="L562">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - getNetworkTimeout()&quot;);
+  }
+
+  @Override
+  public &lt;T&gt; T unwrap(Class&lt;T&gt; iface) throws SQLException {
+<span class="fc" id="L568">    LOGGER.debug(&quot;public &lt;T&gt; T unwrap(Class&lt;T&gt; iface)&quot;);</span>
+<span class="fc" id="L569">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - unwrap(Class&lt;T&gt; iface)&quot;);
+  }
+
+  @Override
+  public boolean isWrapperFor(Class&lt;?&gt; iface) throws SQLException {
+<span class="fc" id="L575">    LOGGER.debug(&quot;public boolean isWrapperFor(Class&lt;?&gt; iface)&quot;);</span>
+<span class="fc" id="L576">    throw new DatabricksSQLFeatureNotSupportedException(</span>
+        &quot;Not implemented in DatabricksConnection - isWrapperFor(Class&lt;?&gt; iface)&quot;);
+  }
+
+  @Override
+  public void closeStatement(IDatabricksStatement statement) {
+<span class="fc" id="L582">    LOGGER.debug(&quot;public void closeStatement(IDatabricksStatement statement)&quot;);</span>
+<span class="fc" id="L583">    this.statementSet.remove(statement);</span>
+<span class="fc" id="L584">  }</span>
+
+  @Override
+  public Connection getConnection() {
+<span class="fc" id="L588">    return this;</span>
+  }
+
+  private void throwExceptionIfConnectionIsClosed() throws SQLException {
+<span class="fc bfc" id="L592" title="All 2 branches covered.">    if (this.isClosed()) {</span>
+<span class="fc" id="L593">      throw new DatabricksSQLException(&quot;Connection closed!&quot;);</span>
+    }
+<span class="fc" id="L595">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

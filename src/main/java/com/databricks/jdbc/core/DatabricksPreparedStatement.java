@@ -625,11 +625,11 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
     String trimmedQuery = query.trim().replaceAll("^(--.*|/\\*.*?\\*/)*", "").trim();
 
     // Check if the query matches any of the patterns that return a ResultSet
-    if (SELECT_PATTERN.matcher(trimmedQuery).find() ||
-            SHOW_PATTERN.matcher(trimmedQuery).find() ||
-            DESCRIBE_PATTERN.matcher(trimmedQuery).find() ||
-            EXPLAIN_PATTERN.matcher(trimmedQuery).find() ||
-            WITH_PATTERN.matcher(trimmedQuery).find()) {
+    if (SELECT_PATTERN.matcher(trimmedQuery).find()
+        || SHOW_PATTERN.matcher(trimmedQuery).find()
+        || DESCRIBE_PATTERN.matcher(trimmedQuery).find()
+        || EXPLAIN_PATTERN.matcher(trimmedQuery).find()
+        || WITH_PATTERN.matcher(trimmedQuery).find()) {
       return true;
     }
 

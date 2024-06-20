@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ResultConstants.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.client.impl.sdk</a> &gt; <span class="el_source">ResultConstants.java</span></div><h1>ResultConstants.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.client.impl.sdk;
+
+import static java.sql.DatabaseMetaData.*;
+
+import com.databricks.jdbc.client.StatementType;
+import com.databricks.jdbc.core.DatabricksResultSet;
+import com.databricks.sdk.service.sql.StatementState;
+import com.databricks.sdk.service.sql.StatementStatus;
+import java.sql.Types;
+import java.util.Arrays;
+
+<span class="nc" id="L12">public class ResultConstants {</span>
+<span class="nc" id="L13">  public static final DatabricksResultSet TYPE_INFO_RESULT =</span>
+      new DatabricksResultSet(
+<span class="nc" id="L15">          new StatementStatus().setState(StatementState.SUCCEEDED),</span>
+          &quot;typeinfo-metadata&quot;,
+<span class="nc" id="L17">          Arrays.asList(</span>
+              &quot;TYPE_NAME&quot;,
+              &quot;DATA_TYPE&quot;,
+              &quot;PRECISION&quot;,
+              &quot;LITERAL_PREFIX&quot;,
+              &quot;LITERAL_SUFFIX&quot;,
+              &quot;CREATE_PARAMS&quot;,
+              &quot;NULLABLE&quot;,
+              &quot;CASE_SENSITIVE&quot;,
+              &quot;SEARCHABLE&quot;,
+              &quot;UNSIGNED_ATTRIBUTE&quot;,
+              &quot;FIXED_PREC_SCALE&quot;,
+              &quot;AUTO_INCREMENT&quot;,
+              &quot;LOCAL_TYPE_NAME&quot;,
+              &quot;MINIMUM_SCALE&quot;,
+              &quot;MAXIMUM_SCALE&quot;,
+              &quot;SQL_DATA_TYPE&quot;,
+              &quot;SQL_DATETIME_SUB&quot;,
+              &quot;NUM_PREC_RADIX&quot;),
+<span class="nc" id="L36">          Arrays.asList(</span>
+              &quot;VARCHAR&quot;,
+              &quot;INTEGER&quot;,
+              &quot;INTEGER&quot;,
+              &quot;VARCHAR&quot;,
+              &quot;VARCHAR&quot;,
+              &quot;VARCHAR&quot;,
+              &quot;SMALLINT&quot;,
+              &quot;BIT&quot;,
+              &quot;SMALLINT&quot;,
+              &quot;BIT&quot;,
+              &quot;BIT&quot;,
+              &quot;BIT&quot;,
+              &quot;VARCHAR&quot;,
+              &quot;SMALLINT&quot;,
+              &quot;SMALLINT&quot;,
+              &quot;INTEGER&quot;,
+              &quot;INTEGER&quot;,
+              &quot;INTEGER&quot;),
+<span class="nc" id="L55">          Arrays.asList(</span>
+<span class="nc" id="L56">              Types.VARCHAR,</span>
+<span class="nc" id="L57">              Types.INTEGER,</span>
+<span class="nc" id="L58">              Types.INTEGER,</span>
+<span class="nc" id="L59">              Types.VARCHAR,</span>
+<span class="nc" id="L60">              Types.VARCHAR,</span>
+<span class="nc" id="L61">              Types.VARCHAR,</span>
+<span class="nc" id="L62">              Types.SMALLINT,</span>
+<span class="nc" id="L63">              Types.BOOLEAN,</span>
+<span class="nc" id="L64">              Types.SMALLINT,</span>
+<span class="nc" id="L65">              Types.BOOLEAN,</span>
+<span class="nc" id="L66">              Types.BOOLEAN,</span>
+<span class="nc" id="L67">              Types.BOOLEAN,</span>
+<span class="nc" id="L68">              Types.VARCHAR,</span>
+<span class="nc" id="L69">              Types.SMALLINT,</span>
+<span class="nc" id="L70">              Types.SMALLINT,</span>
+<span class="nc" id="L71">              Types.INTEGER,</span>
+<span class="nc" id="L72">              Types.INTEGER,</span>
+<span class="nc" id="L73">              Types.INTEGER),</span>
+<span class="nc" id="L74">          Arrays.asList(128, 10, 10, 128, 128, 128, 5, 1, 5, 1, 1, 1, 128, 5, 5, 10, 10, 10),</span>
+          new Object[][] {
+            {
+              &quot;TINYINT&quot;,
+<span class="nc" id="L78">              Types.TINYINT,</span>
+<span class="nc" id="L79">              3,</span>
+              null,
+              null,
+              null,
+<span class="nc" id="L83">              typeNullable,</span>
+<span class="nc" id="L84">              false,</span>
+<span class="nc" id="L85">              typePredBasic,</span>
+<span class="nc" id="L86">              false,</span>
+<span class="nc" id="L87">              false,</span>
+              null,
+              &quot;TINYINT&quot;,
+<span class="nc" id="L90">              0,</span>
+<span class="nc" id="L91">              0,</span>
+<span class="nc" id="L92">              Types.TINYINT,</span>
+              null,
+<span class="nc" id="L94">              10</span>
+            },
+            {
+              &quot;BIGINT&quot;,
+<span class="nc" id="L98">              Types.BIGINT,</span>
+<span class="nc" id="L99">              19,</span>
+              null,
+              null,
+              null,
+<span class="nc" id="L103">              typeNullable,</span>
+<span class="nc" id="L104">              false,</span>
+<span class="nc" id="L105">              typePredBasic,</span>
+<span class="nc" id="L106">              false,</span>
+<span class="nc" id="L107">              false,</span>
+              null,
+              &quot;BIGINT&quot;,
+<span class="nc" id="L110">              0,</span>
+<span class="nc" id="L111">              0,</span>
+<span class="nc" id="L112">              Types.BIGINT,</span>
+              null,
+<span class="nc" id="L114">              10</span>
+            },
+            {
+              &quot;BINARY&quot;,
+<span class="nc" id="L118">              Types.BINARY,</span>
+<span class="nc" id="L119">              32767,</span>
+              &quot;0x&quot;,
+              null,
+              &quot;LENGTH&quot;,
+<span class="nc" id="L123">              typeNullable,</span>
+<span class="nc" id="L124">              false,</span>
+<span class="nc" id="L125">              typePredNone,</span>
+              null,
+<span class="nc" id="L127">              false,</span>
+              null,
+              &quot;BINARY&quot;,
+              null,
+              null,
+<span class="nc" id="L132">              Types.BINARY,</span>
+              null,
+              null
+            },
+            {
+              &quot;CHAR&quot;,
+<span class="nc" id="L138">              Types.CHAR,</span>
+<span class="nc" id="L139">              255,</span>
+              &quot;'&quot;,
+              &quot;'&quot;,
+              &quot;LENGTH&quot;,
+<span class="nc" id="L143">              typeNullable,</span>
+<span class="nc" id="L144">              true,</span>
+<span class="nc" id="L145">              typeSearchable,</span>
+              null,
+<span class="nc" id="L147">              false,</span>
+              null,
+              &quot;CHAR&quot;,
+              null,
+              null,
+<span class="nc" id="L152">              Types.CHAR,</span>
+              null,
+              null
+            },
+            {
+              &quot;DECIMAL&quot;,
+<span class="nc" id="L158">              Types.DECIMAL,</span>
+<span class="nc" id="L159">              38,</span>
+              null,
+              null,
+              null,
+<span class="nc" id="L163">              typeNullable,</span>
+<span class="nc" id="L164">              false,</span>
+<span class="nc" id="L165">              typePredBasic,</span>
+<span class="nc" id="L166">              false,</span>
+<span class="nc" id="L167">              false,</span>
+              null,
+              &quot;DECIMAL&quot;,
+<span class="nc" id="L170">              0,</span>
+<span class="nc" id="L171">              0,</span>
+<span class="nc" id="L172">              Types.DECIMAL,</span>
+              null,
+<span class="nc" id="L174">              10</span>
+            },
+            {
+              &quot;INT&quot;,
+<span class="nc" id="L178">              Types.INTEGER,</span>
+<span class="nc" id="L179">              10,</span>
+              null,
+              null,
+              null,
+<span class="nc" id="L183">              typeNullable,</span>
+<span class="nc" id="L184">              false,</span>
+<span class="nc" id="L185">              typePredBasic,</span>
+<span class="nc" id="L186">              false,</span>
+<span class="nc" id="L187">              false,</span>
+              null,
+              &quot;INT&quot;,
+<span class="nc" id="L190">              0,</span>
+<span class="nc" id="L191">              0,</span>
+<span class="nc" id="L192">              Types.INTEGER,</span>
+              null,
+<span class="nc" id="L194">              10</span>
+            },
+            {
+              &quot;SMALLINT&quot;,
+<span class="nc" id="L198">              Types.SMALLINT,</span>
+<span class="nc" id="L199">              5,</span>
+              null,
+              null,
+              null,
+<span class="nc" id="L203">              typeNullable,</span>
+<span class="nc" id="L204">              false,</span>
+<span class="nc" id="L205">              typePredBasic,</span>
+<span class="nc" id="L206">              false,</span>
+<span class="nc" id="L207">              false,</span>
+              null,
+              &quot;SMALLINT&quot;,
+<span class="nc" id="L210">              0,</span>
+<span class="nc" id="L211">              0,</span>
+<span class="nc" id="L212">              Types.SMALLINT,</span>
+              null,
+<span class="nc" id="L214">              10</span>
+            },
+            {
+              &quot;FLOAT&quot;,
+<span class="nc" id="L218">              Types.FLOAT,</span>
+<span class="nc" id="L219">              7,</span>
+              null,
+              null,
+              null,
+<span class="nc" id="L223">              typeNullable,</span>
+<span class="nc" id="L224">              false,</span>
+<span class="nc" id="L225">              typePredBasic,</span>
+<span class="nc" id="L226">              false,</span>
+<span class="nc" id="L227">              false,</span>
+              null,
+              &quot;FLOAT&quot;,
+              null,
+              null,
+<span class="nc" id="L232">              Types.FLOAT,</span>
+              null,
+<span class="nc" id="L234">              2</span>
+            },
+            {
+              &quot;DOUBLE&quot;,
+<span class="nc" id="L238">              Types.DOUBLE,</span>
+<span class="nc" id="L239">              15,</span>
+              null,
+              null,
+              null,
+<span class="nc" id="L243">              typeNullable,</span>
+<span class="nc" id="L244">              false,</span>
+<span class="nc" id="L245">              typePredBasic,</span>
+<span class="nc" id="L246">              false,</span>
+<span class="nc" id="L247">              false,</span>
+              null,
+              &quot;DOUBLE&quot;,
+              null,
+              null,
+<span class="nc" id="L252">              Types.DOUBLE,</span>
+              null,
+<span class="nc" id="L254">              2</span>
+            },
+            {
+              &quot;ARRAY&quot;,
+<span class="nc" id="L258">              Types.VARCHAR,</span>
+<span class="nc" id="L259">              32767,</span>
+              &quot;'&quot;,
+              &quot;'&quot;,
+              &quot;Type&quot;,
+<span class="nc" id="L263">              typeNullable,</span>
+<span class="nc" id="L264">              false,</span>
+<span class="nc" id="L265">              typeSearchable,</span>
+              null,
+<span class="nc" id="L267">              false,</span>
+              null,
+              &quot;ARRAY&quot;,
+              null,
+              null,
+<span class="nc" id="L272">              Types.VARCHAR,</span>
+              null,
+              null
+            },
+            {
+              &quot;MAP&quot;,
+<span class="nc" id="L278">              Types.VARCHAR,</span>
+<span class="nc" id="L279">              32767,</span>
+              &quot;'&quot;,
+              &quot;'&quot;,
+              &quot;Key,Value&quot;,
+<span class="nc" id="L283">              typeNullable,</span>
+<span class="nc" id="L284">              false,</span>
+<span class="nc" id="L285">              typeSearchable,</span>
+              null,
+<span class="nc" id="L287">              false,</span>
+              null,
+              &quot;MAP&quot;,
+              null,
+              null,
+<span class="nc" id="L292">              Types.VARCHAR,</span>
+              null,
+              null
+            },
+            {
+              &quot;STRING&quot;,
+<span class="nc" id="L298">              Types.VARCHAR,</span>
+<span class="nc" id="L299">              510,</span>
+              &quot;'&quot;,
+              &quot;'&quot;,
+              &quot;max length&quot;,
+<span class="nc" id="L303">              typeNullable,</span>
+<span class="nc" id="L304">              true,</span>
+<span class="nc" id="L305">              typeSearchable,</span>
+              null,
+<span class="nc" id="L307">              false,</span>
+              null,
+              &quot;STRING&quot;,
+              null,
+              null,
+<span class="nc" id="L312">              Types.VARCHAR,</span>
+              null,
+              null
+            },
+            {
+              &quot;STRUCT&quot;,
+<span class="nc" id="L318">              Types.VARCHAR,</span>
+<span class="nc" id="L319">              32767,</span>
+              &quot;'&quot;,
+              &quot;'&quot;,
+              &quot;Column Type, ...&quot;,
+<span class="nc" id="L323">              typeNullable,</span>
+<span class="nc" id="L324">              false,</span>
+<span class="nc" id="L325">              typeSearchable,</span>
+              null,
+<span class="nc" id="L327">              false,</span>
+              null,
+              &quot;STRUCT&quot;,
+              null,
+              null,
+<span class="nc" id="L332">              Types.VARCHAR,</span>
+              null,
+              null
+            },
+            {
+              &quot;VARCHAR&quot;,
+<span class="nc" id="L338">              Types.VARCHAR,</span>
+<span class="nc" id="L339">              510,</span>
+              &quot;'&quot;,
+              &quot;'&quot;,
+              &quot;max length&quot;,
+<span class="nc" id="L343">              typeNullable,</span>
+<span class="nc" id="L344">              true,</span>
+<span class="nc" id="L345">              typeSearchable,</span>
+              null,
+<span class="nc" id="L347">              false,</span>
+              null,
+              &quot;VARCHAR&quot;,
+              null,
+              null,
+<span class="nc" id="L352">              Types.VARCHAR,</span>
+              null,
+              null
+            },
+            {
+              &quot;BOOLEAN&quot;,
+<span class="nc" id="L358">              Types.BOOLEAN,</span>
+<span class="nc" id="L359">              1,</span>
+              null,
+              null,
+              null,
+<span class="nc" id="L363">              typeNullable,</span>
+<span class="nc" id="L364">              true,</span>
+<span class="nc" id="L365">              typePredBasic,</span>
+              null,
+<span class="nc" id="L367">              false,</span>
+              null,
+              &quot;BOOLEAN&quot;,
+              null,
+              null,
+<span class="nc" id="L372">              Types.BOOLEAN,</span>
+              null,
+              null
+            },
+            {
+              &quot;DATE&quot;,
+<span class="nc" id="L378">              Types.DATE,</span>
+<span class="nc" id="L379">              10,</span>
+              &quot;'&quot;,
+              &quot;'&quot;,
+              null,
+<span class="nc" id="L383">              typeNullable,</span>
+<span class="nc" id="L384">              false,</span>
+<span class="nc" id="L385">              typeSearchable,</span>
+              null,
+<span class="nc" id="L387">              false,</span>
+              null,
+              &quot;DATE&quot;,
+              null,
+              null,
+<span class="nc" id="L392">              Types.DATE,</span>
+              null,
+              null
+            },
+            {
+              &quot;TIMESTAMP&quot;,
+<span class="nc" id="L398">              Types.TIMESTAMP,</span>
+<span class="nc" id="L399">              29,</span>
+              &quot;'&quot;,
+              &quot;'&quot;,
+              null,
+<span class="nc" id="L403">              typeNullable,</span>
+<span class="nc" id="L404">              false,</span>
+<span class="nc" id="L405">              typeSearchable,</span>
+              null,
+<span class="nc" id="L407">              false,</span>
+              null,
+              &quot;TIMESTAMP&quot;,
+<span class="nc" id="L410">              0,</span>
+<span class="nc" id="L411">              0,</span>
+<span class="nc" id="L412">              Types.DATE,</span>
+              null,
+              null
+            }
+          },
+          StatementType.METADATA);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

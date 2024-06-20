@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExecutionResultFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.core</a> &gt; <span class="el_source">ExecutionResultFactory.java</span></div><h1>ExecutionResultFactory.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.core;
+
+import static com.databricks.jdbc.client.impl.thrift.commons.DatabricksThriftHelper.convertColumnarToRowBased;
+
+import com.databricks.jdbc.client.impl.thrift.generated.TGetResultSetMetadataResp;
+import com.databricks.jdbc.client.impl.thrift.generated.TRowSet;
+import com.databricks.jdbc.client.sqlexec.ResultData;
+import com.databricks.jdbc.client.sqlexec.ResultManifest;
+import java.util.List;
+
+<span class="fc" id="L11">class ExecutionResultFactory {</span>
+  static IExecutionResult getResultSet(
+      ResultData data, ResultManifest manifest, String statementId, IDatabricksSession session) {
+    // Return Volume operation handler
+<span class="fc bfc" id="L15" title="All 2 branches covered.">    if (data.getVolumeOperationInfo() != null) {</span>
+<span class="fc" id="L16">      return new VolumeOperationResult(data, statementId, session);</span>
+    }
+    // We use JSON_ARRAY for metadata and update commands, and ARROW_STREAM for query results
+<span class="pc bpc" id="L19" title="1 of 3 branches missed.">    switch (manifest.getFormat()) {</span>
+      case ARROW_STREAM:
+<span class="fc" id="L21">        return new ArrowStreamResult(manifest, data, statementId, session);</span>
+      case JSON_ARRAY:
+        // This is used for metadata and update commands
+<span class="fc" id="L24">        return new InlineJsonResult(manifest, data);</span>
+      default:
+<span class="nc" id="L26">        throw new IllegalStateException(&quot;Invalid response format &quot; + manifest.getFormat());</span>
+    }
+  }
+
+  static IExecutionResult getResultSet(
+      TRowSet data,
+      TGetResultSetMetadataResp manifest,
+      String statementId,
+      IDatabricksSession session)
+      throws DatabricksSQLException {
+<span class="pc bpc" id="L36" title="1 of 5 branches missed.">    switch (manifest.getResultFormat()) {</span>
+      case COLUMN_BASED_SET:
+<span class="fc" id="L38">        return getResultSet(convertColumnarToRowBased(data));</span>
+      case ARROW_BASED_SET:
+<span class="fc" id="L40">        return new ArrowStreamResult(manifest, data, true, statementId, session);</span>
+      case URL_BASED_SET:
+<span class="fc" id="L42">        return new ArrowStreamResult(manifest, data, false, statementId, session);</span>
+      case ROW_BASED_SET:
+<span class="fc" id="L44">        throw new DatabricksSQLFeatureNotSupportedException(</span>
+            &quot;Invalid state - row based set cannot be received&quot;);
+      default:
+<span class="nc" id="L47">        throw new DatabricksSQLFeatureNotImplementedException(</span>
+<span class="nc" id="L48">            &quot;Invalid thrift response format &quot; + manifest.getResultFormat());</span>
+    }
+  }
+
+  static IExecutionResult getResultSet(Object[][] rows) {
+<span class="fc" id="L53">    return new InlineJsonResult(rows);</span>
+  }
+
+  static IExecutionResult getResultSet(List&lt;List&lt;Object&gt;&gt; rows) {
+<span class="fc" id="L57">    return new InlineJsonResult(rows);</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

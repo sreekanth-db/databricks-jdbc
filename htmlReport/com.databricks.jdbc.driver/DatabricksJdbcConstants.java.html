@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabricksJdbcConstants.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">jacoco.exec</a> &gt; <a href="index.source.html" class="el_package">com.databricks.jdbc.driver</a> &gt; <span class="el_source">DatabricksJdbcConstants.java</span></div><h1>DatabricksJdbcConstants.java</h1><pre class="source lang-java linenums">package com.databricks.jdbc.driver;
+
+import com.google.common.annotations.VisibleForTesting;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+import org.apache.logging.log4j.Level;
+
+<span class="nc" id="L9">public final class DatabricksJdbcConstants {</span>
+
+<span class="nc" id="L11">  static final Pattern JDBC_URL_PATTERN =</span>
+<span class="nc" id="L12">      Pattern.compile(&quot;jdbc:databricks://([^/;]*)(?::\\d+)?/*(.*)&quot;);</span>
+<span class="nc" id="L13">  static final Pattern HTTP_WAREHOUSE_PATH_PATTERN = Pattern.compile(&quot;.*/warehouses/(.+)&quot;);</span>
+<span class="nc" id="L14">  static final Pattern HTTP_ENDPOINT_PATH_PATTERN = Pattern.compile(&quot;.*/endpoints/(.+)&quot;);</span>
+
+<span class="nc" id="L16">  static final Pattern HTTP_CLI_PATTERN = Pattern.compile(&quot;.*cliservice(.+)&quot;);</span>
+
+<span class="nc" id="L18">  static final Pattern HTTP_PATH_CLI_PATTERN = Pattern.compile(&quot;cliservice&quot;);</span>
+<span class="nc" id="L19">  static final Pattern TEST_PATH_PATTERN = Pattern.compile(&quot;jdbc:databricks://test&quot;);</span>
+<span class="nc" id="L20">  static final Pattern BASE_PATTERN = Pattern.compile(&quot;jdbc:databricks://[^;]+(;[^;]*)?&quot;);</span>
+<span class="nc" id="L21">  public static final Pattern HTTP_CLUSTER_PATH_PATTERN = Pattern.compile(&quot;.*/o/(.+)/(.+)&quot;);</span>
+  public static final String JDBC_SCHEMA = &quot;jdbc:databricks://&quot;;
+<span class="nc" id="L23">  static final Level DEFAULT_LOG_LEVEL = Level.INFO;</span>
+  static final String LOG_LEVEL = &quot;loglevel&quot;;
+  static final String LOG_PATH = &quot;logpath&quot;;
+  static final String DEFAULT_LOG_PATH = &quot;logs/application.log&quot;;
+  static final String LOG_FILE_SIZE = &quot;LogFileSize&quot;;
+  static final int DEFAULT_LOG_FILE_SIZE_IN_MB = 10;
+  static final String DEFAULT_LOG_PATTERN = &quot;%d{yyyy-MM-dd HH:mm:ss} %p %c{1}:%L - %m%n&quot;;
+  public static final String DEFAULT_FILE_LOG_PATTERN = &quot;/%d{yyyy-MM-dd}-logfile-%i.log&quot;;
+  public static final String DEFAULT_LOG_NAME_FILE = &quot;logfile-0.log&quot;;
+  static final String LOG_FILE_COUNT = &quot;LogFileCount&quot;;
+  static final int DEFAULT_LOG_FILE_COUNT = 10;
+  public static final String URL_DELIMITER = &quot;;&quot;;
+  public static final String PORT_DELIMITER = &quot;:&quot;;
+  static final String DEFAULT_SCHEMA = &quot;default&quot;;
+  static final String DEFAULT_CATALOG = &quot;hive_metastore&quot;;
+  public static final String PAIR_DELIMITER = &quot;=&quot;;
+  public static final String USER = &quot;user&quot;;
+  public static final String PASSWORD = &quot;password&quot;;
+
+  static final String CLIENT_ID = &quot;OAuth2ClientId&quot;;
+
+  static final String CLIENT_SECRET = &quot;OAuth2Secret&quot;;
+
+  public static final String AUTH_MECH = &quot;authmech&quot;;
+
+  static final String CONN_CATALOG = &quot;conncatalog&quot;;
+  static final String CONN_SCHEMA = &quot;connschema&quot;;
+
+  static final String PROXY_HOST = &quot;proxyhost&quot;;
+  static final String PROXY_PORT = &quot;proxyport&quot;;
+  static final String PROXY_USER = &quot;proxyuid&quot;;
+  static final String PROXY_PWD = &quot;proxypwd&quot;;
+  static final String USE_PROXY = &quot;useproxy&quot;;
+  static final String USE_PROXY_AUTH = &quot;proxyauth&quot;;
+  static final String USE_SYSTEM_PROXY = &quot;usesystemproxy&quot;;
+  static final String USE_CF_PROXY = &quot;usecfproxy&quot;;
+  static final String CF_PROXY_HOST = &quot;cfproxyhost&quot;;
+  static final String CF_PROXY_PORT = &quot;cfproxyport&quot;;
+  static final String USE_CF_PROXY_AUTH = &quot;cfproxyauth&quot;;
+  static final String ENABLE_ARROW = &quot;EnableArrow&quot;;
+  static final String CF_PROXY_USER = &quot;cfproxyuid&quot;;
+  static final String CF_PROXY_PWD = &quot;cfproxypwd&quot;;
+
+  static final String AUTH_FLOW = &quot;auth_flow&quot;;
+
+  // Only used when AUTH_MECH = 3
+  static final String PWD = &quot;pwd&quot;;
+
+  static final String POLL_INTERVAL = &quot;asyncexecpollinterval&quot;;
+  static final int POLL_INTERVAL_DEFAULT = 200;
+
+  static final String AWS_CLIENT_ID = &quot;databricks-sql-jdbc&quot;;
+
+  static final String AAD_CLIENT_ID = &quot;96eecda7-19ea-49cc-abb5-240097d554f5&quot;;
+
+  public static final String HTTP_PATH = &quot;httppath&quot;;
+
+  public static final String SSL = &quot;ssl&quot;;
+
+  public static final String DIRECT_RESULT = &quot;EnableDirectResults&quot;;
+
+  static final String HTTP_SCHEMA = &quot;http://&quot;;
+  static final String HTTPS_SCHEMA = &quot;https://&quot;;
+  public static final String LOGIN_TIMEOUT = &quot;loginTimeout&quot;;
+
+  public static final String U2M_AUTH_TYPE = &quot;external-browser&quot;;
+  public static final String M2M_AUTH_TYPE = &quot;oauth-m2m&quot;;
+  public static final String ACCESS_TOKEN_AUTH_TYPE = &quot;pat&quot;;
+
+  public static final String U2M_AUTH_REDIRECT_URL = &quot;http://localhost:8020&quot;;
+
+  public static final String SQL_SCOPE = &quot;sql&quot;;
+  public static final String OFFLINE_ACCESS_SCOPE = &quot;offline_access&quot;;
+  public static final String FULL_STOP = &quot;.&quot;;
+  public static final String EMPTY_STRING = &quot;&quot;;
+  public static final String IDENTIFIER_QUOTE_STRING = &quot;`&quot;;
+  public static final String CATALOG = &quot;catalog&quot;;
+  public static final String PROCEDURE = &quot;procedure&quot;;
+  public static final String SCHEMA = &quot;schema&quot;;
+  public static final String TABLE = &quot;table&quot;;
+  public static final String USER_NAME = &quot;User&quot;;
+  static final int DEFAULT_PORT = 443;
+
+  static final String LZ4_COMPRESSION_FLAG =
+      &quot;EnableQueryResultLZ4Compression&quot;; // Adding this for backward compatibility only
+  static final String COMPRESSION_FLAG = &quot;QueryResultCompressionType&quot;;
+  static final String USER_AGENT_ENTRY = &quot;useragententry&quot;;
+  public static final String DEFAULT_USER_AGENT = &quot;DatabricksJDBCDriverOSS&quot;;
+  static final String CLIENT_USER_AGENT_PREFIX = &quot;Java&quot;;
+  static final String USER_AGENT_SEA_CLIENT = &quot;SQLExecHttpClient/HC&quot;;
+  static final String USER_AGENT_THRIFT_CLIENT = &quot;THttpClient/HC&quot;;
+  public static final String ALLOWED_VOLUME_INGESTION_PATHS =
+      &quot;allowlistedVolumeOperationLocalFilePaths&quot;;
+  public static final String VOLUME_OPERATION_STATUS_COLUMN_NAME = &quot;operation_status&quot;;
+<span class="nc" id="L117">  public static final Map&lt;String, String&gt; ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP =</span>
+      // This map comes from
+      // https://docs.databricks.com/en/sql/language-manual/sql-ref-parameters.html
+<span class="nc" id="L120">      Map.of(</span>
+          &quot;ANSI_MODE&quot;, &quot;TRUE&quot;,
+          &quot;ENABLE_PHOTON&quot;, &quot;TRUE&quot;,
+          &quot;LEGACY_TIME_PARSER_POLICY&quot;, &quot;EXCEPTION&quot;,
+          &quot;MAX_FILE_PARTITION_BYTES&quot;, &quot;128m&quot;,
+          &quot;READ_ONLY_EXTERNAL_METASTORE&quot;, &quot;FALSE&quot;,
+          &quot;STATEMENT_TIMEOUT&quot;, &quot;172800&quot;,
+          &quot;TIMEZONE&quot;, &quot;UTC&quot;,
+          &quot;USE_CACHED_RESULT&quot;, &quot;TRUE&quot;);
+
+<span class="nc" id="L130">  public static final Set&lt;String&gt; ALLOWED_CLIENT_INFO_PROPERTIES =</span>
+<span class="nc" id="L131">      Set.of(ALLOWED_VOLUME_INGESTION_PATHS);</span>
+
+  @VisibleForTesting public static final String IS_FAKE_SERVICE_TEST_PROP = &quot;isFakeServiceTest&quot;;
+
+  @VisibleForTesting public static final String FAKE_SERVICE_URI_PROP_SUFFIX = &quot;.fakeServiceURI&quot;;
+
+  /** Enum for the services that can be replaced with a fake service in integration tests. */
+<span class="nc" id="L138">  @VisibleForTesting</span>
+  public enum FakeServiceType {
+<span class="nc" id="L140">    SQL_EXEC,</span>
+<span class="nc" id="L141">    CLOUD_FETCH,</span>
+<span class="nc" id="L142">    SQL_GATEWAY,</span>
+<span class="nc" id="L143">    CLOUD_FETCH_SQL_GATEWAY</span>
+  }
+
+  public static final String USE_THRIFT_CLIENT = &quot;usethriftclient&quot;;
+
+  public static final String USE_LEGACY_METADATA = &quot;uselegacymetadata&quot;;
+
+  static final String CLOUD_FETCH_THREAD_POOL_SIZE = &quot;cloudFetchThreadPoolSize&quot;;
+  static final int CLOUD_FETCH_THREAD_POOL_SIZE_DEFAULT = 16;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
