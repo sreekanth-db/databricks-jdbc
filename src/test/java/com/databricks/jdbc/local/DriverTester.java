@@ -45,6 +45,7 @@ public class DriverTester {
     String jdbcUrl =
         "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
     Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "xx");
+
     System.out.println("Connection established......");
     Statement statement = con.createStatement();
     statement.setMaxRows(10);
@@ -168,29 +169,29 @@ public class DriverTester {
   @Test
   void testModifyMetrics() throws Exception {
     DriverManager.drivers()
-            .forEach(
-                    driver -> {
-                      if (driver.getClass().getName().contains("Driver")) {
-                        try {
-                          DriverManager.deregisterDriver(driver);
-                        } catch (SQLException e) {
-                          throw new RuntimeException(e);
-                        }
-                      }
-                    });
+        .forEach(
+            driver -> {
+              if (driver.getClass().getName().contains("Driver")) {
+                try {
+                  DriverManager.deregisterDriver(driver);
+                } catch (SQLException e) {
+                  throw new RuntimeException(e);
+                }
+              }
+            });
     DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
     DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
 
     String jdbcUrl =
-            "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
     Connection con = DriverManager.getConnection(jdbcUrl, "samikshya.chand@databricks.com", "x");
     System.out.println("Connection established......");
 
-  for(int i = 0; i < 10; i++) {
-    DatabricksMetrics.record(MetricsList.LIST_TABLES_METADATA_SEA.name(), i*2);
-    DatabricksMetrics.record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), 2*i*i);
-    //Thread.sleep(1000);
-  }
+    for (int i = 0; i < 10; i++) {
+      DatabricksMetrics.record(MetricsList.LIST_TABLES_METADATA_SEA.name(), i * 2);
+      DatabricksMetrics.record(MetricsList.LIST_PRIMARY_KEYS_METADATA_SEA.name(), 2 * i * i);
+      // Thread.sleep(1000);
+    }
     Thread.sleep(5000);
     System.out.println(DatabricksMetrics.gaugeMetrics);
   }

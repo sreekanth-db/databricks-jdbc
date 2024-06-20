@@ -24,7 +24,8 @@ public class DatabricksMetrics {
   private static final String ACCESS_TOKEN = "x";
   public static final Map<String, Double> gaugeMetrics = new HashMap<>();
   public static final Map<String, Double> counterMetrics = new HashMap<>();
-  private static final long intervalDurationForSendingReq = TimeUnit.SECONDS.toMillis(10 * 60); // 10 minutes
+  private static final long intervalDurationForSendingReq =
+      TimeUnit.SECONDS.toMillis(10 * 60); // 10 minutes
   private static DatabricksHttpClient telemetryClient = null;
   private static final ObjectMapper objectMapper = new ObjectMapper();
   private static final String METRICS_MAP_STRING = "metrics_map_string";
@@ -35,21 +36,22 @@ public class DatabricksMetrics {
     GAUGE,
     COUNTER
   }
+
   private static void scheduleExportMetrics() {
     Timer metricsTimer = new Timer();
     TimerTask task =
-            new TimerTask() {
-              @Override
-              public void run() {
-                try {
-                  sendRequest(gaugeMetrics, MetricsType.GAUGE);
-                  sendRequest(counterMetrics, MetricsType.COUNTER);
-                } catch (Exception e) {
-                  // Commenting out the exception for now - failing silently
-                  // System.out.println(e.getMessage());
-                }
-              }
-            };
+        new TimerTask() {
+          @Override
+          public void run() {
+            try {
+              sendRequest(gaugeMetrics, MetricsType.GAUGE);
+              sendRequest(counterMetrics, MetricsType.COUNTER);
+            } catch (Exception e) {
+              // Commenting out the exception for now - failing silently
+              // System.out.println(e.getMessage());
+            }
+          }
+        };
 
     // Schedule the task to run after the specified interval infinitely
     metricsTimer.schedule(task, 0, intervalDurationForSendingReq);
@@ -58,7 +60,8 @@ public class DatabricksMetrics {
   public static void instantiateTelemetryClient(IDatabricksConnectionContext context) {
     telemetryClient = DatabricksHttpClient.getInstance(context);
 
-    // Schedule the task using a parallel thread to send metrics to server every "intervalDurationForSendingReq" seconds
+    // Schedule the task using a parallel thread to send metrics to server every
+    // "intervalDurationForSendingReq" seconds
     scheduleExportMetrics();
   }
 
@@ -99,7 +102,7 @@ public class DatabricksMetrics {
               + response.getStatusLine().getStatusCode()
               + " Response: "
               + response.getEntity().toString());
-    }else{
+    } else {
       // Clearing map after successful response
       map.clear();
     }
@@ -124,18 +127,21 @@ public class DatabricksMetrics {
     }
     counterMetrics.put(name, value);
   }
-  private static void FirstExport(Map<String, Double> map, MetricsType metricsType){
-    if(firstExport) return;
+
+  private static void FirstExport(Map<String, Double> map, MetricsType metricsType) {
+    if (firstExport) return;
     firstExport = true;
-    CompletableFuture.runAsync(() -> {
-      try {
-        sendRequest(map, metricsType);
-      } catch (Exception e) {
-        // Commenting out the exception for now - failing silently
-        // System.out.println(e.getMessage());
-      }
-    });
+    CompletableFuture.runAsync(
+        () -> {
+          try {
+            sendRequest(map, metricsType);
+          } catch (Exception e) {
+            // Commenting out the exception for now - failing silently
+            // System.out.println(e.getMessage());
+          }
+        });
   }
+
   public static void record(String name, double value) {
     setGaugeMetrics(name, value);
     FirstExport(gaugeMetrics, MetricsType.GAUGE);
