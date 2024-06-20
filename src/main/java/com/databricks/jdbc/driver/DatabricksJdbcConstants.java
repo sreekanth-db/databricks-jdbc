@@ -149,4 +149,11 @@ public final class DatabricksJdbcConstants {
 
   static final String CLOUD_FETCH_THREAD_POOL_SIZE = "cloudFetchThreadPoolSize";
   static final int CLOUD_FETCH_THREAD_POOL_SIZE_DEFAULT = 16;
+
+
+  public static final Pattern SELECT_PATTERN = Pattern.compile("^\\s*select\\b", Pattern.CASE_INSENSITIVE);
+  public static final Pattern SHOW_PATTERN = Pattern.compile("^\\s*show\\b", Pattern.CASE_INSENSITIVE);
+  public static final Pattern DESCRIBE_PATTERN = Pattern.compile("^\\s*describe\\b", Pattern.CASE_INSENSITIVE);
+  public static final Pattern EXPLAIN_PATTERN = Pattern.compile("^\\s*explain\\b", Pattern.CASE_INSENSITIVE);
+  public static final Pattern WITH_PATTERN = Pattern.compile("^\\s*with\\b", Pattern.CASE_INSENSITIVE); // Common Table Expressions
 }

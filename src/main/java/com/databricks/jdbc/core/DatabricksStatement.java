@@ -1,6 +1,7 @@
 package com.databricks.jdbc.core;
 
 import static com.databricks.jdbc.commons.EnvironmentVariables.*;
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
 import static java.lang.String.format;
 
 import com.databricks.jdbc.client.DatabricksClient;
@@ -44,6 +45,9 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     checkIfClosed();
+    if(!shouldReturnResultSet(sql)) {
+      throw new DatabricksSQLException("A ResultSet was expected but not generated from query: " + sql);
+    }
     return executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.QUERY);
   }
 
@@ -166,7 +170,33 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
     checkIfClosed();
     resultSet =
         executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.SQL);
-    return !resultSet.hasUpdateCount();
+    return shouldReturnResultSet(sql);
+  }
+
+  public void printResultSet(ResultSet resultSet) throws SQLException {
+    System.out.println("\n\nPrinting resultSet...........\n");
+    ResultSetMetaData rsmd = resultSet.getMetaData();
+    int columnsNumber = rsmd.getColumnCount();
+    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnName(i) + "\t");
+    System.out.println();
+    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnTypeName(i) + "\t\t");
+    System.out.println();
+    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnType(i) + "\t\t\t");
+    System.out.println();
+    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getPrecision(i) + "\t\t\t");
+    System.out.println();
+    while (resultSet.next()) {
+      for (int i = 1; i <= columnsNumber; i++) {
+        try {
+          Object columnValue = resultSet.getObject(i);
+          System.out.print(columnValue + "\t\t");
+        } catch (Exception e) {
+          System.out.print(
+                  "NULL\t\t"); // It is possible for certain columns to be non-existent (edge case)
+        }
+      }
+      System.out.println();
+    }
   }
 
   @Override
@@ -470,5 +500,27 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   @Override
   public Statement getStatement() {
     return this;
+  }
+
+  private static boolean shouldReturnResultSet(String query) {
+
+    if (query == null || query.trim().isEmpty()) {
+      throw new IllegalArgumentException("Query cannot be null or empty");
+    }
+
+    // Trim and remove leading comments and whitespaces
+    String trimmedQuery = query.trim().replaceAll("^(--.*|/\\*.*?\\*/)*", "").trim();
+
+    // Check if the query matches any of the patterns that return a ResultSet
+    if (SELECT_PATTERN.matcher(trimmedQuery).find() ||
+            SHOW_PATTERN.matcher(trimmedQuery).find() ||
+            DESCRIBE_PATTERN.matcher(trimmedQuery).find() ||
+            EXPLAIN_PATTERN.matcher(trimmedQuery).find() ||
+            WITH_PATTERN.matcher(trimmedQuery).find()) {
+      return true;
+    }
+
+    // Otherwise, it should not return a ResultSet
+    return false;
   }
 }

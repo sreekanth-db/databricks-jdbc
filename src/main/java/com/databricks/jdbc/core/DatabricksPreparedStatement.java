@@ -1,6 +1,7 @@
 package com.databricks.jdbc.core;
 
 import static com.databricks.jdbc.core.DatabricksTypeUtil.*;
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
 
 import com.databricks.jdbc.client.StatementType;
 import java.io.ByteArrayOutputStream;
@@ -254,7 +255,7 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
     LOGGER.debug("public boolean execute()");
     checkIfClosed();
     executeInternal(sql, parameterBindings, StatementType.SQL);
-    return !resultSet.hasUpdateCount();
+    return shouldReturnResultSet(sql);
   }
 
   @Override
@@ -612,5 +613,27 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   @Override
   public boolean execute(String sql, String[] columnNames) throws SQLException {
     throw new DatabricksSQLException("Method not supported in PreparedStatement");
+  }
+
+  private static boolean shouldReturnResultSet(String query) {
+
+    if (query == null || query.trim().isEmpty()) {
+      throw new IllegalArgumentException("Query cannot be null or empty");
+    }
+
+    // Trim and remove leading comments and whitespaces
+    String trimmedQuery = query.trim().replaceAll("^(--.*|/\\*.*?\\*/)*", "").trim();
+
+    // Check if the query matches any of the patterns that return a ResultSet
+    if (SELECT_PATTERN.matcher(trimmedQuery).find() ||
+            SHOW_PATTERN.matcher(trimmedQuery).find() ||
+            DESCRIBE_PATTERN.matcher(trimmedQuery).find() ||
+            EXPLAIN_PATTERN.matcher(trimmedQuery).find() ||
+            WITH_PATTERN.matcher(trimmedQuery).find()) {
+      return true;
+    }
+
+    // Otherwise, it should not return a ResultSet
+    return false;
   }
 }
