@@ -22,43 +22,44 @@ public class DatabricksMetrics {
       "https://test-shard-bhuvan-v2.dev.azuredatabricks.net/api/2.0/example-v2/exportMetrics";
   // TODO: Replace ACCESS_TOKEN with your own token - TO BE DECIDED ONCE THE SERVICE IS CREATED
   private static final String ACCESS_TOKEN = "x";
-  private static final Map<String, Double> gaugeMetrics = new HashMap<>();
-  private static final Map<String, Double> counterMetrics = new HashMap<>();
-  private static long lastSuccessfulHttpReq = System.currentTimeMillis();
-  private static final long intervalDurationForSendingReq = TimeUnit.SECONDS.toMillis(10 * 60);
-  private static long httpLatency = 0;
+  public static final Map<String, Double> gaugeMetrics = new HashMap<>();
+  public static final Map<String, Double> counterMetrics = new HashMap<>();
+  private static final long intervalDurationForSendingReq = TimeUnit.SECONDS.toMillis(10 * 60); // 10 minutes
   private static DatabricksHttpClient telemetryClient = null;
   private static final ObjectMapper objectMapper = new ObjectMapper();
   private static final String METRICS_MAP_STRING = "metrics_map_string";
   private static final String METRICS_TYPE = "metrics_map_int";
+  private static Boolean firstExport = false;
 
   public enum MetricsType {
     GAUGE,
     COUNTER
   }
-
-  public static void scheduleExportMetrics(long interval) {
-    Timer timer = new Timer();
+  private static void scheduleExportMetrics() {
+    Timer metricsTimer = new Timer();
     TimerTask task =
-        new TimerTask() {
-          @Override
-          public void run() {
-            try {
-              sendRequest(gaugeMetrics, MetricsType.GAUGE);
-              sendRequest(counterMetrics, MetricsType.COUNTER);
-            } catch (Exception e) {
-              // Commenting out the exception for now - failing silently
-              // System.out.println(e.getMessage());
-            }
-          }
-        };
+            new TimerTask() {
+              @Override
+              public void run() {
+                try {
+                  sendRequest(gaugeMetrics, MetricsType.GAUGE);
+                  sendRequest(counterMetrics, MetricsType.COUNTER);
+                } catch (Exception e) {
+                  // Commenting out the exception for now - failing silently
+                  // System.out.println(e.getMessage());
+                }
+              }
+            };
 
-    // Schedule the task to run once after the specified interval
-    timer.schedule(task, interval);
+    // Schedule the task to run after the specified interval infinitely
+    metricsTimer.schedule(task, 0, intervalDurationForSendingReq);
   }
 
   public static void instantiateTelemetryClient(IDatabricksConnectionContext context) {
     telemetryClient = DatabricksHttpClient.getInstance(context);
+
+    // Schedule the task using a parallel thread to send metrics to server every "intervalDurationForSendingReq" seconds
+    scheduleExportMetrics();
   }
 
   private DatabricksMetrics() throws IOException {
@@ -71,6 +72,11 @@ public class DatabricksMetrics {
     if (telemetryClient == null) {
       throw new DatabricksHttpException(
           "Telemetry client is not set. Initialize the Driver first.");
+    }
+
+    // Return if the map is empty - prevents sending empty metrics & unnecessary API calls
+    if (map.isEmpty()) {
+      return "Metrics map is empty";
     }
 
     // Convert the map to JSON string
@@ -93,6 +99,9 @@ public class DatabricksMetrics {
               + response.getStatusLine().getStatusCode()
               + " Response: "
               + response.getEntity().toString());
+    }else{
+      // Clearing map after successful response
+      map.clear();
     }
 
     // Get the response string
@@ -101,48 +110,12 @@ public class DatabricksMetrics {
     return responseString;
   }
 
-  public static void postMetrics(MetricsType metricsType) {
-    CompletableFuture.supplyAsync(
-            () -> {
-              long currentTimeMillis = System.currentTimeMillis();
-              if (currentTimeMillis - lastSuccessfulHttpReq >= intervalDurationForSendingReq) {
-                try {
-                  if (metricsType == MetricsType.GAUGE) {
-                    sendRequest(gaugeMetrics, MetricsType.GAUGE);
-                  } else {
-                    sendRequest(counterMetrics, MetricsType.COUNTER);
-                  }
-                  lastSuccessfulHttpReq = System.currentTimeMillis();
-                  httpLatency += (lastSuccessfulHttpReq - currentTimeMillis);
-                } catch (Exception e) {
-                  // Commenting out the exception for now - failing silently
-                  // System.out.println(e.getMessage());
-                }
-              } else {
-                scheduleExportMetrics(
-                    intervalDurationForSendingReq - (currentTimeMillis - lastSuccessfulHttpReq));
-              }
-              return null;
-            })
-        .thenAccept(
-            response -> {
-              if (response != null) {
-                if (metricsType == MetricsType.GAUGE) {
-                  gaugeMetrics.clear();
-                } else {
-                  counterMetrics.clear();
-                }
-              }
-            });
-  }
-
   public static void setGaugeMetrics(String name, double value) {
     // TODO: Handling metrics export when multiple users are accessing from the same workspace_id.
     if (!gaugeMetrics.containsKey(name)) {
       gaugeMetrics.put(name, 0.0);
     }
     gaugeMetrics.put(name, value);
-    postMetrics(MetricsType.GAUGE);
   }
 
   public static void incCounterMetrics(String name, double value) {
@@ -150,18 +123,26 @@ public class DatabricksMetrics {
       counterMetrics.put(name, 0.0);
     }
     counterMetrics.put(name, value);
-    postMetrics(MetricsType.COUNTER);
   }
-
+  private static void FirstExport(Map<String, Double> map, MetricsType metricsType){
+    if(firstExport) return;
+    firstExport = true;
+    CompletableFuture.runAsync(() -> {
+      try {
+        sendRequest(map, metricsType);
+      } catch (Exception e) {
+        // Commenting out the exception for now - failing silently
+        // System.out.println(e.getMessage());
+      }
+    });
+  }
   public static void record(String name, double value) {
     setGaugeMetrics(name, value);
+    FirstExport(gaugeMetrics, MetricsType.GAUGE);
   }
 
   public static void increment(String name, double value) {
     incCounterMetrics(name, value);
-  }
-
-  public static long getHttpLatency() {
-    return httpLatency;
+    FirstExport(counterMetrics, MetricsType.COUNTER);
   }
 }
