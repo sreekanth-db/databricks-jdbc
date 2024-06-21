@@ -480,7 +480,6 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   }
 
   private static boolean shouldReturnResultSet(String query) {
-
     if (query == null || query.trim().isEmpty()) {
       throw new IllegalArgumentException("Query cannot be null or empty");
     }
