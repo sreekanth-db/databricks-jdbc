@@ -197,9 +197,11 @@ public class DatabricksThriftAccessor {
       if (response.status.statusCode == TStatusCode.ERROR_STATUS) {
         throw new DatabricksSQLException(response.status.errorMessage);
       }
-      if(enableDirectResults) {
-        if(response.getDirectResults().getOperationStatus().operationState == TOperationState.ERROR_STATE) {
-          throw new DatabricksSQLException(response.getDirectResults().getOperationStatus().errorMessage);
+      if (enableDirectResults) {
+        if (response.getDirectResults().getOperationStatus().operationState
+            == TOperationState.ERROR_STATE) {
+          throw new DatabricksSQLException(
+              response.getDirectResults().getOperationStatus().errorMessage);
         }
       }
       if (((response.status.statusCode == SUCCESS_STATUS)
