@@ -176,32 +176,6 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
     return shouldReturnResultSet(sql);
   }
 
-  public void printResultSet(ResultSet resultSet) throws SQLException {
-    System.out.println("\n\nPrinting resultSet...........\n");
-    ResultSetMetaData rsmd = resultSet.getMetaData();
-    int columnsNumber = rsmd.getColumnCount();
-    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnName(i) + "\t");
-    System.out.println();
-    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnTypeName(i) + "\t\t");
-    System.out.println();
-    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getColumnType(i) + "\t\t\t");
-    System.out.println();
-    for (int i = 1; i <= columnsNumber; i++) System.out.print(rsmd.getPrecision(i) + "\t\t\t");
-    System.out.println();
-    while (resultSet.next()) {
-      for (int i = 1; i <= columnsNumber; i++) {
-        try {
-          Object columnValue = resultSet.getObject(i);
-          System.out.print(columnValue + "\t\t");
-        } catch (Exception e) {
-          System.out.print(
-              "NULL\t\t"); // It is possible for certain columns to be non-existent (edge case)
-        }
-      }
-      System.out.println();
-    }
-  }
-
   @Override
   public ResultSet getResultSet() throws SQLException {
     LOGGER.debug("public ResultSet getResultSet()");
