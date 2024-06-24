@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Logger;
 public class DatabricksConnection implements IDatabricksConnection, Connection {
 
   private static final Logger LOGGER = LogManager.getLogger(DatabricksConnection.class);
-  private final IDatabricksSession session;
+  private IDatabricksSession session;
   private final Set<IDatabricksStatement> statementSet = ConcurrentHashMap.newKeySet();
   private SQLWarning warnings = null;
 
@@ -34,6 +34,10 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
       throws DatabricksSQLException {
     this.session = new DatabricksSession(connectionContext);
     this.session.open();
+  }
+
+  public void setMetadataClient(boolean useLegacyMetadataClient) {
+    this.session.setMetadataClient(useLegacyMetadataClient);
   }
 
   @VisibleForTesting
