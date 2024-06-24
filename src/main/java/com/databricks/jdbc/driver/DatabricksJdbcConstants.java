@@ -24,6 +24,13 @@ public final class DatabricksJdbcConstants {
   static final String LOG_LEVEL = "loglevel";
   static final String LOG_PATH = "logpath";
   static final String DEFAULT_LOG_PATH = "logs/application.log";
+  static final String LOG_FILE_SIZE = "LogFileSize";
+  static final int DEFAULT_LOG_FILE_SIZE_IN_MB = 10;
+  static final String DEFAULT_LOG_PATTERN = "%d{yyyy-MM-dd HH:mm:ss} %p %c{1}:%L - %m%n";
+  public static final String DEFAULT_FILE_LOG_PATTERN = "/%d{yyyy-MM-dd}-logfile-%i.log";
+  public static final String DEFAULT_LOG_NAME_FILE = "logfile-0.log";
+  static final String LOG_FILE_COUNT = "LogFileCount";
+  static final int DEFAULT_LOG_FILE_COUNT = 10;
   public static final String URL_DELIMITER = ";";
   public static final String PORT_DELIMITER = ":";
   static final String DEFAULT_SCHEMA = "default";
@@ -71,6 +78,8 @@ public final class DatabricksJdbcConstants {
   public static final String HTTP_PATH = "httppath";
 
   public static final String SSL = "ssl";
+
+  public static final String DIRECT_RESULT = "EnableDirectResults";
 
   static final String HTTP_SCHEMA = "http://";
   static final String HTTPS_SCHEMA = "https://";
@@ -140,6 +149,17 @@ public final class DatabricksJdbcConstants {
 
   static final String CLOUD_FETCH_THREAD_POOL_SIZE = "cloudFetchThreadPoolSize";
   static final int CLOUD_FETCH_THREAD_POOL_SIZE_DEFAULT = 16;
+
+  public static final Pattern SELECT_PATTERN =
+      Pattern.compile("^\\s*select\\b", Pattern.CASE_INSENSITIVE);
+  public static final Pattern SHOW_PATTERN =
+      Pattern.compile("^\\s*show\\b", Pattern.CASE_INSENSITIVE);
+  public static final Pattern DESCRIBE_PATTERN =
+      Pattern.compile("^\\s*describe\\b", Pattern.CASE_INSENSITIVE);
+  public static final Pattern EXPLAIN_PATTERN =
+      Pattern.compile("^\\s*explain\\b", Pattern.CASE_INSENSITIVE);
+  public static final Pattern WITH_PATTERN =
+      Pattern.compile("^\\s*with\\b", Pattern.CASE_INSENSITIVE); // Common Table Expressions
 
   static final int DBSQL_MIN_MAJOR_VERSION_FOR_NEW_METADATA = 2024;
   static final int DBSQL_MIN_MINOR_VERSION_FOR_NEW_METADATA = 30;

@@ -185,6 +185,11 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
         : Integer.parseInt(getParameter(DatabricksJdbcConstants.POLL_INTERVAL));
   }
 
+  @Override
+  public Boolean getDirectResultMode() {
+    return getParameter(DIRECT_RESULT) == null || Objects.equals(getParameter(DIRECT_RESULT), "1");
+  }
+
   public String getCloud() throws DatabricksParsingException {
     String hostURL = getHostUrl();
     if (hostURL.contains("azuredatabricks.net")
@@ -273,6 +278,18 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   public String getLogPathString() {
     String parameter = getParameter(LOG_PATH);
     return (parameter == null) ? DEFAULT_LOG_PATH : parameter;
+  }
+
+  @Override
+  public int getLogFileSize() {
+    String parameter = getParameter(LOG_FILE_SIZE);
+    return (parameter == null) ? DEFAULT_LOG_FILE_SIZE_IN_MB : Integer.parseInt(parameter);
+  }
+
+  @Override
+  public int getLogFileCount() {
+    String parameter = getParameter(LOG_FILE_COUNT);
+    return (parameter == null) ? DEFAULT_LOG_FILE_COUNT : Integer.parseInt(parameter);
   }
 
   @Override
