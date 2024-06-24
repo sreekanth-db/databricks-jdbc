@@ -12,6 +12,7 @@ import com.databricks.jdbc.core.VolumeOperationExecutor.VolumeOperationStatus;
 import com.databricks.sdk.service.sql.ResultSchema;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.SQLException;
+import java.util.Map;
 
 /** Class to handle the result of a volume operation */
 class VolumeOperationResult implements IExecutionResult {
@@ -19,11 +20,14 @@ class VolumeOperationResult implements IExecutionResult {
   private final IDatabricksSession session;
   private final ResultManifest manifest;
   private final String statementId;
+  private final IExecutionResult resultHandler;
   private VolumeOperationExecutor volumeOperationExecutor;
   private int currentRowIndex;
 
   VolumeOperationResult(
-          String statementId, IDatabricksSession session, IExecutionResult resultHandler) {
+          String statementId,
+          IDatabricksSession session,
+          IExecutionResult resultHandler) {
     this.statementId = statementId;
     this.session = session;
     init(resultHandler,
@@ -43,6 +47,10 @@ class VolumeOperationResult implements IExecutionResult {
   }
 
   private void init(IExecutionResult resultHandler, IDatabricksHttpClient httpClient) {
+    String method = resultHandler.getObject(0);
+    String presignedUrl = resultHandler.getObject(1);
+    String localFile = resultHandler.getObject(3);
+    Map<String, String> headers = resultHandler.getObject(2);
     // For now there would be only one external link, until multi part upload is supported
     ExternalLink externalLink =
         volumeOperationInfo.getExternalLinks() == null
@@ -50,9 +58,10 @@ class VolumeOperationResult implements IExecutionResult {
             : volumeOperationInfo.getExternalLinks().stream().findFirst().orElse(null);
     this.volumeOperationExecutor =
         new VolumeOperationExecutor(
-            volumeOperationInfo.getVolumeOperationType(),
-            externalLink,
-            volumeOperationInfo.getLocalFile(),
+            method,
+            presignedUrl,
+            headers,
+            localFile,
             session
                 .getClientInfoProperties()
                 .getOrDefault(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ""),
@@ -62,7 +71,7 @@ class VolumeOperationResult implements IExecutionResult {
     thread.start();
   }
 
-  private void validateMetadata() throws SQLException {
+  private void validateMetadata() throws DatabricksSQLException {
     // For now we only support one row for Volume operation
     if (manifest.getTotalRowCount() > 1) {
       throw new DatabricksSQLException("Too many rows for Volume Operation");
@@ -97,6 +106,10 @@ class VolumeOperationResult implements IExecutionResult {
   @Override
   public boolean next() throws DatabricksSQLException {
     if (hasNext()) {
+      validateMetadata();
+      resultHandler.next();
+      init(resultHandler);
+
       poll();
       currentRowIndex++;
       return true;
@@ -128,7 +141,7 @@ class VolumeOperationResult implements IExecutionResult {
 
   @Override
   public boolean hasNext() {
-    return currentRowIndex < 0;
+    return resultHandler.hasNext();
   }
 
   @Override
