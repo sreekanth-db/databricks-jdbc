@@ -25,18 +25,30 @@ public class RetryHandler {
       long rateLimitRetryTimeout,
       long temporarilyUnavailableRetryCount,
       long rateLimitRetryCount) {
-    if (((errCode != 503 && errCode != 429) && executionCount > DEFAULT_RETRY_COUNT)
-        || !isRetryAllowed(((HttpClientContext) context).getRequest().getRequestLine().getMethod())
-        || (errCode == 503
+
+    boolean isErrorCode503Or429 = (errCode == 503 || errCode == 429);
+    boolean isExecutionCountExceeded = executionCount > DEFAULT_RETRY_COUNT;
+    boolean isMethodRetryNotAllowed =
+        !isRetryAllowed(((HttpClientContext) context).getRequest().getRequestLine().getMethod());
+
+    boolean is503RetryTimeoutExceeded =
+        (errCode == 503
             && temporarilyUnavailableRetryTimeout > 0
             && temporarilyUnavailableRetryCount * temporarilyUnavailableRetryInterval
-                > temporarilyUnavailableRetryTimeout)
-        || (errCode == 429
+                > temporarilyUnavailableRetryTimeout);
+
+    boolean is429RetryTimeoutExceeded =
+        (errCode == 429
             && rateLimitRetryTimeout > 0
-            && rateLimitRetryCount * rateLimitRetryInterval > rateLimitRetryTimeout)) {
-      return false;
-    }
-    return true;
+            && rateLimitRetryCount * rateLimitRetryInterval > rateLimitRetryTimeout);
+
+    boolean shouldNotRetry =
+        (!isErrorCode503Or429 && isExecutionCountExceeded)
+            || isMethodRetryNotAllowed
+            || is503RetryTimeoutExceeded
+            || is429RetryTimeoutExceeded;
+
+    return !shouldNotRetry;
   }
 
   public static void sleepForDelay(long delay) {

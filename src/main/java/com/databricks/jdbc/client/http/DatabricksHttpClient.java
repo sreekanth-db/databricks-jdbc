@@ -119,17 +119,21 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
   public long calculateDelay(int errCode, int executionCount, boolean isTest) {
     long delay;
-    if (errCode != 503 && errCode != 429) {
-      delay =
-          Math.min(
-              MIN_BACKOFF_INTERVAL * (long) Math.pow(DEFAULT_BACKOFF_FACTOR, executionCount),
-              MAX_RETRY_INTERVAL);
-    } else if (errCode == 503) {
-      delay = temporarilyUnavailableRetryInterval;
-      if (!isTest) temporarilyUnavailableRetryCount++;
-    } else {
-      delay = rateLimitRetryInterval;
-      if (!isTest) rateLimitRetryCount++;
+    switch (errCode) {
+      case 503:
+        delay = temporarilyUnavailableRetryInterval;
+        if (!isTest) temporarilyUnavailableRetryCount++;
+        break;
+      case 429:
+        delay = rateLimitRetryInterval;
+        if (!isTest) rateLimitRetryCount++;
+        break;
+      default:
+        delay =
+            Math.min(
+                MIN_BACKOFF_INTERVAL * (long) Math.pow(DEFAULT_BACKOFF_FACTOR, executionCount),
+                MAX_RETRY_INTERVAL);
+        break;
     }
     return delay;
   }
