@@ -181,6 +181,7 @@ public class DatabricksHttpClientTest {
   }
 
   @Test
+  // TODO: Need to improvise this test - Madhav
   void testRetryHandlerWithTemporarilyUnavailableRetryInterval() throws IOException {
     DatabricksHttpClient databricksHttpClient =
         new DatabricksHttpClient(mockHttpClient, connectionManager);
@@ -188,10 +189,10 @@ public class DatabricksHttpClientTest {
     when(mockHttpClient.execute(request))
         .thenThrow(new DatabricksRetryHandlerException("Retry http request.Error code: ", 503));
     assertThrows(DatabricksHttpException.class, () -> databricksHttpClient.execute(request));
-    System.out.println(databricksHttpClient.calculateDelay(503, 1, true));
+    System.out.println(databricksHttpClient.calculateDelay(503, 1));
     assertEquals(
         DatabricksHttpClient.getTemporarilyUnavailableRetryInterval(),
-        databricksHttpClient.calculateDelay(503, 1, false));
+        databricksHttpClient.calculateDelay(503, 1));
   }
 
   @Test

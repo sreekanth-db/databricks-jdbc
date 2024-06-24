@@ -107,26 +107,28 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
   private static Set<Integer> getRetryableHttpCodes() {
     Set<Integer> retryableCodes = new HashSet<>();
+    retryableCodes.add(503); // service unavailable
+    retryableCodes.add(429); // too many requests
+    // TODO: Add retry logic for the following codes
     retryableCodes.add(408); // request timeout
     retryableCodes.add(425); // too early response
-    retryableCodes.add(429); // too many requests
     retryableCodes.add(500); // internal server error
     retryableCodes.add(502); // bad gateway (should this be retried?)
-    retryableCodes.add(503); // service unavailable
     retryableCodes.add(504); // gateway timeout
     return retryableCodes;
   }
 
-  public long calculateDelay(int errCode, int executionCount, boolean isTest) {
+  @VisibleForTesting
+  long calculateDelay(int errCode, int executionCount) {
     long delay;
     switch (errCode) {
       case 503:
         delay = temporarilyUnavailableRetryInterval;
-        if (!isTest) temporarilyUnavailableRetryCount++;
+        temporarilyUnavailableRetryCount++;
         break;
       case 429:
         delay = rateLimitRetryInterval;
-        if (!isTest) rateLimitRetryCount++;
+        rateLimitRetryCount++;
         break;
       default:
         delay =
@@ -164,7 +166,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
                       rateLimitRetryCount)) {
                     return false;
                   }
-                  long delay = calculateDelay(errCode, executionCount, false);
+                  long delay = calculateDelay(errCode, executionCount);
                   sleepForDelay(delay);
                   return true;
                 })

@@ -203,36 +203,6 @@ public class DriverTester {
   }
 
   @Test
-  public void testSimbaLogging() throws Exception {
-    DriverManager.drivers()
-        .forEach(
-            driver -> {
-              if (driver.getClass().getName().contains("DatabricksDriver")) {
-                try {
-                  DriverManager.deregisterDriver(driver);
-                } catch (SQLException e) {
-                  throw new RuntimeException(e);
-                }
-              }
-            });
-
-    // DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
-    DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
-    String jdbcUrl =
-        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;LogLevel=debug;LogPath=test;TemporarilyUnavailableRetry=1;TemporarilyUnavailableRetryTimeout=700;RateLimitRetry=2;RateLimitRetryTimeout=100;IdleHttpConnectionExpiry=60;";
-    Connection con = DriverManager.getConnection(jdbcUrl, "token", "x");
-    System.out.println("Connection established......");
-    System.out.println(
-        con.getMetaData().getDriverName() + " " + con.getMetaData().getDriverVersion());
-    ResultSet resultSet =
-        con.createStatement()
-            .executeQuery("SELECT * from lb_demo.demographics_fs.demographics LIMIT 10");
-    printResultSet(resultSet);
-    resultSet.close();
-    con.close();
-  }
-
-  @Test
   void testHttpFlags() throws Exception {
     DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
     DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
