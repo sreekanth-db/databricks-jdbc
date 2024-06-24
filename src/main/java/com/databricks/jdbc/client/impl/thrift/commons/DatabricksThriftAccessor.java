@@ -14,6 +14,7 @@ import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Map;
 import org.apache.http.HttpException;
 import org.apache.logging.log4j.LogManager;
@@ -199,37 +200,35 @@ public class DatabricksThriftAccessor {
     TFetchResultsResp resultSet = null;
     try {
       response = getThriftClient().ExecuteStatement(request);
+      System.out.println("MADHAVRESPONSE" + response.toString());
+      if (Arrays.asList(ERROR_STATUS, INVALID_HANDLE_STATUS).contains(response.status.statusCode)) {
+        throw new DatabricksSQLException(response.status.errorMessage);
+      }
       if (response.isSetDirectResults()) {
-        if (response.status.statusCode == TStatusCode.ERROR_STATUS) {
-          throw new DatabricksSQLException(response.status.errorMessage);
-        }
         if (enableDirectResults) {
-          if (response.getDirectResults().getOperationStatus().operationState
+          if (response.getDirectResults().isSetOperationStatus()
+              && response.getDirectResults().operationStatus.operationState
                   == TOperationState.ERROR_STATE) {
             throw new DatabricksSQLException(
-                    response.getDirectResults().getOperationStatus().errorMessage);
+                response.getDirectResults().getOperationStatus().errorMessage);
           }
         }
         if (((response.status.statusCode == SUCCESS_STATUS)
                 || (response.status.statusCode == SUCCESS_WITH_INFO_STATUS))
-                && response.isSetDirectResults()) {
+            && response.isSetDirectResults()) {
           checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
           resultSet = response.getDirectResults().getResultSet();
           resultSet.setResultSetMetadata(response.getDirectResults().getResultSetMetadata());
-        } else {
-          if (response.status.statusCode == INVALID_HANDLE_STATUS
-                  || response.getOperationHandle() == null) {
-            throw new DatabricksSQLException("Unknown error occurred during query execution");
-          }
-          longPolling(response.getOperationHandle());
-          resultSet =
-                  getResultSetResp(
-                          response.getStatus().getStatusCode(),
-                          response.getOperationHandle(),
-                          response.toString(),
-                          maxRows,
-                          true);
         }
+      } else {
+        longPolling(response.getOperationHandle());
+        resultSet =
+            getResultSetResp(
+                response.getStatus().getStatusCode(),
+                response.getOperationHandle(),
+                response.toString(),
+                maxRows,
+                true);
       }
     } catch (TException | InterruptedException e) {
       String errorMessage =

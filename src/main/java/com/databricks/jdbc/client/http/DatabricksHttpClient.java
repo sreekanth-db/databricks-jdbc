@@ -181,18 +181,20 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
                       String thriftErrorHeader = "X-Thriftserver-Error-Message";
                       if (httpResponse.containsHeader(thriftErrorHeader)) {
                         String errorMessage =
-                                httpResponse.getFirstHeader(thriftErrorHeader).getValue();
+                            httpResponse.getFirstHeader(thriftErrorHeader).getValue();
                         throw new DatabricksRetryHandlerException(
-                                "HTTP Response code: "
-                                        + httpResponse.getStatusLine().getStatusCode()
-                                        + ", Error message: "
-                                        + errorMessage, errCode);
+                            "HTTP Response code: "
+                                + httpResponse.getStatusLine().getStatusCode()
+                                + ", Error message: "
+                                + errorMessage,
+                            errCode);
                       }
                       throw new DatabricksRetryHandlerException(
-                              "HTTP Response code: "
-                                      + httpResponse.getStatusLine().getStatusCode()
-                                      + ", Error Message: "
-                                      + httpResponse.getStatusLine().getReasonPhrase(), errCode);
+                          "HTTP Response code: "
+                              + httpResponse.getStatusLine().getStatusCode()
+                              + ", Error Message: "
+                              + httpResponse.getStatusLine().getReasonPhrase(),
+                          errCode);
                     }
                   }
                 });
