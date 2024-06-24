@@ -114,7 +114,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   public void setMaxRows(int max) throws SQLException {
     LOGGER.debug("public void setMaxRows(int max = {})", max);
     checkIfClosed();
-    ValidationUtil.checkIfPositive(max, "maxRows");
+    ValidationUtil.checkIfNonNegative(max, "maxRows");
     this.maxRows = max;
   }
 
@@ -135,6 +135,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   public void setQueryTimeout(int seconds) throws SQLException {
     LOGGER.debug("public void setQueryTimeout(int seconds = {})", seconds);
     checkIfClosed();
+    ValidationUtil.checkIfNonNegative(seconds, "queryTimeout");
     this.timeoutInSeconds = seconds;
   }
 
@@ -419,7 +420,10 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
     CompletableFuture<DatabricksResultSet> futureResultSet =
         getFutureResult(sql, params, statementType);
     try {
-      resultSet = futureResultSet.get(timeoutInSeconds, TimeUnit.SECONDS);
+      resultSet =
+          timeoutInSeconds == 0
+              ? futureResultSet.get() // Wait indefinitely when timeout is 0
+              : futureResultSet.get(timeoutInSeconds, TimeUnit.SECONDS);
     } catch (TimeoutException e) {
       this.close(); // Close the statement
       futureResultSet.cancel(true); // Cancel execution run
