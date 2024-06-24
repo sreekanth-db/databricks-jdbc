@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 public class DatabricksSession implements IDatabricksSession {
 
   private static final Logger LOGGER = LogManager.getLogger(DatabricksSession.class);
-  private DatabricksClient databricksClient;
+  private final DatabricksClient databricksClient;
   private DatabricksMetadataClient databricksMetadataClient;
   private final ComputeResource computeResource;
 

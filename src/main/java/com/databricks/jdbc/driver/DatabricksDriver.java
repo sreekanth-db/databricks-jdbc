@@ -60,39 +60,42 @@ public class DatabricksDriver implements Driver {
     try {
       DatabricksConnection connection = new DatabricksConnection(connectionContext);
       if (connectionContext.getClientType() == DatabricksClientType.SQL_EXEC) {
-        try {
-          ResultSet getDBSQLVersionInfo =
-              connection.createStatement().executeQuery("SELECT current_version().dbsql_version");
-          getDBSQLVersionInfo.next();
-          String dbsqlVersion = getDBSQLVersionInfo.getString(1);
-          LOGGER.info("Connected to Databricks DBSQL version: {}", dbsqlVersion);
-          if (checkSupportForNewMetadata(dbsqlVersion)) {
-            LOGGER.info(
-                "The Databricks DBSQL version {} supports the new metadata commands.",
-                dbsqlVersion);
-            if (connectionContext.getUseLegacyMetadata().equals(true)) {
-              LOGGER.warn(
-                  "The new metadata commands are enabled, but the legacy metadata commands are being used due to connection parameter useLegacyMetadata");
-              connection.setMetadataClient(true);
-            } else {
-              connection.setMetadataClient(false);
-            }
-          } else {
-            LOGGER.warn(
-                "The Databricks DBSQL version {} does not support the new metadata commands. Falling back to legacy metadata commands.",
-                dbsqlVersion);
-            connection.setMetadataClient(true);
-          }
-        } catch (SQLException e) {
-          LOGGER.warn(
-              "Unable to get the DBSQL version. Falling back to legacy metadata commands.", e);
-          connection.setMetadataClient(true);
-        }
+        setMetadataClient(connection, connectionContext);
       }
       return connection;
     } catch (Exception e) {
       throw new DatabricksSQLException(
           "Invalid or unknown token or hostname provided :" + connectionContext.getHostUrl(), e);
+    }
+  }
+
+  private void setMetadataClient(
+      DatabricksConnection connection, IDatabricksConnectionContext connectionContext) {
+    try {
+      ResultSet getDBSQLVersionInfo =
+          connection.createStatement().executeQuery("SELECT current_version().dbsql_version");
+      getDBSQLVersionInfo.next();
+      String dbsqlVersion = getDBSQLVersionInfo.getString(1);
+      LOGGER.info("Connected to Databricks DBSQL version: {}", dbsqlVersion);
+      if (checkSupportForNewMetadata(dbsqlVersion)) {
+        LOGGER.info(
+            "The Databricks DBSQL version {} supports the new metadata commands.", dbsqlVersion);
+        if (connectionContext.getUseLegacyMetadata().equals(true)) {
+          LOGGER.warn(
+              "The new metadata commands are enabled, but the legacy metadata commands are being used due to connection parameter useLegacyMetadata");
+          connection.setMetadataClient(true);
+        } else {
+          connection.setMetadataClient(false);
+        }
+      } else {
+        LOGGER.warn(
+            "The Databricks DBSQL version {} does not support the new metadata commands. Falling back to legacy metadata commands.",
+            dbsqlVersion);
+        connection.setMetadataClient(true);
+      }
+    } catch (SQLException e) {
+      LOGGER.warn("Unable to get the DBSQL version. Falling back to legacy metadata commands.", e);
+      connection.setMetadataClient(true);
     }
   }
 
