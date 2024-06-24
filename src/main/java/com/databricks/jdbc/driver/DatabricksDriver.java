@@ -7,8 +7,6 @@ import com.databricks.jdbc.core.DatabricksConnection;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.telemetry.DatabricksMetrics;
 import com.databricks.sdk.core.UserAgent;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.*;
 import java.util.Properties;
 import org.apache.logging.log4j.Level;
