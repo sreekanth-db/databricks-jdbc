@@ -200,36 +200,36 @@ public class DatabricksThriftAccessor {
     try {
       response = getThriftClient().ExecuteStatement(request);
       if (response.isSetDirectResults()) {
-      response = thriftClient.ExecuteStatement(request);
-      if (response.status.statusCode == TStatusCode.ERROR_STATUS) {
-        throw new DatabricksSQLException(response.status.errorMessage);
-      }
-      if (enableDirectResults) {
-        if (response.getDirectResults().getOperationStatus().operationState
-            == TOperationState.ERROR_STATE) {
-          throw new DatabricksSQLException(
-              response.getDirectResults().getOperationStatus().errorMessage);
+        if (response.status.statusCode == TStatusCode.ERROR_STATUS) {
+          throw new DatabricksSQLException(response.status.errorMessage);
         }
-      }
-      if (((response.status.statusCode == SUCCESS_STATUS)
-              || (response.status.statusCode == SUCCESS_WITH_INFO_STATUS))
-          && response.isSetDirectResults()) {
-        checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
-        resultSet = response.getDirectResults().getResultSet();
-        resultSet.setResultSetMetadata(response.getDirectResults().getResultSetMetadata());
-      } else {
-        if (response.status.statusCode == INVALID_HANDLE_STATUS
-            || response.getOperationHandle() == null) {
-          throw new DatabricksSQLException("Unknown error occurred during query execution");
+        if (enableDirectResults) {
+          if (response.getDirectResults().getOperationStatus().operationState
+                  == TOperationState.ERROR_STATE) {
+            throw new DatabricksSQLException(
+                    response.getDirectResults().getOperationStatus().errorMessage);
+          }
         }
-        longPolling(response.getOperationHandle());
-        resultSet =
-            getResultSetResp(
-                response.getStatus().getStatusCode(),
-                response.getOperationHandle(),
-                response.toString(),
-                maxRows,
-                true);
+        if (((response.status.statusCode == SUCCESS_STATUS)
+                || (response.status.statusCode == SUCCESS_WITH_INFO_STATUS))
+                && response.isSetDirectResults()) {
+          checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
+          resultSet = response.getDirectResults().getResultSet();
+          resultSet.setResultSetMetadata(response.getDirectResults().getResultSetMetadata());
+        } else {
+          if (response.status.statusCode == INVALID_HANDLE_STATUS
+                  || response.getOperationHandle() == null) {
+            throw new DatabricksSQLException("Unknown error occurred during query execution");
+          }
+          longPolling(response.getOperationHandle());
+          resultSet =
+                  getResultSetResp(
+                          response.getStatus().getStatusCode(),
+                          response.getOperationHandle(),
+                          response.toString(),
+                          maxRows,
+                          true);
+        }
       }
     } catch (TException | InterruptedException e) {
       String errorMessage =
