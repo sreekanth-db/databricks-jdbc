@@ -59,32 +59,33 @@ public class DatabricksDriver implements Driver {
     DatabricksMetrics.instantiateTelemetryClient(connectionContext);
     try {
       DatabricksConnection connection = new DatabricksConnection(connectionContext);
-      if(connectionContext.getClientType() == DatabricksClientType.SQL_EXEC) {
+      if (connectionContext.getClientType() == DatabricksClientType.SQL_EXEC) {
         try {
           ResultSet getDBSQLVersionInfo =
-                  connection.createStatement().executeQuery("SELECT current_version().dbsql_version");
+              connection.createStatement().executeQuery("SELECT current_version().dbsql_version");
           getDBSQLVersionInfo.next();
           String dbsqlVersion = getDBSQLVersionInfo.getString(1);
           LOGGER.info("Connected to Databricks DBSQL version: {}", dbsqlVersion);
           if (checkSupportForNewMetadata(dbsqlVersion)) {
             LOGGER.info(
-                    "The Databricks DBSQL version {} supports the new metadata commands.", dbsqlVersion);
+                "The Databricks DBSQL version {} supports the new metadata commands.",
+                dbsqlVersion);
             if (connectionContext.getUseLegacyMetadata().equals(true)) {
               LOGGER.warn(
-                      "The new metadata commands are enabled, but the legacy metadata commands are being used due to connection parameter useLegacyMetadata");
+                  "The new metadata commands are enabled, but the legacy metadata commands are being used due to connection parameter useLegacyMetadata");
               connection.setMetadataClient(true);
             } else {
               connection.setMetadataClient(false);
             }
           } else {
             LOGGER.warn(
-                    "The Databricks DBSQL version {} does not support the new metadata commands. Falling back to legacy metadata commands.",
-                    dbsqlVersion);
+                "The Databricks DBSQL version {} does not support the new metadata commands. Falling back to legacy metadata commands.",
+                dbsqlVersion);
             connection.setMetadataClient(true);
           }
         } catch (SQLException e) {
           LOGGER.warn(
-                  "Unable to get the DBSQL version. Falling back to legacy metadata commands.", e);
+              "Unable to get the DBSQL version. Falling back to legacy metadata commands.", e);
           connection.setMetadataClient(true);
         }
       }
