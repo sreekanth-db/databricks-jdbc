@@ -200,7 +200,6 @@ public class DatabricksThriftAccessor {
     TFetchResultsResp resultSet = null;
     try {
       response = getThriftClient().ExecuteStatement(request);
-      System.out.println("MADHAVRESPONSE" + response.toString());
       if (Arrays.asList(ERROR_STATUS, INVALID_HANDLE_STATUS).contains(response.status.statusCode)) {
         throw new DatabricksSQLException(response.status.errorMessage);
       }
