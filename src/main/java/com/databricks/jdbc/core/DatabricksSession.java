@@ -67,6 +67,9 @@ public class DatabricksSession implements IDatabricksSession {
 
   @Override
   public void setMetadataClient(boolean useLegacyMetadataClient) {
+    if(connectionContext.getClientType() == DatabricksClientType.THRIFT) {
+      return;
+    }
     this.databricksMetadataClient =
         useLegacyMetadataClient
             ? new DatabricksMetadataSdkClient((DatabricksSdkClient) databricksClient)
