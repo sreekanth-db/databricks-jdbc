@@ -237,4 +237,7 @@ public final class DatabricksJdbcConstants {
 
   public static final Pattern WITH_PATTERN =
       Pattern.compile("^\\s*with\\b", Pattern.CASE_INSENSITIVE); // Common Table Expressions
+
+  static final int DBSQL_MIN_MAJOR_VERSION_FOR_NEW_METADATA = 2024;
+  static final int DBSQL_MIN_MINOR_VERSION_FOR_NEW_METADATA = 30;
 }
