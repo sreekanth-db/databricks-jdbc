@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.databricks.jdbc.client.DatabricksHttpException;
+import com.databricks.jdbc.client.DatabricksRetryHandlerException;
 import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.DatabricksDriver;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
@@ -180,6 +181,21 @@ public class DatabricksHttpClientTest {
   }
 
   @Test
+  // TODO: Need to improvise this test - Madhav
+  void testRetryHandlerWithTemporarilyUnavailableRetryInterval() throws IOException {
+    DatabricksHttpClient databricksHttpClient =
+        new DatabricksHttpClient(mockHttpClient, connectionManager);
+    when(request.getURI()).thenReturn(URI.create("TestURI"));
+    when(mockHttpClient.execute(request))
+        .thenThrow(new DatabricksRetryHandlerException("Retry http request.Error code: ", 503));
+    assertThrows(DatabricksHttpException.class, () -> databricksHttpClient.execute(request));
+    System.out.println(databricksHttpClient.calculateDelay(503, 1));
+    assertEquals(
+        DatabricksHttpClient.getTemporarilyUnavailableRetryInterval(),
+        databricksHttpClient.calculateDelay(503, 1));
+  }
+
+  @Test
   void testExecute() throws IOException, DatabricksHttpException {
     DatabricksHttpClient databricksHttpClient =
         new DatabricksHttpClient(mockHttpClient, connectionManager);
@@ -195,8 +211,7 @@ public class DatabricksHttpClientTest {
     databricksHttpClient.closeExpiredAndIdleConnections();
     verify(connectionManager).closeExpiredConnections();
     verify(connectionManager)
-        .closeIdleConnections(
-            DatabricksHttpClient.DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
+        .closeIdleConnections(DatabricksHttpClient.idleHttpConnectionExpiry, TimeUnit.SECONDS);
   }
 
   @Test
@@ -215,6 +230,7 @@ public class DatabricksHttpClientTest {
   void testIsErrorCodeRetryable() {
     assertTrue(isErrorCodeRetryable(408), "HTTP 408 Request Timeout should be retryable");
     assertTrue(isErrorCodeRetryable(503), "HTTP 503 Service Unavailable should be retryable");
+    assertTrue(isErrorCodeRetryable(429), "HTTP 429 Too Many Requests should be retryable");
     assertFalse(isErrorCodeRetryable(401), "HTTP 401 Unauthorized should not be retryable");
   }
 
