@@ -44,6 +44,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
+    // TODO(PECO-1731): Revisit this to see if we can fail fast if the statement does not return a result set.
     checkIfClosed();
     ResultSet rs =
         executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.QUERY);
