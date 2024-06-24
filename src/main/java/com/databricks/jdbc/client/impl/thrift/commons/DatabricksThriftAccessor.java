@@ -213,8 +213,7 @@ public class DatabricksThriftAccessor {
           }
         }
         if (((response.status.statusCode == SUCCESS_STATUS)
-                || (response.status.statusCode == SUCCESS_WITH_INFO_STATUS))
-            && response.isSetDirectResults()) {
+                || (response.status.statusCode == SUCCESS_WITH_INFO_STATUS))) {
           checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
           resultSet = response.getDirectResults().getResultSet();
           resultSet.setResultSetMetadata(response.getDirectResults().getResultSetMetadata());
