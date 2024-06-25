@@ -72,8 +72,6 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   private static boolean shouldRetryRateLimitError;
   private static int rateLimitRetryTimeout;
   protected static int idleHttpConnectionExpiry;
-  private static int temporarilyUnavailableRetryCount;
-  private static int rateLimitRetryCount;
 
   private DatabricksHttpClient(IDatabricksConnectionContext connectionContext) {
     connectionManager = new PoolingHttpClientConnectionManager();
@@ -86,8 +84,6 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     rateLimitRetryTimeout = connectionContext.getRateLimitRetryTimeout();
     httpClient = makeClosableHttpClient(connectionContext);
     idleHttpConnectionExpiry = connectionContext.getIdleHttpConnectionExpiry();
-    temporarilyUnavailableRetryCount = 0;
-    rateLimitRetryCount = 0;
   }
 
   @VisibleForTesting
@@ -173,9 +169,9 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
                         executionCount,
                         context,
                         errCode,
-                        connectionContext.shouldRetryTemporarilyUnavailableError(),
+                        shouldRetryTemporarilyUnavailableError,
                         temporarilyUnavailableRetryTimeout,
-                        connectionContext.shouldRetryRateLimitError(),
+                        shouldRetryRateLimitError,
                         rateLimitRetryTimeout,
                         tempUnavailableRetryCount,
                         rateLimitRetryCount,
@@ -208,12 +204,21 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
                       throws IOException {
                     int errCode = httpResponse.getStatusLine().getStatusCode();
                     if (isErrorCodeRetryable(errCode)) {
+                      int retryInterval = -1;
                       if (httpResponse.containsHeader("Retry-After")) {
-                        int retryInterval =
+                        retryInterval =
                             Integer.parseInt(httpResponse.getFirstHeader("Retry-After").getValue());
                         httpContext.setAttribute(RETRY_INTERVAL_KEY, retryInterval);
                       } else {
                         httpContext.setAttribute(RETRY_INTERVAL_KEY, -1);
+                      }
+
+                      if (retryInterval == -1) {
+                        if (errCode == 503 && !shouldRetryTemporarilyUnavailableError) {
+                          return;
+                        } else if (errCode == 429 && !shouldRetryRateLimitError) {
+                          return;
+                        }
                       }
 
                       // Initialize counts only if they are not already set

@@ -3,7 +3,6 @@ package com.databricks.jdbc.driver;
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
 
 import com.databricks.jdbc.client.DatabricksClientType;
-import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.http.DatabricksHttpClient;
 import com.databricks.jdbc.commons.util.AppenderUtil;
 import com.databricks.jdbc.core.DatabricksConnection;
@@ -66,19 +65,23 @@ public class DatabricksDriver implements Driver {
         setMetadataClient(connection, connectionContext);
       }
       return connection;
-    } catch (DatabricksSQLException e) {
-      throw e;
     } catch (Exception e) {
-      Throwable cause = e.getCause();
+      Throwable cause = e;
       while (cause != null) {
-        if(cause instanceof DatabricksHttpException)
         if (cause instanceof DatabricksSQLException) {
-          throw (DatabricksSQLException) cause;
+          throw new DatabricksSQLException(
+              "Communication link failure. Failed to connect to server. : "
+                  + connectionContext.getHostUrl()
+                  + cause.getMessage(),
+              cause.getCause());
         }
         cause = cause.getCause();
       }
       throw new DatabricksSQLException(
-          "Invalid or unknown token or hostname provided :" + connectionContext.getHostUrl(), e);
+          "Communication link failure. Failed to connect to server. :"
+              + connectionContext.getHostUrl()
+              + e.getMessage(),
+          e);
     }
   }
 
