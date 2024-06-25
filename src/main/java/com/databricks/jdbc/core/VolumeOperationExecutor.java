@@ -2,7 +2,6 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
-import com.databricks.jdbc.client.sqlexec.ExternalLink;
 import java.io.*;
 import java.util.*;
 import org.apache.http.HttpEntity;

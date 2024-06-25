@@ -5,13 +5,13 @@ import static com.databricks.jdbc.driver.DatabricksJdbcConstants.ALLOWED_VOLUME_
 
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.http.DatabricksHttpClient;
-import com.databricks.jdbc.client.sqlexec.ExternalLink;
-import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import com.databricks.jdbc.core.VolumeOperationExecutor.VolumeOperationStatus;
 import com.databricks.sdk.service.sql.ResultSchema;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 
 /** Class to handle the result of a volume operation */
@@ -21,44 +21,46 @@ class VolumeOperationResult implements IExecutionResult {
   private final ResultManifest manifest;
   private final String statementId;
   private final IExecutionResult resultHandler;
+  private final IDatabricksHttpClient httpClient;
   private VolumeOperationExecutor volumeOperationExecutor;
   private int currentRowIndex;
 
   VolumeOperationResult(
-          String statementId,
-          IDatabricksSession session,
-          IExecutionResult resultHandler) {
+      String statementId,
+      ResultManifest manifest,
+      IDatabricksSession session,
+      IExecutionResult resultHandler) {
     this.statementId = statementId;
+    this.manifest = manifest;
     this.session = session;
-    init(resultHandler,
-        DatabricksHttpClient.getInstance(session.getConnectionContext()));
+    this.resultHandler = resultHandler;
+    this.httpClient = DatabricksHttpClient.getInstance(session.getConnectionContext());
+    this.currentRowIndex = -1;
   }
 
   @VisibleForTesting
   VolumeOperationResult(
       String statementId,
+      ResultManifest manifest,
       IDatabricksSession session,
       IExecutionResult resultHandler,
       IDatabricksHttpClient httpClient) {
     this.statementId = statementId;
+    this.manifest = manifest;
     this.session = session;
+    this.resultHandler = resultHandler;
+    this.httpClient = httpClient;
     this.currentRowIndex = -1;
-    init(resultHandler, httpClient);
   }
 
-  private void init(IExecutionResult resultHandler, IDatabricksHttpClient httpClient) {
-    String method = resultHandler.getObject(0);
-    String presignedUrl = resultHandler.getObject(1);
-    String localFile = resultHandler.getObject(3);
-    Map<String, String> headers = resultHandler.getObject(2);
-    // For now there would be only one external link, until multi part upload is supported
-    ExternalLink externalLink =
-        volumeOperationInfo.getExternalLinks() == null
-            ? null
-            : volumeOperationInfo.getExternalLinks().stream().findFirst().orElse(null);
+  private void initHandler(IExecutionResult resultHandler) throws DatabricksSQLException {
+    String operation = getString(resultHandler.getObject(0));
+    String presignedUrl = getString(resultHandler.getObject(1));
+    String localFile = getString(resultHandler.getObject(3));
+    Map<String, String> headers = getHeaders(getString(resultHandler.getObject(2)));
     this.volumeOperationExecutor =
         new VolumeOperationExecutor(
-            method,
+            operation,
             presignedUrl,
             headers,
             localFile,
@@ -71,6 +73,22 @@ class VolumeOperationResult implements IExecutionResult {
     thread.start();
   }
 
+  private String getString(Object obj) {
+    return obj == null ? null : obj.toString();
+  }
+
+  private Map<String, String> getHeaders(String headersVal) throws DatabricksSQLException {
+    if (headersVal != null && !headersVal.isEmpty()) {
+      ObjectMapper objectMapper = new ObjectMapper();
+      try {
+        return objectMapper.readValue(headersVal, Map.class);
+      } catch (JsonProcessingException e) {
+        throw new DatabricksSQLException("Failed to parse headers", e);
+      }
+    }
+    return new HashMap<>();
+  }
+
   private void validateMetadata() throws DatabricksSQLException {
     // For now we only support one row for Volume operation
     if (manifest.getTotalRowCount() > 1) {
@@ -80,14 +98,13 @@ class VolumeOperationResult implements IExecutionResult {
     if (schema.getColumnCount() > 4) {
       throw new DatabricksSQLException("Too many columns for Volume Operation");
     }
-    if (schema.getColumnCount() < 3)  {
+    if (schema.getColumnCount() < 3) {
       throw new DatabricksSQLException("Too few columns for Volume Operation");
     }
-
   }
 
   @Override
-  public Object getObject(int columnIndex) throws SQLException {
+  public Object getObject(int columnIndex) throws DatabricksSQLException {
     if (currentRowIndex < 0) {
       throw new DatabricksSQLException("Invalid row access");
     }
@@ -108,7 +125,7 @@ class VolumeOperationResult implements IExecutionResult {
     if (hasNext()) {
       validateMetadata();
       resultHandler.next();
-      init(resultHandler);
+      initHandler(resultHandler);
 
       poll();
       currentRowIndex++;

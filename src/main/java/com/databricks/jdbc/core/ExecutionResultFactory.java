@@ -15,14 +15,14 @@ class ExecutionResultFactory {
 
     IExecutionResult resultHandler = getResultHandler(data, manifest, statementId, session);
     if (manifest.getIsVolumeOperation()) {
-      return new VolumeOperationResult(statementId, session, resultHandler);
+      return new VolumeOperationResult(statementId, manifest, session, resultHandler);
     } else {
       return resultHandler;
     }
-
   }
 
-  private static IExecutionResult getResultHandler(ResultData data, ResultManifest manifest, String statementId, IDatabricksSession session) {
+  private static IExecutionResult getResultHandler(
+      ResultData data, ResultManifest manifest, String statementId, IDatabricksSession session) {
     // We use JSON_ARRAY for metadata and update commands, and ARROW_STREAM for query results
     switch (manifest.getFormat()) {
       case ARROW_STREAM:
