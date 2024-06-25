@@ -110,12 +110,6 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     Set<Integer> retryableCodes = new HashSet<>();
     retryableCodes.add(503); // service unavailable
     retryableCodes.add(429); // too many requests
-    //    // TODO: Add retry logic for the following codes
-    //    retryableCodes.add(408); // request timeout
-    //    retryableCodes.add(425); // too early response
-    //    retryableCodes.add(500); // internal server error
-    //    retryableCodes.add(502); // bad gateway (should this be retried?)
-    //    retryableCodes.add(504); // gateway timeout
     return retryableCodes;
   }
 
@@ -156,14 +150,6 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
                   long rateLimitRetryCount =
                       (long) context.getAttribute(RATE_LIMIT_RETRY_COUNT_KEY);
 
-                  System.out.println(
-                      "MLOGS3"
-                          + shouldRetryTemporarilyUnavailableError
-                          + " "
-                          + shouldRetryRateLimitError
-                          + " "
-                          + retryInterval);
-                  System.out.println(errCode);
                   try {
                     if (!isRetryAllowedHttp(
                         executionCount,
@@ -180,7 +166,6 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
                       return false;
                     }
                   } catch (DatabricksHttpException e) {
-                    System.out.println("MLOGS4");
                     throw new RuntimeException(e);
                   }
 
@@ -340,8 +325,6 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
   public static synchronized DatabricksHttpClient getInstance(
       IDatabricksConnectionContext context) {
-    System.out.println("MLOGS8");
-    System.out.println(instance);
     if (instance == null) {
       instance = new DatabricksHttpClient(context);
     }

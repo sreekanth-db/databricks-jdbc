@@ -483,7 +483,6 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public Boolean shouldRetryRateLimitError() {
-    System.out.println("MLOGS6: " + getParameter(RATE_LIMIT_RETRY));
     if (getParameter(RATE_LIMIT_RETRY) == null) {
       return true;
     }

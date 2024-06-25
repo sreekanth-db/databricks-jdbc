@@ -31,38 +31,6 @@ public class RetryHandler {
       String originalErrorMessage)
       throws DatabricksHttpException {
 
-    System.out.println(
-        "MLOGSX: executionCount: "
-            + executionCount
-            + ", errCode: "
-            + errCode
-            + ", shouldRetryTemporarilyUnavailableError: "
-            + shouldRetryTemporarilyUnavailableError
-            + ", temporarilyUnavailableRetryTimeout: "
-            + temporarilyUnavailableRetryTimeout
-            + ", shouldRetryRateLimitError: "
-            + shouldRetryRateLimitError
-            + ", rateLimitRetryTimeout: "
-            + rateLimitRetryTimeout
-            + ", temporarilyUnavailableRetryCount: "
-            + temporarilyUnavailableRetryCount
-            + ", rateLimitRetryCount: "
-            + rateLimitRetryCount
-            + ", retryInterval: "
-            + retryInterval
-            + ", originalErrorMessage: "
-            + originalErrorMessage
-            + "shouldRetryTemporarilyUnavailableError: "
-            + shouldRetryTemporarilyUnavailableError
-            + ", shouldRetryRateLimitError: "
-            + shouldRetryRateLimitError
-            + ", retryInterval: "
-            + retryInterval
-            + ", temporarilyUnavailableRetryTimeout: "
-            + temporarilyUnavailableRetryTimeout
-            + ", rateLimitRetryTimeout: "
-            + rateLimitRetryTimeout);
-
     if (isImmediateRetryNotAllowed(
         errCode,
         shouldRetryRateLimitError,
@@ -180,20 +148,6 @@ public class RetryHandler {
             && shouldRetryRateLimitError
             && rateLimitRetryTimeout > 0
             && rateLimitRetryCount * retryInterval > rateLimitRetryTimeout);
-
-    System.out.println(
-        "MLOGSX1: isErrorCode503Or429: "
-            + isErrorCode503Or429
-            + ", isExecutionCountExceeded: "
-            + isExecutionCountExceeded
-            + ", isMethodRetryNotAllowed: "
-            + isMethodRetryNotAllowed
-            + ", is503RetryTimeoutExceeded: "
-            + is503RetryTimeoutExceeded
-            + ", is429RetryTimeoutExceeded: "
-            + is429RetryTimeoutExceeded);
-    System.out.println(
-        "MLOGSX2: " + ((HttpClientContext) context).getRequest().getRequestLine().getMethod());
 
     return !((!isErrorCode503Or429 && isExecutionCountExceeded)
         || isMethodRetryNotAllowed
