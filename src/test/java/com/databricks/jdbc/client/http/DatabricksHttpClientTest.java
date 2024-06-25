@@ -3,6 +3,7 @@ package com.databricks.jdbc.client.http;
 import static com.databricks.jdbc.client.http.DatabricksHttpClient.isErrorCodeRetryable;
 import static com.databricks.jdbc.client.http.DatabricksHttpClient.isRetryAllowed;
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.FAKE_SERVICE_URI_PROP_SUFFIX;
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.IS_FAKE_SERVICE_TEST_PROP;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -256,6 +257,8 @@ public class DatabricksHttpClientTest {
 
   @Test
   public void testDifferentInstancesForDifferentContexts() {
+    System.setProperty(IS_FAKE_SERVICE_TEST_PROP, "true");
+
     // Create the first mock connection context
     IDatabricksConnectionContext connectionContext1 =
         Mockito.mock(IDatabricksConnectionContext.class);
@@ -293,5 +296,7 @@ public class DatabricksHttpClientTest {
     // Ensure that the second context's instance remains the same
     DatabricksHttpClient sameClient2 = DatabricksHttpClient.getInstance(connectionContext2);
     assertSame(client2, sameClient2);
+
+    System.clearProperty(IS_FAKE_SERVICE_TEST_PROP);
   }
 }
