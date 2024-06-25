@@ -3,7 +3,6 @@ package com.databricks.jdbc.client.http;
 import static com.databricks.jdbc.client.http.DatabricksHttpClient.isErrorCodeRetryable;
 import static com.databricks.jdbc.client.http.DatabricksHttpClient.isRetryAllowed;
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.FAKE_SERVICE_URI_PROP_SUFFIX;
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.IS_FAKE_SERVICE_TEST_PROP;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -13,7 +12,6 @@ import com.databricks.jdbc.driver.DatabricksConnectionContext;
 import com.databricks.jdbc.driver.DatabricksDriver;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -257,43 +255,43 @@ public class DatabricksHttpClientTest {
   }
 
   @Test
-  public void testResetInstance() {
-    System.setProperty(IS_FAKE_SERVICE_TEST_PROP, "true");
-
-    IDatabricksConnectionContext connectionContext =
+  public void testDifferentInstancesForDifferentContexts() {
+    // Create the first mock connection context
+    IDatabricksConnectionContext connectionContext1 =
         Mockito.mock(IDatabricksConnectionContext.class);
-    when(connectionContext.getUseSystemProxy()).thenReturn(false);
-    when(connectionContext.getUseProxy()).thenReturn(false);
-    when(connectionContext.getUseCloudFetchProxy()).thenReturn(false);
+    when(connectionContext1.getUseSystemProxy()).thenReturn(false);
+    when(connectionContext1.getUseProxy()).thenReturn(false);
+    when(connectionContext1.getUseCloudFetchProxy()).thenReturn(false);
 
-    DatabricksHttpClient databricksHttpClient = DatabricksHttpClient.getInstance(connectionContext);
-    assertNotNull(databricksHttpClient);
+    // Create the second mock connection context
+    IDatabricksConnectionContext connectionContext2 =
+        Mockito.mock(IDatabricksConnectionContext.class);
+    when(connectionContext2.getUseSystemProxy()).thenReturn(false);
+    when(connectionContext2.getUseProxy()).thenReturn(false);
+    when(connectionContext2.getUseCloudFetchProxy()).thenReturn(false);
 
-    DatabricksHttpClient.resetInstance();
+    // Get instances of DatabricksHttpClient for each context
+    DatabricksHttpClient client1 = DatabricksHttpClient.getInstance(connectionContext1);
+    DatabricksHttpClient client2 = DatabricksHttpClient.getInstance(connectionContext2);
 
-    DatabricksHttpClient newInstance = DatabricksHttpClient.getInstance(connectionContext);
-    assertNotNull(newInstance);
-    // The instance should be different after reset
-    assertNotSame(databricksHttpClient, newInstance);
+    assertNotNull(client1);
+    assertNotNull(client2);
 
-    System.clearProperty(IS_FAKE_SERVICE_TEST_PROP);
-  }
+    // Assert that the instances are different for different contexts
+    assertNotSame(client1, client2);
 
-  @Test
-  void testResetInstanceCatchesIOException()
-      throws IOException, NoSuchFieldException, IllegalAccessException {
-    DatabricksHttpClient testInstance = new DatabricksHttpClient(mockHttpClient, connectionManager);
+    // Reset the instance for the first context
+    DatabricksHttpClient.removeInstance(connectionContext1);
 
-    doThrow(new IOException()).when(mockHttpClient).close();
+    // Get a new instance for the first context
+    DatabricksHttpClient newClient1 = DatabricksHttpClient.getInstance(connectionContext1);
 
-    // Set the instance to the testInstance using reflection
-    Field instanceField = DatabricksHttpClient.class.getDeclaredField("instance");
-    instanceField.setAccessible(true);
-    instanceField.set(null, testInstance);
+    assertNotNull(newClient1);
+    // The new instance should be different after reset
+    assertNotSame(client1, newClient1);
 
-    DatabricksHttpClient.resetInstance();
-
-    verify(mockHttpClient, times(1)).close();
-    assertNull(instanceField.get(null));
+    // Ensure that the second context's instance remains the same
+    DatabricksHttpClient sameClient2 = DatabricksHttpClient.getInstance(connectionContext2);
+    assertSame(client2, sameClient2);
   }
 }
