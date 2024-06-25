@@ -3,6 +3,8 @@ package com.databricks.jdbc.driver;
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
 
 import com.databricks.jdbc.client.DatabricksClientType;
+import com.databricks.jdbc.client.DatabricksHttpException;
+import com.databricks.jdbc.client.http.DatabricksHttpClient;
 import com.databricks.jdbc.commons.util.AppenderUtil;
 import com.databricks.jdbc.core.DatabricksConnection;
 import com.databricks.jdbc.core.DatabricksSQLException;
@@ -49,6 +51,7 @@ public class DatabricksDriver implements Driver {
   @Override
   public Connection connect(String url, Properties info) throws DatabricksSQLException {
     LOGGER.debug("public Connection connect(String url = {}, Properties info)", url);
+    DatabricksHttpClient.resetInstance();
     IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(url, info);
     configureLogging(
         connectionContext.getLogPathString(),
@@ -66,6 +69,14 @@ public class DatabricksDriver implements Driver {
     } catch (DatabricksSQLException e) {
       throw e;
     } catch (Exception e) {
+      Throwable cause = e.getCause();
+      while (cause != null) {
+        if(cause instanceof DatabricksHttpException)
+        if (cause instanceof DatabricksSQLException) {
+          throw (DatabricksSQLException) cause;
+        }
+        cause = cause.getCause();
+      }
       throw new DatabricksSQLException(
           "Invalid or unknown token or hostname provided :" + connectionContext.getHostUrl(), e);
     }

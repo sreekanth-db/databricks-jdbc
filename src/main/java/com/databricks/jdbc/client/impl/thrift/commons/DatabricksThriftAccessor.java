@@ -40,6 +40,11 @@ public class DatabricksThriftAccessor {
     String endPointUrl = connectionContext.getEndpointURL();
     // Create a new thrift client for each thread as client state is not thread safe. Note that the
     // underlying protocol uses the same http client which is thread safe
+    System.out.println(
+        "MLOGS7"
+            + connectionContext.shouldRetryTemporarilyUnavailableError()
+            + " "
+            + connectionContext.shouldRetryRateLimitError());
     this.thriftClient =
         ThreadLocal.withInitial(
             () -> {
@@ -200,6 +205,8 @@ public class DatabricksThriftAccessor {
     TFetchResultsResp resultSet = null;
     try {
       response = getThriftClient().ExecuteStatement(request);
+      System.out.println("MLOGS1");
+      System.out.println(response);
       if (Arrays.asList(ERROR_STATUS, INVALID_HANDLE_STATUS).contains(response.status.statusCode)) {
         throw new DatabricksSQLException(response.status.errorMessage);
       }
@@ -229,6 +236,8 @@ public class DatabricksThriftAccessor {
                 true);
       }
     } catch (TException | InterruptedException e) {
+      System.out.println("MLOGS2");
+      System.out.println(e);
       String errorMessage =
           String.format(
               "Error while receiving response from Thrift server. Request {%s}, Error {%s}",
