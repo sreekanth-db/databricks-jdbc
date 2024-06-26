@@ -491,18 +491,12 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public Boolean shouldRetryTemporarilyUnavailableError() {
-    if (getParameter(TEMPORARILY_UNAVAILABLE_RETRY) == null) {
-      return true;
-    }
-    return Objects.equals(getParameter(TEMPORARILY_UNAVAILABLE_RETRY), "1");
+    return Objects.equals(getParameter(TEMPORARILY_UNAVAILABLE_RETRY, "1"), "1");
   }
 
   @Override
   public Boolean shouldRetryRateLimitError() {
-    if (getParameter(RATE_LIMIT_RETRY) == null) {
-      return true;
-    }
-    return Objects.equals(getParameter(RATE_LIMIT_RETRY), "1");
+    return Objects.equals(getParameter(RATE_LIMIT_RETRY, "1"), "1");
   }
 
   @Override
