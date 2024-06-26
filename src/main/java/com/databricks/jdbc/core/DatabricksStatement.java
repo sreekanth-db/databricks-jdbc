@@ -51,7 +51,9 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
         executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.QUERY);
     if (!shouldReturnResultSet(sql)) {
       throw new DatabricksSQLException(
-          "A ResultSet was expected but not generated from query: " + sql + ". However, query "
+          "A ResultSet was expected but not generated from query: "
+              + sql
+              + ". However, query "
               + "execution was successful.");
     }
     return rs;
@@ -499,18 +501,18 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
     // Check if the query matches any of the patterns that return a ResultSet
     if (SELECT_PATTERN.matcher(trimmedQuery).find()
-            || SHOW_PATTERN.matcher(trimmedQuery).find()
-            || DESCRIBE_PATTERN.matcher(trimmedQuery).find()
-            || EXPLAIN_PATTERN.matcher(trimmedQuery).find()
-            || WITH_PATTERN.matcher(trimmedQuery).find()
-            || SET_PATTERN.matcher(trimmedQuery).find()
-            || MAP_PATTERN.matcher(trimmedQuery).find()
-            || FROM_PATTERN.matcher(trimmedQuery).find()
-            || VALUES_PATTERN.matcher(trimmedQuery).find()
-            || UNION_PATTERN.matcher(trimmedQuery).find()
-            || INTERSECT_PATTERN.matcher(trimmedQuery).find()
-            || EXCEPT_PATTERN.matcher(trimmedQuery).find()
-            || DECLARE_PATTERN.matcher(trimmedQuery).find()) {
+        || SHOW_PATTERN.matcher(trimmedQuery).find()
+        || DESCRIBE_PATTERN.matcher(trimmedQuery).find()
+        || EXPLAIN_PATTERN.matcher(trimmedQuery).find()
+        || WITH_PATTERN.matcher(trimmedQuery).find()
+        || SET_PATTERN.matcher(trimmedQuery).find()
+        || MAP_PATTERN.matcher(trimmedQuery).find()
+        || FROM_PATTERN.matcher(trimmedQuery).find()
+        || VALUES_PATTERN.matcher(trimmedQuery).find()
+        || UNION_PATTERN.matcher(trimmedQuery).find()
+        || INTERSECT_PATTERN.matcher(trimmedQuery).find()
+        || EXCEPT_PATTERN.matcher(trimmedQuery).find()
+        || DECLARE_PATTERN.matcher(trimmedQuery).find()) {
       return true;
     }
 
