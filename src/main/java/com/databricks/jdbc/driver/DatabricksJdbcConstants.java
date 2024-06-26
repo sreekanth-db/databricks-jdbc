@@ -223,20 +223,21 @@ public final class DatabricksJdbcConstants {
 
   public static final int CLOUD_FETCH_THREAD_POOL_SIZE_DEFAULT = 16;
 
-  public static final Pattern SELECT_PATTERN =
-      Pattern.compile("^\\s*select\\b", Pattern.CASE_INSENSITIVE);
+  public static final Pattern SELECT_PATTERN = Pattern.compile("^\\s*SELECT", Pattern.CASE_INSENSITIVE);
+  public static final Pattern SHOW_PATTERN = Pattern.compile("^\\s*SHOW", Pattern.CASE_INSENSITIVE);
+  public static final Pattern DESCRIBE_PATTERN = Pattern.compile("^\\s*DESCRIBE", Pattern.CASE_INSENSITIVE);
+  public static final Pattern EXPLAIN_PATTERN = Pattern.compile("^\\s*EXPLAIN", Pattern.CASE_INSENSITIVE);
+  public static final Pattern WITH_PATTERN = Pattern.compile("^\\s*WITH", Pattern.CASE_INSENSITIVE);
+  public static final Pattern SET_PATTERN = Pattern.compile("^\\s*SET", Pattern.CASE_INSENSITIVE);
+  public static final Pattern MAP_PATTERN = Pattern.compile("^\\s*MAP", Pattern.CASE_INSENSITIVE);
+  public static final Pattern FROM_PATTERN = Pattern.compile("^\\s*FROM\\s*\\(", Pattern.CASE_INSENSITIVE);
+  public static final Pattern VALUES_PATTERN = Pattern.compile("^\\s*VALUES", Pattern.CASE_INSENSITIVE);
+  public static final Pattern UNION_PATTERN = Pattern.compile("\\s+UNION\\s+", Pattern.CASE_INSENSITIVE);
+  public static final Pattern INTERSECT_PATTERN = Pattern.compile("\\s+INTERSECT\\s+", Pattern.CASE_INSENSITIVE);
+  public static final Pattern EXCEPT_PATTERN = Pattern.compile("\\s+EXCEPT\\s+", Pattern.CASE_INSENSITIVE);
+  public static final Pattern SUBQUERY_PATTERN = Pattern.compile("^\\s*\\(", Pattern.CASE_INSENSITIVE);
+  public static final Pattern DECLARE_PATTERN = Pattern.compile("^\\s*DECLARE", Pattern.CASE_INSENSITIVE);
 
-  public static final Pattern SHOW_PATTERN =
-      Pattern.compile("^\\s*show\\b", Pattern.CASE_INSENSITIVE);
-
-  public static final Pattern DESCRIBE_PATTERN =
-      Pattern.compile("^\\s*describe\\b", Pattern.CASE_INSENSITIVE);
-
-  public static final Pattern EXPLAIN_PATTERN =
-      Pattern.compile("^\\s*explain\\b", Pattern.CASE_INSENSITIVE);
-
-  public static final Pattern WITH_PATTERN =
-      Pattern.compile("^\\s*with\\b", Pattern.CASE_INSENSITIVE); // Common Table Expressions
 
   static final int DBSQL_MIN_MAJOR_VERSION_FOR_NEW_METADATA = 2024;
   static final int DBSQL_MIN_MINOR_VERSION_FOR_NEW_METADATA = 30;

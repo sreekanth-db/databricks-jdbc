@@ -51,7 +51,8 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
         executeInternal(sql, new HashMap<Integer, ImmutableSqlParameter>(), StatementType.QUERY);
     if (!shouldReturnResultSet(sql)) {
       throw new DatabricksSQLException(
-          "A ResultSet was expected but not generated from query: " + sql);
+          "A ResultSet was expected but not generated from query: " + sql + ". However, query "
+              + "execution was successful.");
     }
     return rs;
   }
@@ -493,16 +494,50 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
     // Trim and remove leading comments and whitespaces
     String trimmedQuery = query.trim().replaceAll("^(--.*|/\\*.*?\\*/)*", "").trim();
 
+    // Remove extraneous brackets from the beginning and end
+    trimmedQuery = removeExtraneousBrackets(trimmedQuery);
+
     // Check if the query matches any of the patterns that return a ResultSet
     if (SELECT_PATTERN.matcher(trimmedQuery).find()
-        || SHOW_PATTERN.matcher(trimmedQuery).find()
-        || DESCRIBE_PATTERN.matcher(trimmedQuery).find()
-        || EXPLAIN_PATTERN.matcher(trimmedQuery).find()
-        || WITH_PATTERN.matcher(trimmedQuery).find()) {
+            || SHOW_PATTERN.matcher(trimmedQuery).find()
+            || DESCRIBE_PATTERN.matcher(trimmedQuery).find()
+            || EXPLAIN_PATTERN.matcher(trimmedQuery).find()
+            || WITH_PATTERN.matcher(trimmedQuery).find()
+            || SET_PATTERN.matcher(trimmedQuery).find()
+            || MAP_PATTERN.matcher(trimmedQuery).find()
+            || FROM_PATTERN.matcher(trimmedQuery).find()
+            || VALUES_PATTERN.matcher(trimmedQuery).find()
+            || UNION_PATTERN.matcher(trimmedQuery).find()
+            || INTERSECT_PATTERN.matcher(trimmedQuery).find()
+            || EXCEPT_PATTERN.matcher(trimmedQuery).find()
+            || DECLARE_PATTERN.matcher(trimmedQuery).find()) {
       return true;
     }
 
     // Otherwise, it should not return a ResultSet
     return false;
+  }
+
+  private static String removeExtraneousBrackets(String query) {
+    int openBrackets = 0;
+    int closeBrackets = 0;
+    int length = query.length();
+
+    // Count brackets
+    for (int i = 0; i < length; i++) {
+      char ch = query.charAt(i);
+      if (ch == '(') openBrackets++;
+      if (ch == ')') closeBrackets++;
+    }
+
+    // Remove brackets if they are extraneous
+    while (openBrackets > 0 && closeBrackets > 0 && query.startsWith("(") && query.endsWith(")")) {
+      query = query.substring(1, length - 1).trim();
+      openBrackets--;
+      closeBrackets--;
+      length = query.length();
+    }
+
+    return query;
   }
 }
