@@ -50,7 +50,6 @@ public class DatabricksDriver implements Driver {
   @Override
   public Connection connect(String url, Properties info) throws DatabricksSQLException {
     LOGGER.debug("public Connection connect(String url = {}, Properties info)", url);
-    DatabricksHttpClient.resetInstance();
     IDatabricksConnectionContext connectionContext = DatabricksConnectionContext.parse(url, info);
     configureLogging(
         connectionContext.getLogPathString(),
