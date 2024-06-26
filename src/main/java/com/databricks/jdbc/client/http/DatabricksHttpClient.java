@@ -118,8 +118,6 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     long delay;
     switch (errCode) {
       case 503:
-        delay = retryInterval;
-        break;
       case 429:
         delay = retryInterval;
         break;

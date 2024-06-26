@@ -219,12 +219,14 @@ public class DatabricksHttpClientTest {
   @Test
   void testIsRetryAllowed() {
     assertTrue(isRetryAllowed("GET"), "GET requests should be allowed for retry");
-    assertFalse(isRetryAllowed("POST"), "POST requests should not be allowed for retry");
+    assertTrue(isRetryAllowed("POST"), "POST requests should  be allowed for retry");
+    assertTrue(isRetryAllowed("PUT"), "PUT requests should be allowed for retry");
+    assertFalse(isRetryAllowed("DELETE"), "DELETE requests should not be allowed for retry");
   }
 
   @Test
   void testIsErrorCodeRetryable() {
-    assertTrue(isErrorCodeRetryable(408), "HTTP 408 Request Timeout should be retryable");
+    assertFalse(isErrorCodeRetryable(408), "HTTP 408 Request Timeout should not be retryable");
     assertTrue(isErrorCodeRetryable(503), "HTTP 503 Service Unavailable should be retryable");
     assertTrue(isErrorCodeRetryable(429), "HTTP 429 Too Many Requests should be retryable");
     assertFalse(isErrorCodeRetryable(401), "HTTP 401 Unauthorized should not be retryable");

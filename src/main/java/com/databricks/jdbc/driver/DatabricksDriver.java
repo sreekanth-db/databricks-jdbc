@@ -3,7 +3,6 @@ package com.databricks.jdbc.driver;
 import static com.databricks.jdbc.driver.DatabricksJdbcConstants.*;
 
 import com.databricks.jdbc.client.DatabricksClientType;
-import com.databricks.jdbc.client.http.DatabricksHttpClient;
 import com.databricks.jdbc.commons.util.AppenderUtil;
 import com.databricks.jdbc.core.DatabricksConnection;
 import com.databricks.jdbc.core.DatabricksSQLException;
