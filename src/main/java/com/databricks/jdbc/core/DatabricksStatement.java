@@ -493,7 +493,7 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
       throw new IllegalArgumentException("Query cannot be null or empty");
     }
 
-    // Trim and remove leading comments and whitespaces
+    // Trim and remove leading comments and whitespaces.
     String trimmedQuery = query.trim().replaceAll("^(--.*|/\\*.*?\\*/)*", "").trim();
 
     // Check if the query matches any of the patterns that return a ResultSet
