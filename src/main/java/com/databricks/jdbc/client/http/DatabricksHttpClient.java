@@ -143,6 +143,9 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
             .setRetryHandler(
                 (exception, executionCount, context) -> {
                   int errCode = getErrorCode(exception);
+                  if (!isErrorCodeRetryable(errCode)) {
+                    return false;
+                  }
                   int retryInterval = (int) context.getAttribute(RETRY_INTERVAL_KEY);
 
                   long tempUnavailableRetryCount =
