@@ -221,19 +221,32 @@ public final class DatabricksJdbcConstants {
   public static final String DEFAULT_IDLE_HTTP_CONNECTION_EXPIRY = "60";
   public static final String CLOUD_FETCH_THREAD_POOL_SIZE = "cloudFetchThreadPoolSize";
 
-  public static final Pattern SELECT_PATTERN = Pattern.compile("^(\\s*\\()*\\s*SELECT", Pattern.CASE_INSENSITIVE);
-  public static final Pattern SHOW_PATTERN = Pattern.compile("^(\\s*\\()*\\s*SHOW", Pattern.CASE_INSENSITIVE);
-  public static final Pattern DESCRIBE_PATTERN = Pattern.compile("^(\\s*\\()*\\s*DESCRIBE", Pattern.CASE_INSENSITIVE);
-  public static final Pattern EXPLAIN_PATTERN = Pattern.compile("^(\\s*\\()*\\s*EXPLAIN", Pattern.CASE_INSENSITIVE);
-  public static final Pattern WITH_PATTERN = Pattern.compile("^(\\s*\\()*\\s*WITH", Pattern.CASE_INSENSITIVE);
-  public static final Pattern SET_PATTERN = Pattern.compile("^(\\s*\\()*\\s*SET", Pattern.CASE_INSENSITIVE);
-  public static final Pattern MAP_PATTERN = Pattern.compile("^(\\s*\\()*\\s*MAP", Pattern.CASE_INSENSITIVE);
-  public static final Pattern FROM_PATTERN = Pattern.compile("^(\\s*\\()*\\s*FROM\\s*\\(", Pattern.CASE_INSENSITIVE);
-  public static final Pattern VALUES_PATTERN = Pattern.compile("^(\\s*\\()*\\s*VALUES", Pattern.CASE_INSENSITIVE);
-  public static final Pattern UNION_PATTERN = Pattern.compile("\\s+UNION\\s+", Pattern.CASE_INSENSITIVE);
-  public static final Pattern INTERSECT_PATTERN = Pattern.compile("\\s+INTERSECT\\s+", Pattern.CASE_INSENSITIVE);
-  public static final Pattern EXCEPT_PATTERN = Pattern.compile("\\s+EXCEPT\\s+", Pattern.CASE_INSENSITIVE);
-  public static final Pattern DECLARE_PATTERN = Pattern.compile("^(\\s*\\()*\\s*DECLARE", Pattern.CASE_INSENSITIVE);
+  public static final Pattern SELECT_PATTERN =
+      Pattern.compile("^(\\s*\\()*\\s*SELECT", Pattern.CASE_INSENSITIVE);
+  public static final Pattern SHOW_PATTERN =
+      Pattern.compile("^(\\s*\\()*\\s*SHOW", Pattern.CASE_INSENSITIVE);
+  public static final Pattern DESCRIBE_PATTERN =
+      Pattern.compile("^(\\s*\\()*\\s*DESCRIBE", Pattern.CASE_INSENSITIVE);
+  public static final Pattern EXPLAIN_PATTERN =
+      Pattern.compile("^(\\s*\\()*\\s*EXPLAIN", Pattern.CASE_INSENSITIVE);
+  public static final Pattern WITH_PATTERN =
+      Pattern.compile("^(\\s*\\()*\\s*WITH", Pattern.CASE_INSENSITIVE);
+  public static final Pattern SET_PATTERN =
+      Pattern.compile("^(\\s*\\()*\\s*SET", Pattern.CASE_INSENSITIVE);
+  public static final Pattern MAP_PATTERN =
+      Pattern.compile("^(\\s*\\()*\\s*MAP", Pattern.CASE_INSENSITIVE);
+  public static final Pattern FROM_PATTERN =
+      Pattern.compile("^(\\s*\\()*\\s*FROM\\s*\\(", Pattern.CASE_INSENSITIVE);
+  public static final Pattern VALUES_PATTERN =
+      Pattern.compile("^(\\s*\\()*\\s*VALUES", Pattern.CASE_INSENSITIVE);
+  public static final Pattern UNION_PATTERN =
+      Pattern.compile("\\s+UNION\\s+", Pattern.CASE_INSENSITIVE);
+  public static final Pattern INTERSECT_PATTERN =
+      Pattern.compile("\\s+INTERSECT\\s+", Pattern.CASE_INSENSITIVE);
+  public static final Pattern EXCEPT_PATTERN =
+      Pattern.compile("\\s+EXCEPT\\s+", Pattern.CASE_INSENSITIVE);
+  public static final Pattern DECLARE_PATTERN =
+      Pattern.compile("^(\\s*\\()*\\s*DECLARE", Pattern.CASE_INSENSITIVE);
   static final int DBSQL_MIN_MAJOR_VERSION_FOR_NEW_METADATA = 2024;
   static final int DBSQL_MIN_MINOR_VERSION_FOR_NEW_METADATA = 30;
 }
