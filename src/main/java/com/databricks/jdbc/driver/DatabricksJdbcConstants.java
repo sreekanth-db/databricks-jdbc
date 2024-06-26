@@ -238,4 +238,6 @@ public final class DatabricksJdbcConstants {
 
   static final int DBSQL_MIN_MAJOR_VERSION_FOR_NEW_METADATA = 2024;
   static final int DBSQL_MIN_MINOR_VERSION_FOR_NEW_METADATA = 30;
+
+  public static final int DEFAULT_RETRY_COUNT = 5;
 }

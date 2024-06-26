@@ -1,6 +1,7 @@
 package com.databricks.jdbc.client.http;
 
 import static com.databricks.jdbc.client.http.DatabricksHttpClient.*;
+import static com.databricks.jdbc.driver.DatabricksJdbcConstants.DEFAULT_RETRY_COUNT;
 
 import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.DatabricksRetryHandlerException;
@@ -47,7 +48,7 @@ public class RetryHandler {
         temporarilyUnavailableRetryTimeout)) {
       throw new DatabricksHttpException(
           String.format(
-              "TemporarilyUnavailableRetry timeout of %s seconds has been hit."
+              "TemporarilyUnavailableRetry timeout of %s seconds has been hit. "
                   + originalErrorMessage,
               temporarilyUnavailableRetryTimeout));
     }
@@ -99,15 +100,13 @@ public class RetryHandler {
       int errCode,
       long temporarilyUnavailableRetryCount,
       long retryInterval,
-      long temporarilyUnavailableRetryTimeout)
-      throws DatabricksHttpException {
+      long temporarilyUnavailableRetryTimeout) {
     return (errCode == 503)
         && temporarilyUnavailableRetryCount * retryInterval > temporarilyUnavailableRetryTimeout;
   }
 
   private static boolean isRateLimitRetryTimeoutExceeded(
-      int errCode, long rateLimitRetryCount, long retryInterval, long rateLimitRetryTimeout)
-      throws DatabricksHttpException {
+      int errCode, long rateLimitRetryCount, long retryInterval, long rateLimitRetryTimeout) {
     return (errCode == 429) && rateLimitRetryCount * retryInterval > rateLimitRetryTimeout;
   }
 
@@ -143,6 +142,7 @@ public class RetryHandler {
             && temporarilyUnavailableRetryTimeout > 0
             && temporarilyUnavailableRetryCount * retryInterval
                 > temporarilyUnavailableRetryTimeout);
+
     boolean is429RetryTimeoutExceeded =
         (errCode == 429
             && shouldRetryRateLimitError
