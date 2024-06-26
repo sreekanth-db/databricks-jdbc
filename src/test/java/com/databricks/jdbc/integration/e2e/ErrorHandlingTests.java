@@ -45,7 +45,7 @@ public class ErrorHandlingTests {
                       "username",
                       "password");
             });
-    assertTrue(e.getMessage().contains("Invalid or unknown token or hostname provided"));
+    assertTrue(e.getMessage().contains("Communication link failure. Failed to connect to server."));
   }
 
   @Test

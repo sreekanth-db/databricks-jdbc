@@ -27,7 +27,7 @@ public class ConnectionTests {
             () -> {
               DriverManager.getConnection(url, getDatabricksUser(), "bad_token");
             });
-    assert (e.getMessage().contains("Invalid or unknown token or hostname provided"));
+    assert (e.getMessage().contains("Communication link failure. Failed to connect to server."));
   }
 
   @Test
@@ -42,6 +42,6 @@ public class ConnectionTests {
               DriverManager.getConnection(url, getDatabricksUser(), "bad_token");
             });
 
-    assert (e.getMessage().contains("Invalid or unknown token or hostname provided"));
+    assert (e.getMessage().contains("Communication link failure. Failed to connect to server."));
   }
 }
