@@ -496,9 +496,6 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
     // Trim and remove leading comments and whitespaces
     String trimmedQuery = query.trim().replaceAll("^(--.*|/\\*.*?\\*/)*", "").trim();
 
-    // Remove extraneous brackets from the beginning and end
-    trimmedQuery = removeExtraneousBrackets(trimmedQuery);
-
     // Check if the query matches any of the patterns that return a ResultSet
     if (SELECT_PATTERN.matcher(trimmedQuery).find()
         || SHOW_PATTERN.matcher(trimmedQuery).find()
@@ -518,28 +515,5 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
 
     // Otherwise, it should not return a ResultSet
     return false;
-  }
-
-  private static String removeExtraneousBrackets(String query) {
-    int openBrackets = 0;
-    int closeBrackets = 0;
-    int length = query.length();
-
-    // Count brackets
-    for (int i = 0; i < length; i++) {
-      char ch = query.charAt(i);
-      if (ch == '(') openBrackets++;
-      if (ch == ')') closeBrackets++;
-    }
-
-    // Remove brackets if they are extraneous
-    while (openBrackets > 0 && closeBrackets > 0 && query.startsWith("(") && query.endsWith(")")) {
-      query = query.substring(1, length - 1).trim();
-      openBrackets--;
-      closeBrackets--;
-      length = query.length();
-    }
-
-    return query;
   }
 }
