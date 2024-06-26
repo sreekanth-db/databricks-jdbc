@@ -96,7 +96,9 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   }
 
   private static void initializeConnectionManager() {
-    connectionManager = new PoolingHttpClientConnectionManager();
+    if (connectionManager == null) {
+      connectionManager = new PoolingHttpClientConnectionManager();
+    }
     connectionManager.setMaxTotal(DEFAULT_MAX_HTTP_CONNECTIONS);
     connectionManager.setDefaultMaxPerRoute(DEFAULT_MAX_HTTP_CONNECTIONS_PER_ROUTE);
   }
