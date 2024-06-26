@@ -72,6 +72,8 @@ public class DatabricksThriftAccessor {
         request.toString(),
         commandName.name());
     refreshHeadersIfRequired();
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
     try {
       switch (commandName) {
         case OPEN_SESSION:
@@ -109,6 +111,9 @@ public class DatabricksThriftAccessor {
               request.toString(), e.toString());
       LOGGER.error(errorMessage);
       throw new DatabricksSQLException(errorMessage, e);
+    } finally {
+      // Ensure resources are closed after use
+      transport.close();
     }
   }
 
@@ -135,6 +140,8 @@ public class DatabricksThriftAccessor {
             .setMaxRows(maxRows)
             .setMaxBytes(DEFAULT_BYTE_LIMIT);
     TFetchResultsResp response = null;
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
     try {
       response = getThriftClient().FetchResults(request);
       if (fetchMetadata) {
@@ -147,6 +154,8 @@ public class DatabricksThriftAccessor {
               request.toString(), e.toString());
       LOGGER.error(errorMessage);
       throw new DatabricksHttpException(errorMessage, e);
+    } finally {
+      transport.close();
     }
     verifySuccessStatus(
         response.getStatus().getStatusCode(),
@@ -164,15 +173,21 @@ public class DatabricksThriftAccessor {
             .setGetProgressUpdate(false);
     TGetOperationStatusResp response;
     TStatusCode statusCode;
-    do {
-      response = getThriftClient().GetOperationStatus(request);
-      statusCode = response.getStatus().getStatusCode();
-      if (statusCode == TStatusCode.STILL_EXECUTING_STATUS) {
-        Thread.sleep(DEFAULT_SLEEP_DELAY);
-      }
-    } while (statusCode == TStatusCode.STILL_EXECUTING_STATUS);
-    verifySuccessStatus(
-        statusCode, String.format("Request {%s}, Response {%s}", request, response));
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
+    try {
+      do {
+        response = getThriftClient().GetOperationStatus(request);
+        statusCode = response.getStatus().getStatusCode();
+        if (statusCode == TStatusCode.STILL_EXECUTING_STATUS) {
+          Thread.sleep(DEFAULT_SLEEP_DELAY);
+        }
+      } while (statusCode == TStatusCode.STILL_EXECUTING_STATUS);
+      verifySuccessStatus(
+          statusCode, String.format("Request {%s}, Response {%s}", request, response));
+    } finally {
+      transport.close();
+    }
   }
 
   public DatabricksResultSet execute(
@@ -190,6 +205,8 @@ public class DatabricksThriftAccessor {
     }
     TExecuteStatementResp response = null;
     TFetchResultsResp resultSet = null;
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
     try {
       response = getThriftClient().ExecuteStatement(request);
       if (response.isSetDirectResults()) {
@@ -213,6 +230,8 @@ public class DatabricksThriftAccessor {
               request.toString(), e.toString());
       LOGGER.error(errorMessage);
       throw new DatabricksHttpException(errorMessage, e);
+    } finally {
+      transport.close();
     }
     return new DatabricksResultSet(
         response.getStatus(),
@@ -228,128 +247,176 @@ public class DatabricksThriftAccessor {
       throws DatabricksHttpException, TException {
     if (enableDirectResults) request.setGetDirectResults(DEFAULT_DIRECT_RESULTS);
     TGetFunctionsResp response = getThriftClient().GetFunctions(request);
-    if (response.isSetDirectResults()) {
-      checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
-      return response.getDirectResults().getResultSet();
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
+    try {
+      if (response.isSetDirectResults()) {
+        checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
+        return response.getDirectResults().getResultSet();
+      }
+      return getResultSetResp(
+          response.getStatus().getStatusCode(),
+          response.getOperationHandle(),
+          response.toString(),
+          DEFAULT_ROW_LIMIT,
+          false);
+    } finally {
+      transport.close();
     }
-    return getResultSetResp(
-        response.getStatus().getStatusCode(),
-        response.getOperationHandle(),
-        response.toString(),
-        DEFAULT_ROW_LIMIT,
-        false);
   }
 
   private TFetchResultsResp listPrimaryKeys(TGetPrimaryKeysReq request)
       throws DatabricksHttpException, TException {
     if (enableDirectResults) request.setGetDirectResults(DEFAULT_DIRECT_RESULTS);
     TGetPrimaryKeysResp response = getThriftClient().GetPrimaryKeys(request);
-    if (response.isSetDirectResults()) {
-      checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
-      return response.getDirectResults().getResultSet();
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
+    try {
+      if (response.isSetDirectResults()) {
+        checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
+        return response.getDirectResults().getResultSet();
+      }
+      return getResultSetResp(
+          response.getStatus().getStatusCode(),
+          response.getOperationHandle(),
+          response.toString(),
+          DEFAULT_ROW_LIMIT,
+          false);
+    } finally {
+      transport.close();
     }
-    return getResultSetResp(
-        response.getStatus().getStatusCode(),
-        response.getOperationHandle(),
-        response.toString(),
-        DEFAULT_ROW_LIMIT,
-        false);
   }
 
   private TFetchResultsResp getTables(TGetTablesReq request)
       throws TException, DatabricksHttpException {
     if (enableDirectResults) request.setGetDirectResults(DEFAULT_DIRECT_RESULTS);
     TGetTablesResp response = getThriftClient().GetTables(request);
-    if (response.isSetDirectResults()) {
-      checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
-      return response.getDirectResults().getResultSet();
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
+    try {
+      if (response.isSetDirectResults()) {
+        checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
+        return response.getDirectResults().getResultSet();
+      }
+      return getResultSetResp(
+          response.getStatus().getStatusCode(),
+          response.getOperationHandle(),
+          response.toString(),
+          DEFAULT_ROW_LIMIT,
+          false);
+    } finally {
+      transport.close();
     }
-    return getResultSetResp(
-        response.getStatus().getStatusCode(),
-        response.getOperationHandle(),
-        response.toString(),
-        DEFAULT_ROW_LIMIT,
-        false);
   }
 
   private TFetchResultsResp getTableTypes(TGetTableTypesReq request)
       throws TException, DatabricksHttpException {
     if (enableDirectResults) request.setGetDirectResults(DEFAULT_DIRECT_RESULTS);
     TGetTableTypesResp response = getThriftClient().GetTableTypes(request);
-    if (response.isSetDirectResults()) {
-      checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
-      return response.getDirectResults().getResultSet();
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
+    try {
+      if (response.isSetDirectResults()) {
+        checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
+        return response.getDirectResults().getResultSet();
+      }
+      return getResultSetResp(
+          response.getStatus().getStatusCode(),
+          response.getOperationHandle(),
+          response.toString(),
+          DEFAULT_ROW_LIMIT,
+          false);
+    } finally {
+      transport.close();
     }
-    return getResultSetResp(
-        response.getStatus().getStatusCode(),
-        response.getOperationHandle(),
-        response.toString(),
-        DEFAULT_ROW_LIMIT,
-        false);
   }
 
   private TFetchResultsResp getCatalogs(TGetCatalogsReq request)
       throws TException, DatabricksHttpException {
     if (enableDirectResults) request.setGetDirectResults(DEFAULT_DIRECT_RESULTS);
     TGetCatalogsResp response = getThriftClient().GetCatalogs(request);
-    if (response.isSetDirectResults()) {
-      checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
-      return response.getDirectResults().getResultSet();
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
+    try {
+      if (response.isSetDirectResults()) {
+        checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
+        return response.getDirectResults().getResultSet();
+      }
+      return getResultSetResp(
+          response.getStatus().getStatusCode(),
+          response.getOperationHandle(),
+          response.toString(),
+          DEFAULT_ROW_LIMIT,
+          false);
+    } finally {
+      transport.close();
     }
-    return getResultSetResp(
-        response.getStatus().getStatusCode(),
-        response.getOperationHandle(),
-        response.toString(),
-        DEFAULT_ROW_LIMIT,
-        false);
   }
 
   private TFetchResultsResp listSchemas(TGetSchemasReq request)
       throws TException, DatabricksHttpException {
     if (enableDirectResults) request.setGetDirectResults(DEFAULT_DIRECT_RESULTS);
     TGetSchemasResp response = getThriftClient().GetSchemas(request);
-    if (response.isSetDirectResults()) {
-      checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
-      return response.getDirectResults().getResultSet();
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
+    try {
+      if (response.isSetDirectResults()) {
+        checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
+        return response.getDirectResults().getResultSet();
+      }
+      return getResultSetResp(
+          response.getStatus().getStatusCode(),
+          response.getOperationHandle(),
+          response.toString(),
+          DEFAULT_ROW_LIMIT,
+          false);
+    } finally {
+      transport.close();
     }
-    return getResultSetResp(
-        response.getStatus().getStatusCode(),
-        response.getOperationHandle(),
-        response.toString(),
-        DEFAULT_ROW_LIMIT,
-        false);
   }
 
   private TFetchResultsResp getTypeInfo(TGetTypeInfoReq request)
       throws TException, DatabricksHttpException {
     if (enableDirectResults) request.setGetDirectResults(DEFAULT_DIRECT_RESULTS);
     TGetTypeInfoResp response = getThriftClient().GetTypeInfo(request);
-    if (response.isSetDirectResults()) {
-      checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
-      return response.getDirectResults().getResultSet();
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
+    try {
+      if (response.isSetDirectResults()) {
+        checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
+        return response.getDirectResults().getResultSet();
+      }
+      return getResultSetResp(
+          response.getStatus().getStatusCode(),
+          response.getOperationHandle(),
+          response.toString(),
+          DEFAULT_ROW_LIMIT,
+          true);
+    } finally {
+      transport.close();
     }
-    return getResultSetResp(
-        response.getStatus().getStatusCode(),
-        response.getOperationHandle(),
-        response.toString(),
-        DEFAULT_ROW_LIMIT,
-        true);
   }
 
   private TFetchResultsResp listColumns(TGetColumnsReq request)
       throws TException, DatabricksHttpException {
     if (enableDirectResults) request.setGetDirectResults(DEFAULT_DIRECT_RESULTS);
     TGetColumnsResp response = getThriftClient().GetColumns(request);
-    if (response.isSetDirectResults()) {
-      checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
-      return response.getDirectResults().getResultSet();
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
+    try {
+      if (response.isSetDirectResults()) {
+        checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
+        return response.getDirectResults().getResultSet();
+      }
+      return getResultSetResp(
+          response.getStatus().getStatusCode(),
+          response.getOperationHandle(),
+          response.toString(),
+          DEFAULT_ROW_LIMIT,
+          false);
+    } finally {
+      transport.close();
     }
-    return getResultSetResp(
-        response.getStatus().getStatusCode(),
-        response.getOperationHandle(),
-        response.toString(),
-        DEFAULT_ROW_LIMIT,
-        false);
   }
 
   private TGetResultSetMetadataResp getResultSetMetadata(TOperationHandle operationHandle)
