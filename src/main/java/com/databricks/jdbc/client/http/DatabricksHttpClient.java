@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -61,7 +62,9 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   private static final String SDK_USER_AGENT = "databricks-sdk-java";
   private static final String JDBC_HTTP_USER_AGENT = "databricks-jdbc-http";
   private static final Set<Integer> RETRYABLE_HTTP_CODES = getRetryableHttpCodes();
-  private static DatabricksHttpClient instance = null;
+
+  private static final ConcurrentHashMap<String, DatabricksHttpClient> instances =
+      new ConcurrentHashMap<>();
 
   private static PoolingHttpClientConnectionManager connectionManager;
 
@@ -326,10 +329,8 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
   public static synchronized DatabricksHttpClient getInstance(
       IDatabricksConnectionContext context) {
-    if (instance == null) {
-      instance = new DatabricksHttpClient(context);
-    }
-    return instance;
+    String contextKey = Integer.toString(context.hashCode());
+    return instances.computeIfAbsent(contextKey, k -> new DatabricksHttpClient(context));
   }
 
   @Override
@@ -388,16 +389,15 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     return mergedString.toString();
   }
 
-  /** Reset the instance of the http client. This is used for testing purposes only. */
-  @VisibleForTesting
-  public static synchronized void resetInstance() {
+  public static synchronized void removeInstance(IDatabricksConnectionContext context) {
+    String contextKey = Integer.toString(context.hashCode());
+    DatabricksHttpClient instance = instances.remove(contextKey);
     if (instance != null) {
       try {
         instance.httpClient.close();
       } catch (IOException e) {
         LOGGER.error("Caught error while closing http client", e);
       }
-      instance = null;
     }
   }
 }

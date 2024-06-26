@@ -76,6 +76,22 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     }
   }
 
+  @Override
+  public int hashCode() {
+    return Objects.hash(host, port, schema, parameters);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    DatabricksConnectionContext that = (DatabricksConnectionContext) obj;
+    return port == that.port
+        && Objects.equals(host, that.host)
+        && Objects.equals(schema, that.schema)
+        && Objects.equals(parameters, that.parameters);
+  }
+
   private static void handleInvalidUrl(String url) throws DatabricksParsingException {
     throw new DatabricksParsingException("Invalid url incorrect: " + url);
   }
