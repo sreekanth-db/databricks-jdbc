@@ -66,7 +66,7 @@ class VolumeOperationExecutor implements Runnable {
         "Running volume operation {} on local file {}",
         operationType,
         localFilePath == null ? "" : localFilePath);
-    if (operationUrl == null) {
+    if (operationUrl == null || operationUrl.isEmpty()) {
       LOGGER.error("Volume operation URL is not set");
       status = VolumeOperationStatus.ABORTED;
       errorMessage = "Volume operation URL is not set";

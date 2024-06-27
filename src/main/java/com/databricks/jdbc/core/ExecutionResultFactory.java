@@ -14,7 +14,7 @@ class ExecutionResultFactory {
     // Return Volume operation handler
 
     IExecutionResult resultHandler = getResultHandler(data, manifest, statementId, session);
-    if (manifest.getIsVolumeOperation()) {
+    if (manifest.getIsVolumeOperation() != null && manifest.getIsVolumeOperation()) {
       return new VolumeOperationResult(statementId, manifest, session, resultHandler);
     } else {
       return resultHandler;
@@ -23,6 +23,9 @@ class ExecutionResultFactory {
 
   private static IExecutionResult getResultHandler(
       ResultData data, ResultManifest manifest, String statementId, IDatabricksSession session) {
+    if (manifest.getFormat() == null) {
+      throw new IllegalStateException("Empty response format");
+    }
     // We use JSON_ARRAY for metadata and update commands, and ARROW_STREAM for query results
     switch (manifest.getFormat()) {
       case ARROW_STREAM:

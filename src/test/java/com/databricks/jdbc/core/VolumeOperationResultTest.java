@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
+import com.databricks.sdk.service.sql.ResultSchema;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Files;
@@ -40,22 +41,21 @@ public class VolumeOperationResultTest {
   @Mock DatabricksSession session;
   @Mock IExecutionResult resultHandler;
   private static final ResultManifest RESULT_MANIFEST =
-      new ResultManifest().setIsVolumeOperation(true).setTotalRowCount(1L);
+      new ResultManifest()
+          .setIsVolumeOperation(true)
+          .setTotalRowCount(1L)
+          .setSchema(new ResultSchema().setColumnCount(4L));
 
   @Test
   public void testGetResult_Get() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("GET");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn(LOCAL_FILE_GET);
     when(mockHttpClient.execute(isA(HttpGet.class))).thenReturn(httpResponse);
     when(httpResponse.getEntity()).thenReturn(new StringEntity("test"));
     when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
     when(mockedStatusLine.getStatusCode()).thenReturn(200);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
@@ -81,7 +81,11 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Get_PropertyEmpty() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
+    when(resultHandler.hasNext())
+        .thenReturn(true)
+        .thenReturn(true)
+        .thenReturn(false)
+        .thenReturn(false);
     when(resultHandler.next()).thenReturn(true).thenReturn(false);
     when(resultHandler.getObject(0)).thenReturn("GET");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
@@ -106,14 +110,10 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Get_PathNotAllowed() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("GET");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn("localFileOther");
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
@@ -131,14 +131,10 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Get_PathCaseSensitive() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("GET");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn("getvolfile.csv");
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
@@ -156,14 +152,10 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Get_PathInvalid() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("GET");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn("");
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
@@ -181,14 +173,10 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Get_FileExists() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("GET");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn(LOCAL_FILE_GET);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     File file = new File(LOCAL_FILE_GET);
     Files.writeString(file.toPath(), "test-put");
@@ -211,14 +199,10 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Get_PathContainsParentDir() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("GET");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn("../newFile.csv");
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
@@ -236,17 +220,13 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Get_HttpError() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("GET");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn(LOCAL_FILE_GET);
     when(mockHttpClient.execute(isA(HttpGet.class))).thenReturn(httpResponse);
     when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
     when(mockedStatusLine.getStatusCode()).thenReturn(403);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
@@ -264,17 +244,13 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Put() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("PUT");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn(LOCAL_FILE_PUT);
     when(mockHttpClient.execute(isA(HttpPut.class))).thenReturn(httpResponse);
     when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
     when(mockedStatusLine.getStatusCode()).thenReturn(200);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     File file = new File(LOCAL_FILE_PUT);
     Files.writeString(file.toPath(), "test-put");
@@ -295,17 +271,13 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Put_failedHttpResponse() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("PUT");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn(LOCAL_FILE_PUT);
     when(mockHttpClient.execute(isA(HttpPut.class))).thenReturn(httpResponse);
     when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
     when(mockedStatusLine.getStatusCode()).thenReturn(403);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     File file = new File(LOCAL_FILE_PUT);
     Files.writeString(file.toPath(), "test-put");
@@ -329,14 +301,10 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Put_emptyLocalFile() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("PUT");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn(LOCAL_FILE_PUT);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     File file = new File(LOCAL_FILE_PUT);
     Files.writeString(file.toPath(), "");
@@ -359,14 +327,10 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Put_nonExistingLocalFile() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("PUT");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn(LOCAL_FILE_PUT);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
@@ -385,14 +349,10 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_invalidOperationType() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("FETCH");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn(LOCAL_FILE_PUT);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
@@ -410,16 +370,13 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Remove() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("REMOVE");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
+    when(resultHandler.getObject(3)).thenReturn(null);
     when(mockHttpClient.execute(isA(HttpDelete.class))).thenReturn(httpResponse);
     when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
     when(mockedStatusLine.getStatusCode()).thenReturn(200);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
@@ -442,16 +399,13 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_RemoveFailed() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("REMOVE");
     when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
+    when(resultHandler.getObject(3)).thenReturn(null);
     when(mockHttpClient.execute(isA(HttpDelete.class))).thenReturn(httpResponse);
     when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
     when(mockedStatusLine.getStatusCode()).thenReturn(403);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
@@ -471,15 +425,6 @@ public class VolumeOperationResultTest {
 
   @Test
   public void getObject() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
-    when(resultHandler.getObject(0)).thenReturn("INVALID");
-    when(resultHandler.getObject(1)).thenReturn(PRESIGNED_URL);
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
-    when(resultHandler.getObject(3)).thenReturn(LOCAL_FILE_GET);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
-
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
             STATEMENT_ID, RESULT_MANIFEST, session, resultHandler, mockHttpClient);
@@ -494,14 +439,10 @@ public class VolumeOperationResultTest {
 
   @Test
   public void testGetResult_Get_emptyLink() throws Exception {
-    when(resultHandler.hasNext()).thenReturn(true).thenReturn(false);
-    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    setupCommonInteractions();
     when(resultHandler.getObject(0)).thenReturn("GET");
     when(resultHandler.getObject(1)).thenReturn("");
-    when(resultHandler.getObject(2)).thenReturn(HEADERS);
     when(resultHandler.getObject(3)).thenReturn(LOCAL_FILE_GET);
-    when(session.getClientInfoProperties())
-        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
 
     VolumeOperationResult volumeOperationResult =
         new VolumeOperationResult(
@@ -515,5 +456,17 @@ public class VolumeOperationResultTest {
     } catch (DatabricksSQLException e) {
       assertEquals("Volume operation aborted: Volume operation URL is not set", e.getMessage());
     }
+  }
+
+  private void setupCommonInteractions() throws Exception {
+    when(resultHandler.hasNext())
+        .thenReturn(true)
+        .thenReturn(true)
+        .thenReturn(false)
+        .thenReturn(false);
+    when(resultHandler.next()).thenReturn(true).thenReturn(false);
+    when(resultHandler.getObject(2)).thenReturn(HEADERS);
+    when(session.getClientInfoProperties())
+        .thenReturn(Map.of(ALLOWED_VOLUME_INGESTION_PATHS.toLowerCase(), ALLOWED_PATHS));
   }
 }

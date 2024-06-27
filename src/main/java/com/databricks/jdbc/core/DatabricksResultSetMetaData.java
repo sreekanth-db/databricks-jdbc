@@ -43,7 +43,7 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
         "Result manifest for statement {} has schema: {}", statementId, resultManifest.getSchema());
 
     int currIndex = 0;
-    if (resultManifest.getIsVolumeOperation()) {
+    if (resultManifest.getIsVolumeOperation() != null && resultManifest.getIsVolumeOperation()) {
       ImmutableDatabricksColumn.Builder columnBuilder = getColumnBuilder();
       columnBuilder
           .columnName(VOLUME_OPERATION_STATUS_COLUMN_NAME)
