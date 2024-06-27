@@ -11,7 +11,6 @@ import com.databricks.jdbc.client.sqlexec.ResultManifest;
 import com.databricks.sdk.service.sql.ColumnInfo;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 import com.google.common.annotations.VisibleForTesting;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -140,7 +139,7 @@ class ArrowStreamResult implements IExecutionResult {
   }
 
   @Override
-  public Object getObject(int columnIndex) throws SQLException {
+  public Object getObject(int columnIndex) throws DatabricksSQLException {
     // we have two types:
     // 1. Required type via the metadata
     // 2. Interpreted type while reading from the arrow file into the record batches
