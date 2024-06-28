@@ -99,7 +99,7 @@ public class DatabricksPreparedStatementTest {
 
   private ImmutableSqlParameter getSqlParam(int parameterIndex, Object x, String databricksType) {
     return ImmutableSqlParameter.builder()
-        .type(databricksType)
+        .type(DatabricksTypeUtil.getColumnInfoType(databricksType))
         .value(x)
         .cardinal(parameterIndex)
         .build();

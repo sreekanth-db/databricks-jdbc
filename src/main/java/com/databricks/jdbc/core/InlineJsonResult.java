@@ -2,7 +2,6 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.sqlexec.ResultData;
 import com.databricks.jdbc.client.sqlexec.ResultManifest;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,7 +60,7 @@ public class InlineJsonResult implements IExecutionResult {
   }
 
   @Override
-  public Object getObject(int columnIndex) throws SQLException {
+  public Object getObject(int columnIndex) throws DatabricksSQLException {
     if (isClosed()) {
       throw new DatabricksSQLException("Method called on closed result");
     }
