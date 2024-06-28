@@ -201,7 +201,8 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     if (isErrorCodeRetryable(errCode)) {
       int retryInterval = -1;
       if (httpResponse.containsHeader(RETRY_AFTER_HEADER)) {
-        retryInterval = Integer.parseInt(httpResponse.getFirstHeader(RETRY_AFTER_HEADER).getValue());
+        retryInterval =
+            Integer.parseInt(httpResponse.getFirstHeader(RETRY_AFTER_HEADER).getValue());
         httpContext.setAttribute(RETRY_INTERVAL_KEY, retryInterval);
       } else {
         httpContext.setAttribute(RETRY_INTERVAL_KEY, -1);
