@@ -60,8 +60,8 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       }
       for (int urlPartIndex = 1; urlPartIndex < urlParts.length; urlPartIndex++) {
         String[] pair = urlParts[urlPartIndex].split(DatabricksJdbcConstants.PAIR_DELIMITER);
-        if (pair.length != 2) {
-          handleInvalidUrl(url);
+        if (pair.length == 1) {
+          pair = new String[] {pair[0], ""};
         }
         parametersBuilder.put(pair[0].toLowerCase(), pair[1]);
       }
@@ -74,6 +74,22 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       // Should never reach here, since we have already checked for url validity
       throw new IllegalArgumentException("Invalid url " + "incorrect");
     }
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(host, port, schema, parameters);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    DatabricksConnectionContext that = (DatabricksConnectionContext) obj;
+    return port == that.port
+        && Objects.equals(host, that.host)
+        && Objects.equals(schema, that.schema)
+        && Objects.equals(parameters, that.parameters);
   }
 
   private static void handleInvalidUrl(String url) throws DatabricksParsingException {
@@ -97,7 +113,9 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     return HTTP_CLUSTER_PATH_PATTERN.matcher(url).matches()
         || HTTP_WAREHOUSE_PATH_PATTERN.matcher(url).matches()
         || HTTP_ENDPOINT_PATH_PATTERN.matcher(url).matches()
-        || TEST_PATH_PATTERN.matcher(url).matches();
+        || TEST_PATH_PATTERN.matcher(url).matches()
+        || BASE_PATTERN.matcher(url).matches()
+        || HTTP_CLI_PATTERN.matcher(url).matches();
   }
 
   @Override
@@ -150,6 +168,10 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     if (urlMatcher.find()) {
       return new AllPurposeCluster(urlMatcher.group(1), urlMatcher.group(2));
     }
+    urlMatcher = HTTP_PATH_CLI_PATTERN.matcher(httpPath);
+    if (urlMatcher.find()) {
+      return new AllPurposeCluster("default", "default");
+    }
     // the control should never reach here, as the parsing already ensured the URL is valid
     throw new DatabricksParsingException("Invalid HTTP Path provided " + this.getHttpPath());
   }
@@ -177,6 +199,11 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     return getParameter(POLL_INTERVAL) == null
         ? POLL_INTERVAL_DEFAULT
         : Integer.parseInt(getParameter(DatabricksJdbcConstants.POLL_INTERVAL));
+  }
+
+  @Override
+  public Boolean getDirectResultMode() {
+    return getParameter(DIRECT_RESULT) == null || Objects.equals(getParameter(DIRECT_RESULT), "1");
   }
 
   public String getCloud() throws DatabricksParsingException {
@@ -270,6 +297,18 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
+  public int getLogFileSize() {
+    String parameter = getParameter(LOG_FILE_SIZE);
+    return (parameter == null) ? DEFAULT_LOG_FILE_SIZE_IN_MB : Integer.parseInt(parameter);
+  }
+
+  @Override
+  public int getLogFileCount() {
+    String parameter = getParameter(LOG_FILE_COUNT);
+    return (parameter == null) ? DEFAULT_LOG_FILE_COUNT : Integer.parseInt(parameter);
+  }
+
+  @Override
   public String getClientUserAgent() {
     String customerUserAgent = getParameter(DatabricksJdbcConstants.USER_AGENT_ENTRY);
     String clientAgent =
@@ -305,7 +344,8 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public Boolean getUseLegacyMetadata() {
     // Defaults to use legacy metadata client
-    return Objects.equals(getParameter(USE_LEGACY_METADATA, "0"), "1");
+    String param = getParameter(USE_LEGACY_METADATA);
+    return param != null && param.equals("1");
   }
 
   @Override
@@ -326,13 +366,14 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public String getCatalog() {
-    return Optional.ofNullable(getParameter(DatabricksJdbcConstants.CONN_CATALOG))
+    return Optional.ofNullable(getParameter(CATALOG, getParameter(CONN_CATALOG)))
         .orElse(DEFAULT_CATALOG);
   }
 
   @Override
   public String getSchema() {
-    return Optional.ofNullable(getParameter(DatabricksJdbcConstants.CONN_SCHEMA)).orElse(schema);
+    return Optional.ofNullable(getParameter(CONN_SCHEMA, getParameter(SCHEMA)))
+        .orElse(DEFAULT_SCHEMA);
   }
 
   @Override
@@ -446,5 +487,35 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
         LOGGER.debug("Invalid logLevel, defaulting to default log level.");
         return DEFAULT_LOG_LEVEL;
     }
+  }
+
+  @Override
+  public int getTemporarilyUnavailableRetryInterval() {
+    return Integer.parseInt(
+        getParameter(TEMPORARILY_UNAVAILABLE_RETRY, DEFAULT_TEMPORARILY_UNAVAILABLE_RETRY));
+  }
+
+  @Override
+  public int getTemporarilyUnavailableRetryTimeout() {
+    return Integer.parseInt(
+        getParameter(
+            TEMPORARILY_UNAVAILABLE_RETRY_TIMEOUT, DEFAULT_TEMPORARILY_UNAVAILABLE_RETRY_TIMEOUT));
+  }
+
+  @Override
+  public int getRateLimitRetryInterval() {
+    return Integer.parseInt(getParameter(RATE_LIMIT_RETRY, DEFAULT_RATE_LIMIT_RETRY));
+  }
+
+  @Override
+  public int getRateLimitRetryTimeout() {
+    return Integer.parseInt(
+        getParameter(RATE_LIMIT_RETRY_TIMEOUT, DEFAULT_RATE_LIMIT_RETRY_TIMEOUT));
+  }
+
+  @Override
+  public int getIdleHttpConnectionExpiry() {
+    return Integer.parseInt(
+        getParameter(IDLE_HTTP_CONNECTION_EXPIRY, DEFAULT_IDLE_HTTP_CONNECTION_EXPIRY));
   }
 }

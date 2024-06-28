@@ -1,5 +1,7 @@
 package com.databricks.jdbc.integration.fakeservice;
 
+import static com.databricks.jdbc.integration.fakeservice.FakeServiceConfigLoader.CLOUD_FETCH_HOST_PROP;
+import static com.databricks.jdbc.integration.fakeservice.FakeServiceConfigLoader.DATABRICKS_HOST_PROP;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
 import com.databricks.jdbc.driver.DatabricksJdbcConstants;
@@ -19,13 +21,15 @@ public abstract class AbstractFakeServiceIntegrationTests {
    * Intercepts all requests to SQL Execution API.
    */
   @RegisterExtension
-  private static final FakeServiceExtension sqlExecApiExtension =
+  private static final FakeServiceExtension databricksApiExtension =
       new FakeServiceExtension(
           new DatabricksWireMockExtension.Builder()
               .options(
                   wireMockConfig().dynamicPort().dynamicHttpsPort().extensions(getExtensions())),
-          DatabricksJdbcConstants.FakeServiceType.SQL_EXEC,
-          "https://" + System.getenv("DATABRICKS_HOST"));
+          FakeServiceConfigLoader.shouldUseThriftClient
+              ? DatabricksJdbcConstants.FakeServiceType.SQL_GATEWAY
+              : DatabricksJdbcConstants.FakeServiceType.SQL_EXEC,
+          FakeServiceConfigLoader.getProperty(DATABRICKS_HOST_PROP));
 
   /**
    * {@link FakeServiceExtension} for {@link DatabricksJdbcConstants.FakeServiceType#CLOUD_FETCH}.
@@ -37,33 +41,44 @@ public abstract class AbstractFakeServiceIntegrationTests {
           new DatabricksWireMockExtension.Builder()
               .options(
                   wireMockConfig().dynamicPort().dynamicHttpsPort().extensions(getExtensions())),
-          DatabricksJdbcConstants.FakeServiceType.CLOUD_FETCH,
-          "https://dbstoragepzjc6kojqibtg.blob.core.windows.net");
+          FakeServiceConfigLoader.shouldUseThriftClient
+              ? DatabricksJdbcConstants.FakeServiceType.CLOUD_FETCH_SQL_GATEWAY
+              : DatabricksJdbcConstants.FakeServiceType.CLOUD_FETCH,
+          FakeServiceConfigLoader.getProperty(CLOUD_FETCH_HOST_PROP));
 
   /**
-   * Resets the potential mutations (e.g., URLs set by {@link #setSqlExecApiTargetUrl}, {@link
+   * Resets the potential mutations (e.g., URLs set by {@link #setDatabricksApiTargetUrl}, {@link
    * #setCloudFetchApiTargetUrl}) to meaningful defaults, after all tests have completed.
    */
   @AfterAll
   static void resetPossibleMutations() {
-    sqlExecApiExtension.setTargetBaseUrl("https://" + System.getenv("DATABRICKS_HOST"));
-    cloudFetchApiExtension.setTargetBaseUrl("https://dbstoragepzjc6kojqibtg.blob.core.windows.net");
+    databricksApiExtension.setTargetBaseUrl(
+        FakeServiceConfigLoader.getProperty(DATABRICKS_HOST_PROP));
+    cloudFetchApiExtension.setTargetBaseUrl(
+        FakeServiceConfigLoader.getProperty(CLOUD_FETCH_HOST_PROP));
   }
 
-  protected static void setSqlExecApiTargetUrl(final String sqlExecApiTargetUrl) {
-    sqlExecApiExtension.setTargetBaseUrl(sqlExecApiTargetUrl);
+  protected static void setDatabricksApiTargetUrl(final String sqlExecApiTargetUrl) {
+    databricksApiExtension.setTargetBaseUrl(sqlExecApiTargetUrl);
   }
 
   protected static void setCloudFetchApiTargetUrl(final String cloudFetchApiTargetUrl) {
     cloudFetchApiExtension.setTargetBaseUrl(cloudFetchApiTargetUrl);
   }
 
-  protected FakeServiceExtension getSqlExecApiExtension() {
-    return sqlExecApiExtension;
+  protected FakeServiceExtension getDatabricksApiExtension() {
+    return databricksApiExtension;
   }
 
   protected FakeServiceExtension getCloudFetchApiExtension() {
     return cloudFetchApiExtension;
+  }
+
+  /**
+   * Returns true if the test uses {@link com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient}.
+   */
+  protected boolean isSqlExecSdkClient() {
+    return !FakeServiceConfigLoader.shouldUseThriftClient;
   }
 
   /** Returns the extensions to be used for stubbing. */
