@@ -63,8 +63,12 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
         if (pair.length == 1) {
           pair = new String[] {pair[0], ""};
         }
-        if (pair[0].toLowerCase().equals("port")) {
-          portValue = Integer.valueOf(pair[1]);
+        if (pair[0].toLowerCase().equals(PORT)) {
+          try {
+            portValue = Integer.valueOf(pair[1]);
+          } catch (NumberFormatException e) {
+            throw new DatabricksParsingException("Invalid port number " + pair[1]);
+          }
         }
         parametersBuilder.put(pair[0].toLowerCase(), pair[1]);
       }
@@ -519,10 +523,5 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   public int getIdleHttpConnectionExpiry() {
     return Integer.parseInt(
         getParameter(IDLE_HTTP_CONNECTION_EXPIRY, DEFAULT_IDLE_HTTP_CONNECTION_EXPIRY));
-  }
-
-  @Override
-  public int getPort() {
-    return Integer.parseInt(getParameter(PORT, "-1"));
   }
 }
