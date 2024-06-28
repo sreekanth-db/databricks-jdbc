@@ -2,7 +2,6 @@ package com.databricks.jdbc.core;
 
 import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
-import com.databricks.jdbc.client.sqlexec.ExternalLink;
 import java.io.*;
 import java.util.*;
 import org.apache.http.HttpEntity;
@@ -39,14 +38,15 @@ class VolumeOperationExecutor implements Runnable {
 
   VolumeOperationExecutor(
       String operationType,
-      ExternalLink externalLink,
+      String operationUrl,
+      Map<String, String> headers,
       String localFilePath,
       String allowedVolumeIngestionPathString,
       IDatabricksHttpClient databricksHttpClient) {
     this.operationType = operationType;
-    this.operationUrl = externalLink == null ? null : externalLink.getExternalLink();
+    this.operationUrl = operationUrl;
     this.localFilePath = localFilePath;
-    this.headers = externalLink == null ? Collections.emptyMap() : externalLink.getHttpHeaders();
+    this.headers = headers;
     this.allowedVolumeIngestionPaths = getAllowedPaths(allowedVolumeIngestionPathString);
     this.databricksHttpClient = databricksHttpClient;
     this.status = VolumeOperationStatus.PENDING;
@@ -66,7 +66,7 @@ class VolumeOperationExecutor implements Runnable {
         "Running volume operation {} on local file {}",
         operationType,
         localFilePath == null ? "" : localFilePath);
-    if (operationUrl == null) {
+    if (operationUrl == null || operationUrl.isEmpty()) {
       LOGGER.error("Volume operation URL is not set");
       status = VolumeOperationStatus.ABORTED;
       errorMessage = "Volume operation URL is not set";
