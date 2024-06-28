@@ -64,6 +64,8 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
   private static final ConcurrentHashMap<String, DatabricksHttpClient> instances =
       new ConcurrentHashMap<>();
+  private static final String RETRY_AFTER_HEADER = "Retry-After";
+  private static final String THRIFT_ERROR_MESSAGE_HEADER = "X-Thriftserver-Error-Message";
 
   private static PoolingHttpClientConnectionManager connectionManager;
 
@@ -196,8 +198,8 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     int errCode = httpResponse.getStatusLine().getStatusCode();
     if (isErrorCodeRetryable(errCode)) {
       int retryInterval = -1;
-      if (httpResponse.containsHeader("Retry-After")) {
-        retryInterval = Integer.parseInt(httpResponse.getFirstHeader("Retry-After").getValue());
+      if (httpResponse.containsHeader(RETRY_AFTER_HEADER)) {
+        retryInterval = Integer.parseInt(httpResponse.getFirstHeader(RETRY_AFTER_HEADER).getValue());
         httpContext.setAttribute(RETRY_INTERVAL_KEY, retryInterval);
       } else {
         httpContext.setAttribute(RETRY_INTERVAL_KEY, -1);
@@ -209,9 +211,8 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
       initializeRetryCounts(httpContext);
 
-      String thriftErrorHeader = "X-Thriftserver-Error-Message";
-      if (httpResponse.containsHeader(thriftErrorHeader)) {
-        String errorMessage = httpResponse.getFirstHeader(thriftErrorHeader).getValue();
+      if (httpResponse.containsHeader(THRIFT_ERROR_MESSAGE_HEADER)) {
+        String errorMessage = httpResponse.getFirstHeader(THRIFT_ERROR_MESSAGE_HEADER).getValue();
         throw new DatabricksRetryHandlerException(
             "HTTP Response code: " + errCode + ", Error message: " + errorMessage, errCode);
       }
