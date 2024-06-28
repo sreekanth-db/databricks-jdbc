@@ -60,6 +60,8 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   private static final String HTTP_PUT = "PUT";
   private static final String SDK_USER_AGENT = "databricks-sdk-java";
   private static final String JDBC_HTTP_USER_AGENT = "databricks-jdbc-http";
+
+  // TODO: Consider other HTTP codes for retries (408, 425, 500, 502, 504)
   private static final Set<Integer> RETRYABLE_HTTP_CODES = Set.of(503, 429);
 
   private static final ConcurrentHashMap<String, DatabricksHttpClient> instances =
