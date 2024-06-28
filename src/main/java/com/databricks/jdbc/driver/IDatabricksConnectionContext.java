@@ -11,6 +11,8 @@ import org.apache.logging.log4j.Level;
 
 public interface IDatabricksConnectionContext {
 
+  int getPort();
+
   enum AuthFlow {
     TOKEN_PASSTHROUGH,
     CLIENT_CREDENTIALS,
