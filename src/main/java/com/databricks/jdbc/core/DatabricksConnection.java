@@ -5,6 +5,7 @@ import com.databricks.jdbc.commons.util.ValidationUtil;
 import com.databricks.jdbc.driver.DatabricksDriver;
 import com.databricks.jdbc.driver.DatabricksJdbcConstants;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
+import com.databricks.jdbc.telemetry.DatabricksMetrics;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.*;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ public class DatabricksConnection implements IDatabricksConnection, Connection {
       throws DatabricksSQLException {
     this.session = new DatabricksSession(connectionContext);
     this.session.open();
+    DatabricksMetrics.instantiateTelemetryClient(connectionContext);
   }
 
   @VisibleForTesting

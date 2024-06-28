@@ -19,17 +19,15 @@ import org.apache.http.util.EntityUtils;
 
 public class DatabricksMetrics {
   private static final String URL =
-      "https://test-shard-bhuvan-v2.dev.azuredatabricks.net/api/2.0/example-v2/exportMetrics";
-  // TODO: Replace ACCESS_TOKEN with your own token - TO BE DECIDED ONCE THE SERVICE IS CREATED
-  private static final String ACCESS_TOKEN = "x";
+      "http://localhost:4051/api/2.0/oss-sql-driver-telemetry/exportMetrics";
   public static final Map<String, Double> gaugeMetrics = new HashMap<>();
   public static final Map<String, Double> counterMetrics = new HashMap<>();
   private static final long intervalDurationForSendingReq =
       TimeUnit.SECONDS.toMillis(10 * 60); // 10 minutes
   private static DatabricksHttpClient telemetryClient = null;
   private static final ObjectMapper objectMapper = new ObjectMapper();
-  private static final String METRICS_MAP_STRING = "metrics_map_string";
-  private static final String METRICS_TYPE = "metrics_map_int";
+  private static final String METRICS_MAP_STRING = "metricsMap";
+  private static final String METRICS_TYPE = "metricsType";
   private static Boolean firstExport = false;
   private static String warehouseId = null;
 
@@ -95,7 +93,7 @@ public class DatabricksMetrics {
     uriBuilder.addParameter(METRICS_MAP_STRING, jsonInputString);
     uriBuilder.addParameter(METRICS_TYPE, metricsType.name().equals("GAUGE") ? "1" : "0");
     HttpUriRequest request = new HttpGet(uriBuilder.build());
-    request.addHeader("Authorization", "Bearer " + ACCESS_TOKEN);
+
     CloseableHttpResponse response = telemetryClient.execute(request);
 
     // Error handling
