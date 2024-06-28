@@ -58,7 +58,8 @@ public class ExecutionResultFactoryTest {
     when(session.getConnectionContext()).thenReturn(connectionContext);
 
     ResultData data = new ResultData();
-    ResultManifest manifest = new ResultManifest().setIsVolumeOperation(true);
+    ResultManifest manifest =
+        new ResultManifest().setIsVolumeOperation(true).setFormat(Format.JSON_ARRAY);
     IExecutionResult result =
         ExecutionResultFactory.getResultSet(data, manifest, "statementId", session);
 
