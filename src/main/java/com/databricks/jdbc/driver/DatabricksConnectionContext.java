@@ -24,7 +24,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   private static final Logger LOGGER = LogManager.getLogger(DatabricksConnectionContext.class);
   private final String host;
-  private final int port;
+  @VisibleForTesting final int port;
   private final String schema;
   private final ComputeResource computeResource;
   private static DatabricksMetrics metricsExporter;
@@ -65,6 +65,13 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
         if (pair.length == 1) {
           pair = new String[] {pair[0], ""};
         }
+        if (pair[0].toLowerCase().equals(PORT)) {
+          try {
+            portValue = Integer.valueOf(pair[1]);
+          } catch (NumberFormatException e) {
+            throw new DatabricksParsingException("Invalid port number " + pair[1]);
+          }
+        }
         parametersBuilder.put(pair[0].toLowerCase(), pair[1]);
       }
       for (Map.Entry<Object, Object> entry : properties.entrySet()) {
@@ -78,6 +85,22 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       // Should never reach here, since we have already checked for url validity
       throw new IllegalArgumentException("Invalid url " + "incorrect");
     }
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(host, port, schema, parameters);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    DatabricksConnectionContext that = (DatabricksConnectionContext) obj;
+    return port == that.port
+        && Objects.equals(host, that.host)
+        && Objects.equals(schema, that.schema)
+        && Objects.equals(parameters, that.parameters);
   }
 
   private static void handleInvalidUrl(String url) throws DatabricksParsingException {
@@ -337,7 +360,8 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public Boolean getUseLegacyMetadata() {
     // Defaults to use legacy metadata client
-    return Objects.equals(getParameter(USE_LEGACY_METADATA, "0"), "1");
+    String param = getParameter(USE_LEGACY_METADATA);
+    return param != null && param.equals("1");
   }
 
   @Override
@@ -479,5 +503,34 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
         LOGGER.debug("Invalid logLevel, defaulting to default log level.");
         return DEFAULT_LOG_LEVEL;
     }
+  }
+
+  @Override
+  public Boolean shouldRetryTemporarilyUnavailableError() {
+    return Objects.equals(getParameter(TEMPORARILY_UNAVAILABLE_RETRY, "1"), "1");
+  }
+
+  @Override
+  public Boolean shouldRetryRateLimitError() {
+    return Objects.equals(getParameter(RATE_LIMIT_RETRY, "1"), "1");
+  }
+
+  @Override
+  public int getTemporarilyUnavailableRetryTimeout() {
+    return Integer.parseInt(
+        getParameter(
+            TEMPORARILY_UNAVAILABLE_RETRY_TIMEOUT, DEFAULT_TEMPORARILY_UNAVAILABLE_RETRY_TIMEOUT));
+  }
+
+  @Override
+  public int getRateLimitRetryTimeout() {
+    return Integer.parseInt(
+        getParameter(RATE_LIMIT_RETRY_TIMEOUT, DEFAULT_RATE_LIMIT_RETRY_TIMEOUT));
+  }
+
+  @Override
+  public int getIdleHttpConnectionExpiry() {
+    return Integer.parseInt(
+        getParameter(IDLE_HTTP_CONNECTION_EXPIRY, DEFAULT_IDLE_HTTP_CONNECTION_EXPIRY));
   }
 }

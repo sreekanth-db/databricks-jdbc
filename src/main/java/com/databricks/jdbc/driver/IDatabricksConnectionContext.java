@@ -134,4 +134,14 @@ public interface IDatabricksConnectionContext {
   Boolean getDirectResultMode();
 
   DatabricksMetrics getMetricsExporter();
+
+  Boolean shouldRetryTemporarilyUnavailableError();
+
+  Boolean shouldRetryRateLimitError();
+
+  int getTemporarilyUnavailableRetryTimeout();
+
+  int getRateLimitRetryTimeout();
+
+  int getIdleHttpConnectionExpiry();
 }
