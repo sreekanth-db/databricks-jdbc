@@ -49,7 +49,7 @@ class ExecutionResultFactory {
       IDatabricksSession session)
       throws DatabricksSQLException {
     IExecutionResult resultHandler = getResultHandler(data, manifest, statementId, session);
-    if (manifest.isSetIsStagingOperation() && manifest.isStagingOperation) {
+    if (manifest.isSetIsStagingOperation() && manifest.isIsStagingOperation()) {
       return new VolumeOperationResult(
           statementId,
           DatabricksThriftHelper.getRowCount(data),
