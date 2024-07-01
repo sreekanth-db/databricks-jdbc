@@ -59,7 +59,11 @@ public class ExecutionResultFactoryTest {
 
     ResultData data = new ResultData();
     ResultManifest manifest =
-        new ResultManifest().setIsVolumeOperation(true).setFormat(Format.JSON_ARRAY);
+        new ResultManifest()
+            .setIsVolumeOperation(true)
+            .setFormat(Format.JSON_ARRAY)
+            .setTotalRowCount(1L)
+            .setSchema(new ResultSchema().setColumnCount(4L));
     IExecutionResult result =
         ExecutionResultFactory.getResultSet(data, manifest, "statementId", session);
 
