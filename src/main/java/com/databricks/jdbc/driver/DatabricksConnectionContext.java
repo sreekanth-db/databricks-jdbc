@@ -23,8 +23,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   private static final Logger LOGGER = LogManager.getLogger(DatabricksConnectionContext.class);
   private final String host;
-  @VisibleForTesting
-  final int port;
+  @VisibleForTesting final int port;
   private final String schema;
   private final ComputeResource computeResource;
   @VisibleForTesting final ImmutableMap<String, String> parameters;
