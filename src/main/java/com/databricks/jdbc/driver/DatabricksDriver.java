@@ -30,8 +30,9 @@ public class DatabricksDriver implements Driver {
   private static final DatabricksDriver INSTANCE;
 
   private static final int majorVersion = 0;
-  private static final int minorVersion = 0;
-  private static final int buildVersion = 1;
+  private static final int minorVersion = 7;
+  private static final int buildVersion = 0;
+  private static final String qualifier = "oss";
 
   static {
     try {
@@ -168,7 +169,7 @@ public class DatabricksDriver implements Driver {
   }
 
   private static String getVersion() {
-    return String.format("%d.%d.%d", majorVersion, minorVersion, buildVersion);
+    return String.format("%d.%d.%d-%s", majorVersion, minorVersion, buildVersion, qualifier);
   }
 
   public static void setUserAgent(IDatabricksConnectionContext connectionContext) {
