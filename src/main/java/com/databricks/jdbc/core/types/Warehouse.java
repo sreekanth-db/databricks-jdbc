@@ -27,7 +27,8 @@ public class Warehouse implements ComputeResource {
   }
 
   @Override
-  public String getResourceId() {
+  public String getWorkspaceId() {
+    // TODO: Should return the workspace ID of the warehouse
     return this.warehouseId;
   }
 }

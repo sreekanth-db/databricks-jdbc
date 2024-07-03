@@ -34,7 +34,7 @@ public class AllPurposeCluster implements ComputeResource {
   }
 
   @Override
-  public String getResourceId() {
-    return this.clusterId;
+  public String getWorkspaceId() {
+    return this.orgId;
   }
 }

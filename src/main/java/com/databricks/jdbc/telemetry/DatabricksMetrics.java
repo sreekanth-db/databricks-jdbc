@@ -17,8 +17,10 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.util.EntityUtils;
 
+// TODO (Bhuvan) Flush out metrics once the driver connection is closed
 public class DatabricksMetrics {
-  private final String URL = "http://localhost:4051/api/2.0/oss-sql-driver-telemetry/metrics";
+  private final String URL =
+      "https://aa87314c1e33d4c1f91a919f8cf9c4ba-387609431.us-west-2.elb.amazonaws.com:443/api/2.0/oss-sql-driver-telemetry/metrics";
   public final Map<String, Double> gaugeMetrics = new HashMap<>();
   public final Map<String, Double> counterMetrics = new HashMap<>();
   private final long intervalDurationForSendingReq =
@@ -27,11 +29,11 @@ public class DatabricksMetrics {
   private final String METRICS_MAP_STRING = "metrics_map";
   private final String METRICS_TYPE = "metrics_type";
   private Boolean hasInitialExportOccurred = false;
-  private String resourceId = null;
+  private String workspaceId = null;
   private DatabricksHttpClient telemetryClient = null;
 
-  private void setResourceId(String resourceId) {
-    this.resourceId = resourceId;
+  private void setWorkspaceId(String workspaceId) {
+    this.workspaceId = workspaceId;
   }
 
   public enum MetricsType {
@@ -63,8 +65,8 @@ public class DatabricksMetrics {
     if (context == null) {
       throw new DatabricksSQLException("Connection context is null");
     }
-    String resourceId = context.getComputeResource().getResourceId();
-    setResourceId(resourceId);
+    String resourceId = context.getComputeResource().getWorkspaceId();
+    setWorkspaceId(resourceId);
     telemetryClient = DatabricksHttpClient.getInstance(context);
     scheduleExportMetrics();
   }
@@ -74,7 +76,7 @@ public class DatabricksMetrics {
     if (telemetryClient == null) {
       throw new DatabricksHttpException(
           "Telemetry client is not set for resource Id: "
-              + resourceId
+              + workspaceId
               + ". Initialize the Driver first.");
     }
 
@@ -91,7 +93,7 @@ public class DatabricksMetrics {
     uriBuilder.addParameter(METRICS_MAP_STRING, jsonInputString);
     uriBuilder.addParameter(METRICS_TYPE, metricsType.name().equals("GAUGE") ? "1" : "0");
     HttpUriRequest request = new HttpPost(uriBuilder.build());
-
+    // TODO (Bhuvan): Add authentication headers
     CloseableHttpResponse response = telemetryClient.execute(request);
 
     // Error handling
@@ -142,13 +144,15 @@ public class DatabricksMetrics {
         });
   }
 
+  // record() appends the metric to be exported in the gauge metric map
   public void record(String name, double value) {
-    setGaugeMetrics(name + "_" + resourceId, value);
+    setGaugeMetrics(name + "_" + workspaceId, value);
     if (!hasInitialExportOccurred) initialExport(gaugeMetrics, MetricsType.GAUGE);
   }
 
+  // increment() appends the metric to be exported in the counter metric map
   public void increment(String name, double value) {
-    incCounterMetrics(name + "_" + resourceId, value);
+    incCounterMetrics(name + "_" + workspaceId, value);
     if (!hasInitialExportOccurred) initialExport(counterMetrics, MetricsType.COUNTER);
   }
 }
