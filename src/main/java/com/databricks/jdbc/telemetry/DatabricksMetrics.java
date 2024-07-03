@@ -12,13 +12,13 @@ import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.util.EntityUtils;
 
 public class DatabricksMetrics {
-  private final String URL = "http://localhost:4051/api/2.0/oss-sql-driver-telemetry/exportMetrics";
+  private final String URL = "http://localhost:4051/api/2.0/oss-sql-driver-telemetry/metrics";
   public final Map<String, Double> gaugeMetrics = new HashMap<>();
   public final Map<String, Double> counterMetrics = new HashMap<>();
   private final long intervalDurationForSendingReq =
@@ -26,7 +26,7 @@ public class DatabricksMetrics {
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final String METRICS_MAP_STRING = "metrics_map";
   private final String METRICS_TYPE = "metrics_type";
-  private Boolean firstExport = false;
+  private Boolean hasInitialExportOccurred = false;
   private String resourceId = null;
   private DatabricksHttpClient telemetryClient = null;
 
@@ -90,7 +90,7 @@ public class DatabricksMetrics {
     URIBuilder uriBuilder = new URIBuilder(URL);
     uriBuilder.addParameter(METRICS_MAP_STRING, jsonInputString);
     uriBuilder.addParameter(METRICS_TYPE, metricsType.name().equals("GAUGE") ? "1" : "0");
-    HttpUriRequest request = new HttpGet(uriBuilder.build());
+    HttpUriRequest request = new HttpPost(uriBuilder.build());
 
     CloseableHttpResponse response = telemetryClient.execute(request);
 
@@ -129,9 +129,8 @@ public class DatabricksMetrics {
     counterMetrics.put(name, value);
   }
 
-  private void FirstExport(Map<String, Double> map, MetricsType metricsType) {
-    if (firstExport) return;
-    firstExport = true;
+  private void initialExport(Map<String, Double> map, MetricsType metricsType) {
+    hasInitialExportOccurred = true;
     CompletableFuture.runAsync(
         () -> {
           try {
@@ -145,11 +144,11 @@ public class DatabricksMetrics {
 
   public void record(String name, double value) {
     setGaugeMetrics(name + "_" + resourceId, value);
-    FirstExport(gaugeMetrics, MetricsType.GAUGE);
+    if (!hasInitialExportOccurred) initialExport(gaugeMetrics, MetricsType.GAUGE);
   }
 
   public void increment(String name, double value) {
     incCounterMetrics(name + "_" + resourceId, value);
-    FirstExport(counterMetrics, MetricsType.COUNTER);
+    if (!hasInitialExportOccurred) initialExport(counterMetrics, MetricsType.COUNTER);
   }
 }
