@@ -18,7 +18,7 @@ import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /** Implementation for Databricks specific connection. */
-public class DatabricksConnection implements IDatabricksConnection, Connection {
+public class DatabricksConnection implements IDatabricksConnection, Connection, AutoCloseable {
   private IDatabricksSession session;
   private final Set<IDatabricksStatement> statementSet = ConcurrentHashMap.newKeySet();
   private SQLWarning warnings = null;
