@@ -49,6 +49,8 @@ public final class DatabricksJdbcConstants {
 
   public static final int DEFAULT_LOG_FILE_COUNT = 10;
 
+  public static final String USER_AGENT_DELIMITER = "-";
+
   public static final String URL_DELIMITER = ";";
 
   public static final String PORT_DELIMITER = ":";
@@ -83,7 +85,7 @@ public final class DatabricksJdbcConstants {
 
   public static final String USE_PROXY = "useproxy";
 
-  public static final String USE_PROXY_AUTH = "proxyauth";
+  public static final String PROXY_AUTH = "proxyauth";
 
   public static final String USE_SYSTEM_PROXY = "usesystemproxy";
 
@@ -93,13 +95,13 @@ public final class DatabricksJdbcConstants {
 
   public static final String CF_PROXY_PORT = "cfproxyport";
 
-  public static final String USE_CF_PROXY_AUTH = "cfproxyauth";
-
-  public static final String ENABLE_ARROW = "EnableArrow";
+  public static final String CF_PROXY_AUTH = "cfproxyauth";
 
   public static final String CF_PROXY_USER = "cfproxyuid";
 
   public static final String CF_PROXY_PWD = "cfproxypwd";
+
+  public static final String ENABLE_ARROW = "EnableArrow";
 
   public static final String AUTH_FLOW = "auth_flow";
 
@@ -167,9 +169,9 @@ public final class DatabricksJdbcConstants {
 
   public static final String CLIENT_USER_AGENT_PREFIX = "Java";
 
-  public static final String USER_AGENT_SEA_CLIENT = "SQLExecHttpClient/HC";
+  public static final String USER_AGENT_SEA_CLIENT = "SQLExecHttpClient-HC";
 
-  public static final String USER_AGENT_THRIFT_CLIENT = "THttpClient/HC";
+  public static final String USER_AGENT_THRIFT_CLIENT = "THttpClient-HC";
 
   public static final String ALLOWED_VOLUME_INGESTION_PATHS =
       "allowlistedVolumeOperationLocalFilePaths";
