@@ -19,7 +19,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 /** Implementation for Session interface, which maintains an underlying session in SQL Gateway. */
-public class DatabricksSession implements IDatabricksSession, AutoCloseable {
+public class DatabricksSession implements IDatabricksSession {
   private final DatabricksClient databricksClient;
   private DatabricksMetadataClient databricksMetadataClient;
   private final ComputeResource computeResource;
