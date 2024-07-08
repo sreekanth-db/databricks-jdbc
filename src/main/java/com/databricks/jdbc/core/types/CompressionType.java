@@ -5,7 +5,8 @@ import com.databricks.jdbc.commons.util.LoggingUtil;
 
 public enum CompressionType {
   NONE(0),
-  LZ4_COMPRESSION(1);
+  LZ4_COMPRESSION(1),
+  UNKNOWN_COMPRESSION(2);
   private final int compressionTypeVal;
 
   CompressionType(int value) {
