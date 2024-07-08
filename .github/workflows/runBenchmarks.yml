@@ -1,0 +1,37 @@
+name: Benchmark Driver
+
+on:
+  schedule:
+    - cron: '0 14 * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout benchmark branch
+        uses: actions/checkout@v2
+        with:
+          ref: benchmark-branch
+
+      - name: Merge main into benchmark-branch
+        run: |
+          git config --global user.email "madhav.sainanee@databricks.com"
+          git config --global user.name "madhav-db"
+          git checkout benchmark-branch
+          git pull origin main
+          git push origin benchmark-branch
+
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          java-version: '21'
+          distribution: 'adopt'
+
+      - name: Set up Maven
+        run: mvn -version
+
+      - name: Run Benchmark Tests
+        run: |
+          mvn test -Dtest=com.databricks.jdbc.integration.benchmarking.LargeQueriesBenchmarkingTest,com.databricks.jdbc.integration.benchmarking.MetadataBenchmarkingTests
