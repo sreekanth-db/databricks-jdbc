@@ -12,7 +12,6 @@ import com.databricks.jdbc.commons.util.LoggingUtil;
 import com.databricks.jdbc.core.types.CompressionType;
 import com.databricks.jdbc.core.types.ComputeResource;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
-import com.databricks.jdbc.telemetry.DatabricksMetrics;
 import com.databricks.sdk.support.ToStringer;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
@@ -149,7 +148,6 @@ public class DatabricksSession implements IDatabricksSession {
   @Override
   public void close() throws DatabricksSQLException {
     LoggingUtil.log(LogLevel.DEBUG, "public void close()");
-    System.out.println("close() session");
     // TODO: check for any pending query executions
     synchronized (this) {
       if (isSessionOpen) {
@@ -157,19 +155,7 @@ public class DatabricksSession implements IDatabricksSession {
         databricksClient.deleteSession(this, computeResource);
         this.sessionInfo = null;
         this.isSessionOpen = false;
-
-        // Flush out metrics when connection is closed
-        DatabricksMetrics metricsExporter = connectionContext.getMetricsExporter();
-        if (metricsExporter != null) {
-          try {
-            metricsExporter.sendRequest(
-                metricsExporter.getGaugeMetrics(), DatabricksMetrics.MetricsType.GAUGE);
-            metricsExporter.sendRequest(
-                metricsExporter.getCounterMetrics(), DatabricksMetrics.MetricsType.COUNTER);
-          } catch (Exception e) {
-            throw new RuntimeException("Failed to flush out metrics", e);
-          }
-        }
+        this.connectionContext.getMetricsExporter().close();
       }
     }
   }
