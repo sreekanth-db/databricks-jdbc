@@ -1,8 +1,8 @@
 package com.databricks.jdbc.telemetry;
 
 import com.databricks.jdbc.client.DatabricksHttpException;
+import com.databricks.jdbc.client.http.DatabricksHttpClient;
 import com.databricks.jdbc.commons.LogLevel;
-import com.databricks.jdbc.commons.util.DefaultHttpClientUtil;
 import com.databricks.jdbc.commons.util.LoggingUtil;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
@@ -17,7 +17,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
 public class DatabricksMetrics implements AutoCloseable {
@@ -32,7 +31,7 @@ public class DatabricksMetrics implements AutoCloseable {
   private final String METRICS_TYPE = "metrics_type";
   private Boolean hasInitialExportOccurred = false;
   private String workspaceId = null;
-  private DefaultHttpClient telemetryClient = null;
+  private final DatabricksHttpClient telemetryClient;
 
   private void setWorkspaceId(String workspaceId) {
     this.workspaceId = workspaceId;
@@ -69,13 +68,7 @@ public class DatabricksMetrics implements AutoCloseable {
     }
     String resourceId = context.getComputeResource().getWorkspaceId();
     setWorkspaceId(resourceId);
-    // TODO: Bhuvan: Replace telemetry client with DatabricksHttpClient when non-SSL variation is
-    // implemented
-    try {
-      telemetryClient = DefaultHttpClientUtil.getDefaultHttpClient();
-    } catch (Exception e) {
-      throw new DatabricksSQLException("Failed to create telemetry client");
-    }
+    this.telemetryClient = DatabricksHttpClient.getInstance(context);
     scheduleExportMetrics();
   }
 
@@ -102,7 +95,8 @@ public class DatabricksMetrics implements AutoCloseable {
     uriBuilder.addParameter(METRICS_TYPE, metricsType.name().equals("GAUGE") ? "1" : "0");
     HttpUriRequest request = new HttpPost(uriBuilder.build());
     // TODO (Bhuvan): Add authentication headers
-    CloseableHttpResponse response = telemetryClient.execute(request);
+    // TODO (Bhuvan): execute request using SSL
+    CloseableHttpResponse response = telemetryClient.executeWithoutSSL(request);
 
     // Error handling
     if (response == null) {

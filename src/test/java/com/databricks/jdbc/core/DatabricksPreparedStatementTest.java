@@ -268,6 +268,15 @@ public class DatabricksPreparedStatementTest {
   }
 
   @Test
+  public void testSetTimestampWithNullCalendar() throws DatabricksSQLException {
+    setupMocks();
+    DatabricksPreparedStatement preparedStatement =
+        new DatabricksPreparedStatement(connection, STATEMENT);
+    assertDoesNotThrow(
+        () -> preparedStatement.setTimestamp(1, new Timestamp(System.currentTimeMillis()), null));
+  }
+
+  @Test
   public void testSetAsciiStream() throws DatabricksSQLException {
     setupMocks();
     DatabricksPreparedStatement preparedStatement =

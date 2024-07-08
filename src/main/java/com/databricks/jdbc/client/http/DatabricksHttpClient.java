@@ -16,10 +16,14 @@ import com.databricks.sdk.core.UserAgent;
 import com.databricks.sdk.core.utils.ProxyUtils;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLContext;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -28,11 +32,13 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.UnsupportedSchemeException;
 import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.ssl.SSLContextBuilder;
 
 /** Http client implementation to be used for executing http requests. */
 public class DatabricksHttpClient implements IDatabricksHttpClient {
@@ -72,6 +78,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   private static boolean shouldRetryRateLimitError;
   private static int rateLimitRetryTimeout;
   protected static int idleHttpConnectionExpiry;
+  private CloseableHttpClient httpDisabledSSLClient;
 
   private DatabricksHttpClient(IDatabricksConnectionContext connectionContext) {
     initializeConnectionManager();
@@ -81,6 +88,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     shouldRetryRateLimitError = connectionContext.shouldRetryRateLimitError();
     rateLimitRetryTimeout = connectionContext.getRateLimitRetryTimeout();
     httpClient = makeClosableHttpClient(connectionContext);
+    httpDisabledSSLClient = makeClosableDisabledSslHttpClient();
     idleHttpConnectionExpiry = connectionContext.getIdleHttpConnectionExpiry();
   }
 
@@ -141,6 +149,26 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
       setFakeServiceRouteInHttpClient(builder);
     }
     return builder.build();
+  }
+
+  private CloseableHttpClient makeClosableDisabledSslHttpClient() {
+    try {
+      // Create SSL context that trusts all certificates
+      SSLContext sslContext =
+          new SSLContextBuilder().loadTrustMaterial(null, (chain, authType) -> true).build();
+
+      // Create HttpClient with the SSL context
+      return HttpClientBuilder.create()
+          .setSSLContext(sslContext)
+          .setSSLHostnameVerifier(new NoopHostnameVerifier())
+          .build();
+    } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+      LoggingUtil.log(
+          LogLevel.DEBUG,
+          String.format(
+              "Error in creating HttpClient with the SSL context [{%s}]", e.getMessage()));
+    }
+    return null;
   }
 
   private boolean handleRetry(IOException exception, int executionCount, HttpContext context) {
@@ -322,20 +350,22 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     try {
       return httpClient.execute(request);
     } catch (IOException e) {
-      Throwable cause = e;
-      while (cause != null) {
-        if (cause instanceof DatabricksRetryHandlerException) {
-          throw new DatabricksHttpException(cause.getMessage(), cause);
-        }
-        cause = cause.getCause();
-      }
-      String errorMsg =
-          String.format(
-              "Caught error while executing http request: [%s]. Error Message: [%s]",
-              RequestSanitizer.sanitizeRequest(request), e);
-      LoggingUtil.log(LogLevel.ERROR, errorMsg);
-      throw new DatabricksHttpException(errorMsg, e);
+      throwHttpException(e, request, LogLevel.ERROR);
     }
+    return null;
+  }
+
+  public CloseableHttpResponse executeWithoutSSL(HttpUriRequest request)
+      throws DatabricksHttpException {
+    LoggingUtil.log(
+        LogLevel.DEBUG,
+        String.format("Executing HTTP request [{%s}]", RequestSanitizer.sanitizeRequest(request)));
+    try {
+      return httpDisabledSSLClient.execute(request);
+    } catch (Exception e) {
+      throwHttpException(e, request, LogLevel.DEBUG);
+    }
+    return null;
   }
 
   @Override
@@ -384,5 +414,22 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
             LogLevel.DEBUG, String.format("Caught error while closing http client. Error %s", e));
       }
     }
+  }
+
+  private static void throwHttpException(Exception e, HttpUriRequest request, LogLevel logLevel)
+      throws DatabricksHttpException {
+    Throwable cause = e;
+    while (cause != null) {
+      if (cause instanceof DatabricksRetryHandlerException) {
+        throw new DatabricksHttpException(cause.getMessage(), cause);
+      }
+      cause = cause.getCause();
+    }
+    String errorMsg =
+        String.format(
+            "Caught error while executing http request: [%s]. Error Message: [%s]",
+            RequestSanitizer.sanitizeRequest(request), e);
+    LoggingUtil.log(logLevel, errorMsg);
+    throw new DatabricksHttpException(errorMsg, e);
   }
 }
