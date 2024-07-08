@@ -2,6 +2,8 @@ package com.databricks.jdbc.telemetry;
 
 import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.http.DatabricksHttpClient;
+import com.databricks.jdbc.commons.LogLevel;
+import com.databricks.jdbc.commons.util.LoggingUtil;
 import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,12 +19,11 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.util.EntityUtils;
 
-// TODO (Bhuvan) Flush out metrics once the driver connection is closed
-public class DatabricksMetrics {
+public class DatabricksMetrics implements AutoCloseable {
   private final String URL =
       "https://aa87314c1e33d4c1f91a919f8cf9c4ba-387609431.us-west-2.elb.amazonaws.com:443/api/2.0/oss-sql-driver-telemetry/metrics";
-  public final Map<String, Double> gaugeMetrics = new HashMap<>();
-  public final Map<String, Double> counterMetrics = new HashMap<>();
+  private final Map<String, Double> gaugeMetrics = new HashMap<>();
+  private final Map<String, Double> counterMetrics = new HashMap<>();
   private final long intervalDurationForSendingReq =
       TimeUnit.SECONDS.toMillis(10 * 60); // 10 minutes
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -155,5 +156,20 @@ public class DatabricksMetrics {
   public void increment(String name, double value) {
     incCounterMetrics(name + "_" + workspaceId, value);
     if (!hasInitialExportOccurred) initialExport(counterMetrics, MetricsType.COUNTER);
+  }
+
+  @Override
+  public void close() {
+    // Flush out metrics when connection is closed
+    if (telemetryClient != null) {
+      try {
+        sendRequest(gaugeMetrics, DatabricksMetrics.MetricsType.GAUGE);
+        sendRequest(counterMetrics, DatabricksMetrics.MetricsType.COUNTER);
+      } catch (Exception e) {
+        LoggingUtil.log(
+            LogLevel.DEBUG,
+            "Failed to export metrics when connection is closed. Error: " + e.getMessage());
+      }
+    }
   }
 }
