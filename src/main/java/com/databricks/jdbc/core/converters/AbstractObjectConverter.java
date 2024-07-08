@@ -9,7 +9,7 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 
-public abstract class AbstractObjectConverter {
+public class AbstractObjectConverter {
 
   // TODO (Madhav): Ensure proper handling of null values in the conversions.
   long[] POWERS_OF_TEN = {

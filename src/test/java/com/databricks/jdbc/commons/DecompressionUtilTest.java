@@ -49,6 +49,7 @@ public class DecompressionUtilTest {
         compressedInputStream);
     assertNull(DecompressionUtil.decompress(null, CompressionType.LZ4_COMPRESSION, CONTEXT));
   }
+
   @Test
   public void testDecompressThrowsExceptionForUnknownCompressionType() {
     assertThrows(
