@@ -94,6 +94,7 @@ public class DatabricksMetrics {
     uriBuilder.addParameter(METRICS_TYPE, metricsType.name().equals("GAUGE") ? "1" : "0");
     HttpUriRequest request = new HttpPost(uriBuilder.build());
     // TODO (Bhuvan): Add authentication headers
+    // TODO (Bhuvan): execute request using SSL
     CloseableHttpResponse response = telemetryClient.executeWithoutSSL(request);
 
     // Error handling

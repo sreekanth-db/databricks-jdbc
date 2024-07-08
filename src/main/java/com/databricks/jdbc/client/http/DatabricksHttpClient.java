@@ -8,7 +8,6 @@ import com.databricks.jdbc.client.DatabricksHttpException;
 import com.databricks.jdbc.client.DatabricksRetryHandlerException;
 import com.databricks.jdbc.client.IDatabricksHttpClient;
 import com.databricks.jdbc.commons.LogLevel;
-import com.databricks.jdbc.commons.util.HttpExecuteExceptionUtil;
 import com.databricks.jdbc.commons.util.LoggingUtil;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
 import com.databricks.sdk.core.DatabricksConfig;
@@ -348,7 +347,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     try {
       return httpClient.execute(request);
     } catch (IOException e) {
-      HttpExecuteExceptionUtil.throwException(e, request);
+      throwHttpException(e, request);
     }
     return null;
   }
@@ -361,7 +360,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     try {
       return httpDisabledSSLClient.execute(request);
     } catch (Exception e) {
-      HttpExecuteExceptionUtil.throwException(e, request);
+      throwHttpException(e, request);
     }
     return null;
   }
@@ -412,5 +411,22 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
             LogLevel.DEBUG, String.format("Caught error while closing http client. Error %s", e));
       }
     }
+  }
+
+  private static void throwHttpException(Exception e, HttpUriRequest request)
+      throws DatabricksHttpException {
+    Throwable cause = e;
+    while (cause != null) {
+      if (cause instanceof DatabricksRetryHandlerException) {
+        throw new DatabricksHttpException(cause.getMessage(), cause);
+      }
+      cause = cause.getCause();
+    }
+    String errorMsg =
+        String.format(
+            "Caught error while executing http request: [%s]. Error Message: [%s]",
+            RequestSanitizer.sanitizeRequest(request), e);
+    LoggingUtil.log(LogLevel.ERROR, errorMsg);
+    throw new DatabricksHttpException(errorMsg, e);
   }
 }
