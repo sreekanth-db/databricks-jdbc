@@ -163,7 +163,7 @@ public class DriverTester {
     DriverManager.registerDriver(new com.databricks.jdbc.driver.DatabricksDriver());
     String jdbcUrl =
         "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
-    Connection con = DriverManager.getConnection(jdbcUrl, "jothi.prakash@databricks.com", "dapib0a507b0d18c529b4e3cfbb6041d9082");
+    Connection con = DriverManager.getConnection(jdbcUrl, "jothi.prakash@databricks.com", "xx");
     System.out.println("Connection established......");
   }
 
@@ -222,32 +222,24 @@ public class DriverTester {
             "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/dd43ee29fedd958d;";
     Connection con =
             DriverManager.getConnection(
-                    jdbcUrl, "jothi.prakash@databricks.com", "dapib0a507b0d18c529b4e3cfbb6041d9082");
+                    jdbcUrl, "jothi.prakash@databricks.com", "xx");
     System.out.println("Connection established......");
-//    ResultSet resultSet = con.getMetaData().getSchemas("main", "%");
-//    printResultSet(resultSet);
-//    resultSet.close();
-    // Create a statement
 
+    //
+    // Batch Statement Testing
+    //
     String sqlStatement="INSERT INTO ___________________first.`jprakash-test`.diamonds (carat, cut, color, clarity) VALUES (?, ?, ?, ?)";
     PreparedStatement pstmt = con.prepareStatement(sqlStatement);
-//    Statement stmt = con.prepareStatement("INSERT INTO ___________________first.`jprakash-test`.diamonds (carat, cut, color, clarity) VALUES (?, 'Descent', 'E', 'SI2')");
-
-    // Add SQL statements to the batch
-//    stmt.addBatch("INSERT INTO ___________________first.`jprakash-test`.diamonds (carat, cut, color, clarity) VALUES (0.23, 'Descent', 'E', 'SI2')");
-//    stmt.addBatch("UPDATE your_table SET col1='new_value' WHERE col2='value2'");
-//    stmt.addBatch("DELETE FROM your_table WHERE col1='value1'");
-
     for (int i = 1; i <= 3; i++) {
       pstmt.setFloat(1, 0.23f);
-      pstmt.setString(2, "Descent");
+      pstmt.setString(2, "OK");
       pstmt.setString(3, "E");
       pstmt.setString(4, "SI2");
       pstmt.addBatch();
     }
 
-    pstmt.setString(1, "Hello");
-    pstmt.setInt(2, 645636);
+    pstmt.setString(1, "Shaama");
+    pstmt.setString(2, "Bad");
     pstmt.setString(3, "F");
     pstmt.setString(4, "SI6");
     pstmt.addBatch();
@@ -269,23 +261,6 @@ public class DriverTester {
     }
     con.close();
 
-//    Connection con = DriverManager.getConnection(jdbcUrl, "jothi.prakash@databricks.com", "dapib0a507b0d18c529b4e3cfbb6041d9082");
-//    System.out.println("Connection established......");
-
-//
-//    Statement s = con.createStatement();
-//    ResultSet rs=s.executeQuery("SELECT * FROM  ___________________first.default.owid_covid_data LIMIT 5");
-//    System.out.println(rs);
-//    while (rs.next()) {
-//      // Retrieve data by column name or index
-//      String continent = rs.getString("continent");
-//      String location = rs.getString("location");
-//
-//      // Print the data
-//      System.out.println("Continent: " + continent + ", Location: " + location);
-//    }
-//    con.close();
-//    System.out.println("Connection closed successfully......");
-
   }
 }
+
