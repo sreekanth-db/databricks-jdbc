@@ -18,12 +18,11 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
-// TODO (Bhuvan) Flush out metrics once the driver connection is closed
 public class DatabricksMetrics {
   private final String URL =
       "https://aa87314c1e33d4c1f91a919f8cf9c4ba-387609431.us-west-2.elb.amazonaws.com:443/api/2.0/oss-sql-driver-telemetry/metrics";
-  public final Map<String, Double> gaugeMetrics = new HashMap<>();
-  public final Map<String, Double> counterMetrics = new HashMap<>();
+  private final Map<String, Double> gaugeMetrics = new HashMap<>();
+  private final Map<String, Double> counterMetrics = new HashMap<>();
   private final long intervalDurationForSendingReq =
       TimeUnit.SECONDS.toMillis(10 * 60); // 10 minutes
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -32,6 +31,14 @@ public class DatabricksMetrics {
   private Boolean hasInitialExportOccurred = false;
   private String workspaceId = null;
   private DefaultHttpClient telemetryClient = null;
+
+  public Map<String, Double> getGaugeMetrics() {
+    return gaugeMetrics;
+  }
+
+  public Map<String, Double> getCounterMetrics() {
+    return counterMetrics;
+  }
 
   private void setWorkspaceId(String workspaceId) {
     this.workspaceId = workspaceId;
