@@ -163,7 +163,10 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
           .setSSLHostnameVerifier(new NoopHostnameVerifier())
           .build();
     } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
-      System.out.println("Error in creating HttpClient with the SSL context");
+      LoggingUtil.log(
+          LogLevel.DEBUG,
+          String.format(
+              "Error in creating HttpClient with the SSL context [{%s}]", e.getMessage()));
     }
     return null;
   }
@@ -347,7 +350,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     try {
       return httpClient.execute(request);
     } catch (IOException e) {
-      throwHttpException(e, request);
+      throwHttpException(e, request, LogLevel.ERROR);
     }
     return null;
   }
@@ -360,7 +363,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     try {
       return httpDisabledSSLClient.execute(request);
     } catch (Exception e) {
-      throwHttpException(e, request);
+      throwHttpException(e, request, LogLevel.DEBUG);
     }
     return null;
   }
@@ -413,7 +416,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     }
   }
 
-  private static void throwHttpException(Exception e, HttpUriRequest request)
+  private static void throwHttpException(Exception e, HttpUriRequest request, LogLevel logLevel)
       throws DatabricksHttpException {
     Throwable cause = e;
     while (cause != null) {
@@ -426,7 +429,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
         String.format(
             "Caught error while executing http request: [%s]. Error Message: [%s]",
             RequestSanitizer.sanitizeRequest(request), e);
-    LoggingUtil.log(LogLevel.ERROR, errorMsg);
+    LoggingUtil.log(logLevel, errorMsg);
     throw new DatabricksHttpException(errorMsg, e);
   }
 }
