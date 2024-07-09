@@ -19,7 +19,6 @@ jobs:
         run: |
           git config --global user.email "madhav.sainanee@databricks.com"
           git config --global user.name "madhav-db"
-          git checkout benchmark-branch
           git pull origin main
           git push origin benchmark-branch
 
