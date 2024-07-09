@@ -10,16 +10,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout benchmark branch
+      - name: Checkout the repository
         uses: actions/checkout@v2
-        with:
-          ref: benchmark-branch
+
+      - name: Checkout benchmark branch
+        run: |
+          git fetch origin benchmark-branch
+          git checkout benchmark-branch
 
       - name: Merge main into benchmark-branch
         run: |
-          git config --global user.email "madhav.sainanee@databricks.com"
-          git config --global user.name "madhav-db"
-          git pull origin main
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+          git merge origin/main
           git push origin benchmark-branch
 
       - name: Set up Java
