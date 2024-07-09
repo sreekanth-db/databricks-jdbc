@@ -12,13 +12,14 @@ jobs:
     steps:
       - name: Checkout benchmarking branch
         uses: actions/checkout@v2
+        with:
+          ref: benchmarking-branch
 
       - name: Merge main into benchmarking-branch
         run: |
           git config --global user.email "madhav.sainanee@databricks.com"
           git config --global user.name "madhav-db"
           git config pull.rebase false
-          git checkout origin benchmarking-branch
           git pull origin main
           git push origin benchmarking-branch
 
