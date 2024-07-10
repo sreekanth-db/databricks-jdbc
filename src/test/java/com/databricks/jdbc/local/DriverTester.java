@@ -205,18 +205,6 @@ public class DriverTester {
 
   @Test
   void testSimbaBatchFunction() throws Exception {
-    DriverManager.registerDriver(new com.databricks.client.jdbc.Driver());
-    DriverManager.drivers()
-            .forEach(
-                    driver -> {
-                      if (driver.getClass().getName().contains("DatabricksDriver")) {
-                        try {
-                          DriverManager.deregisterDriver(driver);
-                        } catch (SQLException e) {
-                          throw new RuntimeException(e);
-                        }
-                      }
-                    });
 
     String jdbcUrl =
             "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/dd43ee29fedd958d;";
