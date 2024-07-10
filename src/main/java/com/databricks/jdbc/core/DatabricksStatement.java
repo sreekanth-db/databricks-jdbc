@@ -430,9 +430,9 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
       String sql, Map<Integer, ImmutableSqlParameter> params, StatementType statementType,boolean closeStatement)
       throws SQLException {
     String stackTraceMessage =
-            format(
-                    "DatabricksResultSet executeInternal(String sql = %s,Map<Integer, ImmutableSqlParameter> params = {%s}, StatementType statementType = {%s})",
-                    sql, params.toString(), statementType.toString());
+        format(
+            "DatabricksResultSet executeInternal(String sql = %s,Map<Integer, ImmutableSqlParameter> params = {%s}, StatementType statementType = {%s})",
+            sql, params, statementType);
     LoggingUtil.log(LogLevel.DEBUG, stackTraceMessage);
     CompletableFuture<DatabricksResultSet> futureResultSet =
             getFutureResult(sql, params, statementType);
@@ -541,7 +541,10 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
         || UNION_PATTERN.matcher(trimmedQuery).find()
         || INTERSECT_PATTERN.matcher(trimmedQuery).find()
         || EXCEPT_PATTERN.matcher(trimmedQuery).find()
-        || DECLARE_PATTERN.matcher(trimmedQuery).find()) {
+        || DECLARE_PATTERN.matcher(trimmedQuery).find()
+        || PUT_PATTERN.matcher(trimmedQuery).find()
+        || GET_PATTERN.matcher(trimmedQuery).find()
+        || REMOVE_PATTERN.matcher(trimmedQuery).find()) {
       return true;
     }
 
