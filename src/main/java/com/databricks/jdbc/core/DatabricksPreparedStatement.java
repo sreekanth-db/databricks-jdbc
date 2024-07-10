@@ -25,7 +25,6 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   List<DatabricksParameterMetaData> databricksBatchParameterMetaData;
   private final boolean supportManyParameters;
 
-
   private final int CHUNK_SIZE = 8192;
 
   public DatabricksPreparedStatement(DatabricksConnection connection, String sql) {
@@ -91,22 +90,20 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   }
 
   @Override
-  public int[] executeBatch()
-  {
+  public int[] executeBatch() {
     LoggingUtil.log(LogLevel.DEBUG, "public int executeBatch()");
-    int[] updateCount=new int[databricksBatchParameterMetaData.size()];
+    int[] updateCount = new int[databricksBatchParameterMetaData.size()];
 
-    for(int i=0;i<databricksBatchParameterMetaData.size();i++)
-    {
-      DatabricksParameterMetaData databricksParameterMetaData=databricksBatchParameterMetaData.get(i);
-      try
-      {
+    for (int i = 0; i < databricksBatchParameterMetaData.size(); i++) {
+      DatabricksParameterMetaData databricksParameterMetaData =
+          databricksBatchParameterMetaData.get(i);
+      try {
         executeInternal(
-                sql, databricksParameterMetaData.getParameterBindings(), StatementType.UPDATE,false);
-        updateCount[i]=(int) resultSet.getUpdateCount();
-      }catch (Exception e){
+            sql, databricksParameterMetaData.getParameterBindings(), StatementType.UPDATE, false);
+        updateCount[i] = (int) resultSet.getUpdateCount();
+      } catch (Exception e) {
         LoggingUtil.log(LogLevel.ERROR, e.getMessage());
-        updateCount[i]=-1;
+        updateCount[i] = -1;
       }
     }
     return updateCount;
@@ -294,7 +291,7 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   }
 
   @Override
-  public void addBatch(){
+  public void addBatch() {
     LoggingUtil.log(LogLevel.DEBUG, "public void addBatch()");
     this.databricksBatchParameterMetaData.add(databricksParameterMetaData);
     this.databricksParameterMetaData = new DatabricksParameterMetaData();

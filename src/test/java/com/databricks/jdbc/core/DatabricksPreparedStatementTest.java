@@ -412,7 +412,6 @@ public class DatabricksPreparedStatementTest {
     assertThrows(
         UnsupportedOperationException.class, () -> preparedStatement.setTime(1, null, null));
     assertThrows(UnsupportedOperationException.class, () -> preparedStatement.setBytes(1, null));
-    assertThrows(UnsupportedOperationException.class, () -> preparedStatement.addBatch());
     assertThrows(
         SQLFeatureNotSupportedException.class, () -> preparedStatement.setObject(1, null, null));
     assertThrows(

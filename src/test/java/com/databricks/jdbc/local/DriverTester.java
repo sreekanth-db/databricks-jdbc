@@ -236,16 +236,15 @@ public class DriverTester {
   void testSimbaBatchFunction() throws Exception {
 
     String jdbcUrl =
-            "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/dd43ee29fedd958d;";
-    Connection con =
-            DriverManager.getConnection(
-                    jdbcUrl, "jothi.prakash@databricks.com", "xx");
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/dd43ee29fedd958d;";
+    Connection con = DriverManager.getConnection(jdbcUrl, "jothi.prakash@databricks.com", "xx");
     System.out.println("Connection established......");
 
     //
     // Batch Statement Testing
     //
-    String sqlStatement="INSERT INTO ___________________first.`jprakash-test`.diamonds (carat, cut, color, clarity) VALUES (?, ?, ?, ?)";
+    String sqlStatement =
+        "INSERT INTO ___________________first.`jprakash-test`.diamonds (carat, cut, color, clarity) VALUES (?, ?, ?, ?)";
     PreparedStatement pstmt = con.prepareStatement(sqlStatement);
     for (int i = 1; i <= 3; i++) {
       pstmt.setFloat(1, 0.23f);
@@ -277,7 +276,5 @@ public class DriverTester {
       System.out.println("Update count: " + count);
     }
     con.close();
-
   }
 }
-

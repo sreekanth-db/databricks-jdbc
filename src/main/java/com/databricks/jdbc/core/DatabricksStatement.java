@@ -425,9 +425,11 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
     }
   }
 
-
   DatabricksResultSet executeInternal(
-      String sql, Map<Integer, ImmutableSqlParameter> params, StatementType statementType,boolean closeStatement)
+      String sql,
+      Map<Integer, ImmutableSqlParameter> params,
+      StatementType statementType,
+      boolean closeStatement)
       throws SQLException {
     String stackTraceMessage =
         format(
@@ -435,19 +437,19 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
             sql, params, statementType);
     LoggingUtil.log(LogLevel.DEBUG, stackTraceMessage);
     CompletableFuture<DatabricksResultSet> futureResultSet =
-            getFutureResult(sql, params, statementType);
+        getFutureResult(sql, params, statementType);
     try {
       resultSet =
-              timeoutInSeconds == 0
-                      ? futureResultSet.get() // Wait indefinitely when timeout is 0
-                      : futureResultSet.get(timeoutInSeconds, TimeUnit.SECONDS);
+          timeoutInSeconds == 0
+              ? futureResultSet.get() // Wait indefinitely when timeout is 0
+              : futureResultSet.get(timeoutInSeconds, TimeUnit.SECONDS);
     } catch (TimeoutException e) {
-      if(closeStatement) {
+      if (closeStatement) {
         this.close(); // Close the statement
       }
       futureResultSet.cancel(true); // Cancel execution run
       throw new DatabricksTimeoutException(
-              "Statement execution timed-out. " + stackTraceMessage, e);
+          "Statement execution timed-out. " + stackTraceMessage, e);
     } catch (InterruptedException | ExecutionException e) {
       Throwable cause = e;
       // Look for underlying DatabricksSQL exception
@@ -458,8 +460,8 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
         }
       }
       LoggingUtil.log(
-              LogLevel.ERROR,
-              String.format("Error occurred during statement execution: %s. Error : %s", sql, e));
+          LogLevel.ERROR,
+          String.format("Error occurred during statement execution: %s. Error : %s", sql, e));
       throw new DatabricksSQLException("Error occurred during statement execution: " + sql, e);
     }
     LoggingUtil.log(LogLevel.DEBUG, "Result retrieved successfully" + resultSet.toString());
@@ -467,9 +469,9 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   }
 
   DatabricksResultSet executeInternal(
-          String sql, Map<Integer, ImmutableSqlParameter> params, StatementType statementType)
-          throws SQLException {
-    return executeInternal(sql,params,statementType,true);
+      String sql, Map<Integer, ImmutableSqlParameter> params, StatementType statementType)
+      throws SQLException {
+    return executeInternal(sql, params, statementType, true);
   }
 
   // Todo : Add timeout tests in the subsequent PR
