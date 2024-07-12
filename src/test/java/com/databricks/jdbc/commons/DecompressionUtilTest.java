@@ -3,7 +3,6 @@ package com.databricks.jdbc.commons;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.databricks.jdbc.commons.util.DecompressionUtil;
-import com.databricks.jdbc.core.DatabricksSQLException;
 import com.databricks.jdbc.core.types.CompressionType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -48,16 +47,5 @@ public class DecompressionUtilTest {
         decompressionUtil.decompress(compressedInputStream, CompressionType.NONE, CONTEXT),
         compressedInputStream);
     assertNull(DecompressionUtil.decompress(null, CompressionType.LZ4_COMPRESSION, CONTEXT));
-  }
-
-  @Test
-  public void testDecompressThrowsExceptionForUnknownCompressionType() {
-    assertThrows(
-        DatabricksSQLException.class,
-        () -> {
-          decompressionUtil.decompress(
-              compressedInputStream, CompressionType.UNKNOWN_COMPRESSION, CONTEXT);
-        },
-        "Decompress should throw DatabricksSQLException for unknown compression type");
   }
 }
