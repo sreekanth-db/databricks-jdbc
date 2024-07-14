@@ -17,13 +17,24 @@ public class DatabricksUsageMetrics {
   private static String workspaceId = null;
   private static DatabricksHttpClient telemetryClient;
 
+  private static final String WORKSPACE_ID = "workspace_id";
+  private static final String JVM_NAME = "jvm_name";
+  private static final String JVM_SPEC_VERSION = "jvm_spec_version";
+  private static final String JVM_IMPL_VERSION = "jvm_impl_version";
+  private static final String JVM_VENDOR = "jvm_vendor";
+  private static final String OS_NAME = "os_name";
+  private static final String OS_VERSION = "os_version";
+  private static final String OS_ARCH = "os_arch";
+  private static final String LOCALE_NAME = "locale_name";
+  private static final String CHARSET_ENCODING = "charset_encoding";
+
   private static void initialize(IDatabricksConnectionContext context)
       throws DatabricksSQLException {
     workspaceId = context.getComputeResource().getWorkspaceId();
     telemetryClient = DatabricksHttpClient.getInstance(context);
   }
 
-  private static HttpUriRequest getRequest(
+  private static HttpPost getRequest(
       String jvmName,
       String jvmSpecVersion,
       String jvmImplVersion,
@@ -35,17 +46,18 @@ public class DatabricksUsageMetrics {
       String charsetEncoding)
       throws Exception {
     URIBuilder uriBuilder = new URIBuilder(URL);
-    uriBuilder.addParameter("workspace_id", workspaceId);
-    uriBuilder.addParameter("jvm_name", jvmName);
-    uriBuilder.addParameter("jvm_spec_version", jvmSpecVersion);
-    uriBuilder.addParameter("jvm_impl_version", jvmImplVersion);
-    uriBuilder.addParameter("jvm_vendor", jvmVendor);
-    uriBuilder.addParameter("os_name", osName);
-    uriBuilder.addParameter("os_version", osVersion);
-    uriBuilder.addParameter("os_arch", osArch);
-    uriBuilder.addParameter("locale_name", localeName);
-    uriBuilder.addParameter("charset_encoding", charsetEncoding);
-    return new HttpPost(uriBuilder.build());
+    HttpPost request = new HttpPost(uriBuilder.build());
+    request.setHeader(WORKSPACE_ID, workspaceId);
+    request.setHeader(JVM_NAME, jvmName);
+    request.setHeader(JVM_SPEC_VERSION, jvmSpecVersion);
+    request.setHeader(JVM_IMPL_VERSION, jvmImplVersion);
+    request.setHeader(JVM_VENDOR, jvmVendor);
+    request.setHeader(OS_NAME, osName);
+    request.setHeader(OS_VERSION, osVersion);
+    request.setHeader(OS_ARCH, osArch);
+    request.setHeader(LOCALE_NAME, localeName);
+    request.setHeader(CHARSET_ENCODING, charsetEncoding);
+    return request;
   }
 
   public static void exportUsageMetrics(
