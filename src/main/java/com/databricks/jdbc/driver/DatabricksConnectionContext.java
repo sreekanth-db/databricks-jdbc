@@ -77,7 +77,9 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       }
       DatabricksConnectionContext context =
           new DatabricksConnectionContext(hostValue, portValue, schema, parametersBuilder.build());
-      metricsExporter = new DatabricksMetrics(context);
+      if (context.enableTelemetry()) {
+        metricsExporter = new DatabricksMetrics(context);
+      }
       return context;
     } else {
       // Should never reach here, since we have already checked for url validity
@@ -546,5 +548,10 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public boolean isFakeServiceTest() {
     return Boolean.parseBoolean(System.getProperty(IS_FAKE_SERVICE_TEST_PROP));
+  }
+
+  @Override
+  public boolean enableTelemetry() {
+    return Objects.equals(getParameter(ENABLE_TELEMETRY, "1"), "1");
   }
 }
