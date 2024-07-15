@@ -1,6 +1,5 @@
-package com.databricks.jdbc.client.impl;
+package com.databricks.jdbc.client.impl.helper;
 
-import com.databricks.jdbc.client.impl.helper.MetadataResultSetBuilder;
 import org.junit.jupiter.api.Test;
 
 public class MetadataResultSetBuilderTest {

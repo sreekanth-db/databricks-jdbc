@@ -1,9 +1,8 @@
-package com.databricks.jdbc.client.impl;
+package com.databricks.jdbc.client.impl.sdk;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
-import com.databricks.jdbc.client.impl.sdk.DatabricksSdkClient;
 import com.databricks.jdbc.client.sqlexec.ExecuteStatementResponse;
 import com.databricks.jdbc.core.DatabricksParsingException;
 import com.databricks.jdbc.driver.IDatabricksConnectionContext;
