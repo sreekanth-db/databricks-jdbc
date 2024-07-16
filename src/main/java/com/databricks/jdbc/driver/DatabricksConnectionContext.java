@@ -79,9 +79,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       }
       DatabricksConnectionContext context =
           new DatabricksConnectionContext(hostValue, portValue, schema, parametersBuilder.build());
-      if (context.enableTelemetry()) {
-        metricsExporter = new DatabricksMetrics(context);
-      }
+      metricsExporter = new DatabricksMetrics(context);
       return context;
     } else {
       // Should never reach here, since we have already checked for url validity
@@ -554,6 +552,6 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public boolean enableTelemetry() {
-    return Objects.equals(getParameter(ENABLE_TELEMETRY, "1"), "1");
+    return Objects.equals(getParameter(ENABLE_TELEMETRY, "0"), "1");
   }
 }
