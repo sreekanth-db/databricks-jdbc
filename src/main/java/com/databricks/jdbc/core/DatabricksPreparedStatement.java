@@ -113,7 +113,7 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
         executeInternal(
             sql, databricksParameterMetaData.getParameterBindings(), StatementType.UPDATE, false);
         updateCount[i] = (int) resultSet.getUpdateCount();
-      } catch (Exception e) {
+      } catch (SQLException e) {
         LoggingUtil.log(LogLevel.ERROR, e.getMessage());
         updateCount[i] = -1;
       }
@@ -311,7 +311,7 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   }
 
   @Override
-  public void clearBatch() throws SQLException {
+  public void clearBatch() throws DatabricksSQLException {
     LoggingUtil.log(LogLevel.DEBUG, "public void clearBatch()");
     checkIfClosed();
     this.databricksParameterMetaData = new DatabricksParameterMetaData();
