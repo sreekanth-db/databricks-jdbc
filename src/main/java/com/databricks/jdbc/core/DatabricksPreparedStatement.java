@@ -58,13 +58,12 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
     }
   }
 
-  private void checkIfBatchOperation() throws DatabricksSQLException
-  {
-    if(!this.databricksBatchParameterMetaData.isEmpty())
-    {
-        String errorMessage = "Batch must either be executed with executeBatch() or cleared with clearBatch()";
-        LoggingUtil.log(LogLevel.ERROR, errorMessage);
-        throw new DatabricksSQLException(errorMessage);
+  private void checkIfBatchOperation() throws DatabricksSQLException {
+    if (!this.databricksBatchParameterMetaData.isEmpty()) {
+      String errorMessage =
+          "Batch must either be executed with executeBatch() or cleared with clearBatch()";
+      LoggingUtil.log(LogLevel.ERROR, errorMessage);
+      throw new DatabricksSQLException(errorMessage);
     }
   }
 
