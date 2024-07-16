@@ -58,6 +58,16 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
     }
   }
 
+  private void checkIfBatchOperation() throws DatabricksSQLException
+  {
+    if(!this.databricksBatchParameterMetaData.isEmpty())
+    {
+        String errorMessage = "Batch must either be executed with executeBatch() or cleared with clearBatch()";
+        LoggingUtil.log(LogLevel.ERROR, errorMessage);
+        throw new DatabricksSQLException(errorMessage);
+    }
+  }
+
   private byte[] readByteStream(InputStream x, int length) throws SQLException {
     if (x == null) {
       String errorMessage = "InputStream cannot be null";
@@ -79,12 +89,14 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   @Override
   public ResultSet executeQuery() throws SQLException {
     LoggingUtil.log(LogLevel.DEBUG, "public ResultSet executeQuery()");
+    checkIfBatchOperation();
     return interpolateIfRequiredAndExecute(StatementType.QUERY);
   }
 
   @Override
   public int executeUpdate() throws SQLException {
     LoggingUtil.log(LogLevel.DEBUG, "public int executeUpdate()");
+    checkIfBatchOperation();
     interpolateIfRequiredAndExecute(StatementType.UPDATE);
     return (int) resultSet.getUpdateCount();
   }
@@ -286,6 +298,7 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   public boolean execute() throws SQLException {
     LoggingUtil.log(LogLevel.DEBUG, "public boolean execute()");
     checkIfClosed();
+    checkIfBatchOperation();
     interpolateIfRequiredAndExecute(StatementType.SQL);
     return shouldReturnResultSet(sql);
   }
@@ -295,6 +308,14 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
     LoggingUtil.log(LogLevel.DEBUG, "public void addBatch()");
     this.databricksBatchParameterMetaData.add(databricksParameterMetaData);
     this.databricksParameterMetaData = new DatabricksParameterMetaData();
+  }
+
+  @Override
+  public void clearBatch() throws SQLException {
+    LoggingUtil.log(LogLevel.DEBUG, "public void clearBatch()");
+    checkIfClosed();
+    this.databricksParameterMetaData = new DatabricksParameterMetaData();
+    this.databricksBatchParameterMetaData = new ArrayList<>();
   }
 
   @Override
