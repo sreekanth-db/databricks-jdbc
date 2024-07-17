@@ -564,6 +564,8 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
   public void setInputStreamForUCVolume(InputStream inputStream) throws DatabricksSQLException {
     if (isAllowedInputStreamForVolumeOperation()) {
       this.inputStream = inputStream;
+    } else {
+      throw new DatabricksSQLException("Volume operation not supported for Input Stream");
     }
   }
 

@@ -270,6 +270,8 @@ public class DatabricksStatementTest {
 
     assertFalse(statement.isAllowedInputStreamForVolumeOperation());
     assertNull(statement.getInputStreamForUCVolume());
+    assertThrows(
+        DatabricksSQLException.class, () -> statement.setInputStreamForUCVolume(mockStream));
 
     statement.allowInputStreamForVolumeOperation(true);
     statement.setInputStreamForUCVolume(mockStream);
