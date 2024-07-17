@@ -85,7 +85,7 @@ public class DatabricksUsageMetrics {
               osArch,
               localeName,
               charsetEncoding);
-      CloseableHttpResponse response = telemetryClient.executeWithoutSSL(request);
+      CloseableHttpResponse response = telemetryClient.executeWithoutCertVerification(request);
 
       if (response == null) {
         LoggingUtil.log(LogLevel.DEBUG, "Response is null for usage metrics export.");

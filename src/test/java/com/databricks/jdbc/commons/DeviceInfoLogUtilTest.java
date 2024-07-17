@@ -19,6 +19,7 @@ public class DeviceInfoLogUtilTest {
 
   @Test
   public void testLogProperties() throws DatabricksSQLException {
+    when(context.enableTelemetry()).thenReturn(true);
     when(context.getComputeResource()).thenReturn(computeResource);
     when(computeResource.getWorkspaceId()).thenReturn("workspaceId");
     assertDoesNotThrow(() -> DeviceInfoLogUtil.logProperties(context));

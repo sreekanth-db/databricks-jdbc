@@ -31,20 +31,22 @@ public class DeviceInfoLogUtil {
     LoggingUtil.log(LogLevel.DEBUG, String.format("Locale Name: {%s}", localeName));
     LoggingUtil.log(
         LogLevel.DEBUG, String.format("Default Charset Encoding: {%s}", charsetEncoding));
-    try {
-      DatabricksUsageMetrics.exportUsageMetrics(
-          context,
-          jvmName,
-          jvmSpecVersion,
-          jvmImplVersion,
-          jvmVendor,
-          osName,
-          osVersion,
-          osArch,
-          localeName,
-          charsetEncoding);
-    } catch (DatabricksSQLException e) {
-      LoggingUtil.log(LogLevel.DEBUG, "Failed to export usage metrics: " + e.getMessage());
+    if (context.enableTelemetry()) {
+      try {
+        DatabricksUsageMetrics.exportUsageMetrics(
+            context,
+            jvmName,
+            jvmSpecVersion,
+            jvmImplVersion,
+            jvmVendor,
+            osName,
+            osVersion,
+            osArch,
+            localeName,
+            charsetEncoding);
+      } catch (DatabricksSQLException e) {
+        LoggingUtil.log(LogLevel.DEBUG, "Failed to export usage metrics: " + e.getMessage());
+      }
     }
   }
 }
