@@ -36,11 +36,9 @@ public class LargeQueryExecutionTests {
 
     // Create the SQL query
     String query = String.format("SELECT id, %s FROM RANGE(%d)", uuids, rows);
-    System.out.println("query: " + query);
     ResultSet rs = executeQuery(query);
     int rowCount = 0;
     while (rs != null && rs.next()) {
-      System.out.println("check");
       assertEquals(rs.getInt("id"), rowCount, "Expected id to be equal to row number");
       assertEquals(rs.getString("uuid0").length(), 36, "Expected UUID length of 36");
       rowCount++;
