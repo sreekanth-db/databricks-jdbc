@@ -6,6 +6,8 @@ import static com.databricks.jdbc.driver.DatabricksJdbcConstants.VOLUME_OPERATIO
 import com.databricks.jdbc.client.IDatabricksUCVolumeClient;
 import com.databricks.jdbc.commons.LogLevel;
 import com.databricks.jdbc.commons.util.LoggingUtil;
+import com.databricks.jdbc.core.DatabricksStatement;
+import java.io.InputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +39,30 @@ public class DatabricksUCVolumeClient implements IDatabricksUCVolumeClient {
       String catalog, String schema, String volume, String objectPath, String localPath) {
     return String.format(
         "GET '/Volumes/%s/%s/%s/%s' TO '%s'", catalog, schema, volume, objectPath, localPath);
+  }
+
+  private String createPutObjectQuery(
+      String catalog,
+      String schema,
+      String volume,
+      String objectPath,
+      String localPath,
+      boolean toOverwrite) {
+    return String.format(
+        "PUT '%s' INTO '/Volumes/%s/%s/%s/%s'%s",
+        localPath, catalog, schema, volume, objectPath, toOverwrite ? " OVERWRITE" : "");
+  }
+
+  private String createPutObjectQueryForInputStream(
+      String catalog, String schema, String volume, String objectPath, boolean toOverwrite) {
+    return String.format(
+        "PUT '__input_stream__' INTO '/Volumes/%s/%s/%s/%s'%s",
+        catalog, schema, volume, objectPath, toOverwrite ? " OVERWRITE" : "");
+  }
+
+  private String createDeleteObjectQuery(
+      String catalog, String schema, String volume, String objectPath) {
+    return String.format("REMOVE '/Volumes/%s/%s/%s/%s'", catalog, schema, volume, objectPath);
   }
 
   public boolean prefixExists(String catalog, String schema, String volume, String prefix)
@@ -261,6 +287,118 @@ public class DatabricksUCVolumeClient implements IDatabricksUCVolumeClient {
       }
     } catch (SQLException e) {
       LoggingUtil.log(LogLevel.ERROR, "GET query execution failed " + e);
+      throw e;
+    }
+
+    return volumeOperationStatus;
+  }
+
+  public boolean putObject(
+      String catalog,
+      String schema,
+      String volume,
+      String objectPath,
+      String localPath,
+      boolean toOverwrite)
+      throws SQLException {
+
+    LoggingUtil.log(
+        LogLevel.DEBUG,
+        String.format(
+            "Entering putObject method with parameters: catalog={%s}, schema={%s}, volume={%s}, objectPath={%s}, localPath={%s}, toOverwrite={%s}",
+            catalog, schema, volume, objectPath, localPath, toOverwrite));
+
+    String putObjectQuery =
+        createPutObjectQuery(catalog, schema, volume, objectPath, localPath, toOverwrite);
+
+    boolean volumeOperationStatus = false;
+
+    try (Statement statement = connection.createStatement()) {
+      ResultSet resultSet = statement.executeQuery(putObjectQuery);
+      LoggingUtil.log(LogLevel.INFO, "PUT query executed successfully");
+
+      if (resultSet.next()) {
+        String volumeOperationStatusString =
+            resultSet.getString(VOLUME_OPERATION_STATUS_COLUMN_NAME);
+        volumeOperationStatus =
+            VOLUME_OPERATION_STATUS_SUCCEEDED.equals(volumeOperationStatusString);
+      }
+    } catch (SQLException e) {
+      LoggingUtil.log(LogLevel.ERROR, "PUT query execution failed " + e);
+      throw e;
+    }
+
+    return volumeOperationStatus;
+  }
+
+  @Override
+  public boolean putObject(
+      String catalog,
+      String schema,
+      String volume,
+      String objectPath,
+      InputStream inputStream,
+      boolean toOverwrite)
+      throws SQLException {
+
+    LoggingUtil.log(
+        LogLevel.DEBUG,
+        String.format(
+            "Entering putObject method with parameters: catalog={%s}, schema={%s}, volume={%s}, objectPath={%s}, inputStream={%s}, toOverwrite={%s}",
+            catalog, schema, volume, objectPath, inputStream, toOverwrite));
+
+    String putObjectQueryForInputStream =
+        createPutObjectQueryForInputStream(catalog, schema, volume, objectPath, toOverwrite);
+
+    boolean volumeOperationStatus = false;
+
+    try (Statement statement = connection.createStatement()) {
+      DatabricksStatement databricksStatement = (DatabricksStatement) statement;
+      databricksStatement.allowInputStreamForVolumeOperation(true);
+      databricksStatement.setInputStreamForUCVolume(inputStream);
+
+      ResultSet resultSet = databricksStatement.executeQuery(putObjectQueryForInputStream);
+      LoggingUtil.log(LogLevel.INFO, "PUT query executed successfully");
+
+      if (resultSet.next()) {
+        String volumeOperationStatusString =
+            resultSet.getString(VOLUME_OPERATION_STATUS_COLUMN_NAME);
+        volumeOperationStatus =
+            VOLUME_OPERATION_STATUS_SUCCEEDED.equals(volumeOperationStatusString);
+      }
+    } catch (SQLException e) {
+      LoggingUtil.log(LogLevel.ERROR, "PUT query execution failed " + e);
+      throw e;
+    }
+
+    return volumeOperationStatus;
+  }
+
+  public boolean deleteObject(String catalog, String schema, String volume, String objectPath)
+      throws SQLException {
+
+    LoggingUtil.log(
+        LogLevel.DEBUG,
+        String.format(
+            "Entering deleteObject method with parameters: catalog={%s}, schema={%s}, volume={%s}, objectPath={%s}",
+            catalog, schema, volume, objectPath));
+
+    String deleteObjectQuery = createDeleteObjectQuery(catalog, schema, volume, objectPath);
+
+    boolean volumeOperationStatus = false;
+
+    try (Statement statement = connection.createStatement()) {
+      ResultSet resultSet = statement.executeQuery(deleteObjectQuery);
+      LoggingUtil.log(LogLevel.INFO, "SQL query executed successfully");
+
+      if (resultSet.next()) {
+        String volumeOperationStatusString =
+            resultSet.getString(VOLUME_OPERATION_STATUS_COLUMN_NAME);
+        volumeOperationStatus =
+            VOLUME_OPERATION_STATUS_SUCCEEDED.equals(volumeOperationStatusString);
+      }
+    } catch (SQLException e) {
+      LoggingUtil.log(LogLevel.ERROR, "SQL query execution failed " + e);
       throw e;
     }
 
