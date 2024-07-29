@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Test;;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -458,7 +458,8 @@ public class DatabricksStatementTest {
 
   @Test
   public void testShouldReturnResultSet_CommentSurroundingQuery() {
-    String query = "-- Single-line comment\n/* Multi-line comment */ SELECT * FROM table; /* Another comment */ -- End comment";
+    String query =
+        "-- Single-line comment\n/* Multi-line comment */ SELECT * FROM table; /* Another comment */ -- End comment";
     assertTrue(DatabricksStatement.shouldReturnResultSet(query));
   }
 }

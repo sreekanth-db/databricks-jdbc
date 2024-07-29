@@ -618,7 +618,6 @@ public class DatabricksStatement implements IDatabricksStatement, Statement {
     trimmedQuery = trimmedQuery.replaceAll("/\\*.*?\\*/", "");
     trimmedQuery = trimmedQuery.replaceAll("\\s+", " ").trim();
 
-
     // Check if the query matches any of the patterns that return a ResultSet
     if (SELECT_PATTERN.matcher(trimmedQuery).find()
         || SHOW_PATTERN.matcher(trimmedQuery).find()
