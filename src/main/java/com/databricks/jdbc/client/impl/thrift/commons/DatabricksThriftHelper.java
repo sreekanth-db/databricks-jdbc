@@ -194,7 +194,8 @@ public class DatabricksThriftHelper {
     if (column.isSetStringVal())
       return getColumnValuesWithNulls(
           column.getStringVal().getValues(), column.getStringVal().getNulls());
-    return null; // Return null if no valid value set
+    return getColumnValuesWithNulls(
+        column.getStringVal().getValues(), column.getStringVal().getNulls()); // default to string
   }
 
   private static <T> List<T> getColumnValuesWithNulls(List<T> values, byte[] nulls) {
