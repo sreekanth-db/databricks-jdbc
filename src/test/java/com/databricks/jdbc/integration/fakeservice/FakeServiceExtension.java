@@ -7,10 +7,7 @@ import static com.github.tomakehurst.wiremock.common.AbstractFileSource.byFileEx
 import com.databricks.jdbc.driver.DatabricksJdbcConstants.FakeServiceType;
 import com.databricks.jdbc.integration.IntegrationTestUtil;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
-import com.github.tomakehurst.wiremock.common.BinaryFile;
-import com.github.tomakehurst.wiremock.common.ContentTypes;
-import com.github.tomakehurst.wiremock.common.SingleRootFileSource;
-import com.github.tomakehurst.wiremock.common.TextFile;
+import com.github.tomakehurst.wiremock.common.*;
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
 import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -210,8 +207,18 @@ public class FakeServiceExtension extends DatabricksWireMockExtension {
 
   /** Gets the stubbing directory for the current test class and method. */
   private String getStubbingDir(ExtensionContext context) {
-    String testClassName = context.getTestClass().orElseThrow().getSimpleName().toLowerCase();
-    String testMethodName = context.getTestMethod().orElseThrow().getName().toLowerCase();
+    String testClassName =
+        context
+            .getTestClass()
+            .orElseThrow(() -> new IllegalStateException("Test class not found"))
+            .getSimpleName()
+            .toLowerCase();
+    String testMethodName =
+        context
+            .getTestMethod()
+            .orElseThrow(() -> new IllegalStateException("Test method not found"))
+            .getName()
+            .toLowerCase();
 
     String basePath;
     switch (fakeServiceType) {
@@ -295,7 +302,9 @@ public class FakeServiceExtension extends DatabricksWireMockExtension {
         wireMockRuntimeInfo.getWireMock().stopStubRecording().getStubMappings();
     String stubbingDir = getStubbingDir(context) + "/mappings";
     deleteFilesInDir(stubbingDir);
-    new JsonFileMappingsSource(new SingleRootFileSource(stubbingDir), null).save(stubMappingList);
+    new JsonFileMappingsSource(new SingleRootFileSource(stubbingDir)).save(stubMappingList);
+    //    new JsonFileMappingsSource(new SingleRootFileSource(stubbingDir),
+    // null).save(stubMappingList);
   }
 
   private void setFakeServiceProperties(int wireMockServerHttpPort) {
