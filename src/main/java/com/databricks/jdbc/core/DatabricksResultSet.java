@@ -55,7 +55,8 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     this.statementStatus = statementStatus;
     this.statementId = statementId;
     this.executionResult =
-        ExecutionResultFactory.getResultSet(resultData, resultManifest, statementId, session);
+        ExecutionResultFactory.getResultSet(
+            resultData, resultManifest, statementId, session, parentStatement, this);
     this.resultSetMetaData = new DatabricksResultSetMetaData(statementId, resultManifest);
     this.statementType = statementType;
     this.updateCount = null;
@@ -99,7 +100,8 @@ public class DatabricksResultSet implements ResultSet, IDatabricksResultSet {
     }
     this.statementId = statementId;
     this.executionResult =
-        ExecutionResultFactory.getResultSet(resultData, resultManifest, statementId, session);
+        ExecutionResultFactory.getResultSet(
+            resultData, resultManifest, statementId, session, parentStatement, this);
     long rowSize = getRowCount(resultData);
     this.resultSetMetaData =
         new DatabricksResultSetMetaData(
