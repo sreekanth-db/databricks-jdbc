@@ -61,6 +61,25 @@ public class DriverTester {
   }
 
   @Test
+  void testResultSetMetaData() throws Exception {
+    DriverManager.registerDriver(new Driver());
+    String jdbcUrl =
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/58aa1b363649e722";
+
+    Connection con = DriverManager.getConnection(jdbcUrl, "user", "x");
+    System.out.println("Connection established with jdbc driver......");
+    Statement statement = con.createStatement();
+    statement.setMaxRows(10000);
+    ResultSet rs =
+        statement.executeQuery(
+            "select * from ml.feature_store_ol_dynamodb_.test_ft_data_types LIMIT 10");
+    printResultSet(rs);
+    rs.close();
+    statement.close();
+    con.close();
+  }
+
+  @Test
   void testGetTablesOSS_Metadata() throws Exception {
     DriverManager.registerDriver(new Driver());
     DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
