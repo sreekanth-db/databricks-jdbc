@@ -241,8 +241,6 @@
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <excludes>
-            <exclude>**/*LargeQueriesBenchmarkingTest.java</exclude>
-            <exclude>**/*MetadataBenchmarkingTest.java</exclude>
             <exclude>**/DriverTest.java</exclude>
             <exclude>**/integration/**/*.java</exclude>
           </excludes>
@@ -280,10 +278,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <testExcludes>
-            <testExclude>com/databricks/jdbc/integration/benchmarking/MetadataBenchmarkingTest.java</testExclude>
-            <testExclude>com/databricks/jdbc/integration/benchmarking/LargeQueriesBenchmarkingTest.java</testExclude>
-          </testExcludes>
           <annotationProcessorPaths>
             <path>
               <groupId>org.immutables</groupId>
