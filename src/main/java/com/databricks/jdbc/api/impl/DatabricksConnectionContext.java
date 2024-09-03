@@ -618,4 +618,9 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   public String getAuthScope() {
     return getParameter(AUTH_SCOPE, ALL_APIS_SCOPE);
   }
+
+  @Override
+  public String getOAuthRefreshToken() {
+    return getParameter(OAUTH_REFRESH_TOKEN);
+  }
 }

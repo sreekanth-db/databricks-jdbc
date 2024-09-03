@@ -182,4 +182,6 @@ public interface IDatabricksConnectionContext {
 
   /** Returns the OAuth2 authentication scope used in the request. */
   String getAuthScope();
+
+  String getOAuthRefreshToken();
 }
