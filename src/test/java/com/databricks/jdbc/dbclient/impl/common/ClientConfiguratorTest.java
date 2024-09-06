@@ -1,43 +1,53 @@
-package com.databricks.jdbc.auth;
+package com.databricks.jdbc.dbclient.impl.common;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.databricks.jdbc.api.IDatabricksConnectionContext;
 import com.databricks.jdbc.api.impl.DatabricksConnectionContext;
+import com.databricks.jdbc.auth.PrivateKeyClientCredentialProvider;
 import com.databricks.jdbc.common.DatabricksJdbcConstants;
 import com.databricks.jdbc.exception.DatabricksParsingException;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.CredentialsProvider;
 import com.databricks.sdk.core.DatabricksConfig;
+import com.databricks.sdk.core.commons.CommonsHttpClient;
+import com.databricks.sdk.core.http.Response;
+import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
-import org.junit.jupiter.api.BeforeEach;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-public class OAuthAuthenticatorTest {
+@ExtendWith(MockitoExtension.class)
+public class ClientConfiguratorTest {
 
   @Mock private IDatabricksConnectionContext mockContext;
+  @Mock private DatabricksConfig mockConfig;
+  @Mock private CommonsHttpClient httpClient;
+  @Mock private Response response;
 
-  private OAuthAuthenticator authenticator;
+  private static final String OAUTH_RESPONSE =
+      new JSONObject()
+          .put("access_token", "TOKEN")
+          .put("token_type", "token-type")
+          .put("expires_in", 360)
+          .toString();
 
-  @BeforeEach
-  void setUp() {
-    MockitoAnnotations.openMocks(this);
-    authenticator = new OAuthAuthenticator(mockContext);
-  }
+  private ClientConfigurator configurator;
 
   @Test
   void getWorkspaceClient_PAT_AuthenticatesWithAccessToken() throws DatabricksParsingException {
-    DatabricksConfig databricksConfig = new DatabricksConfig();
     when(mockContext.getAuthMech()).thenReturn(IDatabricksConnectionContext.AuthMech.PAT);
     when(mockContext.getHostUrl()).thenReturn("https://pat.databricks.com");
     when(mockContext.getToken()).thenReturn("pat-token");
+    configurator = new ClientConfigurator(mockContext);
 
-    WorkspaceClient client = authenticator.getWorkspaceClient(databricksConfig);
+    WorkspaceClient client = configurator.getWorkspaceClient();
     assertNotNull(client);
     DatabricksConfig config = client.config();
 
@@ -49,14 +59,14 @@ public class OAuthAuthenticatorTest {
   @Test
   void getWorkspaceClient_OAuthWithTokenPassthrough_AuthenticatesCorrectly()
       throws DatabricksParsingException {
-    DatabricksConfig databricksConfig = new DatabricksConfig();
     when(mockContext.getAuthMech()).thenReturn(IDatabricksConnectionContext.AuthMech.OAUTH);
     when(mockContext.getAuthFlow())
         .thenReturn(IDatabricksConnectionContext.AuthFlow.TOKEN_PASSTHROUGH);
     when(mockContext.getHostUrl()).thenReturn("https://oauth-token.databricks.com");
     when(mockContext.getToken()).thenReturn("oauth-token");
+    configurator = new ClientConfigurator(mockContext);
 
-    WorkspaceClient client = authenticator.getWorkspaceClient(databricksConfig);
+    WorkspaceClient client = configurator.getWorkspaceClient();
     assertNotNull(client);
     DatabricksConfig config = client.config();
 
@@ -68,15 +78,15 @@ public class OAuthAuthenticatorTest {
   @Test
   void getWorkspaceClient_OAuthWithClientCredentials_AuthenticatesCorrectly()
       throws DatabricksParsingException {
-    DatabricksConfig databricksConfig = new DatabricksConfig();
     when(mockContext.getAuthMech()).thenReturn(IDatabricksConnectionContext.AuthMech.OAUTH);
     when(mockContext.getAuthFlow())
         .thenReturn(IDatabricksConnectionContext.AuthFlow.CLIENT_CREDENTIALS);
     when(mockContext.getHostForOAuth()).thenReturn("https://oauth-client.databricks.com");
     when(mockContext.getClientId()).thenReturn("client-id");
     when(mockContext.getClientSecret()).thenReturn("client-secret");
+    configurator = new ClientConfigurator(mockContext);
 
-    WorkspaceClient client = authenticator.getWorkspaceClient(databricksConfig);
+    WorkspaceClient client = configurator.getWorkspaceClient();
     assertNotNull(client);
     DatabricksConfig config = client.config();
 
@@ -87,29 +97,27 @@ public class OAuthAuthenticatorTest {
   }
 
   @Test
-  void testM2MWithJWT() throws DatabricksSQLException {
+  void testM2MWithJWT() throws DatabricksSQLException, IOException {
     String jdbcUrl =
         "jdbc:databricks://adb-565757575.18.azuredatabricks.net:123/default;ssl=1;port=123;AuthMech=11;"
             + "httpPath=/sql/1.0/endpoints/erg6767gg;auth_flow=1;UseJWTAssertion=1;auth_scope=test_scope;"
             + "OAuth2ClientId=test-client;auth_kid=test_kid;Auth_JWT_Key_Passphrase=test_phrase;Auth_JWT_Key_File=test_key_file;"
-            + "Auth_JWT_Alg=test_algo";
+            + "Auth_JWT_Alg=test_algo;Oauth2TokenEndpoint=token_endpoint";
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(jdbcUrl, new Properties());
-    authenticator = new OAuthAuthenticator(connectionContext);
-    WorkspaceClient client = authenticator.getWorkspaceClient(new DatabricksConfig());
-    assertNotNull(client);
-    DatabricksConfig config = client.config();
-    CredentialsProvider provider = client.config().getCredentialsProvider();
+    configurator = new ClientConfigurator(connectionContext);
+    DatabricksConfig config = configurator.getDatabricksConfig();
+    CredentialsProvider provider = config.getCredentialsProvider();
     assertEquals("https://adb-565757575.18.azuredatabricks.net", config.getHost());
     assertEquals("test-client", config.getClientId());
-    assertEquals(provider.authType(), "custom-oauth-m2m");
+    assertEquals("custom-oauth-m2m", provider.authType());
     assertEquals(DatabricksJdbcConstants.M2M_AUTH_TYPE, config.getAuthType());
+    assertEquals(PrivateKeyClientCredentialProvider.class, provider.getClass());
   }
 
   @Test
   void getWorkspaceClient_OAuthWithBrowserBasedAuthentication_AuthenticatesCorrectly()
       throws DatabricksParsingException {
-    DatabricksConfig databricksConfig = new DatabricksConfig();
     when(mockContext.getAuthMech()).thenReturn(IDatabricksConnectionContext.AuthMech.OAUTH);
     when(mockContext.getAuthFlow())
         .thenReturn(IDatabricksConnectionContext.AuthFlow.BROWSER_BASED_AUTHENTICATION);
@@ -117,8 +125,8 @@ public class OAuthAuthenticatorTest {
     when(mockContext.getClientId()).thenReturn("browser-client-id");
     when(mockContext.getClientSecret()).thenReturn("browser-client-secret");
     when(mockContext.getOAuthScopesForU2M()).thenReturn(List.of(new String[] {"scope1", "scope2"}));
-
-    WorkspaceClient client = authenticator.getWorkspaceClient(databricksConfig);
+    configurator = new ClientConfigurator(mockContext);
+    WorkspaceClient client = configurator.getWorkspaceClient();
     assertNotNull(client);
     DatabricksConfig config = client.config();
 
@@ -131,13 +139,10 @@ public class OAuthAuthenticatorTest {
   }
 
   @Test
-  void testNonOauth() throws DatabricksParsingException {
-    when(mockContext.getHostForOAuth()).thenReturn("https://oauth-client.databricks.com");
-    when(mockContext.getClientId()).thenReturn("client-id");
-    when(mockContext.getClientSecret()).thenReturn("client-secret");
+  void testNonOauth() {
     when(mockContext.getAuthMech()).thenReturn(IDatabricksConnectionContext.AuthMech.OTHER);
-    DatabricksConfig config = new DatabricksConfig();
-    authenticator.setupDatabricksConfig(config);
+    configurator = new ClientConfigurator(mockContext);
+    DatabricksConfig config = configurator.getDatabricksConfig();
     assertEquals(DatabricksJdbcConstants.ACCESS_TOKEN_AUTH_TYPE, config.getAuthType());
   }
 }
