@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.databricks.jdbc.api.IDatabricksConnectionContext;
-import com.databricks.jdbc.api.impl.DatabricksConnectionContext;
+import com.databricks.jdbc.api.impl.DatabricksConnectionContextFactory;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.core.DatabricksException;
 import com.databricks.sdk.core.HeaderFactory;
@@ -33,28 +33,22 @@ public class OAuthRefreshCredentialsProviderTest {
   @Mock DatabricksConfig databricksConfig;
   @Mock CommonsHttpClient httpClient;
   @Mock Response httpResponse;
-
   private OAuthRefreshCredentialsProvider credentialsProvider;
-
   private static final String REFRESH_TOKEN_URL_DEFAULT =
       "jdbc:databricks://host:4423/default;transportMode=http;ssl=1;AuthMech=11;AuthFlow=0;httpPath=/sql/1.0/warehouses/erg6767gg;OAuthRefreshToken=refresh-token";
-
   private static final String REFRESH_TOKEN_URL_OVERRIDE_CLIENT_ID =
       "jdbc:databricks://host:4423/default;transportMode=http;ssl=1;AuthMech=11;AuthFlow=0;httpPath=/sql/1.0/warehouses/erg6767gg;OAuthRefreshToken=refresh-token;OAuth2ClientID=client_id";
-
   private static final String REFRESH_TOKEN_URL_OVERRIDE_CLIENT_ID_CLIENT_SECRET =
       "jdbc:databricks://host:4423/default;transportMode=http;ssl=1;AuthMech=11;AuthFlow=0;httpPath=/sql/1.0/warehouses/erg6767gg;OAuthRefreshToken=refresh-token;OAuth2ClientID=client_id;OAuth2Secret=client_secret";
-
   private static final String REFRESH_TOKEN_URL_OVERRIDE_TOKEN_URL =
       "jdbc:databricks://host:4423/default;transportMode=http;ssl=1;AuthMech=11;AuthFlow=0;httpPath=/sql/1.0/warehouses/erg6767gg;OAuthRefreshToken=refresh-token;OAuth2TokenEndpoint=token_endpoint";
-
   private static final String REFRESH_TOKEN_URL_OVERRIDE_EVERYTHING =
       "jdbc:databricks://host:4423/default;transportMode=http;ssl=1;AuthMech=11;AuthFlow=0;httpPath=/sql/1.0/warehouses/erg6767gg;OAuthRefreshToken=refresh-token;OAuth2TokenEndpoint=token_endpoint;OAuth2ClientID=client_id;OAuth2Secret=client_secret";
 
   @Test
   void testRefreshThrowsExceptionWhenRefreshTokenIsNotSet() throws Exception {
     IDatabricksConnectionContext connectionContext =
-        DatabricksConnectionContext.parse(REFRESH_TOKEN_URL_DEFAULT, new Properties());
+        DatabricksConnectionContextFactory.create(REFRESH_TOKEN_URL_DEFAULT, new Properties());
     OAuthEndpointResolver oAuthEndpointResolver = spy(new OAuthEndpointResolver(connectionContext));
     when(oAuthEndpointResolver.getBarebonesDatabricksConfig()).thenReturn(databricksConfig);
     when(databricksConfig.getOidcEndpoints())
@@ -84,7 +78,7 @@ public class OAuthRefreshCredentialsProviderTest {
       })
   void testRefreshSuccess(String refreshTokenUrl) throws Exception {
     IDatabricksConnectionContext connectionContext =
-        DatabricksConnectionContext.parse(refreshTokenUrl, new Properties());
+        DatabricksConnectionContextFactory.create(refreshTokenUrl, new Properties());
     OAuthEndpointResolver oAuthEndpointResolver = spy(new OAuthEndpointResolver(connectionContext));
     boolean isDefaultEndpointPath = connectionContext.getTokenEndpoint() == null;
     if (isDefaultEndpointPath) {

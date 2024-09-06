@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.databricks.jdbc.api.IDatabricksConnectionContext;
-import com.databricks.jdbc.api.impl.DatabricksConnectionContext;
+import com.databricks.jdbc.api.impl.DatabricksConnectionContextFactory;
 import com.databricks.jdbc.auth.PrivateKeyClientCredentialProvider;
 import com.databricks.jdbc.common.DatabricksJdbcConstants;
 import com.databricks.jdbc.exception.DatabricksParsingException;
@@ -12,12 +12,8 @@ import com.databricks.jdbc.exception.DatabricksSQLException;
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.CredentialsProvider;
 import com.databricks.sdk.core.DatabricksConfig;
-import com.databricks.sdk.core.commons.CommonsHttpClient;
-import com.databricks.sdk.core.http.Response;
-import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
-import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -27,17 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class ClientConfiguratorTest {
 
   @Mock private IDatabricksConnectionContext mockContext;
-  @Mock private DatabricksConfig mockConfig;
-  @Mock private CommonsHttpClient httpClient;
-  @Mock private Response response;
-
-  private static final String OAUTH_RESPONSE =
-      new JSONObject()
-          .put("access_token", "TOKEN")
-          .put("token_type", "token-type")
-          .put("expires_in", 360)
-          .toString();
-
   private ClientConfigurator configurator;
 
   @Test
@@ -97,14 +82,14 @@ public class ClientConfiguratorTest {
   }
 
   @Test
-  void testM2MWithJWT() throws DatabricksSQLException, IOException {
+  void testM2MWithJWT() throws DatabricksSQLException {
     String jdbcUrl =
         "jdbc:databricks://adb-565757575.18.azuredatabricks.net:123/default;ssl=1;port=123;AuthMech=11;"
             + "httpPath=/sql/1.0/endpoints/erg6767gg;auth_flow=1;UseJWTAssertion=1;auth_scope=test_scope;"
             + "OAuth2ClientId=test-client;auth_kid=test_kid;Auth_JWT_Key_Passphrase=test_phrase;Auth_JWT_Key_File=test_key_file;"
             + "Auth_JWT_Alg=test_algo;Oauth2TokenEndpoint=token_endpoint";
     IDatabricksConnectionContext connectionContext =
-        DatabricksConnectionContext.parse(jdbcUrl, new Properties());
+        DatabricksConnectionContextFactory.create(jdbcUrl, new Properties());
     configurator = new ClientConfigurator(connectionContext);
     DatabricksConfig config = configurator.getDatabricksConfig();
     CredentialsProvider provider = config.getCredentialsProvider();
