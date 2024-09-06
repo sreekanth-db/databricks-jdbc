@@ -146,8 +146,15 @@ public class DatabricksSdkClient implements IDatabricksClient {
         workspaceClient
             .apiClient()
             .POST(STATEMENT_PATH, request, ExecuteStatementResponse.class, getHeaders());
-
     String statementId = response.getStatementId();
+    if (statementId == null) {
+      LoggingUtil.log(
+          LogLevel.ERROR,
+          String.format(
+              "Empty Statement ID for sql %s, statementType %s, compute %s",
+              sql, statementType, computeResource.toString()));
+      handleFailedExecution(response, statementId, sql);
+    }
     LoggingUtil.log(
         LogLevel.DEBUG,
         String.format(
@@ -286,11 +293,17 @@ public class DatabricksSdkClient implements IDatabricksClient {
   /** Handles a failed execution and throws appropriate exception */
   void handleFailedExecution(
       ExecuteStatementResponse response, String statementId, String statement) throws SQLException {
+    // TODO : Add retries here.
     StatementState statementState = response.getStatus().getState();
+    ServiceError error = response.getStatus().getError();
     String errorMessage =
         String.format(
-            "Statement execution failed %s -> %s\n%s: %s",
-            statementId, statement, statementState, response.getStatus().getError().getMessage());
+            "Statement execution failed %s -> %s\n%s.", statementId, statement, statementState);
+    if (error != null) {
+      errorMessage +=
+          String.format(
+              " Error Message: %s, Error code: %s", error.getMessage(), error.getErrorCode());
+    }
     LoggingUtil.log(LogLevel.DEBUG, errorMessage, this.getClass().getName());
     int errorCode;
     switch (statementState) {
