@@ -4,6 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.databricks</groupId>
   <artifactId>databricks-jdbc</artifactId>
+  <!-- This value may be modified by a release script to reflect the current version of the driver. -->
   <version>0.9.3-oss</version>
   <packaging>jar</packaging>
   <name>Databricks JDBC Driver</name>
@@ -144,7 +145,6 @@
       <version>${junit.jupiter.version}</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>com.nimbusds</groupId>
       <artifactId>nimbus-jose-jwt</artifactId>
