@@ -3,9 +3,11 @@ package com.databricks.jdbc.api.impl;
 import com.databricks.jdbc.api.IDatabricksConnection;
 import com.databricks.jdbc.api.IDatabricksSession;
 import com.databricks.jdbc.api.impl.fake.EmptyResultSet;
+import com.databricks.jdbc.common.DatabricksClientType;
 import com.databricks.jdbc.common.DatabricksJdbcConstants;
 import com.databricks.jdbc.common.StatementType;
 import com.databricks.jdbc.common.util.DriverUtil;
+import com.databricks.jdbc.dbclient.impl.common.MetadataResultSetBuilder;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import com.databricks.jdbc.log.JdbcLogger;
 import com.databricks.jdbc.log.JdbcLoggerFactory;
@@ -135,14 +137,12 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public int getDriverMajorVersion() {
-    throw new UnsupportedOperationException(
-        "Not implemented in DatabricksDatabaseMetaData - getDriverMajorVersion()");
+    return DriverUtil.getMajorVersion();
   }
 
   @Override
   public int getDriverMinorVersion() {
-    throw new UnsupportedOperationException(
-        "Not implemented in DatabricksDatabaseMetaData - getDriverMinorVersion()");
+    return DriverUtil.getMinorVersion();
   }
 
   @Override
@@ -937,6 +937,9 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
   @Override
   public ResultSet getSchemas() throws SQLException {
     LOGGER.debug("public ResultSet getSchemas()");
+    if (session.getConnectionContext().getClientType() == DatabricksClientType.SQL_EXEC) {
+      return MetadataResultSetBuilder.getSchemasResult(null);
+    }
     return getSchemas(null /* catalog */, null /* schema pattern */);
   }
 
