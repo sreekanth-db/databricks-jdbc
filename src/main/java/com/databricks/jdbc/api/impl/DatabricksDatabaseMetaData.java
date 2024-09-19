@@ -875,7 +875,6 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
         String.format(
             "public ResultSet getProcedures(String catalog = {%s}, String schemaPattern = {%s}, String procedureNamePattern = {%s})",
             catalog, schemaPattern, procedureNamePattern));
-    // TODO: check once, simba returns empty result set as well
     throwExceptionIfConnectionIsClosed();
     return new DatabricksResultSet(
         new StatementStatus().setState(StatementState.SUCCEEDED),
