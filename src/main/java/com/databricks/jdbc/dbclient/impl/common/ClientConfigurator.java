@@ -15,8 +15,18 @@ import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.core.DatabricksException;
 import com.databricks.sdk.core.ProxyConfig;
 import com.databricks.sdk.core.commons.CommonsHttpClient;
+import java.io.FileInputStream;
+import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 /**
  * This class is responsible for configuring the Databricks config based on the connection context.
@@ -33,8 +43,64 @@ public class ClientConfigurator {
     this.databricksConfig = new DatabricksConfig();
     CommonsHttpClient.Builder httpClientBuilder = new CommonsHttpClient.Builder();
     setupProxyConfig(httpClientBuilder);
+    setupSSLConfig(httpClientBuilder);
     setupAuthConfig();
     this.databricksConfig.setHttpClient(httpClientBuilder.build()).resolve();
+  }
+
+  /**
+   * Setup the SSL configuration in the httpClientBuilder.
+   *
+   * @param httpClientBuilder The builder to which the SSL configuration should be added.
+   */
+  private void setupSSLConfig(CommonsHttpClient.Builder httpClientBuilder) {
+    if (this.connectionContext.getSSLTrustStore() == null) {
+      return;
+    }
+    PoolingHttpClientConnectionManager connManager =
+        new PoolingHttpClientConnectionManager(
+            getConnectionSocketFactoryRegistry(this.connectionContext));
+    // This is consistent with the value in the SDK
+    connManager.setMaxTotal(100);
+    httpClientBuilder.withConnectionManager(connManager);
+  }
+
+  /**
+   * This function returns the registry of connection socket factories based on the truststore in
+   * the connection context.
+   *
+   * @param connectionContext The connection context to use to get the truststore.
+   * @return The registry of connection socket factories.
+   */
+  public static Registry<ConnectionSocketFactory> getConnectionSocketFactoryRegistry(
+      IDatabricksConnectionContext connectionContext) {
+    try {
+      TrustManagerFactory trustManagerFactory;
+      try (FileInputStream trustStoreStream =
+          new FileInputStream(connectionContext.getSSLTrustStore())) {
+        char[] password = null;
+        if (connectionContext.getSSLTrustStorePassword() != null) {
+          password = connectionContext.getSSLTrustStorePassword().toCharArray();
+        }
+        KeyStore trustStore = KeyStore.getInstance(connectionContext.getSSLTrustStoreType());
+        trustStore.load(trustStoreStream, password);
+        trustManagerFactory =
+            TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        trustManagerFactory.init(trustStore);
+      }
+      SSLContext sslContext = SSLContext.getInstance(DatabricksJdbcConstants.TLS);
+      sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
+
+      SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext);
+      return RegistryBuilder.<ConnectionSocketFactory>create()
+          .register(DatabricksJdbcConstants.HTTPS, sslSocketFactory)
+          .register(DatabricksJdbcConstants.HTTP, new PlainConnectionSocketFactory())
+          .build();
+    } catch (Exception e) {
+      String errorMessage = "Error while loading truststore to set up SSL configuration.";
+      LOGGER.error(errorMessage, e);
+      throw new DatabricksException(errorMessage, e);
+    }
   }
 
   /** Setup proxy settings in the databricks config. */
@@ -172,19 +238,19 @@ public class ClientConfigurator {
     if (nonProxyHosts == null || nonProxyHosts.isEmpty()) {
       return EMPTY_STRING;
     }
-    if (nonProxyHosts.contains("|")) {
+    if (nonProxyHosts.contains(DatabricksJdbcConstants.PIPE)) {
       // Already in system property compliant format
       return nonProxyHosts;
     }
-    return Arrays.stream(nonProxyHosts.split(","))
+    return Arrays.stream(nonProxyHosts.split(DatabricksJdbcConstants.COMMA))
         .map(
             suffix -> {
-              if (suffix.startsWith(".")) {
-                return "*" + suffix;
+              if (suffix.startsWith(DatabricksJdbcConstants.FULL_STOP)) {
+                return DatabricksJdbcConstants.ASTERISK + suffix;
               }
               return suffix;
             })
-        .collect(Collectors.joining("|"));
+        .collect(Collectors.joining(DatabricksJdbcConstants.PIPE));
   }
 
   public DatabricksConfig getDatabricksConfig() {
