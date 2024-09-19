@@ -517,6 +517,17 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
+  public boolean checkCertificateRevocation() {
+    return Objects.equals(getParameter(DatabricksJdbcUrlParams.CHECK_CERTIFICATE_REVOCATION), "1");
+  }
+
+  @Override
+  public boolean acceptUndeterminedCertificateRevocation() {
+    return Objects.equals(
+        getParameter(DatabricksJdbcUrlParams.ACCEPT_UNDETERMINED_CERTIFICATE_REVOCATION), "1");
+  }
+
+  @Override
   public String getJWTKeyFile() {
     return getParameter(DatabricksJdbcUrlParams.JWT_KEY_FILE);
   }

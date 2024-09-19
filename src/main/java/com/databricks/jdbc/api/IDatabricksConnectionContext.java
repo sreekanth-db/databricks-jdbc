@@ -166,6 +166,10 @@ public interface IDatabricksConnectionContext {
 
   String getConnectionURL();
 
+  boolean checkCertificateRevocation();
+
+  boolean acceptUndeterminedCertificateRevocation();
+
   /** Returns the file path to the JWT private key used for signing the JWT. */
   String getJWTKeyFile();
 

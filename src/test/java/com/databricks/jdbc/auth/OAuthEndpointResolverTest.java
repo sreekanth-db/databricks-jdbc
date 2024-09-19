@@ -93,7 +93,9 @@ public class OAuthEndpointResolverTest {
       throws DatabricksParsingException, IOException, DatabricksHttpException {
     try (MockedStatic<DatabricksHttpClient> mocked = mockStatic(DatabricksHttpClient.class)) {
       mocked.when(() -> DatabricksHttpClient.getInstance(any())).thenReturn(httpClient);
-      when(httpClient.execute(any(HttpGet.class))).thenThrow(DatabricksHttpException.class);
+      when(httpClient.execute(any(HttpGet.class)))
+          .thenThrow(
+              new DatabricksHttpException("Error fetching token endpoint from discovery endpoint"));
       when(context.isOAuthDiscoveryModeEnabled()).thenReturn(true);
       when(context.getOAuthDiscoveryURL()).thenReturn("https://fake");
       when(context.getTokenEndpoint()).thenReturn(null);

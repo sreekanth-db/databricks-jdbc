@@ -74,7 +74,7 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
 
   private static void initializeConnectionManager(IDatabricksConnectionContext connectionContext) {
     if (connectionManager == null) {
-      if (connectionContext != null && connectionContext.getSSLTrustStore() != null) {
+      if (connectionContext != null) {
         connectionManager =
             new PoolingHttpClientConnectionManager(
                 ClientConfigurator.getConnectionSocketFactoryRegistry(connectionContext));
