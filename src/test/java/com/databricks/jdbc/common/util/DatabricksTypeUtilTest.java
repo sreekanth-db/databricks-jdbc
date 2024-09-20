@@ -114,6 +114,7 @@ class DatabricksTypeUtilTest {
     assertEquals(255, DatabricksTypeUtil.getPrecision(Types.ARRAY));
     assertEquals(5, DatabricksTypeUtil.getPrecision(Types.TINYINT));
     assertEquals(5, DatabricksTypeUtil.getPrecision(Types.SMALLINT));
+    assertEquals(10, DatabricksTypeUtil.getPrecision(Types.INTEGER));
   }
 
   @Test

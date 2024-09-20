@@ -236,6 +236,8 @@ public class DatabricksTypeUtil {
       case Types.TINYINT:
       case Types.SMALLINT:
         return 5;
+      case Types.INTEGER:
+        return 10;
       case Types.DATE:
       case Types.DECIMAL:
         return 10;
