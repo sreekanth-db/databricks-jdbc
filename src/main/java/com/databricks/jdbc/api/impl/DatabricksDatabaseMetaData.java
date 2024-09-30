@@ -1038,7 +1038,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             catalog,
             schema,
             table));
-    // TODO(PECO-1696): Implement this
+    // TODO (PECO-1696): Implement getImportedKeys
     return new EmptyResultSet();
   }
 
@@ -1051,7 +1051,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
             catalog,
             schema,
             table));
-    // TODO(PECO-1696): Implement this
+    // TODO (PECO-1696): Implement getExportedKeys
     return new EmptyResultSet();
   }
 
@@ -1193,8 +1193,7 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
     LOGGER.debug(
         String.format(
             "public ResultSet getUDTs(String catalog = {%s}, String schemaPattern = {%s}, String typeNamePattern = {%s}, int[] types = {%s})",
-            catalog, schemaPattern, typeNamePattern, types));
-    // TODO: implement, returning only empty set for now
+            catalog, schemaPattern, typeNamePattern, Arrays.toString(types)));
     throwExceptionIfConnectionIsClosed();
     return new DatabricksResultSet(
         new StatementStatus().setState(StatementState.SUCCEEDED),

@@ -54,7 +54,7 @@ public class Driver implements java.sql.Driver {
     try {
       connection.open();
       isConnectionOpen = true;
-      // TODO(PECO-1957): enable exporting driver properties after fixing the bug
+      // TODO (PECO-1957): Export properties asynchronously
       // DeviceInfoLogUtil.exportDeviceProperties(connection.getSession());
       resolveMetadataClient(connection, connectionContext);
       return connection;

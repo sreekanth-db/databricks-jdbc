@@ -166,11 +166,6 @@ public class ChunkDownloader implements ChunkDownloadCallback {
     }
   }
 
-  /** Fetches total chunks that we have in memory */
-  long getTotalChunksInMemory() {
-    return totalChunksInMemory;
-  }
-
   /** Release all chunks from memory. This would be called when result-set has been closed. */
   void releaseAllChunks() {
     this.isClosed = true;
@@ -221,7 +216,6 @@ public class ChunkDownloader implements ChunkDownloadCallback {
               resultLink.getStartRowOffset(), resultLink.getRowCount(), resultLink.getExpiryTime());
       LOGGER.debug(telemetryLog);
 
-      // TODO : add compression
       chunkIndexMap.put(
           chunkIndex,
           ArrowResultChunk.builder()
