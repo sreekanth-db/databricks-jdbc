@@ -1,10 +1,13 @@
 name: 'Close stale issues and PRs'
 on:
   schedule:
-    - cron: "30 6 * * *" #Run at 06:30 GMT everyday
+    # Run at 06:30 GMT everyday
+    - cron: "30 6 * * *"
 jobs:
   stale:
-    runs-on: ubuntu-latest
+    runs-on:
+      group: databricks-protected-runner-group
+      labels: linux-ubuntu-latest
     steps:
       # Release v8 (https://github.com/actions/stale/tree/v8.0.0)
       - uses: actions/stale@v8

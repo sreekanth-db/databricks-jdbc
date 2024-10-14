@@ -1,10 +1,10 @@
 package com.databricks.jdbc.integration.fakeservice;
 
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.FAKE_SERVICE_URI_PROP_SUFFIX;
-import static com.databricks.jdbc.driver.DatabricksJdbcConstants.IS_FAKE_SERVICE_TEST_PROP;
+import static com.databricks.jdbc.common.DatabricksJdbcConstants.FAKE_SERVICE_URI_PROP_SUFFIX;
+import static com.databricks.jdbc.common.DatabricksJdbcConstants.IS_FAKE_SERVICE_TEST_PROP;
 import static com.github.tomakehurst.wiremock.common.AbstractFileSource.byFileExtension;
 
-import com.databricks.jdbc.driver.DatabricksJdbcConstants.FakeServiceType;
+import com.databricks.jdbc.common.DatabricksJdbcConstants.FakeServiceType;
 import com.databricks.jdbc.integration.IntegrationTestUtil;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.common.*;
@@ -289,7 +289,7 @@ public class FakeServiceExtension extends DatabricksWireMockExtension {
                 .makeStubsPersistent(false) // manually save stub mappings
                 .extractTextBodiesOver(MAX_STUBBING_TEXT_SIZE)
                 .extractBinaryBodiesOver(MAX_STUBBING_BINARY_SIZE)
-                .transformers(StubMappingCredentialsCleaner.NAME));
+                .transformers(StubMappingRedactor.NAME));
   }
 
   /**

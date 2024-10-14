@@ -1,18 +1,18 @@
 package com.databricks.jdbc.pooling;
 
-import com.databricks.jdbc.commons.LogLevel;
-import com.databricks.jdbc.commons.util.LoggingUtil;
-import com.databricks.jdbc.core.DatabricksSQLException;
-import com.databricks.jdbc.core.IDatabricksConnection;
-import com.databricks.jdbc.core.IDatabricksStatement;
+import com.databricks.jdbc.api.IDatabricksConnection;
+import com.databricks.jdbc.api.IDatabricksStatement;
+import com.databricks.jdbc.exception.DatabricksSQLException;
+import com.databricks.jdbc.log.JdbcLogger;
+import com.databricks.jdbc.log.JdbcLoggerFactory;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.*;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import javax.annotation.Nullable;
 import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
@@ -20,13 +20,13 @@ import javax.sql.PooledConnection;
 import javax.sql.StatementEventListener;
 
 public class DatabricksPooledConnection implements PooledConnection {
-  private final Set<ConnectionEventListener> listeners = new HashSet<>();
+
+  private static final JdbcLogger LOGGER =
+      JdbcLoggerFactory.getLogger(DatabricksPooledConnection.class);
+  private final Set<ConnectionEventListener> listeners = new CopyOnWriteArraySet<>();
   private Connection physicalConnection;
   private ConnectionHandler connectionHandler;
-
-  public Connection getPhysicalConnection() {
-    return this.physicalConnection;
-  }
+  private final Object lock = new Object();
 
   /**
    * Creates a new PooledConnection representing the specified physical connection.
@@ -35,28 +35,6 @@ public class DatabricksPooledConnection implements PooledConnection {
    */
   public DatabricksPooledConnection(Connection physicalConnection) {
     this.physicalConnection = physicalConnection;
-  }
-
-  /** Fires a connection closed event to all listeners. */
-  void fireConnectionClosed() {
-    LoggingUtil.log(LogLevel.DEBUG, "void fireConnectionClosed()");
-    for (ConnectionEventListener listener : this.listeners) {
-      listener.connectionClosed(new ConnectionEvent(this));
-    }
-  }
-
-  /**
-   * Fires a connection error event to all listeners
-   *
-   * @param e the SQLException to consider
-   */
-  private void fireConnectionError(SQLException e) {
-    LoggingUtil.log(
-        LogLevel.DEBUG,
-        String.format("private void fireConnectionError(SQLException e = {})", e.toString()));
-    for (ConnectionEventListener listener : this.listeners) {
-      listener.connectionErrorOccurred(new ConnectionEvent(this, e));
-    }
   }
 
   @Override
@@ -82,17 +60,19 @@ public class DatabricksPooledConnection implements PooledConnection {
   /** Close the physical connection once the pooled connection is closed */
   @Override
   public void close() throws SQLException {
-    LoggingUtil.log(LogLevel.DEBUG, "public void close()");
-    if (connectionHandler != null && !connectionHandler.isClosed()) {
-      connectionHandler.close();
-    }
-    if (physicalConnection == null) {
-      return;
-    }
-    try {
-      physicalConnection.close();
-    } finally {
-      physicalConnection = null;
+    LOGGER.debug("public void close()");
+    synchronized (lock) {
+      if (connectionHandler != null && !connectionHandler.isClosed()) {
+        connectionHandler.close();
+      }
+      if (physicalConnection == null) {
+        return;
+      }
+      try {
+        physicalConnection.close();
+      } finally {
+        physicalConnection = null;
+      }
     }
   }
 
@@ -107,20 +87,47 @@ public class DatabricksPooledConnection implements PooledConnection {
    */
   @Override
   public Connection getConnection() throws SQLException {
-    LoggingUtil.log(LogLevel.DEBUG, "public PooledConnection getConnection()");
-    if (physicalConnection == null) {
-      // Before throwing the exception, notify the listeners
-      DatabricksSQLException sqlException =
-          new DatabricksSQLException("This PooledConnection has already been closed.");
-      fireConnectionError(sqlException);
-      throw sqlException;
+    LOGGER.debug("public PooledConnection getConnection()");
+    synchronized (lock) {
+      if (physicalConnection == null) {
+        // Before throwing the exception, notify the listeners
+        DatabricksSQLException sqlException =
+            new DatabricksSQLException("This PooledConnection has already been closed.");
+        fireConnectionError(sqlException);
+        throw sqlException;
+      }
+      // Only one connection can be open at a time from this PooledConnection
+      if (connectionHandler != null && !connectionHandler.isClosed()) {
+        connectionHandler.close();
+      }
+      connectionHandler = new ConnectionHandler(physicalConnection);
+      return connectionHandler.getVirtualConnection();
     }
-    // Only one connection can be open at a time from this PooledConnection
-    if (connectionHandler != null && !connectionHandler.isClosed()) {
-      connectionHandler.close();
+  }
+
+  public Connection getPhysicalConnection() {
+    return this.physicalConnection;
+  }
+
+  /** Fires a connection closed event to all listeners. */
+  private void fireConnectionClosed() {
+    LOGGER.debug("void fireConnectionClosed()");
+    for (ConnectionEventListener listener : this.listeners) {
+      listener.connectionClosed(new ConnectionEvent(this));
     }
-    connectionHandler = new ConnectionHandler(physicalConnection);
-    return connectionHandler.getVirtualConnection();
+  }
+
+  /**
+   * Fires a connection error event to all listeners
+   *
+   * @param e the SQLException to consider
+   */
+  private void fireConnectionError(SQLException e) {
+    LOGGER.debug(
+        String.format("private void fireConnectionError(SQLException e = {%s})", e.toString()));
+    for (ConnectionEventListener listener : this.listeners) {
+      listener.connectionErrorOccurred(new ConnectionEvent(this, e));
+    }
   }
 
   /**
@@ -129,10 +136,12 @@ public class DatabricksPooledConnection implements PooledConnection {
    */
   private class ConnectionHandler implements InvocationHandler {
     private Connection physicalConnection;
-    private Connection
-        virtualConnection; // the Connection the client is currently using, which is not a physical
 
-    // connection
+    /**
+     * Connection being used by the client. This is a proxy object that wraps the physical
+     * connection.
+     */
+    private Connection virtualConnection;
 
     ConnectionHandler(Connection physicalConnection) {
       this.physicalConnection = physicalConnection;
@@ -148,11 +157,10 @@ public class DatabricksPooledConnection implements PooledConnection {
 
     @Override
     public Object invoke(Object proxy, Method method, @Nullable Object[] args) throws Throwable {
-      LoggingUtil.log(
-          LogLevel.DEBUG,
+      LOGGER.debug(
           String.format(
               "public Object invoke(Object proxy, Method method = {%s}, Object[] args = {%s})",
-              method, args));
+              method, Arrays.toString(args)));
       final String methodName = method.getName();
       if (method.getDeclaringClass() == Object.class) {
         if (methodName.equals("toString")) {
@@ -167,26 +175,32 @@ public class DatabricksPooledConnection implements PooledConnection {
         try {
           return method.invoke(physicalConnection, args);
         } catch (InvocationTargetException e) {
-          // throwing.nullable
+          // throwing nullable
           throw e.getTargetException();
         }
       }
 
       if (methodName.equals("isClosed")) {
-        return physicalConnection == null || physicalConnection.isClosed();
+        synchronized (DatabricksPooledConnection.this.lock) {
+          return physicalConnection == null || physicalConnection.isClosed();
+        }
       }
       // Do not close the physical connection, remove reference and fire close event
       if (methodName.equals("close")) {
-        if (physicalConnection != null) {
-          physicalConnection = null;
-          virtualConnection = null;
-          connectionHandler = null;
-          fireConnectionClosed();
+        synchronized (DatabricksPooledConnection.this.lock) {
+          if (physicalConnection != null) {
+            physicalConnection = null;
+            virtualConnection = null;
+            connectionHandler = null;
+            fireConnectionClosed();
+          }
         }
         return null;
       }
-      if (physicalConnection == null || physicalConnection.isClosed()) {
-        throw new DatabricksSQLException("Connection has been closed.");
+      synchronized (DatabricksPooledConnection.this.lock) {
+        if (physicalConnection == null || physicalConnection.isClosed()) {
+          throw new DatabricksSQLException("Connection has been closed.");
+        }
       }
 
       // From here on in, we invoke via reflection and catch exceptions
@@ -224,14 +238,18 @@ public class DatabricksPooledConnection implements PooledConnection {
     }
 
     public void close() {
-      LoggingUtil.log(LogLevel.DEBUG, "public void close()");
-      physicalConnection = null;
-      virtualConnection = null;
-      // No close event fired here: see JDBC 4.3 Optional Package spec section 11.4
+      LOGGER.debug("public void close()");
+      synchronized (DatabricksPooledConnection.this.lock) {
+        physicalConnection = null;
+        virtualConnection = null;
+        // No close event fired here: see JDBC 4.3 Optional Package spec section 11.4
+      }
     }
 
     public boolean isClosed() {
-      return physicalConnection == null;
+      synchronized (DatabricksPooledConnection.this.lock) {
+        return physicalConnection == null;
+      }
     }
   }
 
@@ -251,8 +269,7 @@ public class DatabricksPooledConnection implements PooledConnection {
 
     @Override
     public Object invoke(Object proxy, Method method, @Nullable Object[] args) throws Throwable {
-      LoggingUtil.log(
-          LogLevel.DEBUG,
+      LOGGER.debug(
           String.format(
               "public Object invoke(Object proxy, Method method = {%s}, Object[] args = {%s})",
               method, Arrays.toString(args)));
@@ -271,23 +288,29 @@ public class DatabricksPooledConnection implements PooledConnection {
       }
 
       if (methodName.equals("isClosed")) {
-        return physicalStatement == null || physicalStatement.isClosed();
+        synchronized (this) {
+          return physicalStatement == null || physicalStatement.isClosed();
+        }
       }
       if (methodName.equals("close")) {
-        if (physicalStatement == null || physicalStatement.isClosed()) {
-          return null;
+        synchronized (this) {
+          if (physicalStatement == null || physicalStatement.isClosed()) {
+            return null;
+          }
+          conHandler = null;
+          physicalStatement.close();
+          physicalStatement = null;
         }
-        conHandler = null;
-        physicalStatement.close();
-        physicalStatement = null;
         return null;
       }
-      if (physicalStatement == null || physicalStatement.isClosed()) {
-        throw new DatabricksSQLException("Statement has been closed.");
+      synchronized (this) {
+        if (physicalStatement == null || physicalStatement.isClosed()) {
+          throw new DatabricksSQLException("Statement has been closed.");
+        }
       }
       if (methodName.equals("getConnection")) {
-        return conHandler
-            .getVirtualConnection(); // the virtual connection from the connection handler
+        // the virtual connection from the connection handler
+        return conHandler.getVirtualConnection();
       }
 
       // Delegate the call to the physical Statement.
