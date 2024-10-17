@@ -1,6 +1,8 @@
 package com.databricks.client.jdbc;
 
 import com.databricks.jdbc.api.IDatabricksConnection;
+import com.databricks.jdbc.api.IDatabricksResultSet;
+import com.databricks.jdbc.api.IDatabricksStatement;
 import com.databricks.jdbc.api.IDatabricksUCVolumeClient;
 import com.databricks.jdbc.api.impl.DatabricksResultSetMetaData;
 import com.databricks.jdbc.api.impl.arrow.ArrowResultChunk;
@@ -319,6 +321,42 @@ public class DriverTest {
     System.out.println("Connection established......");
     Statement s = con.createStatement();
     s.executeQuery("SELECT * from RANGE(10)");
+    con.close();
+    System.out.println("Connection closed successfully......");
+  }
+
+  @Test
+  void testAllPurposeClusters_async() throws Exception {
+    String jdbcUrl =
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;AuthMech=3;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv;enableDirectResults=1";
+    Connection con = DriverManager.getConnection(jdbcUrl, "token", "token");
+    System.out.println("Connection established...... con1");
+    Statement s = con.createStatement();
+    IDatabricksStatement ids = s.unwrap(IDatabricksStatement.class);
+    ResultSet rs = ids.executeAsync("SELECT * from RANGE(10)");
+    System.out.println(
+        "1Status of async execution " + rs.unwrap(IDatabricksResultSet.class).getStatementStatus());
+
+    ResultSet rs3 = s.unwrap(IDatabricksStatement.class).getExecutionResult();
+    System.out.println(
+        "2Status of async execution "
+            + rs3.unwrap(IDatabricksResultSet.class).getStatementStatus());
+
+    System.out.println("StatementId " + rs.unwrap(IDatabricksResultSet.class).getStatementId());
+
+    Connection con2 = DriverManager.getConnection(jdbcUrl, "token", "token");
+    System.out.println("Connection established......con2");
+    IDatabricksConnection idc = con2.unwrap(IDatabricksConnection.class);
+    Statement stm = idc.getStatement(rs.unwrap(IDatabricksResultSet.class).getStatementId());
+    ResultSet rs2 = stm.unwrap(IDatabricksStatement.class).getExecutionResult();
+    System.out.println(
+        "3Status of async execution "
+            + rs2.unwrap(IDatabricksResultSet.class).getStatementStatus());
+    stm.cancel();
+    System.out.println("Statement cancelled using con2");
+    s.close();
+    System.out.println("Statement cancelled using con1");
+    con2.close();
     con.close();
     System.out.println("Connection closed successfully......");
   }
