@@ -33,6 +33,7 @@ import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.IdleConnectionEvictor;
 import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
@@ -52,15 +53,17 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
   private static PoolingHttpClientConnectionManager connectionManager;
   private final CloseableHttpClient httpClient;
   protected static int idleHttpConnectionExpiry;
-  private CloseableHttpClient httpDisabledSSLClient;
   private DatabricksHttpRetryHandler retryHandler;
+  private IdleConnectionEvictor idleConnectionEvictor;
 
   private DatabricksHttpClient(IDatabricksConnectionContext connectionContext) {
     initializeConnectionManager(connectionContext);
     httpClient = makeClosableHttpClient(connectionContext);
-    httpDisabledSSLClient = makeClosableDisabledSslHttpClient();
     idleHttpConnectionExpiry = connectionContext.getIdleHttpConnectionExpiry();
     retryHandler = new DatabricksHttpRetryHandler(connectionContext);
+    idleConnectionEvictor =
+        new IdleConnectionEvictor(connectionManager, idleHttpConnectionExpiry, TimeUnit.SECONDS);
+    idleConnectionEvictor.start();
   }
 
   @VisibleForTesting
@@ -219,30 +222,6 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     return null;
   }
 
-  public CloseableHttpResponse executeWithoutCertVerification(HttpUriRequest request)
-      throws DatabricksHttpException {
-    LOGGER.debug(
-        String.format("Executing HTTP request [{%s}]", RequestSanitizer.sanitizeRequest(request)));
-    try {
-      return httpDisabledSSLClient.execute(request);
-    } catch (Exception e) {
-      throwHttpException(e, request, LogLevel.DEBUG);
-    }
-    return null;
-  }
-
-  @Override
-  public void closeExpiredAndIdleConnections() {
-    if (connectionManager != null) {
-      synchronized (connectionManager) {
-        LOGGER.debug(
-            String.format("connection pool stats: {%s}", connectionManager.getTotalStats()));
-        connectionManager.closeExpiredConnections();
-        connectionManager.closeIdleConnections(idleHttpConnectionExpiry, TimeUnit.SECONDS);
-      }
-    }
-  }
-
   static String getUserAgent() {
     String sdkUserAgent = UserAgent.asString();
     // Split the string into parts
@@ -270,6 +249,9 @@ public class DatabricksHttpClient implements IDatabricksHttpClient {
     DatabricksHttpClient instance = instances.remove(contextKey);
     if (instance != null) {
       try {
+        if (instance.idleConnectionEvictor != null) {
+          instance.idleConnectionEvictor.shutdown();
+        }
         instance.httpClient.close();
       } catch (IOException e) {
         LOGGER.debug(String.format("Caught error while closing http client. Error %s", e));

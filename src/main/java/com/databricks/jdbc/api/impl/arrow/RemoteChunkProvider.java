@@ -131,7 +131,6 @@ public class RemoteChunkProvider implements ChunkProvider, ChunkDownloadCallback
       return null;
     }
     ArrowResultChunk chunk = chunkIndexToChunksMap.get(currentChunkIndex);
-    httpClient.closeExpiredAndIdleConnections();
     synchronized (chunk) {
       try {
         while (!isDownloadComplete(chunk.getStatus())) {
@@ -188,7 +187,6 @@ public class RemoteChunkProvider implements ChunkProvider, ChunkDownloadCallback
     this.isClosed = true;
     this.chunkDownloaderExecutorService.shutdownNow();
     this.chunkIndexToChunksMap.values().forEach(ArrowResultChunk::releaseChunk);
-    httpClient.closeExpiredAndIdleConnections();
   }
 
   /** Release the memory for previous chunk since it is already consumed */
