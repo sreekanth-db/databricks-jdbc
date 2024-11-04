@@ -134,7 +134,7 @@ public class DatabricksStatement implements IDatabricksStatement, IDatabricksSta
   }
 
   @Override
-  public int getMaxRows() throws SQLException {
+  public int getMaxRows() throws DatabricksSQLException {
     LOGGER.debug("public int getMaxRows()");
     checkIfClosed();
     return maxRows;
@@ -454,8 +454,8 @@ public class DatabricksStatement implements IDatabricksStatement, IDatabricksSta
   }
 
   @Override
-  public String getStatementId() {
-    return this.statementId.toString();
+  public StatementId getStatementId() {
+    return this.statementId;
   }
 
   @Override

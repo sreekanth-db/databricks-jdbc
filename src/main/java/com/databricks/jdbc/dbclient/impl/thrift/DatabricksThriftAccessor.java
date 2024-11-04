@@ -153,6 +153,21 @@ final class DatabricksThriftAccessor {
     }
   }
 
+  TFetchResultsResp getMoreResults(IDatabricksStatementInternal parentStatement)
+      throws DatabricksSQLException {
+    String context =
+        String.format(
+            "Fetching more results as it has more rows %s",
+            parentStatement.getStatementId().toSQLExecStatementId());
+    int maxRows = (parentStatement == null) ? DEFAULT_ROW_LIMIT : parentStatement.getMaxRows();
+    return getResultSetResp(
+        SUCCESS_STATUS,
+        getOperationHandle(parentStatement.getStatementId()),
+        context,
+        maxRows,
+        true);
+  }
+
   private TFetchResultsResp getResultSetResp(
       TStatusCode responseCode,
       TOperationHandle operationHandle,
@@ -229,20 +244,9 @@ final class DatabricksThriftAccessor {
         throw new DatabricksSQLException(response.status.errorMessage);
       }
       if (response.isSetDirectResults()) {
-        if (enableDirectResults) {
-          if (response.getDirectResults().isSetOperationStatus()
-              && response.getDirectResults().operationStatus.operationState
-                  == TOperationState.ERROR_STATE) {
-            throw new DatabricksSQLException(
-                response.getDirectResults().getOperationStatus().errorMessage);
-          }
-        }
-        if (((response.status.statusCode == SUCCESS_STATUS)
-            || (response.status.statusCode == SUCCESS_WITH_INFO_STATUS))) {
-          checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
-          resultSet = response.getDirectResults().getResultSet();
-          resultSet.setResultSetMetadata(response.getDirectResults().getResultSetMetadata());
-        }
+        checkDirectResultsForErrorStatus(response.getDirectResults(), response.toString());
+        resultSet = response.getDirectResults().getResultSet();
+        resultSet.setResultSetMetadata(response.getDirectResults().getResultSetMetadata());
       } else {
         longPolling(response.getOperationHandle());
         resultSet =
@@ -266,13 +270,7 @@ final class DatabricksThriftAccessor {
       parentStatement.setStatementId(statementId);
     }
     return new DatabricksResultSet(
-        response.getStatus(),
-        statementId,
-        resultSet.getResults(),
-        resultSet.getResultSetMetadata(),
-        statementType,
-        parentStatement,
-        session);
+        response.getStatus(), statementId, resultSet, statementType, parentStatement, session);
   }
 
   DatabricksResultSet executeAsync(
@@ -282,7 +280,9 @@ final class DatabricksThriftAccessor {
       StatementType statementType)
       throws SQLException {
     refreshHeadersIfRequired();
-    TExecuteStatementResp response;
+    TExecuteStatementResp response = null;
+    DatabricksHttpTTransport transport =
+        (DatabricksHttpTTransport) getThriftClient().getInputProtocol().getTransport();
     try {
       response = getThriftClient().ExecuteStatement(request);
       if (Arrays.asList(ERROR_STATUS, INVALID_HANDLE_STATUS).contains(response.status.statusCode)) {
@@ -304,7 +304,7 @@ final class DatabricksThriftAccessor {
       parentStatement.setStatementId(statementId);
     }
     return new DatabricksResultSet(
-        response.getStatus(), statementId, null, null, statementType, parentStatement, session);
+        response.getStatus(), statementId, null, statementType, parentStatement, session);
   }
 
   DatabricksResultSet getStatementResult(
@@ -342,13 +342,7 @@ final class DatabricksThriftAccessor {
     }
     StatementId statementId = new StatementId(operationHandle.getOperationId());
     return new DatabricksResultSet(
-        response.getStatus(),
-        statementId,
-        resultSet == null ? null : resultSet.getResults(),
-        resultSet == null ? null : resultSet.getResultSetMetadata(),
-        StatementType.SQL,
-        parentStatement,
-        session);
+        response.getStatus(), statementId, resultSet, StatementType.SQL, parentStatement, session);
   }
 
   void resetAccessToken(String newAccessToken) {
