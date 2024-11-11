@@ -1,15 +1,20 @@
 package com.databricks.client.jdbc;
 
+import static com.databricks.jdbc.integration.IntegrationTestUtil.getFullyQualifiedTableName;
+
 import com.databricks.jdbc.api.IDatabricksConnection;
-import com.databricks.jdbc.api.IDatabricksUCVolumeClient;
+import com.databricks.jdbc.api.IDatabricksResultSet;
+import com.databricks.jdbc.api.IDatabricksStatement;
+import com.databricks.jdbc.api.IDatabricksVolumeClient;
+import com.databricks.jdbc.api.impl.DatabricksResultSetMetaData;
 import com.databricks.jdbc.api.impl.arrow.ArrowResultChunk;
 import com.databricks.jdbc.common.DatabricksJdbcConstants;
+import com.databricks.jdbc.exception.DatabricksSQLException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.*;
 import java.time.LocalDate;
@@ -95,6 +100,22 @@ public class DriverTest {
   }
 
   @Test
+  void testGetDisposition() throws Exception {
+    DriverManager.registerDriver(new Driver());
+    String jdbcUrl =
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=https;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;";
+    Connection con =
+        DriverManager.getConnection(jdbcUrl, "token", "xx"); // Default connection, arrow enabled.
+    System.out.println("Connection established with default params. Arrow is enabled ......");
+    String query = "SELECT * FROM RANGE(10)";
+    ResultSet resultSet = con.createStatement().executeQuery(query);
+    DatabricksResultSetMetaData rsmd = (DatabricksResultSetMetaData) resultSet.getMetaData();
+    System.out.println("isCloudFetchUsed when arrow is enabled: " + rsmd.getIsCloudFetchUsed());
+    resultSet.close();
+    con.close();
+  }
+
+  @Test
   void testArclight() throws Exception {
     DriverManager.registerDriver(new Driver());
     // Getting the connection
@@ -112,6 +133,24 @@ public class DriverTest {
     System.out.println("printing is done......");
     rs.close();
     statement.close();
+    con.close();
+  }
+
+  @Test
+  void testThriftSqlState() throws Exception {
+    String jdbcUrl =
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;AuthMech=3;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv";
+    Connection con = DriverManager.getConnection(jdbcUrl, "token", "xx");
+    System.out.println("Connection established......");
+    Statement s = con.createStatement();
+    try {
+      s.executeQuery("some fake sql");
+    } catch (DatabricksSQLException e) {
+      System.out.println("Error message: " + e.getMessage());
+      if (e.getSQLState() != null && !Objects.equals(e.getSQLState(), "")) {
+        System.out.println("SQL State: " + e.getSQLState());
+      }
+    }
     con.close();
   }
 
@@ -224,11 +263,11 @@ public class DriverTest {
     Connection con = DriverManager.getConnection(jdbcUrl, "token", "xx");
     con.setClientInfo(DatabricksJdbcConstants.ALLOWED_VOLUME_INGESTION_PATHS, "delete");
     System.out.println("Connection created");
-    IDatabricksUCVolumeClient client = ((IDatabricksConnection) con).getUCVolumeClient();
+    IDatabricksVolumeClient client = ((IDatabricksConnection) con).getVolumeClient();
 
     File file = new File("/tmp/put.txt");
     try {
-      Files.write(file.toPath(), "test-put".getBytes(StandardCharsets.UTF_8));
+      Files.write(file.toPath(), "test-put".getBytes());
 
       System.out.println("File created");
 
@@ -245,14 +284,14 @@ public class DriverTest {
 
       InputStreamEntity inputStream =
           client.getObject("samikshya_hackathon", "default", "gopal-psl", "test-stream.csv");
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      byte[] data = new byte[1024];
-      int nRead;
-      while ((nRead = inputStream.getContent().read(data, 0, data.length)) != -1) {
-        buffer.write(data, 0, nRead);
+      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+      byte[] buffer = new byte[1024];
+      int length;
+      while ((length = inputStream.getContent().read(buffer)) != -1) {
+        byteArrayOutputStream.write(buffer, 0, length);
       }
-      buffer.flush();
-      System.out.println("Got data " + new String(buffer.toByteArray(), StandardCharsets.UTF_8));
+      String content = new String(byteArrayOutputStream.toByteArray(), "UTF-8");
+      System.out.println("Got data " + content);
       inputStream.getContent().close();
 
       System.out.println(
@@ -264,6 +303,41 @@ public class DriverTest {
           "Object exists "
               + client.objectExists(
                   "samikshya_hackathon", "default", "gopal-psl", "test-stream.csv", false));
+    } finally {
+      file.delete();
+      con.close();
+    }
+  }
+
+  @Test
+  void testDBFSVolumeOperation() throws Exception {
+    DriverManager.registerDriver(new Driver());
+    System.out.println("Starting test");
+    // Getting the connection
+    String jdbcUrl =
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/dd43ee29fedd958d;Loglevel=debug;useFileSystemAPI=1";
+    Connection con = DriverManager.getConnection(jdbcUrl, "token", "xx");
+    System.out.println("Connection created");
+
+    IDatabricksVolumeClient client = ((IDatabricksConnection) con).getVolumeClient();
+
+    File file = new File("/tmp/put.txt");
+    try {
+      Files.write(file.toPath(), "put string check".getBytes());
+      System.out.println("File created");
+
+      System.out.println(
+          "Object inserted "
+              + client.putObject(
+                  "___________________first",
+                  "jprakash-test",
+                  "jprakash_volume",
+                  "test-stream.csv",
+                  "/tmp/put.txt",
+                  true));
+
+    } catch (Exception e) {
+      e.printStackTrace();
     } finally {
       file.delete();
       con.close();
@@ -304,6 +378,42 @@ public class DriverTest {
     System.out.println("Connection established......");
     Statement s = con.createStatement();
     s.executeQuery("SELECT * from RANGE(10)");
+    con.close();
+    System.out.println("Connection closed successfully......");
+  }
+
+  @Test
+  void testAllPurposeClusters_async() throws Exception {
+    String jdbcUrl =
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;AuthMech=3;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv;enableDirectResults=1";
+    Connection con = DriverManager.getConnection(jdbcUrl, "token", "token");
+    System.out.println("Connection established...... con1");
+    Statement s = con.createStatement();
+    IDatabricksStatement ids = s.unwrap(IDatabricksStatement.class);
+    ResultSet rs = ids.executeAsync("SELECT * from RANGE(10)");
+    System.out.println(
+        "1Status of async execution " + rs.unwrap(IDatabricksResultSet.class).getStatementStatus());
+
+    ResultSet rs3 = s.unwrap(IDatabricksStatement.class).getExecutionResult();
+    System.out.println(
+        "2Status of async execution "
+            + rs3.unwrap(IDatabricksResultSet.class).getStatementStatus());
+
+    System.out.println("StatementId " + rs.unwrap(IDatabricksResultSet.class).getStatementId());
+
+    Connection con2 = DriverManager.getConnection(jdbcUrl, "token", "token");
+    System.out.println("Connection established......con2");
+    IDatabricksConnection idc = con2.unwrap(IDatabricksConnection.class);
+    Statement stm = idc.getStatement(rs.unwrap(IDatabricksResultSet.class).getStatementId());
+    ResultSet rs2 = stm.unwrap(IDatabricksStatement.class).getExecutionResult();
+    System.out.println(
+        "3Status of async execution "
+            + rs2.unwrap(IDatabricksResultSet.class).getStatementStatus());
+    stm.cancel();
+    System.out.println("Statement cancelled using con2");
+    s.close();
+    System.out.println("Statement cancelled using con1");
+    con2.close();
     con.close();
     System.out.println("Connection closed successfully......");
   }
@@ -389,5 +499,42 @@ public class DriverTest {
     System.out.println("Connection closed successfully......");
     // Disable error injection after the test (not strictly needed as test launches a new JVM)
     ArrowResultChunk.disableErrorInjection();
+  }
+
+  @Test
+  void testBatchAllPurposeClusters() throws Exception {
+    String jdbcUrl =
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;AuthMech=3;httpPath=sql/protocolv1/o/6051921418418893/1115-130834-ms4m0yv;MaxBatchSize=4";
+    String tableName = "batch_test_table";
+    Connection con = DriverManager.getConnection(jdbcUrl, "token", "xx");
+    System.out.println("Connection established......");
+    Statement s = con.createStatement();
+    s.addBatch("DROP TABLE IF EXISTS " + getFullyQualifiedTableName(tableName));
+    s.addBatch(
+        "CREATE TABLE IF NOT EXISTS "
+            + getFullyQualifiedTableName(tableName)
+            + " (id INT PRIMARY KEY, col1 VARCHAR(255), col2 VARCHAR(255))");
+    s.executeBatch();
+    s.clearBatch();
+    s.addBatch(
+        "INSERT INTO "
+            + getFullyQualifiedTableName(tableName)
+            + " (id, col1, col2) VALUES (1, 'value1', 'value2')");
+    s.addBatch(
+        "INSERT INTO "
+            + getFullyQualifiedTableName(tableName)
+            + " (id, col1, col2) VALUES (2, 'value3', 'value4')");
+    s.addBatch(
+        "INSERT INTO "
+            + getFullyQualifiedTableName(tableName)
+            + " (id, col1, col2) VALUES (3, 'value5', 'value6')");
+    s.addBatch(
+        "UPDATE "
+            + getFullyQualifiedTableName(tableName)
+            + " SET col1 = 'updatedValue1' WHERE id = 1");
+    System.out.println(Arrays.toString(s.executeBatch()));
+    s.clearBatch();
+    con.close();
+    System.out.println("Connection closed successfully......");
   }
 }

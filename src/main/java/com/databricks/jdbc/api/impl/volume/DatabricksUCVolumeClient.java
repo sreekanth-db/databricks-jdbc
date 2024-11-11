@@ -4,9 +4,9 @@ import static com.databricks.jdbc.common.DatabricksJdbcConstants.VOLUME_OPERATIO
 import static com.databricks.jdbc.common.DatabricksJdbcConstants.VOLUME_OPERATION_STATUS_SUCCEEDED;
 import static com.databricks.jdbc.common.util.StringUtil.escapeStringLiteral;
 
-import com.databricks.jdbc.api.IDatabricksUCVolumeClient;
-import com.databricks.jdbc.api.callback.IDatabricksResultSetHandle;
-import com.databricks.jdbc.api.callback.IDatabricksStatementHandle;
+import com.databricks.jdbc.api.IDatabricksVolumeClient;
+import com.databricks.jdbc.api.internal.IDatabricksResultSetInternal;
+import com.databricks.jdbc.api.internal.IDatabricksStatementInternal;
 import com.databricks.jdbc.log.JdbcLogger;
 import com.databricks.jdbc.log.JdbcLoggerFactory;
 import java.io.InputStream;
@@ -15,8 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.http.entity.InputStreamEntity;
 
-/** Implementation for DatabricksUCVolumeClient */
-public class DatabricksUCVolumeClient implements IDatabricksUCVolumeClient {
+/** Implementation of the VolumeClient that uses SQL query to perform the Volume Operations */
+public class DatabricksUCVolumeClient implements IDatabricksVolumeClient {
 
   private static final JdbcLogger LOGGER =
       JdbcLoggerFactory.getLogger(DatabricksUCVolumeClient.class);
@@ -48,7 +48,7 @@ public class DatabricksUCVolumeClient implements IDatabricksUCVolumeClient {
     return escapeStringLiteral(String.format("/Volumes/%s/%s/%s/", catalog, schema, volume));
   }
 
-  private static String getObjectFullPath(
+  public static String getObjectFullPath(
       String catalog, String schema, String volume, String objectPath) {
     return getVolumePath(catalog, schema, volume) + escapeStringLiteral(objectPath);
   }
@@ -347,14 +347,16 @@ public class DatabricksUCVolumeClient implements IDatabricksUCVolumeClient {
     String getObjectQuery = createGetObjectQueryForInputStream(catalog, schema, volume, objectPath);
 
     try (Statement statement = connection.createStatement()) {
-      IDatabricksStatementHandle databricksStatement =
-          statement.unwrap(IDatabricksStatementHandle.class);
+      IDatabricksStatementInternal databricksStatement =
+          statement.unwrap(IDatabricksStatementInternal.class);
       databricksStatement.allowInputStreamForVolumeOperation(true);
 
       try (ResultSet resultSet = statement.executeQuery(getObjectQuery)) {
         LOGGER.info("GET query executed successfully");
         if (resultSet.next()) {
-          return resultSet.unwrap(IDatabricksResultSetHandle.class).getVolumeOperationInputStream();
+          return resultSet
+              .unwrap(IDatabricksResultSetInternal.class)
+              .getVolumeOperationInputStream();
         } else {
           return null;
         }
@@ -424,8 +426,8 @@ public class DatabricksUCVolumeClient implements IDatabricksUCVolumeClient {
     boolean isOperationSucceeded = false;
 
     try (Statement statement = connection.createStatement()) {
-      IDatabricksStatementHandle databricksStatement =
-          statement.unwrap(IDatabricksStatementHandle.class);
+      IDatabricksStatementInternal databricksStatement =
+          statement.unwrap(IDatabricksStatementInternal.class);
       databricksStatement.allowInputStreamForVolumeOperation(true);
       databricksStatement.setInputStreamForUCVolume(
           new InputStreamEntity(inputStream, contentLength));

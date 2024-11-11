@@ -1,16 +1,15 @@
 package com.databricks.jdbc.auth;
 
 import com.databricks.jdbc.api.IDatabricksConnectionContext;
-import com.databricks.jdbc.dbclient.impl.http.DatabricksHttpClient;
+import com.databricks.jdbc.dbclient.IDatabricksHttpClient;
+import com.databricks.jdbc.dbclient.impl.http.DatabricksHttpClientFactory;
 import com.databricks.jdbc.exception.DatabricksHttpException;
-import com.databricks.jdbc.exception.DatabricksParsingException;
 import com.databricks.jdbc.log.JdbcLogger;
 import com.databricks.jdbc.log.JdbcLoggerFactory;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.core.DatabricksException;
 import com.databricks.sdk.core.oauth.OpenIDConnectEndpoints;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -21,9 +20,12 @@ public class OAuthEndpointResolver {
 
   private static final JdbcLogger LOGGER = JdbcLoggerFactory.getLogger(OAuthEndpointResolver.class);
   private final IDatabricksConnectionContext context;
+  private final DatabricksConfig databricksConfig;
 
-  public OAuthEndpointResolver(IDatabricksConnectionContext context) {
+  public OAuthEndpointResolver(
+      IDatabricksConnectionContext context, DatabricksConfig databricksConfig) {
     this.context = context;
+    this.databricksConfig = databricksConfig;
   }
 
   public String getTokenEndpoint() {
@@ -46,26 +48,20 @@ public class OAuthEndpointResolver {
     try {
       return getTokenEndpointFromDiscoveryEndpoint();
     } catch (DatabricksException e) {
-      String errorMessage =
-          "Failed to get token endpoint from discovery endpoint. Falling back to default token endpoint.";
-      LOGGER.error(errorMessage);
+      LOGGER.error(
+          "Failed to get token endpoint from discovery endpoint. Falling back to default token endpoint.");
       return getDefaultTokenEndpoint();
     }
   }
 
   String getDefaultTokenEndpoint() {
     try {
-      return getBarebonesDatabricksConfig().getOidcEndpoints().getTokenEndpoint();
-    } catch (DatabricksParsingException | IOException e) {
+      return databricksConfig.getOidcEndpoints().getTokenEndpoint();
+    } catch (IOException e) {
       String errorMessage = "Failed to build default token endpoint URL.";
       LOGGER.error(errorMessage);
       throw new DatabricksException(errorMessage, e);
     }
-  }
-
-  @VisibleForTesting
-  DatabricksConfig getBarebonesDatabricksConfig() throws DatabricksParsingException {
-    return new DatabricksConfig().setHost(context.getHostForOAuth()).resolve();
   }
 
   /**
@@ -77,7 +73,8 @@ public class OAuthEndpointResolver {
   private String getTokenEndpointFromDiscoveryEndpoint() {
     try {
       URIBuilder uriBuilder = new URIBuilder(context.getOAuthDiscoveryURL());
-      DatabricksHttpClient httpClient = DatabricksHttpClient.getInstance(context);
+      IDatabricksHttpClient httpClient =
+          DatabricksHttpClientFactory.getInstance().getClient(context);
       HttpGet getRequest = new HttpGet(uriBuilder.build());
       try (CloseableHttpResponse response = httpClient.execute(getRequest)) {
         if (response.getStatusLine().getStatusCode() != 200) {

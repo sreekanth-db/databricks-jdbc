@@ -1,6 +1,6 @@
 package com.databricks.jdbc.api;
 
-import com.databricks.jdbc.common.CompressionType;
+import com.databricks.jdbc.common.CompressionCodec;
 import com.databricks.jdbc.common.DatabricksClientType;
 import com.databricks.jdbc.common.IDatabricksComputeResource;
 import com.databricks.jdbc.common.LogLevel;
@@ -10,12 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 public interface IDatabricksConnectionContext {
-
-  enum Cloud {
-    AWS,
-    AZURE,
-    OTHER
-  }
 
   enum AuthFlow {
     TOKEN_PASSTHROUGH,
@@ -92,7 +86,7 @@ public interface IDatabricksConnectionContext {
 
   String getClientUserAgent();
 
-  CompressionType getCompressionType();
+  CompressionCodec getCompressionCodec();
 
   String getCatalog();
 
@@ -157,6 +151,12 @@ public interface IDatabricksConnectionContext {
 
   boolean supportManyParameters();
 
+  /**
+   * If set true then DBFSVolumeClient will be used otherwise DatabricksUCVolumeClient will be used
+   * for Volume Operations
+   */
+  boolean useFileSystemAPI();
+
   String getConnectionURL();
 
   boolean checkCertificateRevocation();
@@ -213,4 +213,7 @@ public interface IDatabricksConnectionContext {
 
   /** Returns the SSL trust store type of the trust store file. */
   String getSSLTrustStoreType();
+
+  /** Returns the maximum number of commands that can be executed in a single batch. */
+  int getMaxBatchSize();
 }
