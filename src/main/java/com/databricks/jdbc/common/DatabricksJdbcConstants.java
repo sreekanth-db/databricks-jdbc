@@ -82,7 +82,10 @@ public final class DatabricksJdbcConstants {
   @VisibleForTesting public static final String IS_FAKE_SERVICE_TEST_PROP = "isFakeServiceTest";
   @VisibleForTesting public static final String FAKE_SERVICE_URI_PROP_SUFFIX = ".fakeServiceURI";
   public static final String AWS_CLIENT_ID = "databricks-sql-jdbc";
+  public static final String GCP_CLIENT_ID = "databricks-sql-jdbc";
   public static final String AAD_CLIENT_ID = "96eecda7-19ea-49cc-abb5-240097d554f5";
+  public static final String GCP_GOOGLE_CREDENTIALS_AUTH_TYPE = "google-credentials";
+  public static final String GCP_GOOGLE_ID_AUTH_TYPE = "google-id";
   public static final String DEFAULT_HTTP_EXCEPTION_SQLSTATE = "08000";
 
   /** Enum for the services that can be replaced with a fake service in integration tests. */

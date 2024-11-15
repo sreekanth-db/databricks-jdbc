@@ -6,6 +6,7 @@ import com.databricks.jdbc.common.IDatabricksComputeResource;
 import com.databricks.jdbc.common.LogLevel;
 import com.databricks.jdbc.exception.DatabricksParsingException;
 import com.databricks.sdk.core.ProxyConfig;
+import com.databricks.sdk.core.utils.Cloud;
 import java.util.List;
 import java.util.Map;
 
@@ -114,6 +115,8 @@ public interface IDatabricksConnectionContext {
 
   Boolean getUseCloudFetchProxy();
 
+  Cloud getCloud() throws DatabricksParsingException;
+
   String getCloudFetchProxyHost();
 
   int getCloudFetchProxyPort();
@@ -198,6 +201,12 @@ public interface IDatabricksConnectionContext {
    * expires.
    */
   String getOAuthRefreshToken();
+
+  String getGcpAuthType() throws DatabricksParsingException;
+
+  String getGoogleServiceAccount();
+
+  String getGoogleCredentials();
 
   /** Returns the non-proxy hosts that should be excluded from proxying. */
   String getNonProxyHosts();

@@ -66,6 +66,8 @@ public enum DatabricksJdbcUrlParams {
   SSL_TRUST_STORE_TYPE("SSLTrustStoreType", "JKS"),
   CHECK_CERTIFICATE_REVOCATION("CheckCertRevocation", "1"),
   ACCEPT_UNDETERMINED_CERTIFICATE_REVOCATION("AcceptUndeterminedRevocation", "0"),
+  GOOGLE_SERVICE_ACCOUNT("GoogleServiceAccount"),
+  GOOGLE_CREDENTIALS_FILE("GoogleCredentialsFile"),
   MAX_BATCH_SIZE("MaxBatchSize", "500");
 
   private final String paramName;

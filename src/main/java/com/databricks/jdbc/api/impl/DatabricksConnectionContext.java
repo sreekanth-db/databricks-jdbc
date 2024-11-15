@@ -187,6 +187,23 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     return DatabricksEnvironment.getEnvironmentFromHostname(hostName).getCloud();
   }
 
+  public String getGcpAuthType() throws DatabricksParsingException {
+    if (parameters.containsKey(
+        DatabricksJdbcUrlParams.GOOGLE_SERVICE_ACCOUNT.getParamName().toLowerCase())) {
+      return DatabricksJdbcConstants.GCP_GOOGLE_ID_AUTH_TYPE;
+    }
+    if (parameters.containsKey(
+        DatabricksJdbcUrlParams.GOOGLE_CREDENTIALS_FILE.getParamName().toLowerCase())) {
+      return DatabricksJdbcConstants.GCP_GOOGLE_CREDENTIALS_AUTH_TYPE;
+    }
+    if (parameters.containsKey(
+        DatabricksJdbcUrlParams.CLIENT_SECRET.getParamName().toLowerCase())) {
+      return DatabricksJdbcConstants.M2M_AUTH_TYPE;
+    }
+    throw new DatabricksParsingException(
+        "GCP Auth Type not found. Provide either Google Service Account or Google Credentials file path");
+  }
+
   @Override
   public String getClientId() throws DatabricksParsingException {
     String clientId = getParameter(DatabricksJdbcUrlParams.CLIENT_ID);
@@ -194,6 +211,8 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       Cloud cloud = getCloud();
       if (cloud == Cloud.AWS) {
         return DatabricksJdbcConstants.AWS_CLIENT_ID;
+      } else if (cloud == Cloud.GCP) {
+        return DatabricksJdbcConstants.GCP_CLIENT_ID;
       } else if (cloud == Cloud.AZURE) {
         return DatabricksJdbcConstants.AAD_CLIENT_ID;
       }
@@ -203,7 +222,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public List<String> getOAuthScopesForU2M() throws DatabricksParsingException {
-    if (getCloud() == Cloud.AWS) {
+    if (getCloud() == Cloud.AWS || getCloud() == Cloud.GCP) {
       return Arrays.asList(
           DatabricksJdbcConstants.SQL_SCOPE, DatabricksJdbcConstants.OFFLINE_ACCESS_SCOPE);
     } else {
@@ -215,6 +234,16 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public String getClientSecret() {
     return getParameter(DatabricksJdbcUrlParams.CLIENT_SECRET);
+  }
+
+  @Override
+  public String getGoogleServiceAccount() {
+    return getParameter(DatabricksJdbcUrlParams.GOOGLE_SERVICE_ACCOUNT);
+  }
+
+  @Override
+  public String getGoogleCredentials() {
+    return getParameter(DatabricksJdbcUrlParams.GOOGLE_CREDENTIALS_FILE);
   }
 
   @Override
