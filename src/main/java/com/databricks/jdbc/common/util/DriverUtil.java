@@ -26,7 +26,6 @@ public class DriverUtil {
   private static final String DBSQL_VERSION_SQL = "SELECT current_version().dbsql_version";
   public static final int DBSQL_MIN_MAJOR_VERSION_FOR_SEA_SUPPORT = 2024;
   public static final int DBSQL_MIN_MINOR_VERSION_FOR_SEA_SUPPORT = 30;
-
   private static final String[] VERSION_PARTS = VERSION.split("[.-]");
 
   public static String getVersion() {
@@ -86,7 +85,7 @@ public class DriverUtil {
   static void ensureUpdatedDBRVersionInUse(IDatabricksConnection connection)
       throws DatabricksValidationException {
     if (connection.getConnectionContext().getClientType() != DatabricksClientType.SQL_EXEC
-        || Boolean.parseBoolean(System.getProperty(IS_FAKE_SERVICE_TEST_PROP))) {
+        || isRunningAgainstFake()) {
       // Check applicable only for SEA flow
       return;
     }
@@ -126,5 +125,9 @@ public class DriverUtil {
       return minorVersion >= DBSQL_MIN_MINOR_VERSION_FOR_SEA_SUPPORT;
     }
     return majorVersion > DBSQL_MIN_MAJOR_VERSION_FOR_SEA_SUPPORT;
+  }
+
+  public static boolean isRunningAgainstFake() {
+    return Boolean.parseBoolean(System.getProperty(IS_FAKE_SERVICE_TEST_PROP));
   }
 }
