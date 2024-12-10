@@ -2,12 +2,11 @@ package com.databricks.client.jdbc;
 
 import static com.databricks.jdbc.integration.IntegrationTestUtil.getFullyQualifiedTableName;
 
-import com.databricks.jdbc.api.IDatabricksConnection;
-import com.databricks.jdbc.api.IDatabricksResultSet;
-import com.databricks.jdbc.api.IDatabricksStatement;
-import com.databricks.jdbc.api.IDatabricksVolumeClient;
+import com.databricks.jdbc.api.*;
+import com.databricks.jdbc.api.impl.DatabricksConnectionContextFactory;
 import com.databricks.jdbc.api.impl.DatabricksResultSetMetaData;
 import com.databricks.jdbc.api.impl.arrow.ArrowResultChunk;
+import com.databricks.jdbc.api.impl.volume.DatabricksVolumeClientFactory;
 import com.databricks.jdbc.common.DatabricksJdbcConstants;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import java.io.File;
@@ -303,7 +302,7 @@ public class DriverTest {
     Connection con = DriverManager.getConnection(jdbcUrl, "token", "xx");
     con.setClientInfo(DatabricksJdbcConstants.ALLOWED_VOLUME_INGESTION_PATHS, "delete");
     System.out.println("Connection created");
-    IDatabricksVolumeClient client = ((IDatabricksConnection) con).getVolumeClient();
+    IDatabricksVolumeClient client = DatabricksVolumeClientFactory.getVolumeClient(con);
 
     File file = new File("/tmp/put.txt");
     try {
@@ -347,17 +346,19 @@ public class DriverTest {
     DriverManager.registerDriver(new Driver());
     DriverManager.drivers().forEach(driver -> System.out.println(driver.getClass()));
     System.out.println("Starting test");
-    // Getting the connection
     String jdbcUrl =
-        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/dd43ee29fedd958d;Loglevel=debug;useFileSystemAPI=1";
-    Connection con = DriverManager.getConnection(jdbcUrl, "token", "xx");
-    System.out.println("Connection created");
+        "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/58aa1b363649e722;Loglevel=debug;useFileSystemAPI=1";
 
-    IDatabricksVolumeClient client = ((IDatabricksConnection) con).getVolumeClient();
+    IDatabricksConnectionContext connectionContext =
+        DatabricksConnectionContextFactory.create(jdbcUrl, "token", "xx");
+    IDatabricksVolumeClient client =
+        DatabricksVolumeClientFactory.getVolumeClient(connectionContext);
 
     File file = new File("/tmp/put.txt");
+    File file_get = new File("/tmp/dbfs.txt");
+
     try {
-      Files.writeString(file.toPath(), "put string check");
+      Files.writeString(file.toPath(), "test-put");
       System.out.println("File created");
 
       System.out.println(
@@ -370,11 +371,23 @@ public class DriverTest {
                   "/tmp/put.txt",
                   true));
 
+      System.out.println(
+          client.getObject(
+              "___________________first",
+              "jprakash-test",
+              "jprakash_volume",
+              "test-stream.csv",
+              "/tmp/dbfs.txt"));
+
+      System.out.println(
+          client.deleteObject(
+              "___________________first", "jprakash-test", "jprakash_volume", "test-stream.csv"));
     } catch (Exception e) {
       e.printStackTrace();
+      throw e;
     } finally {
       file.delete();
-      con.close();
+      file_get.delete();
     }
   }
 
