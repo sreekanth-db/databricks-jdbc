@@ -13,6 +13,9 @@ public class TelemetryEvent {
   @JsonProperty("system_configuration")
   DriverSystemConfiguration driverSystemConfiguration;
 
+  @JsonProperty("driver_connection_params")
+  DriverConnectionParameters driverConnectionParameters;
+
   public TelemetryEvent() {}
 
   public String getSessionId() {
@@ -26,6 +29,16 @@ public class TelemetryEvent {
 
   public String getSqlStatementId() {
     return sqlStatementId;
+  }
+
+  public TelemetryEvent setDriverConnectionParameters(
+      DriverConnectionParameters connectionParameters) {
+    this.driverConnectionParameters = connectionParameters;
+    return this;
+  }
+
+  public DriverConnectionParameters getDriverConnectionParameters() {
+    return driverConnectionParameters;
   }
 
   public TelemetryEvent setSqlStatementId(String sqlStatementId) {

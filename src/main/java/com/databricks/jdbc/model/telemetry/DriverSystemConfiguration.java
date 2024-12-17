@@ -1,49 +1,41 @@
 package com.databricks.jdbc.model.telemetry;
 
+import com.databricks.sdk.support.ToStringer;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DriverSystemConfiguration {
-
-  @JsonProperty("driver_name")
-  String driverName;
-
+  // TODO : add json properties when proto is implemented completely
   @JsonProperty("driver_version")
-  String driverVersion;
+  private String driverVersion;
 
   @JsonProperty("os_name")
-  String osName;
+  private String osName;
 
   @JsonProperty("os_version")
-  String osVersion;
+  private String osVersion;
 
   @JsonProperty("os_arch")
-  String osArch;
+  private String osArch;
 
   @JsonProperty("runtime_name")
-  String runtimeName;
+  private String runtimeName;
 
   @JsonProperty("runtime_version")
-  String runtimeVersion;
+  private String runtimeVersion;
 
   @JsonProperty("runtime_vendor")
-  String runtimeVendor;
+  private String runtimeVendor;
 
-  @JsonProperty("client_app_name")
-  String clientAppName;
+  private String clientAppName;
 
-  public DriverSystemConfiguration() {}
+  private String localeName;
+  private String driverName;
 
-  public String getDriverName() {
-    return driverName;
-  }
+  private String charSetEncoding;
 
   public DriverSystemConfiguration setDriverName(String driverName) {
     this.driverName = driverName;
     return this;
-  }
-
-  public String getDriverVersion() {
-    return driverVersion;
   }
 
   public DriverSystemConfiguration setDriverVersion(String driverVersion) {
@@ -51,17 +43,9 @@ public class DriverSystemConfiguration {
     return this;
   }
 
-  public String getOsName() {
-    return osName;
-  }
-
   public DriverSystemConfiguration setOsName(String osName) {
     this.osName = osName;
     return this;
-  }
-
-  public String getOsVersion() {
-    return osVersion;
   }
 
   public DriverSystemConfiguration setOsVersion(String osVersion) {
@@ -69,17 +53,9 @@ public class DriverSystemConfiguration {
     return this;
   }
 
-  public String getOsArch() {
-    return osArch;
-  }
-
   public DriverSystemConfiguration setOsArch(String osArch) {
     this.osArch = osArch;
     return this;
-  }
-
-  public String getRuntimeName() {
-    return runtimeName;
   }
 
   public DriverSystemConfiguration setRuntimeName(String runtimeName) {
@@ -87,17 +63,9 @@ public class DriverSystemConfiguration {
     return this;
   }
 
-  public String getRuntimeVersion() {
-    return runtimeVersion;
-  }
-
   public DriverSystemConfiguration setRuntimeVersion(String runtimeVersion) {
     this.runtimeVersion = runtimeVersion;
     return this;
-  }
-
-  public String getRuntimeVendor() {
-    return runtimeVendor;
   }
 
   public DriverSystemConfiguration setRuntimeVendor(String runtimeVendor) {
@@ -105,12 +73,35 @@ public class DriverSystemConfiguration {
     return this;
   }
 
-  public String getClientAppName() {
-    return clientAppName;
-  }
-
   public DriverSystemConfiguration setClientAppName(String clientAppName) {
     this.clientAppName = clientAppName;
     return this;
+  }
+
+  public DriverSystemConfiguration setLocaleName(String localeName) {
+    this.localeName = localeName;
+    return this;
+  }
+
+  public DriverSystemConfiguration setCharSetEncoding(String charSetEncoding) {
+    this.charSetEncoding = charSetEncoding;
+    return this;
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringer(DriverSystemConfiguration.class)
+        .add("driverName", driverName)
+        .add("driverVersion", driverVersion)
+        .add("osName", osName)
+        .add("osVersion", osVersion)
+        .add("osArch", osArch)
+        .add("runtimeName", runtimeName)
+        .add("runtimeVersion", runtimeVersion)
+        .add("runtimeVendor", runtimeVendor)
+        .add("clientAppName", clientAppName)
+        .add("localeName", localeName)
+        .add("defaultCharsetEncoding", charSetEncoding)
+        .toString();
   }
 }

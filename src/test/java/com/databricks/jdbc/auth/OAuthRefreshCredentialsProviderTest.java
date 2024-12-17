@@ -90,14 +90,14 @@ public class OAuthRefreshCredentialsProviderTest {
       })
   void testRefreshSuccess(String refreshTokenUrl) throws Exception {
     IDatabricksConnectionContext connectionContext =
-        DatabricksConnectionContextFactory.create(refreshTokenUrl, new Properties());
+        DatabricksConnectionContextFactory.create(refreshTokenUrl, null, null);
     boolean isDefaultEndpointPath = connectionContext.getTokenEndpoint() == null;
     if (isDefaultEndpointPath) {
       when(databricksConfig.getOidcEndpoints())
           .thenReturn(new OpenIDConnectEndpoints(TEST_TOKEN_URL, TEST_AUTH_URL));
     }
     credentialsProvider = new OAuthRefreshCredentialsProvider(connectionContext, databricksConfig);
-
+    assertEquals("oauth-refresh", credentialsProvider.authType());
     // Reinitialize the OAUTH_RESPONSE InputStream for each test run
     String jsonResponse =
         new JSONObject()
