@@ -63,7 +63,7 @@ public final class DatabricksJdbcConstants {
   public static final Map<String, String> ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP;
 
   static {
-    ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP = new HashMap<>();
+    ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP = new HashMap<String, String>();
     ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.put("ANSI_MODE", "TRUE");
     ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.put("ENABLE_PHOTON", "TRUE");
     ALLOWED_SESSION_CONF_TO_DEFAULT_VALUES_MAP.put("LEGACY_TIME_PARSER_POLICY", "EXCEPTION");
@@ -77,7 +77,7 @@ public final class DatabricksJdbcConstants {
   public static final Set<String> ALLOWED_CLIENT_INFO_PROPERTIES;
 
   static {
-    ALLOWED_CLIENT_INFO_PROPERTIES = new HashSet<>();
+    ALLOWED_CLIENT_INFO_PROPERTIES = new HashSet<String>();
     ALLOWED_CLIENT_INFO_PROPERTIES.add(ALLOWED_VOLUME_INGESTION_PATHS);
     ALLOWED_CLIENT_INFO_PROPERTIES.add(ALLOWED_STAGING_INGESTION_PATHS);
     ALLOWED_CLIENT_INFO_PROPERTIES.add(DatabricksJdbcUrlParams.AUTH_ACCESS_TOKEN.getParamName());
@@ -86,7 +86,7 @@ public final class DatabricksJdbcConstants {
   public static final Map<String, String> JSON_HTTP_HEADERS;
 
   static {
-    JSON_HTTP_HEADERS = new HashMap<>();
+    JSON_HTTP_HEADERS = new HashMap<String, String>();
     JSON_HTTP_HEADERS.put("Accept", "application/json");
     JSON_HTTP_HEADERS.put("Content-Type", "application/json");
   }
