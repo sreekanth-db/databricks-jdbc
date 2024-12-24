@@ -55,8 +55,11 @@ public class JDBCDriverComparisonTest {
     // Initialize connections
     String pwd = System.getenv("PWD");
     Properties props = new Properties();
-    simbaConnection = simbaDriver.connect(SIMBA_JDBC_URL + "PWD=" + pwd, props);
+    if (pwd != null) {
+      System.out.println("PWD is set");
+    }
     ossConnection = DriverManager.getConnection(OSS_JDBC_URL + "PWD=" + pwd, props);
+    simbaConnection = simbaDriver.connect(SIMBA_JDBC_URL + "PWD=" + pwd, props);
     reporter = new TestReporter(Path.of("jdbc-comparison-report.txt"));
   }
 
