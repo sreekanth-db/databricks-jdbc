@@ -22,9 +22,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class JDBCDriverComparisonTest {
   private static final String SIMBA_JDBC_URL =
-      "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;UID=token;";
+      "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;UID=token;";
   private static final String OSS_JDBC_URL =
-      "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a";
+      "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a";
   private static Connection simbaConnection;
   private static Connection ossConnection;
   private static Path tempDir;
