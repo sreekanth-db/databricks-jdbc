@@ -24,7 +24,7 @@ public class JDBCDriverComparisonTest {
   private static final String SIMBA_JDBC_URL =
       "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;UID=token;";
   private static final String OSS_JDBC_URL =
-      "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;UID=token;";
+      "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a";
   private static Connection simbaConnection;
   private static Connection ossConnection;
   private static Path tempDir;
@@ -58,7 +58,7 @@ public class JDBCDriverComparisonTest {
     if (pwd != null) {
       System.out.println("PWD is set");
     }
-    ossConnection = DriverManager.getConnection(OSS_JDBC_URL + "PWD=" + pwd, props);
+    ossConnection = DriverManager.getConnection(OSS_JDBC_URL, "token", pwd);
     simbaConnection = simbaDriver.connect(SIMBA_JDBC_URL + "PWD=" + pwd, props);
     reporter = new TestReporter(Path.of("jdbc-comparison-report.txt"));
   }
