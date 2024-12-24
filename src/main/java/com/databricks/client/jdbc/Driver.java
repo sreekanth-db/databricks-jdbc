@@ -50,8 +50,8 @@ public class Driver implements java.sql.Driver {
         DatabricksConnectionContextFactory.create(url, info);
     DriverUtil.setUpLogging(connectionContext);
     UserAgentManager.setUserAgent(connectionContext);
-    LOGGER.info(getDriverSystemConfiguration().toString());
-    exportInitialTelemetryLog(connectionContext);
+    // LOGGER.info(getDriverSystemConfiguration().toString());
+    // exportInitialTelemetryLog(connectionContext);
     DatabricksConnection connection = new DatabricksConnection(connectionContext);
     boolean isConnectionOpen = false;
     try {
