@@ -11,9 +11,6 @@ jobs:
       group: databricks-protected-runner-group
       labels: linux-ubuntu-latest
 
-    env:
-      PWD: ${{ secrets.DATABRICKS_COMPARATOR_TOKEN }}
-
     steps:
       - name: Checkout comparator branch
         uses: actions/checkout@v3
@@ -26,6 +23,12 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
           cache: maven
+
+      - name: Set up PAT
+        env:
+          DATABRICKS_COMPARATOR_TOKEN: ${{ secrets.DATABRICKS_COMPARATOR_TOKEN }}
+        run: |
+          echo "PWD=${DATABRICKS_COMPARATOR_TOKEN}" >> $GITHUB_ENV
 
       - name: Run Tests
         run: mvn test -Dtest=JDBCDriverComparisonTest
