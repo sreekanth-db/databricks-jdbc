@@ -1,8 +1,6 @@
 package com.databricks.client.jdbc;
 
 import static com.databricks.jdbc.common.util.DriverUtil.getRootCauseMessage;
-import static com.databricks.jdbc.telemetry.TelemetryHelper.exportInitialTelemetryLog;
-import static com.databricks.jdbc.telemetry.TelemetryHelper.getDriverSystemConfiguration;
 
 import com.databricks.jdbc.api.IDatabricksConnectionContext;
 import com.databricks.jdbc.api.impl.DatabricksConnection;

@@ -28,7 +28,7 @@ jobs:
         env:
           DATABRICKS_COMPARATOR_TOKEN: ${{ secrets.DATABRICKS_COMPARATOR_TOKEN }}
         run: |
-          echo "PWD=${DATABRICKS_COMPARATOR_TOKEN}" >> $GITHUB_ENV
+          echo "DATABRICKS_COMPARATOR_TOKEN=${DATABRICKS_COMPARATOR_TOKEN}" >> $GITHUB_ENV
 
       - name: Run Tests
         run: mvn test -Dtest=JDBCDriverComparisonTest

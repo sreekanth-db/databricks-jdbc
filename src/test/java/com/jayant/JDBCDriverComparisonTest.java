@@ -53,7 +53,7 @@ public class JDBCDriverComparisonTest {
     Driver simbaDriver = (Driver) simbaDriverClass.getDeclaredConstructor().newInstance();
 
     // Initialize connections
-    String pwd = System.getenv("PWD");
+    String pwd = System.getenv("DATABRICKS_COMPARATOR_TOKEN");
     Properties props = new Properties();
     if (pwd != null) {
       System.out.println("PWD is set");
