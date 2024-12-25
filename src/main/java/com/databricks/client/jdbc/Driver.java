@@ -1,6 +1,8 @@
 package com.databricks.client.jdbc;
 
 import static com.databricks.jdbc.common.util.DriverUtil.getRootCauseMessage;
+import static com.databricks.jdbc.telemetry.TelemetryHelper.exportInitialTelemetryLog;
+import static com.databricks.jdbc.telemetry.TelemetryHelper.getDriverSystemConfiguration;
 
 import com.databricks.jdbc.api.IDatabricksConnectionContext;
 import com.databricks.jdbc.api.impl.DatabricksConnection;
@@ -48,8 +50,8 @@ public class Driver implements java.sql.Driver {
         DatabricksConnectionContextFactory.create(url, info);
     DriverUtil.setUpLogging(connectionContext);
     UserAgentManager.setUserAgent(connectionContext);
-    // LOGGER.info(getDriverSystemConfiguration().toString());
-    // exportInitialTelemetryLog(connectionContext);
+    LOGGER.info(getDriverSystemConfiguration().toString());
+    exportInitialTelemetryLog(connectionContext);
     DatabricksConnection connection = new DatabricksConnection(connectionContext);
     boolean isConnectionOpen = false;
     try {

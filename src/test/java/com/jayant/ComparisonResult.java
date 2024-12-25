@@ -25,7 +25,6 @@ public class ComparisonResult {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("ResultSet Comparison Results:\n");
     sb.append("Query Type: ").append(queryType).append("\n");
     sb.append("Query/Method: ").append(queryOrMethod).append("\n");
     if (methodArgs.length > 0) {

@@ -55,11 +55,6 @@ public class JDBCDriverComparisonTest {
     // Initialize connections
     String pwd = System.getenv("DATABRICKS_COMPARATOR_TOKEN");
     Properties props = new Properties();
-    if (pwd != null) {
-      System.out.println("PWD is set");
-      System.out.println("Length of PWD: " + pwd.length());
-      System.out.println("Last 7 characters: " + pwd.substring(pwd.length() - 7));
-    }
     ossConnection = DriverManager.getConnection(OSS_JDBC_URL, "token", pwd);
     simbaConnection = simbaDriver.connect(SIMBA_JDBC_URL + "PWD=" + pwd, props);
     reporter = new TestReporter(Path.of("jdbc-comparison-report.txt"));
