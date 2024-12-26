@@ -33,6 +33,11 @@ jobs:
       - name: Run Tests
         run: mvn test -Dtest=JDBCDriverComparisonTest
 
+      - name: Format Email Content
+        run: |
+          chmod +x bin/format-comparator-email.sh
+          ./bin/format-comparator-email.sh
+
       - name: Check for Report and Differences
         id: check_differences
         run: |
