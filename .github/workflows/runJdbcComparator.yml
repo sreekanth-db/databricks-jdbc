@@ -33,6 +33,11 @@ jobs:
       - name: Run Tests
         run: mvn test -Dtest=JDBCDriverComparisonTest
 
+      - name: Format Email Content
+        run: |
+          chmod +x bin/format-comparator-email.sh
+          ./bin/format-comparator-email.sh
+
       - name: Check for Report and Differences
         id: check_differences
         run: |
@@ -58,7 +63,7 @@ jobs:
           subject: JDBC Driver Comparison Results - 🚨Differences Found
           body: file://jdbc-comparison-report.txt
           to: ${{ secrets.EMAIL_RECIPIENTS }}
-          from: JDBC Test Runner
+          from: JDBC Comparator Runner
           content_type: text/plain
 
       - name: Upload Report as Artifact

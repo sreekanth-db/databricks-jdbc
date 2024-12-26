@@ -173,7 +173,14 @@ public class ResultSetComparator {
       List<String> differences) {
     if (!objectsEqual(value1, value2)) {
       differences.add(
-          "Column " + columnName + " " + propertyName + " mismatch: " + value1 + " vs " + value2);
+          "Column name "
+              + columnName
+              + " "
+              + propertyName
+              + " mismatch: "
+              + value1
+              + " vs "
+              + value2);
     }
   }
 

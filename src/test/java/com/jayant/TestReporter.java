@@ -20,16 +20,12 @@ public class TestReporter {
 
   public void generateReport() throws IOException {
     try (FileWriter writer = new FileWriter(outputPath.toFile())) {
-      writer.write("╔═════════════════════════════════════════════════════════╗\n");
-      writer.write("║         JDBC Driver Comparison Report, Simba vs OSS     ║\n");
-      writer.write("╚═════════════════════════════════════════════════════════╝\n\n");
-
       boolean hasDifferences = false;
       for (ComparisonResult result : results) {
         if (result.hasDifferences()) {
           hasDifferences = true;
           writer.write(result.toString());
-          writer.write("\n****************************\n\n");
+          writer.write("\n============================\n\n");
         }
       }
 
