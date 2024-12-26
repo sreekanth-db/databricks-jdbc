@@ -22,9 +22,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class JDBCDriverComparisonTest {
   private static final String SIMBA_JDBC_URL =
-      "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a;UID=token;";
+      "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/7e635336d748166a;UID=token;";
   private static final String OSS_JDBC_URL =
-      "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/791ba2a31c7fd70a";
+      "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/7e635336d748166a";
   private static Connection simbaConnection;
   private static Connection ossConnection;
   private static Path tempDir;
@@ -100,9 +100,7 @@ public class JDBCDriverComparisonTest {
   }
 
   private static Stream<Arguments> provideSQLQueries() {
-    return Stream.of(
-        Arguments.of("SELECT * FROM samples.tpch.lineitem LIMIT 10", "Select query"),
-        Arguments.of("SELECT * FROM RANGE(10)", "Range query"));
+    return Stream.of(Arguments.of("SELECT * FROM RANGE(10)", "Range query"));
   }
 
   private static Stream<Arguments> provideMetadataMethods() {
