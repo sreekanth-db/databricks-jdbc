@@ -64,7 +64,7 @@ jobs:
           body: file://jdbc-comparison-report.txt
           to: ${{ secrets.EMAIL_RECIPIENTS }}
           from: JDBC Comparator Runner
-          content_type: text/html
+          content_type: text/plain
 
       - name: Upload Report as Artifact
         uses: actions/upload-artifact@v3
