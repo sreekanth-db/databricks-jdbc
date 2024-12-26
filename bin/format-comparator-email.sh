@@ -39,6 +39,19 @@ cat > jdbc-comparison-report.html << 'EOL'
             margin: -15px -15px 15px -15px;
             font-weight: bold;
         }
+        .driver-info {
+            background-color: #e9ecef;
+            border-radius: 4px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .driver-info code {
+            background-color: #fff;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+        }
         .output {
             font-family: 'Courier New', Courier, monospace;
             white-space: pre-wrap;
@@ -85,6 +98,13 @@ cat > jdbc-comparison-report.html << 'EOL'
 
     <div class="comparator-section">
         <div class="section-title">Comparator Output</div>
+        <div class="driver-info">
+            In the comparison results below:
+            <ul>
+                <li>Values before <code>vs</code> are from <code>Simba</code> driver</li>
+                <li>Values after <code>vs</code> are from <code>OSS</code> driver</li>
+            </ul>
+        </div>
         <div class="output">
 EOL
 
