@@ -11,7 +11,7 @@ cat > jdbc-comparison-report.html << 'EOL'
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -94,7 +94,7 @@ cat > jdbc-comparison-report.html << 'EOL'
         Hi Team,
     </div>
 
-    <p>Please find the JDBC driver comparison results below. These differences were detected during our automated comparison test run.</p>
+    <p>Please find the JDBC driver comparison results below. These differences were detected during our automated comparison test run on prod e2-benchfood.</p>
 
     <div class="comparator-section">
         <div class="section-title">Comparator Output</div>

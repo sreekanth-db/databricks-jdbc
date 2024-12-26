@@ -100,7 +100,9 @@ public class JDBCDriverComparisonTest {
   }
 
   private static Stream<Arguments> provideSQLQueries() {
-    return Stream.of(Arguments.of("SELECT * FROM RANGE(10)", "Range query"));
+    return Stream.of(
+        Arguments.of("SELECT * FROM RANGE(10)", "Range query"),
+        Arguments.of("SELECT * FROM main.tpcds_sf100_delta.catalog_sales limit 5", "TPC-DS query"));
   }
 
   private static Stream<Arguments> provideMetadataMethods() {
