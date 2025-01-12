@@ -310,7 +310,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public String getClientUserAgent() {
-    return getClientType().equals(DatabricksClientType.SQL_EXEC)
+    return getClientType().equals(DatabricksClientType.SEA)
         ? DatabricksJdbcConstants.USER_AGENT_SEA_CLIENT
         : DatabricksJdbcConstants.USER_AGENT_THRIFT_CLIENT;
   }
@@ -337,7 +337,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     if (useThriftClient != null && useThriftClient.equals("1")) {
       return DatabricksClientType.THRIFT;
     }
-    return DatabricksClientType.SQL_EXEC;
+    return DatabricksClientType.SEA;
   }
 
   @Override
@@ -507,11 +507,6 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
-  public boolean useFileSystemAPI() {
-    return getParameter(DatabricksJdbcUrlParams.USE_FILE_SYSTEM_API).equals("1");
-  }
-
-  @Override
   public String getConnectionURL() {
     return connectionURL;
   }
@@ -626,6 +621,13 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public boolean isTelemetryEnabled() {
     return getParameter(DatabricksJdbcUrlParams.ENABLE_TELEMETRY, "0").equals("1");
+  }
+
+  @Override
+  public String getVolumeOperationAllowedPaths() {
+    return getParameter(
+        DatabricksJdbcUrlParams.ALLOWED_VOLUME_INGESTION_PATHS,
+        getParameter(DatabricksJdbcUrlParams.ALLOWED_STAGING_INGESTION_PATHS, ""));
   }
 
   private static boolean nullOrEmptyString(String s) {

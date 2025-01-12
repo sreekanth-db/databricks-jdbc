@@ -57,7 +57,6 @@ public enum DatabricksJdbcUrlParams {
   RATE_LIMIT_RETRY("RateLimitRetry", "1"),
   IDLE_HTTP_CONNECTION_EXPIRY("IdleHttpConnectionExpiry", "60"),
   SUPPORT_MANY_PARAMETERS("supportManyParameters", "0"),
-  USE_FILE_SYSTEM_API("useFileSystemAPI", "0"),
   CLOUD_FETCH_THREAD_POOL_SIZE("cloudFetchThreadPoolSize", "16"),
   TOKEN_ENDPOINT("OAuth2TokenEndpoint"),
   AUTH_ENDPOINT("OAuth2AuthorizationEndPoint"),
@@ -70,7 +69,9 @@ public enum DatabricksJdbcUrlParams {
   GOOGLE_CREDENTIALS_FILE("GoogleCredentialsFile"),
   ENABLE_TELEMETRY("EnableTelemetry", "0"), // Disabled for now
   TELEMETRY_BATCH_SIZE("TelemetryBatchSize", "200"),
-  MAX_BATCH_SIZE("MaxBatchSize", "500");
+  MAX_BATCH_SIZE("MaxBatchSize", "500"),
+  ALLOWED_VOLUME_INGESTION_PATHS("VolumeOperationAllowedLocalPaths"),
+  ALLOWED_STAGING_INGESTION_PATHS("StagingAllowedLocalPaths");
 
   private final String paramName;
   private final String defaultValue;
