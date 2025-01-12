@@ -217,6 +217,9 @@ public class ResultSetComparator {
         Object value2 = rs2.getObject(i);
 
         if (!objectsEqual(value1, value2)) {
+          String type1 = value1 != null ? value1.getClass().getSimpleName() : "null";
+          String type2 = value2 != null ? value2.getClass().getSimpleName() : "null";
+
           differences.add(
               "Row "
                   + rowCount
@@ -224,8 +227,14 @@ public class ResultSetComparator {
                   + md1.getColumnName(i)
                   + " mismatch: "
                   + value1
+                  + " ("
+                  + type1
+                  + ")"
                   + " vs "
-                  + value2);
+                  + value2
+                  + " ("
+                  + type2
+                  + ")");
         }
       }
     }
