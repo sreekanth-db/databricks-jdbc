@@ -252,7 +252,7 @@ public class ResultSetComparator {
       throws SQLException {
     int extraRows = 0;
     StringBuilder rowData = new StringBuilder();
-    while (rs.next()) {
+    do {
       extraRows++;
       rowData.setLength(0);
       for (int i = 1; i <= md.getColumnCount(); i++) {
@@ -260,7 +260,7 @@ public class ResultSetComparator {
         rowData.append(md.getColumnName(i)).append(": ").append(rs.getObject(i));
       }
       differences.add("Extra row " + (startingRowCount + extraRows) + ": " + rowData);
-    }
+    } while (rs.next());
     return extraRows;
   }
 

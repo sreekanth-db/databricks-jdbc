@@ -11,7 +11,7 @@ cat > jdbc-comparison-report.html << 'EOL'
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -61,6 +61,14 @@ cat > jdbc-comparison-report.html << 'EOL'
             padding: 10px;
             margin: 10px 0;
         }
+        .vs-highlight {
+            font-weight: bold;
+            color: #0062cc;
+            background-color: #e6f3ff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin: 0 3px;
+        }
         .notes {
             background-color: #fff3cd;
             border: 1px solid #ffeeba;
@@ -101,15 +109,15 @@ cat > jdbc-comparison-report.html << 'EOL'
         <div class="driver-info">
             In the comparison results below:
             <ul>
-                <li>Values before <code>vs</code> are from <code>Simba</code> driver</li>
-                <li>Values after <code>vs</code> are from <code>OSS</code> driver</li>
+                <li>Values before <span class="vs-highlight">vs</span> are from <code>Simba</code> driver</li>
+                <li>Values after <span class="vs-highlight">vs</span> are from <code>OSS</code> driver</li>
             </ul>
         </div>
-        <div class="output">
+        <div class="output" id="comparison-output">
 EOL
 
-# Escape HTML special characters and append the comparison output
-cat jdbc-comparison-report.txt | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' >> jdbc-comparison-report.html
+# Escape HTML special characters, highlight 'vs', and append the comparison output
+cat jdbc-comparison-report.txt | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/ vs /<span class="vs-highlight">vs<\/span>/g' >> jdbc-comparison-report.html
 
 # Append the rest of the HTML template
 cat >> jdbc-comparison-report.html << 'EOL'

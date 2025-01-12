@@ -99,16 +99,54 @@ public class JDBCDriverComparisonTest {
         });
   }
 
+  @ParameterizedTest
+  @MethodSource("provideMetadataMethods")
+  @DisplayName("Compare Metadata API Results")
+  void compareMetadataResults(String methodName, String[] args, String description) {
+    assertDoesNotThrow(
+        () -> {
+          DatabaseMetaData simbaMetadata = simbaConnection.getMetaData();
+          DatabaseMetaData ossMetadata = ossConnection.getMetaData();
+
+          ResultSet simbaRs = executeMetadataMethod(simbaMetadata, methodName, args);
+          ResultSet ossRs = executeMetadataMethod(ossMetadata, methodName, args);
+
+          ComparisonResult result =
+              ResultSetComparator.compare("metadata", methodName, args, simbaRs, ossRs);
+          reporter.addResult(result);
+
+          if (result.hasDifferences()) {
+            System.err.println("Differences found in metadata results for: " + description);
+            System.err.println("Method: " + methodName);
+            System.err.println("Args: " + String.join(", ", args));
+            System.err.println(result);
+          }
+        });
+  }
+
   private static Stream<Arguments> provideSQLQueries() {
     return Stream.of(
-        Arguments.of("SELECT * FROM RANGE(10)", "Range query"),
         Arguments.of("SELECT * FROM main.tpcds_sf100_delta.catalog_sales limit 5", "TPC-DS query"));
   }
 
   private static Stream<Arguments> provideMetadataMethods() {
     return Stream.of(
         Arguments.of(
-            "getTables", new String[] {"main", "ggm_pk", "table_with_pk", null}, "Get tables"));
+            "getTables", new String[] {"main", "tpcds_sf100_delta", "%", null}, "Get tables"),
+        Arguments.of("getTableTypes", new String[] {}, "Get table types"),
+        Arguments.of("getCatalogs", new String[] {}, "Get catalogs"),
+        Arguments.of("getSchemas", new String[] {"main", "tpcds_%"}, "Get schemas"),
+        Arguments.of(
+            "getColumns",
+            new String[] {"main", "tpcds_sf100_delta", "catalog_sales", "%"},
+            "Get columns"),
+        Arguments.of("getTypeInfo", new String[] {}, "Get type info"),
+        Arguments.of(
+            "getFunctions",
+            new String[] {"main", "tpcds_sf100_delta", "aggregate"},
+            "Get functions"),
+        Arguments.of(
+            "getProcedures", new String[] {"main", "tpcds_sf100_delta", "%"}, "Get procedures"));
   }
 
   private ResultSet executeMetadataMethod(
