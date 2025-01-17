@@ -7,7 +7,7 @@ import com.databricks.jdbc.api.IDatabricksStatement;
 import com.databricks.jdbc.api.internal.IDatabricksConnectionInternal;
 import com.databricks.jdbc.api.internal.IDatabricksStatementInternal;
 import com.databricks.jdbc.common.DatabricksJdbcConstants;
-import com.databricks.jdbc.common.util.DatabricksConnectionContextHolder;
+import com.databricks.jdbc.common.util.DatabricksThreadContextHolder;
 import com.databricks.jdbc.common.util.UserAgentManager;
 import com.databricks.jdbc.common.util.ValidationUtil;
 import com.databricks.jdbc.dbclient.IDatabricksClient;
@@ -18,6 +18,7 @@ import com.databricks.jdbc.exception.*;
 import com.databricks.jdbc.log.JdbcLogger;
 import com.databricks.jdbc.log.JdbcLoggerFactory;
 import com.databricks.jdbc.model.telemetry.enums.DatabricksDriverErrorCode;
+import com.databricks.jdbc.telemetry.TelemetryClientFactory;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.*;
 import java.util.*;
@@ -42,7 +43,7 @@ public class DatabricksConnection implements IDatabricksConnection, IDatabricksC
       throws DatabricksSQLException {
     this.connectionContext = connectionContext;
     this.session = new DatabricksSession(connectionContext);
-    DatabricksConnectionContextHolder.setConnectionContext(connectionContext);
+    DatabricksThreadContextHolder.setConnectionContext(connectionContext);
   }
 
   @VisibleForTesting
@@ -50,7 +51,7 @@ public class DatabricksConnection implements IDatabricksConnection, IDatabricksC
       IDatabricksConnectionContext connectionContext, IDatabricksClient testDatabricksClient)
       throws DatabricksSQLException {
     this.connectionContext = connectionContext;
-    DatabricksConnectionContextHolder.setConnectionContext(connectionContext);
+    DatabricksThreadContextHolder.setConnectionContext(connectionContext);
     this.session = new DatabricksSession(connectionContext, testDatabricksClient);
     UserAgentManager.setUserAgent(connectionContext);
   }
@@ -144,8 +145,9 @@ public class DatabricksConnection implements IDatabricksConnection, IDatabricksC
       statementSet.remove(statement);
     }
     this.session.close();
+    TelemetryClientFactory.getInstance().closeTelemetryClient(this.session.getConnectionContext());
     DatabricksHttpClientFactory.getInstance().removeClient(this.session.getConnectionContext());
-    DatabricksConnectionContextHolder.clear();
+    DatabricksThreadContextHolder.clearAllContext();
   }
 
   @Override
