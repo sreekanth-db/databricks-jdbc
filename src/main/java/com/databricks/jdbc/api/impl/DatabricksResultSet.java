@@ -134,8 +134,9 @@ public class DatabricksResultSet implements IDatabricksResultSet, IDatabricksRes
       StatementId statementId,
       List<String> columnNames,
       List<String> columnTypeText,
-      List<Integer> columnTypes,
-      List<Integer> columnTypePrecisions,
+      int[] columnTypes,
+      int[] columnTypePrecisions,
+      int[] isNullables,
       Object[][] rows,
       StatementType statementType) {
     this.statementStatus = statementStatus;
@@ -148,6 +149,7 @@ public class DatabricksResultSet implements IDatabricksResultSet, IDatabricksRes
             columnTypeText,
             columnTypes,
             columnTypePrecisions,
+            isNullables,
             rows.length);
     this.statementType = statementType;
     this.updateCount = null;
