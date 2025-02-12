@@ -80,7 +80,11 @@ public enum DatabricksJdbcUrlParams {
   ALLOWED_STAGING_INGESTION_PATHS("StagingAllowedLocalPaths", ""),
   ENABLE_REQUEST_TRACING("EnableRequestTracing", "flag to enable request tracing", "0"),
   ENABLE_SQL_EXEC_HYBRID_RESULTS(
-      "EnableSQLExecHybridResults", "flag to enable hybrid results", "0");
+      "EnableSQLExecHybridResults", "flag to enable hybrid results", "0"),
+  ENABLE_COMPLEX_DATATYPE_SUPPORT(
+      "EnableComplexDatatypeSupport",
+      "flag to enable native support of complex data types as java objects",
+      "0");
 
   private final String paramName;
   private final String defaultValue;
