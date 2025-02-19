@@ -1,11 +1,14 @@
 package com.databricks.jdbc.api.impl.converters;
 
+import com.databricks.jdbc.api.impl.*;
+import com.databricks.jdbc.exception.DatabricksParsingException;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import com.databricks.jdbc.exception.DatabricksValidationException;
 import com.databricks.jdbc.log.JdbcLogger;
 import com.databricks.jdbc.log.JdbcLoggerFactory;
 import com.databricks.sdk.service.sql.ColumnInfoTypeName;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -47,8 +50,19 @@ public class ArrowToJavaObjectConverter {
           DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S"),
           DateTimeFormatter.RFC_1123_DATE_TIME);
 
-  public static Object convert(Object object, ColumnInfoTypeName requiredType)
+  public static Object convert(Object object, ColumnInfoTypeName requiredType, String arrowMetadata)
       throws DatabricksSQLException {
+    if (arrowMetadata != null) {
+      if (arrowMetadata.startsWith("ARRAY")) {
+        requiredType = ColumnInfoTypeName.ARRAY;
+      }
+      if (arrowMetadata.startsWith("STRUCT")) {
+        requiredType = ColumnInfoTypeName.STRUCT;
+      }
+      if (arrowMetadata.startsWith("MAP")) {
+        requiredType = ColumnInfoTypeName.MAP;
+      }
+    }
     if (object == null) {
       return null;
     }
@@ -66,19 +80,20 @@ public class ArrowToJavaObjectConverter {
       case DOUBLE:
         return convertToNumber(object, Double::parseDouble, Number::doubleValue);
       case DECIMAL:
-        return convertToNumber(
-            object, BigDecimal::new, num -> BigDecimal.valueOf(num.doubleValue()));
+        return convertToDecimal(object, arrowMetadata);
       case BINARY:
         return convertToByteArray(object);
       case BOOLEAN:
         return convertToBoolean(object);
       case CHAR:
         return convertToChar(object);
-      case STRING:
-        // Struct and Array are present in Arrow data in the VARCHAR ValueVector format
       case STRUCT:
+        return convertToStruct(object, arrowMetadata);
       case ARRAY:
+        return convertToArray(object, arrowMetadata);
       case MAP:
+        return convertToMap(object, arrowMetadata);
+      case STRING:
         return convertToString(object);
       case DATE:
         return convertToDate(object);
@@ -91,6 +106,24 @@ public class ArrowToJavaObjectConverter {
         LOGGER.error(errorMessage);
         throw new DatabricksValidationException(errorMessage);
     }
+  }
+
+  private static DatabricksMap convertToMap(Object object, String arrowMetadata)
+      throws DatabricksParsingException {
+    ComplexDataTypeParser parser = new ComplexDataTypeParser();
+    return parser.parseJsonStringToDbMap(object.toString(), arrowMetadata);
+  }
+
+  private static DatabricksArray convertToArray(Object object, String arrowMetadata)
+      throws DatabricksParsingException {
+    ComplexDataTypeParser parser = new ComplexDataTypeParser();
+    return parser.parseJsonStringToDbArray(object.toString(), arrowMetadata);
+  }
+
+  private static Object convertToStruct(Object object, String arrowMetadata)
+      throws DatabricksParsingException {
+    ComplexDataTypeParser parser = new ComplexDataTypeParser();
+    return parser.parseJsonStringToDbStruct(object.toString(), arrowMetadata);
   }
 
   private static Object convertToTimestamp(Object object) throws DatabricksSQLException {
@@ -152,6 +185,30 @@ public class ArrowToJavaObjectConverter {
       return object.toString().getBytes();
     }
     return (byte[]) object;
+  }
+
+  static BigDecimal convertToDecimal(Object object, String arrowMetadata)
+      throws DatabricksValidationException {
+    if (object instanceof Text) {
+      return new BigDecimal(object.toString());
+    }
+    int scale;
+    try {
+      scale =
+          Integer.parseInt(
+              arrowMetadata
+                  .substring(arrowMetadata.indexOf(',') + 1, arrowMetadata.indexOf(')'))
+                  .trim());
+    } catch (Exception e) {
+      scale = 0;
+    }
+    if (object instanceof Number) {
+      return new BigDecimal(object.toString()).setScale(scale, RoundingMode.HALF_UP);
+    }
+    String errorMessage =
+        String.format("Unsupported object type for decimal conversion: %s", object.getClass());
+    LOGGER.error(errorMessage);
+    throw new DatabricksValidationException(errorMessage);
   }
 
   private static <T extends Number> T convertToNumber(

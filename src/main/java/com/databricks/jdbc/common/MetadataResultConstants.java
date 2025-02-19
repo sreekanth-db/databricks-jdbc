@@ -114,6 +114,46 @@ public class MetadataResultConstants {
       new ResultColumn("MINIMUM_SCALE", "minimumScale", Types.SMALLINT);
   private static final ResultColumn MAXIMUM_SCALE_COLUMN =
       new ResultColumn("MAXIMUM_SCALE", "maximumScale", Types.SMALLINT);
+  private static final ResultColumn TYPE_CAT =
+      new ResultColumn("TYPE_CAT", "typeCat", Types.VARCHAR);
+  private static final ResultColumn TYPE_SCHEM =
+      new ResultColumn("TYPE_SCHEM", "typeSchem", Types.VARCHAR);
+  private static final ResultColumn ATTR_NAME =
+      new ResultColumn("ATTR_NAME", "attrName", Types.VARCHAR);
+  private static final ResultColumn DATA_TYPE =
+      new ResultColumn("DATA_TYPE", "dataType", Types.INTEGER);
+  private static final ResultColumn ATTR_TYPE_NAME =
+      new ResultColumn("ATTR_TYPE_NAME", "attrTypeName", Types.VARCHAR);
+  private static final ResultColumn ATTR_SIZE =
+      new ResultColumn("ATTR_SIZE", "attrSize", Types.INTEGER);
+  private static final ResultColumn DECIMAL_DIGITS =
+      new ResultColumn("DECIMAL_DIGITS", "decimalDigits", Types.INTEGER);
+  private static final ResultColumn NUM_PREC_RADIX =
+      new ResultColumn("NUM_PREC_RADIX", "numPrecRadix", Types.INTEGER);
+  private static final ResultColumn NULLABLE =
+      new ResultColumn("NULLABLE", "nullable", Types.INTEGER);
+  private static final ResultColumn REMARKS = new ResultColumn("REMARKS", "remarks", Types.VARCHAR);
+  private static final ResultColumn ATTR_DEF =
+      new ResultColumn("ATTR_DEF", "attrDef", Types.VARCHAR);
+  private static final ResultColumn SQL_DATA_TYPE =
+      new ResultColumn("SQL_DATA_TYPE", "SQLDataType", Types.INTEGER);
+  private static final ResultColumn SQL_DATETIME_SUB =
+      new ResultColumn("SQL_DATETIME_SUB", "SQLDateTimeSub", Types.INTEGER);
+  private static final ResultColumn CHAR_OCTET_LENGTH =
+      new ResultColumn("CHAR_OCTET_LENGTH", "CharOctetLength", Types.INTEGER);
+  private static final ResultColumn ORDINAL_POSITION =
+      new ResultColumn("ORDINAL_POSITION", "ordinalPosition", Types.INTEGER);
+  private static final ResultColumn IS_NULLABLE =
+      new ResultColumn("IS_NULLABLE", "isNullable", Types.VARCHAR);
+  private static final ResultColumn SCOPE_CATALOG =
+      new ResultColumn("SCOPE_CATALOG", "ScopeCatalog", Types.VARCHAR);
+  private static final ResultColumn SCOPE_SCHEMA =
+      new ResultColumn("SCOPE_SCHEMA", "ScopeSchema", Types.VARCHAR);
+  private static final ResultColumn SCOPE_TABLE =
+      new ResultColumn("SCOPE_TABLE", "ScopeTable", Types.VARCHAR);
+  private static final ResultColumn SOURCE_DATA_TYPE =
+      new ResultColumn("SOURCE_DATA_TYPE", "SourceDataType", Types.SMALLINT);
+
   public static List<ResultColumn> FUNCTION_COLUMNS =
       List.of(
           FUNCTION_CATALOG_COLUMN,
@@ -173,29 +213,61 @@ public class MetadataResultConstants {
           KEY_SEQUENCE_COLUMN,
           PRIMARY_KEY_NAME_COLUMN);
   public static List<List<Object>> TABLE_TYPES_ROWS =
-      Arrays.asList(List.of("TABLE"), List.of("VIEW"), List.of("SYSTEM TABLE"));
+      Arrays.asList(List.of("SYSTEM TABLE"), List.of("TABLE"), List.of("VIEW"));
   public static List<ResultColumn> TABLE_TYPE_COLUMNS = List.of(TABLE_TYPE_COLUMN);
   public static String NULL_STRING = "NULL";
-  public static List<ResultColumn> TYPE_INFO_COLUMNS =
+
+  public static final List<ResultColumn> NULL_COLUMN_COLUMNS =
       List.of(
+          SCOPE_CATALOG_COLUMN,
+          SCOPE_SCHEMA_COLUMN,
+          SCOPE_TABLE_COLUMN,
+          SOURCE_DATA_TYPE_COLUMN,
+          IS_AUTO_INCREMENT_COLUMN,
+          IS_GENERATED_COLUMN);
+
+  public static final List<ResultColumn> NULL_TABLE_COLUMNS =
+      List.of(
+          TYPE_CATALOG_COLUMN,
+          TYPE_SCHEMA_COLUMN,
           TYPE_NAME_COLUMN,
-          DATA_TYPE_COLUMN,
-          PRECISION_COLUMN,
-          LITERAL_PREFIX_COLUMN,
-          LITERAL_SUFFIX_COLUMN,
-          CREATE_PARAMS_COLUMN,
-          NULLABLE_COLUMN,
-          CASE_SENSITIVE_COLUMN,
-          SEARCHABLE_COLUMN,
-          UNSIGNED_ATTRIBUTE_COLUMN,
-          FIXED_PREC_SCALE_COLUMN,
-          AUTO_INCREMENT_COLUMN,
-          LOCAL_TYPE_NAME_COLUMN,
-          MINIMUM_SCALE_COLUMN,
-          MAXIMUM_SCALE_COLUMN,
-          SQL_DATA_TYPE_COLUMN,
-          SQL_DATETIME_SUB_COLUMN,
-          NUM_PREC_RADIX_COLUMN);
+          SELF_REFERENCING_COLUMN_NAME,
+          REF_GENERATION_COLUMN);
+
+  public static final List<ResultColumn> LARGE_DISPLAY_COLUMNS =
+      List.of(
+          REMARKS_COLUMN,
+          SPECIFIC_NAME_COLUMN,
+          COLUMN_DEF_COLUMN,
+          IS_NULLABLE_COLUMN,
+          SCOPE_CATALOG_COLUMN,
+          SCOPE_SCHEMA_COLUMN,
+          SCOPE_TABLE_COLUMN);
+
+  public static final List<ResultColumn> ATTRIBUTES_COLUMNS =
+      List.of(
+          TYPE_CAT,
+          TYPE_SCHEM,
+          TYPE_NAME_COLUMN,
+          ATTR_NAME,
+          DATA_TYPE,
+          ATTR_TYPE_NAME,
+          ATTR_SIZE,
+          DECIMAL_DIGITS,
+          NUM_PREC_RADIX,
+          NULLABLE,
+          REMARKS,
+          ATTR_DEF,
+          SQL_DATA_TYPE,
+          SQL_DATETIME_SUB,
+          CHAR_OCTET_LENGTH,
+          ORDINAL_POSITION,
+          IS_NULLABLE,
+          SCOPE_CATALOG,
+          SCOPE_SCHEMA,
+          SCOPE_TABLE,
+          SOURCE_DATA_TYPE);
+
   public static final Map<CommandName, List<ResultColumn>> NON_NULLABLE_COLUMNS_MAP =
       Map.of(
           CommandName.LIST_TYPE_INFO,
@@ -207,13 +279,14 @@ public class MetadataResultConstants {
                   ),
           CommandName.LIST_CATALOGS,
               List.of(MetadataResultConstants.CATALOG_COLUMN_FOR_GET_CATALOGS),
-          CommandName.LIST_TABLES, List.of(MetadataResultConstants.TABLE_NAME_COLUMN),
+          CommandName.LIST_TABLES,
+              List.of(MetadataResultConstants.TABLE_NAME_COLUMN, TABLE_TYPE_COLUMN),
           CommandName.LIST_PRIMARY_KEYS,
               List.of(
                   MetadataResultConstants.TABLE_NAME_COLUMN,
                   MetadataResultConstants.COLUMN_NAME_COLUMN),
           CommandName.LIST_SCHEMAS, List.of(MetadataResultConstants.SCHEMA_COLUMN_FOR_GET_SCHEMA),
-          CommandName.LIST_TABLE_TYPES, List.of(MetadataResultConstants.TABLE_TYPE_COLUMN),
+          CommandName.LIST_TABLE_TYPES, List.of(TABLE_TYPE_COLUMN),
           CommandName.LIST_COLUMNS,
               List.of(
                   MetadataResultConstants.TABLE_NAME_COLUMN,

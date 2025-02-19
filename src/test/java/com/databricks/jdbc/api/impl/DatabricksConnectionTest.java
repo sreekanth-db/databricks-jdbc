@@ -18,6 +18,8 @@ import com.databricks.jdbc.exception.DatabricksSQLFeatureNotImplementedException
 import com.databricks.jdbc.exception.DatabricksSQLFeatureNotSupportedException;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -43,8 +45,8 @@ public class DatabricksConnectionTest {
       "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;UserAgentEntry=MyApp";
   private static final String CATALOG_SCHEMA_JDBC_URL =
       String.format(
-          "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;ConnCatalog=%s;ConnSchema=%s;logLevel=FATAL",
-          CATALOG, SCHEMA);
+          "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/%s;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;ConnCatalog=%s;ConnSchema=%s;logLevel=FATAL",
+          SCHEMA, CATALOG, SCHEMA);
   private static final String SESSION_CONF_JDBC_URL =
       String.format(
           "jdbc:databricks://adb-565757575.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/erg6767gg;%s",
@@ -133,7 +135,9 @@ public class DatabricksConnectionTest {
         .thenReturn(IMMUTABLE_SESSION_INFO);
     connection = new DatabricksConnection(connectionContext, databricksClient);
     connection.open();
+    assertTrue(connection.isValid(1));
     connection.close();
+    assertFalse(connection.isValid(1));
     assertThrows(DatabricksSQLException.class, connection::isReadOnly);
   }
 
@@ -143,7 +147,7 @@ public class DatabricksConnectionTest {
         SESSION_CONFIGS.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey().toLowerCase(), Map.Entry::getValue));
     when(databricksClient.createSession(
-            new Warehouse(WAREHOUSE_ID), null, null, lowercaseSessionConfigs))
+            new Warehouse(WAREHOUSE_ID), null, "default", lowercaseSessionConfigs))
         .thenReturn(IMMUTABLE_SESSION_INFO);
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(SESSION_CONF_JDBC_URL, new Properties());
@@ -213,7 +217,7 @@ public class DatabricksConnectionTest {
         DatabricksConnectionContext.parse(JDBC_URL, new Properties());
     ImmutableSessionInfo session =
         ImmutableSessionInfo.builder().computeResource(warehouse).sessionId(SESSION_ID).build();
-    when(databricksClient.createSession(warehouse, null, null, new HashMap<>()))
+    when(databricksClient.createSession(warehouse, null, "default", new HashMap<>()))
         .thenReturn(session);
     DatabricksConnection connection =
         Mockito.spy(new DatabricksConnection(connectionContext, databricksClient));
@@ -248,28 +252,15 @@ public class DatabricksConnectionTest {
     connection = new DatabricksConnection(connectionContext, databricksClient);
     connection.open();
     assertThrows(
-        DatabricksSQLFeatureNotSupportedException.class, () -> connection.prepareCall(SQL));
+        DatabricksSQLFeatureNotImplementedException.class, () -> connection.prepareCall(SQL));
+    assertThrows(DatabricksSQLFeatureNotSupportedException.class, () -> connection.nativeSQL(SQL));
     assertThrows(
-        DatabricksSQLFeatureNotImplementedException.class, () -> connection.nativeSQL(SQL));
-    assertThrows(
-        DatabricksSQLFeatureNotImplementedException.class, () -> connection.setAutoCommit(true));
-    assertThrows(
-        DatabricksSQLFeatureNotImplementedException.class, () -> connection.setReadOnly(true));
+        DatabricksSQLFeatureNotSupportedException.class, () -> connection.setAutoCommit(false));
     assertThrows(DatabricksSQLFeatureNotImplementedException.class, connection::commit);
     assertThrows(DatabricksSQLFeatureNotImplementedException.class, connection::rollback);
     assertThrows(
         DatabricksSQLFeatureNotImplementedException.class,
-        () -> connection.setTransactionIsolation(10));
-    assertThrows(
-        DatabricksSQLFeatureNotImplementedException.class,
-        () -> connection.setTypeMap(Collections.emptyMap()));
-    assertThrows(
-        DatabricksSQLFeatureNotImplementedException.class,
         () -> connection.prepareCall(SQL, 10, 10));
-    assertThrows(DatabricksSQLFeatureNotImplementedException.class, connection::getTypeMap);
-    assertThrows(DatabricksSQLFeatureNotImplementedException.class, connection::getHoldability);
-    assertThrows(
-        DatabricksSQLFeatureNotImplementedException.class, () -> connection.setHoldability(1));
     assertThrows(
         DatabricksSQLFeatureNotImplementedException.class,
         () -> connection.prepareCall(SQL, 1, 1, 1));
@@ -302,12 +293,11 @@ public class DatabricksConnectionTest {
         DatabricksSQLFeatureNotImplementedException.class, () -> connection.rollback(null));
     assertThrows(
         DatabricksSQLFeatureNotImplementedException.class, () -> connection.releaseSavepoint(null));
-    assertThrows(DatabricksSQLFeatureNotImplementedException.class, () -> connection.abort(null));
     assertThrows(
-        DatabricksSQLFeatureNotImplementedException.class,
+        DatabricksSQLFeatureNotSupportedException.class,
         () -> connection.setNetworkTimeout(null, 1));
     assertThrows(
-        DatabricksSQLFeatureNotImplementedException.class, () -> connection.getNetworkTimeout());
+        DatabricksSQLFeatureNotSupportedException.class, () -> connection.getNetworkTimeout());
     assertInstanceOf(
         IDatabricksConnectionInternal.class,
         connection.unwrap(IDatabricksConnectionInternal.class));
@@ -334,5 +324,46 @@ public class DatabricksConnectionTest {
     assertNull(connection.getWarnings());
     assertTrue(connection.getAutoCommit());
     assertEquals(connection.getTransactionIsolation(), Connection.TRANSACTION_READ_UNCOMMITTED);
+    connection.close();
+  }
+
+  @Test
+  void testTranslationIsolation() throws DatabricksSQLException {
+    connection = new DatabricksConnection(connectionContext, databricksClient);
+    connection.open();
+    assertDoesNotThrow(
+        () -> connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED));
+    assertThrows(
+        DatabricksSQLFeatureNotSupportedException.class,
+        () -> connection.setTransactionIsolation(10));
+    connection.close();
+  }
+
+  @Test
+  void testReadOnlyAndAbort() throws DatabricksSQLException {
+    connection = new DatabricksConnection(connectionContext, databricksClient);
+    connection.open();
+    assertDoesNotThrow(() -> connection.setReadOnly(false));
+    assertThrows(
+        DatabricksSQLFeatureNotSupportedException.class, () -> connection.setReadOnly(true));
+    ExecutorService executorService = Executors.newFixedThreadPool(1);
+    assertDoesNotThrow(() -> connection.abort(executorService));
+    connection.close();
+  }
+
+  @Test
+  void testTypeMap() {
+    assertEquals(new HashMap<>(), connection.getTypeMap());
+    assertThrows(
+        DatabricksSQLFeatureNotSupportedException.class,
+        () -> connection.setTypeMap(Collections.emptyMap()));
+  }
+
+  @Test
+  void testHoldability() throws SQLException {
+    assertEquals(2, connection.getHoldability());
+    assertDoesNotThrow(() -> connection.setHoldability(2));
+    assertThrows(
+        DatabricksSQLFeatureNotSupportedException.class, () -> connection.setHoldability(3));
   }
 }
