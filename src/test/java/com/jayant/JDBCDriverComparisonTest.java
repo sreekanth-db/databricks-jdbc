@@ -2,6 +2,7 @@ package com.jayant;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import com.jayant.testparams.DatabaseMetaDataTestParams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -10,7 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.sql.*;
-import java.util.Properties;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -102,23 +104,24 @@ public class JDBCDriverComparisonTest {
   @ParameterizedTest
   @MethodSource("provideMetadataMethods")
   @DisplayName("Compare Metadata API Results")
-  void compareMetadataResults(String methodName, String[] args, String description) {
+  void compareMetadataResults(String methodName, Object[] args) {
     assertDoesNotThrow(
         () -> {
           DatabaseMetaData simbaMetadata = simbaConnection.getMetaData();
           DatabaseMetaData ossMetadata = ossConnection.getMetaData();
 
-          ResultSet simbaRs = executeMetadataMethod(simbaMetadata, methodName, args);
-          ResultSet ossRs = executeMetadataMethod(ossMetadata, methodName, args);
+          Object simbaRs = ReflectionUtils.executeMethod(simbaMetadata, methodName, args);
+          Object ossRs = ReflectionUtils.executeMethod(ossMetadata, methodName, args);
 
           ComparisonResult result =
               ResultSetComparator.compare("metadata", methodName, args, simbaRs, ossRs);
           reporter.addResult(result);
 
           if (result.hasDifferences()) {
-            System.err.println("Differences found in metadata results for: " + description);
-            System.err.println("Method: " + methodName);
-            System.err.println("Args: " + String.join(", ", args));
+            System.err.println("Differences found in metadata results for method: " + methodName);
+            System.err.println(
+                "Args: "
+                    + Arrays.stream(args).map(Object::toString).collect(Collectors.joining(", ")));
             System.err.println(result);
           }
         });
@@ -130,48 +133,8 @@ public class JDBCDriverComparisonTest {
   }
 
   private static Stream<Arguments> provideMetadataMethods() {
-    return Stream.of(
-        Arguments.of(
-            "getTables", new String[] {"main", "tpcds_sf100_delta", "%", null}, "Get tables"),
-        Arguments.of("getTableTypes", new String[] {}, "Get table types"),
-        Arguments.of("getCatalogs", new String[] {}, "Get catalogs"),
-        Arguments.of("getSchemas", new String[] {"main", "tpcds_%"}, "Get schemas"),
-        Arguments.of(
-            "getColumns",
-            new String[] {"main", "tpcds_sf100_delta", "catalog_sales", "%"},
-            "Get columns"),
-        Arguments.of("getTypeInfo", new String[] {}, "Get type info"),
-        Arguments.of(
-            "getFunctions",
-            new String[] {"main", "tpcds_sf100_delta", "aggregate"},
-            "Get functions"),
-        Arguments.of(
-            "getProcedures", new String[] {"main", "tpcds_sf100_delta", "%"}, "Get procedures"));
-  }
-
-  private ResultSet executeMetadataMethod(
-      DatabaseMetaData metadata, String methodName, String[] args) throws SQLException {
-    switch (methodName) {
-      case "getTableTypes":
-        return metadata.getTableTypes();
-      case "getCatalogs":
-        return metadata.getCatalogs();
-      case "getSchemas":
-        return metadata.getSchemas(args[0], args[1]);
-      case "getTables":
-        return metadata.getTables(
-            args[0], args[1], args[2], args[3] == null ? null : args[3].split(","));
-      case "getColumns":
-        return metadata.getColumns(args[0], args[1], args[2], args[3]);
-      case "getTypeInfo":
-        return metadata.getTypeInfo();
-      case "getFunctions":
-        return metadata.getFunctions(args[0], args[1], args[2]);
-      case "getProcedures":
-        return metadata.getProcedures(args[0], args[1], args[2]);
-      default:
-        throw new IllegalArgumentException("Unknown metadata method: " + methodName);
-    }
+    DatabaseMetaDataTestParams params = new DatabaseMetaDataTestParams();
+    return ReflectionUtils.provideMethodsForClass(DatabaseMetaData.class, params);
   }
 
   private static URL extractJarToTemp(String jarName, Path tempDir) {
