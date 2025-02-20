@@ -1013,11 +1013,9 @@ public class DatabricksDatabaseMetaDataTest {
             () -> metaData.supportsTransactionIsolationLevel(0),
             () -> metaData.getProcedureColumns(null, null, null, null),
             () -> metaData.getVersionColumns(null, null, null),
-            () -> metaData.getCrossReference(null, null, null, null, null, null),
             () -> metaData.getIndexInfo(null, null, null, false, false),
             () -> metaData.supportsConvert(0, 0),
             () -> metaData.getProcedureColumns(null, null, null, null),
-            () -> metaData.getColumnPrivileges(null, null, null, null),
             () -> metaData.getTablePrivileges(null, null, null),
             () -> metaData.getSuperTypes(null, null, null),
             () -> metaData.getSuperTables(null, null, null),
@@ -1042,13 +1040,6 @@ public class DatabricksDatabaseMetaDataTest {
   @MethodSource("resultSetTypes")
   public void testDeletesAreDetected(int resultSetType, String typeName) {
     assertFalse(metaData.deletesAreDetected(resultSetType));
-  }
-
-  private static Stream<Arguments> resultSetTypes() {
-    return Stream.of(
-        Arguments.of(ResultSet.TYPE_FORWARD_ONLY, "TYPE_FORWARD_ONLY"),
-        Arguments.of(ResultSet.TYPE_SCROLL_INSENSITIVE, "TYPE_SCROLL_INSENSITIVE"),
-        Arguments.of(ResultSet.TYPE_SCROLL_SENSITIVE, "TYPE_SCROLL_SENSITIVE"));
   }
 
   @ParameterizedTest
@@ -1106,6 +1097,91 @@ public class DatabricksDatabaseMetaDataTest {
         () -> metaData.getBestRowIdentifier(null, null, null, 3, false));
   }
 
+  @Test
+  public void testGetColumnPrivileges() throws SQLException {
+    ResultSet resultSet =
+        metaData.getColumnPrivileges("sample_catalog", "sample_schema", "sample_table", "%");
+    assertNotNull(resultSet);
+
+    assertEquals(8, resultSet.getMetaData().getColumnCount());
+    assertSame("TABLE_CAT", resultSet.getMetaData().getColumnName(1));
+    assertSame("TABLE_SCHEM", resultSet.getMetaData().getColumnName(2));
+    assertEquals("TABLE_NAME", resultSet.getMetaData().getColumnName(3));
+
+    // Result set is empty
+    assertFalse(resultSet.next());
+  }
+
+  @Test
+  public void testGetClientInfoProperties() throws SQLException {
+    ResultSet resultSet = metaData.getClientInfoProperties();
+    assertNotNull(resultSet);
+
+    assertEquals(4, resultSet.getMetaData().getColumnCount());
+    assertEquals("NAME", resultSet.getMetaData().getColumnName(1));
+    assertEquals("MAX_LEN", resultSet.getMetaData().getColumnName(2));
+    assertEquals("DEFAULT_VALUE", resultSet.getMetaData().getColumnName(3));
+    assertEquals("DESCRIPTION", resultSet.getMetaData().getColumnName(4));
+
+    // Verify the first row
+    assertTrue(resultSet.next());
+    assertEquals("APPLICATIONNAME", resultSet.getString(1));
+    assertEquals(25, resultSet.getInt(2));
+    assertNull(resultSet.getString(3));
+
+    assertTrue(resultSet.next());
+    assertTrue(resultSet.next());
+
+    // No more than 3 rows
+    assertFalse(resultSet.next());
+  }
+
+  @Test
+  public void testGetCrossReference() throws SQLException {
+    ResultSet resultSet =
+        metaData.getCrossReference(
+            "primary_catalog",
+            "primary_schema",
+            "primary_table",
+            "foreign_catalog",
+            "foreign_schema",
+            "foreign_table");
+    assertNotNull(resultSet);
+
+    assertEquals(14, resultSet.getMetaData().getColumnCount());
+    assertEquals("PKTABLE_CAT", resultSet.getMetaData().getColumnName(1));
+    assertEquals("PKTABLE_SCHEM", resultSet.getMetaData().getColumnName(2));
+    assertEquals("PKTABLE_NAME", resultSet.getMetaData().getColumnName(3));
+    assertEquals("PKCOLUMN_NAME", resultSet.getMetaData().getColumnName(4));
+    assertEquals("FKTABLE_CAT", resultSet.getMetaData().getColumnName(5));
+    assertEquals("FKTABLE_SCHEM", resultSet.getMetaData().getColumnName(6));
+    assertEquals("FKTABLE_NAME", resultSet.getMetaData().getColumnName(7));
+    assertEquals("FKCOLUMN_NAME", resultSet.getMetaData().getColumnName(8));
+    assertEquals("KEY_SEQ", resultSet.getMetaData().getColumnName(9));
+    assertEquals("UPDATE_RULE", resultSet.getMetaData().getColumnName(10));
+    assertEquals("DELETE_RULE", resultSet.getMetaData().getColumnName(11));
+    assertEquals("FK_NAME", resultSet.getMetaData().getColumnName(12));
+    assertEquals("PK_NAME", resultSet.getMetaData().getColumnName(13));
+    assertEquals("DEFERRABILITY", resultSet.getMetaData().getColumnName(14));
+
+    // Result set is empty
+    assertFalse(resultSet.next());
+  }
+
+  @Test
+  public void testGetCrossReferenceThrowsExceptionWhenPrimaryForeignTableNull() {
+    assertThrows(
+        DatabricksSQLException.class,
+        () ->
+            metaData.getCrossReference(
+                "primary_catalog",
+                "primary_schema",
+                null,
+                "primary_catalog",
+                "primary_schema",
+                null));
+  }
+
   private static Stream<Arguments> provideAttributeParameters() {
     return Stream.of(
         // Test case 1: All nulls (should return empty result set)
@@ -1147,30 +1223,6 @@ public class DatabricksDatabaseMetaDataTest {
         Arguments.of(null, "_test%", "%TYPE_", "_attr%", "Special characters in patterns"));
   }
 
-  @Test
-  public void testGetClientInfoProperties() throws SQLException {
-    ResultSet resultSet = metaData.getClientInfoProperties();
-    assertNotNull(resultSet);
-
-    assertEquals(4, resultSet.getMetaData().getColumnCount());
-    assertEquals("NAME", resultSet.getMetaData().getColumnName(1));
-    assertEquals("MAX_LEN", resultSet.getMetaData().getColumnName(2));
-    assertEquals("DEFAULT_VALUE", resultSet.getMetaData().getColumnName(3));
-    assertEquals("DESCRIPTION", resultSet.getMetaData().getColumnName(4));
-
-    // Verify the first row
-    assertTrue(resultSet.next());
-    assertEquals("APPLICATIONNAME", resultSet.getString(1));
-    assertEquals(25, resultSet.getInt(2));
-    assertNull(resultSet.getString(3));
-
-    assertTrue(resultSet.next());
-    assertTrue(resultSet.next());
-
-    // No more than 3 rows
-    assertFalse(resultSet.next());
-  }
-
   private static Stream<Arguments> provideGetBestRowIdentifierParameters() {
     return Stream.of(
         // Test case 1: All nulls (should return empty result set)
@@ -1194,5 +1246,12 @@ public class DatabricksDatabaseMetaDataTest {
         // Test case 7: All parameters specified
         Arguments.of(
             "test_catalog", "test_schema", "test_table", 1, true, "All parameters specified"));
+  }
+
+  private static Stream<Arguments> resultSetTypes() {
+    return Stream.of(
+        Arguments.of(ResultSet.TYPE_FORWARD_ONLY, "TYPE_FORWARD_ONLY"),
+        Arguments.of(ResultSet.TYPE_SCROLL_INSENSITIVE, "TYPE_SCROLL_INSENSITIVE"),
+        Arguments.of(ResultSet.TYPE_SCROLL_SENSITIVE, "TYPE_SCROLL_SENSITIVE"));
   }
 }

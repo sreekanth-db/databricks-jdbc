@@ -1,8 +1,11 @@
 package com.databricks.jdbc.common;
 
+import static javax.swing.UIManager.put;
+
 import com.databricks.jdbc.model.core.ResultColumn;
 import java.sql.Types;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -92,58 +95,51 @@ public class MetadataResultConstants {
       new ResultColumn("IS_AUTOINCREMENT", "isAutoIncrement", Types.VARCHAR);
   public static final ResultColumn IS_GENERATED_COLUMN =
       new ResultColumn("IS_GENERATEDCOLUMN", "isGenerated", Types.VARCHAR);
-  private static final ResultColumn TYPE_CAT =
-      new ResultColumn("TYPE_CAT", "typeCat", Types.VARCHAR);
-  private static final ResultColumn TYPE_SCHEM =
-      new ResultColumn("TYPE_SCHEM", "typeSchem", Types.VARCHAR);
   private static final ResultColumn ATTR_NAME =
       new ResultColumn("ATTR_NAME", "attrName", Types.VARCHAR);
-  private static final ResultColumn DATA_TYPE =
-      new ResultColumn("DATA_TYPE", "dataType", Types.INTEGER);
   private static final ResultColumn ATTR_TYPE_NAME =
       new ResultColumn("ATTR_TYPE_NAME", "attrTypeName", Types.VARCHAR);
   private static final ResultColumn ATTR_SIZE =
       new ResultColumn("ATTR_SIZE", "attrSize", Types.INTEGER);
-  private static final ResultColumn DECIMAL_DIGITS =
-      new ResultColumn("DECIMAL_DIGITS", "decimalDigits", Types.INTEGER);
-  private static final ResultColumn NUM_PREC_RADIX =
-      new ResultColumn("NUM_PREC_RADIX", "numPrecRadix", Types.INTEGER);
-  private static final ResultColumn NULLABLE =
-      new ResultColumn("NULLABLE", "nullable", Types.INTEGER);
-  private static final ResultColumn REMARKS = new ResultColumn("REMARKS", "remarks", Types.VARCHAR);
   private static final ResultColumn ATTR_DEF =
       new ResultColumn("ATTR_DEF", "attrDef", Types.VARCHAR);
-  private static final ResultColumn SQL_DATA_TYPE =
-      new ResultColumn("SQL_DATA_TYPE", "SQLDataType", Types.INTEGER);
-  private static final ResultColumn SQL_DATETIME_SUB =
-      new ResultColumn("SQL_DATETIME_SUB", "SQLDateTimeSub", Types.INTEGER);
-  private static final ResultColumn CHAR_OCTET_LENGTH =
-      new ResultColumn("CHAR_OCTET_LENGTH", "CharOctetLength", Types.INTEGER);
-  private static final ResultColumn ORDINAL_POSITION =
-      new ResultColumn("ORDINAL_POSITION", "ordinalPosition", Types.INTEGER);
-  private static final ResultColumn IS_NULLABLE =
-      new ResultColumn("IS_NULLABLE", "isNullable", Types.VARCHAR);
-  private static final ResultColumn SCOPE_CATALOG =
-      new ResultColumn("SCOPE_CATALOG", "ScopeCatalog", Types.VARCHAR);
-  private static final ResultColumn SCOPE_SCHEMA =
-      new ResultColumn("SCOPE_SCHEMA", "ScopeSchema", Types.VARCHAR);
-  private static final ResultColumn SCOPE_TABLE =
-      new ResultColumn("SCOPE_TABLE", "ScopeTable", Types.VARCHAR);
   private static final ResultColumn SOURCE_DATA_TYPE =
       new ResultColumn("SOURCE_DATA_TYPE", "SourceDataType", Types.SMALLINT);
+  private static final ResultColumn GRANTOR = new ResultColumn("GRANTOR", "grantor", Types.VARCHAR);
+  private static final ResultColumn GRANTEE = new ResultColumn("GRANTEE", "grantee", Types.VARCHAR);
+  private static final ResultColumn PRIVILEGE =
+      new ResultColumn("PRIVILEGE", "privilege", Types.VARCHAR);
+  private static final ResultColumn IS_GRANTABLE =
+      new ResultColumn("IS_GRANTABLE", "isGrantable", Types.VARCHAR);
   private static final ResultColumn SCOPE = new ResultColumn("SCOPE", "scope", Types.SMALLINT);
-  private static final ResultColumn COLUMN_NAME =
-      new ResultColumn("COLUMN_NAME", "columnName", Types.VARCHAR);
-  private static final ResultColumn TYPE_NAME =
-      new ResultColumn("TYPE_NAME", "typeName", Types.VARCHAR);
-  private static final ResultColumn COLUMN_SIZE =
-      new ResultColumn("COLUMN_SIZE", "columnSize", Types.INTEGER);
-  private static final ResultColumn BUFFER_LENGTH =
-      new ResultColumn("BUFFER_LENGTH", "bufferLength", Types.INTEGER);
   private static final ResultColumn DECIMAL_DIGITS_SHORT =
       new ResultColumn("DECIMAL_DIGITS", "decimalDigits", Types.SMALLINT);
   private static final ResultColumn PSEUDO_COLUMN =
       new ResultColumn("PSEUDO_COLUMN", "pseudoColumn", Types.SMALLINT);
+  private static final ResultColumn PKTABLE_CAT =
+      new ResultColumn("PKTABLE_CAT", "pktableCat", Types.VARCHAR);
+  private static final ResultColumn PKTABLE_SCHEM =
+      new ResultColumn("PKTABLE_SCHEM", "pktableSchem", Types.VARCHAR);
+  private static final ResultColumn PKTABLE_NAME =
+      new ResultColumn("PKTABLE_NAME", "pktableName", Types.VARCHAR);
+  private static final ResultColumn PKCOLUMN_NAME =
+      new ResultColumn("PKCOLUMN_NAME", "pkcolumnName", Types.VARCHAR);
+  private static final ResultColumn FKTABLE_CAT =
+      new ResultColumn("FKTABLE_CAT", "fktableCat", Types.VARCHAR);
+  private static final ResultColumn FKTABLE_SCHEM =
+      new ResultColumn("FKTABLE_SCHEM", "fktableSchem", Types.VARCHAR);
+  private static final ResultColumn FKTABLE_NAME =
+      new ResultColumn("FKTABLE_NAME", "fktableName", Types.VARCHAR);
+  private static final ResultColumn FKCOLUMN_NAME =
+      new ResultColumn("FKCOLUMN_NAME", "fkcolumnName", Types.VARCHAR);
+  private static final ResultColumn UPDATE_RULE =
+      new ResultColumn("UPDATE_RULE", "updateRule", Types.SMALLINT);
+  private static final ResultColumn DELETE_RULE =
+      new ResultColumn("DELETE_RULE", "deleteRule", Types.SMALLINT);
+  private static final ResultColumn FK_NAME = new ResultColumn("FK_NAME", "fkName", Types.VARCHAR);
+  private static final ResultColumn PK_NAME = new ResultColumn("PK_NAME", "pkName", Types.VARCHAR);
+  private static final ResultColumn DEFERRABILITY =
+      new ResultColumn("DEFERRABILITY", "deferrability", Types.SMALLINT);
 
   public static List<ResultColumn> FUNCTION_COLUMNS =
       List.of(
@@ -237,79 +233,127 @@ public class MetadataResultConstants {
 
   public static final List<ResultColumn> ATTRIBUTES_COLUMNS =
       List.of(
-          TYPE_CAT,
-          TYPE_SCHEM,
+          TYPE_CATALOG_COLUMN,
+          TYPE_SCHEMA_COLUMN,
           TYPE_NAME_COLUMN,
           ATTR_NAME,
-          DATA_TYPE,
+          DATA_TYPE_COLUMN,
           ATTR_TYPE_NAME,
           ATTR_SIZE,
-          DECIMAL_DIGITS,
-          NUM_PREC_RADIX,
-          NULLABLE,
-          REMARKS,
+          DECIMAL_DIGITS_COLUMN,
+          NUM_PREC_RADIX_COLUMN,
+          NULLABLE_COLUMN,
+          REMARKS_COLUMN,
           ATTR_DEF,
-          SQL_DATA_TYPE,
-          SQL_DATETIME_SUB,
-          CHAR_OCTET_LENGTH,
-          ORDINAL_POSITION,
-          IS_NULLABLE,
-          SCOPE_CATALOG,
-          SCOPE_SCHEMA,
-          SCOPE_TABLE,
+          SQL_DATA_TYPE_COLUMN,
+          SQL_DATETIME_SUB_COLUMN,
+          CHAR_OCTET_LENGTH_COLUMN,
+          ORDINAL_POSITION_COLUMN,
+          IS_NULLABLE_COLUMN,
+          SCOPE_CATALOG_COLUMN,
+          SCOPE_SCHEMA_COLUMN,
+          SCOPE_TABLE_COLUMN,
           SOURCE_DATA_TYPE);
+
+  public static final List<ResultColumn> COLUMN_PRIVILEGES_COLUMNS =
+      List.of(
+          CATALOG_COLUMN,
+          SCHEMA_COLUMN,
+          TABLE_NAME_COLUMN,
+          COLUMN_NAME_COLUMN,
+          GRANTOR,
+          GRANTEE,
+          PRIVILEGE,
+          IS_GRANTABLE);
 
   public static final List<ResultColumn> BEST_ROW_IDENTIFIER_COLUMNS =
       List.of(
           SCOPE,
-          COLUMN_NAME,
-          DATA_TYPE,
-          TYPE_NAME,
-          COLUMN_SIZE,
-          BUFFER_LENGTH,
+          COL_NAME_COLUMN,
+          DATA_TYPE_COLUMN,
+          COLUMN_TYPE_COLUMN,
+          COLUMN_SIZE_COLUMN,
+          BUFFER_LENGTH_COLUMN,
           DECIMAL_DIGITS_SHORT,
           PSEUDO_COLUMN);
 
+  public static List<ResultColumn> CROSS_REFERENCE_COLUMNS =
+      List.of(
+          PKTABLE_CAT,
+          PKTABLE_SCHEM,
+          PKTABLE_NAME,
+          PKCOLUMN_NAME,
+          FKTABLE_CAT,
+          FKTABLE_SCHEM,
+          FKTABLE_NAME,
+          FKCOLUMN_NAME,
+          KEY_SEQUENCE_COLUMN,
+          UPDATE_RULE,
+          DELETE_RULE,
+          FK_NAME,
+          PK_NAME,
+          DEFERRABILITY);
+
   public static final Map<CommandName, List<ResultColumn>> NON_NULLABLE_COLUMNS_MAP =
-      Map.of(
-          CommandName.LIST_TYPE_INFO,
-          List.of(
-              MetadataResultConstants.TYPE_NAME_COLUMN,
-              MetadataResultConstants.DATA_TYPE_COLUMN,
-              MetadataResultConstants
-                  .PRECISION_COLUMN // Assuming COLUMN_SIZE_COLUMN maps to precision
-              ),
-          CommandName.LIST_CATALOGS,
-          List.of(MetadataResultConstants.CATALOG_COLUMN_FOR_GET_CATALOGS),
-          CommandName.LIST_TABLES,
-          List.of(MetadataResultConstants.TABLE_NAME_COLUMN, TABLE_TYPE_COLUMN),
-          CommandName.LIST_PRIMARY_KEYS,
-          List.of(
-              MetadataResultConstants.TABLE_NAME_COLUMN,
-              MetadataResultConstants.COLUMN_NAME_COLUMN),
-          CommandName.LIST_SCHEMAS,
-          List.of(MetadataResultConstants.SCHEMA_COLUMN_FOR_GET_SCHEMA),
-          CommandName.LIST_TABLE_TYPES,
-          List.of(TABLE_TYPE_COLUMN),
-          CommandName.LIST_COLUMNS,
-          List.of(
-              MetadataResultConstants.TABLE_NAME_COLUMN,
-              MetadataResultConstants.COL_NAME_COLUMN,
-              MetadataResultConstants.DATA_TYPE_COLUMN,
-              MetadataResultConstants.COLUMN_TYPE_COLUMN,
-              MetadataResultConstants.NULLABLE_COLUMN,
-              MetadataResultConstants.SQL_DATA_TYPE_COLUMN,
-              MetadataResultConstants.ORDINAL_POSITION_COLUMN,
-              MetadataResultConstants.IS_NULLABLE_COLUMN),
-          CommandName.LIST_FUNCTIONS,
-          List.of(
-              MetadataResultConstants.FUNCTION_NAME_COLUMN,
-              MetadataResultConstants.SPECIFIC_NAME_COLUMN),
-          CommandName.GET_BEST_ROW_IDENTIFIER,
-          List.of(
-              MetadataResultConstants.SCOPE,
-              MetadataResultConstants.COLUMN_NAME,
-              MetadataResultConstants.DATA_TYPE,
-              MetadataResultConstants.TYPE_NAME,
-              MetadataResultConstants.PSEUDO_COLUMN));
+      new HashMap<>() {
+        {
+          put(
+              CommandName.LIST_TYPE_INFO,
+              List.of(
+                  MetadataResultConstants.TYPE_NAME_COLUMN,
+                  MetadataResultConstants.DATA_TYPE_COLUMN,
+                  MetadataResultConstants.PRECISION_COLUMN));
+          put(
+              CommandName.LIST_CATALOGS,
+              List.of(MetadataResultConstants.CATALOG_COLUMN_FOR_GET_CATALOGS));
+          put(
+              CommandName.LIST_TABLES,
+              List.of(MetadataResultConstants.TABLE_NAME_COLUMN, TABLE_TYPE_COLUMN));
+          put(
+              CommandName.LIST_PRIMARY_KEYS,
+              List.of(
+                  MetadataResultConstants.TABLE_NAME_COLUMN,
+                  MetadataResultConstants.COLUMN_NAME_COLUMN));
+          put(
+              CommandName.LIST_SCHEMAS,
+              List.of(MetadataResultConstants.SCHEMA_COLUMN_FOR_GET_SCHEMA));
+          put(CommandName.LIST_TABLE_TYPES, List.of(TABLE_TYPE_COLUMN));
+          put(
+              CommandName.LIST_COLUMNS,
+              List.of(
+                  MetadataResultConstants.TABLE_NAME_COLUMN,
+                  MetadataResultConstants.COL_NAME_COLUMN,
+                  MetadataResultConstants.DATA_TYPE_COLUMN,
+                  MetadataResultConstants.COLUMN_TYPE_COLUMN,
+                  MetadataResultConstants.NULLABLE_COLUMN,
+                  MetadataResultConstants.SQL_DATA_TYPE_COLUMN,
+                  MetadataResultConstants.ORDINAL_POSITION_COLUMN,
+                  MetadataResultConstants.IS_NULLABLE_COLUMN));
+          put(
+              CommandName.LIST_FUNCTIONS,
+              List.of(
+                  MetadataResultConstants.FUNCTION_NAME_COLUMN,
+                  MetadataResultConstants.SPECIFIC_NAME_COLUMN));
+          put(
+              CommandName.GET_COLUMN_PRIVILEGES,
+              List.of(TABLE_NAME_COLUMN, COLUMN_NAME_COLUMN, GRANTEE, PRIVILEGE));
+          put(
+              CommandName.GET_BEST_ROW_IDENTIFIER,
+              List.of(
+                  MetadataResultConstants.SCOPE,
+                  MetadataResultConstants.COL_NAME_COLUMN,
+                  MetadataResultConstants.DATA_TYPE_COLUMN,
+                  MetadataResultConstants.COLUMN_TYPE_COLUMN,
+                  MetadataResultConstants.PSEUDO_COLUMN));
+          put(
+              CommandName.GET_CROSS_REFERENCE,
+              List.of(
+                  MetadataResultConstants.PKTABLE_NAME,
+                  MetadataResultConstants.PKCOLUMN_NAME,
+                  MetadataResultConstants.FKTABLE_NAME,
+                  MetadataResultConstants.FKCOLUMN_NAME,
+                  MetadataResultConstants.KEY_SEQUENCE_COLUMN,
+                  MetadataResultConstants.DEFERRABILITY));
+        }
+      };
 }
