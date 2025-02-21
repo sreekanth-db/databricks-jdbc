@@ -3,6 +3,8 @@ package com.jayant;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.jayant.testparams.DatabaseMetaDataTestParams;
+import com.jayant.testparams.ResultSetMetaDataTestParams;
+import com.jayant.testparams.ResultSetTestParams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -22,14 +24,16 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class JDBCDriverComparisonTest {
-  private static final String SIMBA_JDBC_URL =
+  private static final String OLD_DRIVER_JDBC_URL =
       "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/7e635336d748166a;UID=token;";
-  private static final String OSS_JDBC_URL =
+  private static final String OSS_DRIVER_JDBC_URL =
       "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/7e635336d748166a";
-  private static Connection simbaConnection;
-  private static Connection ossConnection;
+  private static Connection oldDriverConnection;
+  private static Connection ossDriverConnection;
   private static Path tempDir;
   private static TestReporter reporter;
+  private static ResultSet oldDriverResultSet;
+  private static ResultSet ossDriverResultSet;
 
   @BeforeAll
   static void setup() throws Exception {
@@ -37,34 +41,43 @@ public class JDBCDriverComparisonTest {
     tempDir = Files.createTempDirectory("jdbc-drivers");
 
     // Extract and load drivers
-    URL simbaJarUrl = extractJarToTemp("databricks-jdbc-2.6.38.jar", tempDir);
+    URL oldDriverJarUrl = extractJarToTemp("databricks-jdbc-2.6.38.jar", tempDir);
 
-    if (simbaJarUrl == null) {
+    if (oldDriverJarUrl == null) {
       throw new RuntimeException("Unable to find JDBC driver JARs in the classpath");
     }
 
     // Initialize class loaders and drivers
-    URLClassLoader simbaClassLoader =
+    URLClassLoader oldDriverClassLoader =
         new CustomClassLoader(
-            new URL[] {simbaJarUrl}, JDBCDriverComparisonTest.class.getClassLoader());
+            new URL[] {oldDriverJarUrl}, JDBCDriverComparisonTest.class.getClassLoader());
 
-    Class<?> simbaDriverClass =
-        Class.forName("com.databricks.client.jdbc.Driver", true, simbaClassLoader);
+    Class<?> oldDriverClass =
+        Class.forName("com.databricks.client.jdbc.Driver", true, oldDriverClassLoader);
 
-    Driver simbaDriver = (Driver) simbaDriverClass.getDeclaredConstructor().newInstance();
+    Driver oldDriver = (Driver) oldDriverClass.getDeclaredConstructor().newInstance();
 
     // Initialize connections
     String pwd = System.getenv("DATABRICKS_COMPARATOR_TOKEN");
     Properties props = new Properties();
-    ossConnection = DriverManager.getConnection(OSS_JDBC_URL, "token", pwd);
-    simbaConnection = simbaDriver.connect(SIMBA_JDBC_URL + "PWD=" + pwd, props);
+    ossDriverConnection = DriverManager.getConnection(OSS_DRIVER_JDBC_URL, "token", pwd);
+    oldDriverConnection = oldDriver.connect(OLD_DRIVER_JDBC_URL + "PWD=" + pwd, props);
     reporter = new TestReporter(Path.of("jdbc-comparison-report.txt"));
+
+    String queryResultSetTypesTable =
+        "select * from main.oss_jdbc_tests.test_result_set_types limit 100";
+    oldDriverResultSet =
+        oldDriverConnection.createStatement().executeQuery(queryResultSetTypesTable);
+    oldDriverResultSet.next();
+    ossDriverResultSet =
+        ossDriverConnection.createStatement().executeQuery(queryResultSetTypesTable);
+    ossDriverResultSet.next();
   }
 
   @AfterAll
   static void teardown() throws Exception {
-    if (simbaConnection != null) simbaConnection.close();
-    if (ossConnection != null) ossConnection.close();
+    if (oldDriverConnection != null) oldDriverConnection.close();
+    if (ossDriverConnection != null) ossDriverConnection.close();
     // Clean up temp directory
     if (tempDir != null) {
       Files.walk(tempDir)
@@ -87,11 +100,11 @@ public class JDBCDriverComparisonTest {
   void compareSQLQueryResults(String query, String description) {
     assertDoesNotThrow(
         () -> {
-          ResultSet simbaRs = simbaConnection.createStatement().executeQuery(query);
-          ResultSet ossRs = ossConnection.createStatement().executeQuery(query);
+          ResultSet oldDriverRs = oldDriverConnection.createStatement().executeQuery(query);
+          ResultSet ossDriverRs = ossDriverConnection.createStatement().executeQuery(query);
 
           ComparisonResult result =
-              ResultSetComparator.compare("sql", query, new String[] {}, simbaRs, ossRs);
+              ResultSetComparator.compare("sql", query, new String[] {}, oldDriverRs, ossDriverRs);
           reporter.addResult(result);
 
           if (result.hasDifferences()) {
@@ -107,18 +120,72 @@ public class JDBCDriverComparisonTest {
   void compareMetadataResults(String methodName, Object[] args) {
     assertDoesNotThrow(
         () -> {
-          DatabaseMetaData simbaMetadata = simbaConnection.getMetaData();
-          DatabaseMetaData ossMetadata = ossConnection.getMetaData();
+          DatabaseMetaData oldDriverMetadata = oldDriverConnection.getMetaData();
+          DatabaseMetaData ossDriverMetadata = ossDriverConnection.getMetaData();
 
-          Object simbaRs = ReflectionUtils.executeMethod(simbaMetadata, methodName, args);
-          Object ossRs = ReflectionUtils.executeMethod(ossMetadata, methodName, args);
+          Object oldDriverRs = ReflectionUtils.executeMethod(oldDriverMetadata, methodName, args);
+          Object ossDriverRs = ReflectionUtils.executeMethod(ossDriverMetadata, methodName, args);
 
           ComparisonResult result =
-              ResultSetComparator.compare("metadata", methodName, args, simbaRs, ossRs);
+              ResultSetComparator.compare(
+                  "DatabaseMetaData", methodName, args, oldDriverRs, ossDriverRs);
           reporter.addResult(result);
 
           if (result.hasDifferences()) {
             System.err.println("Differences found in metadata results for method: " + methodName);
+            System.err.println(
+                "Args: "
+                    + Arrays.stream(args).map(Object::toString).collect(Collectors.joining(", ")));
+            System.err.println(result);
+          }
+        });
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideResultSetMethods")
+  @DisplayName("Compare ResultSet API Results")
+  void compareResultSetResults(String methodName, Object[] args) {
+    assertDoesNotThrow(
+        () -> {
+          Object oldDriverResult =
+              ReflectionUtils.executeMethod(oldDriverResultSet, methodName, args);
+          Object ossDriverResult =
+              ReflectionUtils.executeMethod(ossDriverResultSet, methodName, args);
+
+          ComparisonResult result =
+              ResultSetComparator.compare(
+                  "ResultSet", methodName, args, oldDriverResult, ossDriverResult);
+          reporter.addResult(result);
+
+          if (result.hasDifferences()) {
+            System.err.println("Differences found in ResultSet results for method: " + methodName);
+            System.err.println(
+                "Args: "
+                    + Arrays.stream(args).map(Object::toString).collect(Collectors.joining(", ")));
+            System.err.println(result);
+          }
+        });
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideResultSetMetaDataMethods")
+  @DisplayName("Compare ResultSetMetaData API Results")
+  void compareResultSetMetaDataResults(String methodName, Object[] args) {
+    assertDoesNotThrow(
+        () -> {
+          ResultSetMetaData oldDriverRsMd = oldDriverResultSet.getMetaData();
+          ResultSetMetaData ossDriverRsMd = ossDriverResultSet.getMetaData();
+          Object oldDriverResult = ReflectionUtils.executeMethod(oldDriverRsMd, methodName, args);
+          Object ossDriverResult = ReflectionUtils.executeMethod(ossDriverRsMd, methodName, args);
+
+          ComparisonResult result =
+              ResultSetComparator.compare(
+                  "ResultSetMetaData", methodName, args, oldDriverResult, ossDriverResult);
+          reporter.addResult(result);
+
+          if (result.hasDifferences()) {
+            System.err.println(
+                "Differences found in ResultSetMetaData results for method: " + methodName);
             System.err.println(
                 "Args: "
                     + Arrays.stream(args).map(Object::toString).collect(Collectors.joining(", ")));
@@ -135,6 +202,16 @@ public class JDBCDriverComparisonTest {
   private static Stream<Arguments> provideMetadataMethods() {
     DatabaseMetaDataTestParams params = new DatabaseMetaDataTestParams();
     return ReflectionUtils.provideMethodsForClass(DatabaseMetaData.class, params);
+  }
+
+  private static Stream<Arguments> provideResultSetMethods() {
+    ResultSetTestParams params = new ResultSetTestParams();
+    return ReflectionUtils.provideMethodsForClass(ResultSet.class, params);
+  }
+
+  private static Stream<Arguments> provideResultSetMetaDataMethods() {
+    ResultSetMetaDataTestParams params = new ResultSetMetaDataTestParams();
+    return ReflectionUtils.provideMethodsForClass(ResultSetMetaData.class, params);
   }
 
   private static URL extractJarToTemp(String jarName, Path tempDir) {
