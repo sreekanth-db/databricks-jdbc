@@ -1,5 +1,7 @@
 package com.jayant.testparams;
 
+import static com.jayant.testparams.ParamUtils.putInMapForKey;
+
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -8,14 +10,6 @@ import java.sql.Types;
 import java.util.*;
 
 public class DatabaseMetaDataTestParams implements TestParams {
-
-  private void putInMapForKey(
-      Map<Map.Entry<String, Integer>, Set<Object[]>> functionToArgsMap,
-      Map.Entry<String, Integer> key,
-      Object[] value) {
-    functionToArgsMap.putIfAbsent(key, new HashSet<>());
-    functionToArgsMap.get(key).add(value);
-  }
 
   @Override
   public Map<Map.Entry<String, Integer>, Set<Object[]>> getFunctionToArgsMap() {
@@ -159,6 +153,15 @@ public class DatabaseMetaDataTestParams implements TestParams {
     Set<Map.Entry<String, Integer>> acceptedKnownDiffs = new HashSet<>();
     // getSchemas with no args returns empty result set for SEA
     acceptedKnownDiffs.add(Map.entry("getSchemas", 0));
+
+    // don't compare classes
+    acceptedKnownDiffs.add(Map.entry("getConnection", 0));
+
+    // don't compare driver version
+    acceptedKnownDiffs.add(Map.entry("getDriverVersion", 0));
+
+    // URL passes is different
+    acceptedKnownDiffs.add(Map.entry("getURL", 0));
 
     // Methods that we do not need to test from the Super class
     acceptedKnownDiffs.add(Map.entry("unwrap", 1));
