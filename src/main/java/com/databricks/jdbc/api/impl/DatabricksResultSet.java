@@ -24,6 +24,7 @@ import com.databricks.jdbc.model.core.ResultData;
 import com.databricks.jdbc.model.core.ResultManifest;
 import com.databricks.jdbc.model.core.StatementStatus;
 import com.databricks.jdbc.model.telemetry.enums.DatabricksDriverErrorCode;
+import com.databricks.sdk.support.ToStringer;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.InputStream;
 import java.io.Reader;
@@ -1735,5 +1736,18 @@ public class DatabricksResultSet implements IDatabricksResultSet, IDatabricksRes
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     ObjectConverter converter = ConverterHelper.getConverterForSqlType(columnType);
     return convertMethod.apply(converter, obj);
+  }
+
+  @Override
+  public String toString() {
+    return (new ToStringer(DatabricksResultSet.class))
+        .add("statementStatus", this.statementStatus)
+        .add("statementId", this.statementId)
+        .add("statementType", this.statementType)
+        .add("updateCount", this.updateCount)
+        .add("isClosed", this.isClosed)
+        .add("wasNull", this.wasNull)
+        .add("resultSetType", this.resultSetType)
+        .toString();
   }
 }
