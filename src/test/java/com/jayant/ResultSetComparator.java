@@ -14,6 +14,10 @@ public class ResultSetComparator {
     result.metadataDifferences = new ArrayList<>();
     result.dataDifferences = new ArrayList<>();
 
+    if (result1 == null && result2 == null) {
+      return result;
+    }
+
     if (result1 instanceof ResultSet && result2 instanceof ResultSet) {
       ResultSet rs1 = (ResultSet) result1;
       ResultSet rs2 = (ResultSet) result2;

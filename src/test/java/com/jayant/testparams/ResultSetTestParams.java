@@ -3,8 +3,10 @@ package com.jayant.testparams;
 import static com.jayant.testparams.ParamUtils.putInMapForKey;
 
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.ResultSet;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -59,6 +61,8 @@ public class ResultSetTestParams implements TestParams {
     set.add(Map.entry("getObject", 2));
     set.add(Map.entry("updateObject", 3));
     set.add(Map.entry("updateObject", 4));
+    // difficult to test this function since need to create test object using a connection
+    set.add(Map.entry("updateArray", 2));
 
     set.add(Map.entry("unwrap", 1));
     set.add(Map.entry("isWrapperFor", 1));
@@ -200,12 +204,14 @@ public class ResultSetTestParams implements TestParams {
     putInMapForKey(functionToArgsMap, Map.entry("updateBoolean", 2), new Object[] {3, true});
     putInMapForKey(functionToArgsMap, Map.entry("updateInt", 2), new Object[] {4, 1234});
     putInMapForKey(functionToArgsMap, Map.entry("updateLong", 2), new Object[] {5, 9892492323L});
-    putInMapForKey(functionToArgsMap, Map.entry("updateShort", 2), new Object[] {6, 1234});
-    putInMapForKey(functionToArgsMap, Map.entry("updateShort", 2), new Object[] {7, 12});
-    putInMapForKey(functionToArgsMap, Map.entry("updateFloat", 2), new Object[] {8, 7.89});
+    putInMapForKey(functionToArgsMap, Map.entry("updateShort", 2), new Object[] {6, (short) 1234});
+    putInMapForKey(functionToArgsMap, Map.entry("updateShort", 2), new Object[] {7, (short) 12});
+    putInMapForKey(functionToArgsMap, Map.entry("updateFloat", 2), new Object[] {8, 7.89f});
     putInMapForKey(functionToArgsMap, Map.entry("updateDouble", 2), new Object[] {9, 11210.28412});
     putInMapForKey(
-        functionToArgsMap, Map.entry("updateBigDecimal", 2), new Object[] {9, 11210.28412});
+        functionToArgsMap,
+        Map.entry("updateBigDecimal", 2),
+        new Object[] {9, new BigDecimal("11210.28412")});
     putInMapForKey(functionToArgsMap, Map.entry("updateDouble", 2), new Object[] {10, 121.22});
     putInMapForKey(
         functionToArgsMap,
@@ -218,17 +224,13 @@ public class ResultSetTestParams implements TestParams {
     putInMapForKey(
         functionToArgsMap,
         Map.entry("updateTime", 2),
-        new Object[] {12, new Timestamp(System.currentTimeMillis())});
+        new Object[] {12, new Time(System.currentTimeMillis())});
     putInMapForKey(
         functionToArgsMap,
         Map.entry("updateTimestamp", 2),
         new Object[] {13, new Timestamp(System.currentTimeMillis())});
     putInMapForKey(
         functionToArgsMap, Map.entry("updateBytes", 2), new Object[] {14, "test".getBytes()});
-    putInMapForKey(
-        functionToArgsMap,
-        Map.entry("updateArray", 2),
-        new Object[] {15, new String[] {"new1", "new2"}});
     putInMapForKey(functionToArgsMap, Map.entry("updateObject", 2), new Object[] {16, Map.of()});
     putInMapForKey(functionToArgsMap, Map.entry("updateObject", 2), new Object[] {17, Map.of()});
     putInMapForKey(
@@ -248,11 +250,15 @@ public class ResultSetTestParams implements TestParams {
     putInMapForKey(
         functionToArgsMap, Map.entry("updateLong", 2), new Object[] {"bigint_column", 121312313L});
     putInMapForKey(
-        functionToArgsMap, Map.entry("updateShort", 2), new Object[] {"smallint_column", 1212});
+        functionToArgsMap,
+        Map.entry("updateShort", 2),
+        new Object[] {"smallint_column", (short) 1212});
     putInMapForKey(
-        functionToArgsMap, Map.entry("updateShort", 2), new Object[] {"tinyint_column", 13});
+        functionToArgsMap,
+        Map.entry("updateShort", 2),
+        new Object[] {"tinyint_column", (short) 13});
     putInMapForKey(
-        functionToArgsMap, Map.entry("updateFloat", 2), new Object[] {"float_column", 42.82});
+        functionToArgsMap, Map.entry("updateFloat", 2), new Object[] {"float_column", 42.82f});
     putInMapForKey(
         functionToArgsMap,
         Map.entry("updateDouble", 2),
@@ -260,7 +266,7 @@ public class ResultSetTestParams implements TestParams {
     putInMapForKey(
         functionToArgsMap,
         Map.entry("updateBigDecimal", 2),
-        new Object[] {"double_column", 13322313.2313123});
+        new Object[] {"double_column", new BigDecimal("13322313.2313123")});
     putInMapForKey(
         functionToArgsMap, Map.entry("updateDouble", 2), new Object[] {"decimal_column", 1231.23});
     putInMapForKey(
@@ -274,7 +280,7 @@ public class ResultSetTestParams implements TestParams {
     putInMapForKey(
         functionToArgsMap,
         Map.entry("updateTime", 2),
-        new Object[] {"timestamp_column", new Timestamp(System.currentTimeMillis())});
+        new Object[] {"timestamp_column", new Time(System.currentTimeMillis())});
     putInMapForKey(
         functionToArgsMap,
         Map.entry("updateTimestamp", 2),
@@ -283,10 +289,6 @@ public class ResultSetTestParams implements TestParams {
         functionToArgsMap,
         Map.entry("updateBytes", 2),
         new Object[] {"binary_column", "test".getBytes()});
-    putInMapForKey(
-        functionToArgsMap,
-        Map.entry("updateArray", 2),
-        new Object[] {"array_column", new String[] {"new1", "new2"}});
     putInMapForKey(
         functionToArgsMap, Map.entry("updateObject", 2), new Object[] {"map_column", Map.of()});
     putInMapForKey(

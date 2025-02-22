@@ -68,17 +68,38 @@ public class ReflectionUtils {
     Object result;
     try {
       // Get the method by its name and parameter types
-      Method method;
-      if (args == null || args.length == 0) {
-        method = object.getClass().getMethod(methodName);
-      } else {
-        // Create an array of parameter types to match the method signature
-        Class<?>[] paramTypes = new Class[args.length];
-        for (int i = 0; i < args.length; i++) {
-          paramTypes[i] = args[i] == null ? String.class : args[i].getClass();
+      Method method = null;
+      Method[] methods = object.getClass().getMethods();
+      for (Method m : methods) {
+        if (m.getName().equals(methodName)) {
+          // Check if the parameter types match
+          Class<?>[] paramTypes = m.getParameterTypes();
+          if (paramTypes.length == args.length) {
+            int matched = 0;
+            for (int i = 0; i < paramTypes.length; i++) {
+              // Handle both primitive and wrapper types (autoboxing)
+              if (paramTypes[i].isPrimitive()) {
+                if (isPrimitiveCompatible(paramTypes[i], args[i].getClass())) {
+                  matched++;
+                }
+              } else {
+                // if args[i] is null assume it is of the correct type
+                if (args[i] == null || paramTypes[i].isAssignableFrom(args[i].getClass())) {
+                  matched++;
+                }
+              }
+            }
+            if (matched == paramTypes.length) {
+              method = m;
+              break;
+            }
+          }
         }
+      }
 
-        method = object.getClass().getMethod(methodName, paramTypes);
+      // If no matching method was found, throw an exception
+      if (method == null) {
+        throw new NoSuchMethodException("No matching method found: " + methodName);
       }
 
       // Invoke the method dynamically with the arguments
@@ -87,12 +108,22 @@ public class ReflectionUtils {
       } catch (InvocationTargetException e) {
         result = e.getCause();
       }
-    } catch (NoSuchMethodException e) {
-      // This is generally thrown due to the difference in JDBC spec versions
-      result = "NoSuchMethodException";
     } catch (Exception e) {
       throw new SQLException("Error executing method: " + methodName, e);
     }
     return result;
+  }
+
+  // Helper method to check compatibility between primitive and wrapper types
+  private static boolean isPrimitiveCompatible(Class<?> primitiveType, Class<?> wrapperType) {
+    if (primitiveType == int.class && wrapperType == Integer.class) return true;
+    if (primitiveType == boolean.class && wrapperType == Boolean.class) return true;
+    if (primitiveType == long.class && wrapperType == Long.class) return true;
+    if (primitiveType == short.class && wrapperType == Short.class) return true;
+    if (primitiveType == byte.class && wrapperType == Byte.class) return true;
+    if (primitiveType == char.class && wrapperType == Character.class) return true;
+    if (primitiveType == float.class && wrapperType == Float.class) return true;
+    if (primitiveType == double.class && wrapperType == Double.class) return true;
+    return false;
   }
 }

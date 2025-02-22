@@ -133,9 +133,7 @@ public class JDBCDriverComparisonTest {
 
           if (result.hasDifferences()) {
             System.err.println("Differences found in metadata results for method: " + methodName);
-            System.err.println(
-                "Args: "
-                    + Arrays.stream(args).map(Object::toString).collect(Collectors.joining(", ")));
+            System.err.println("Args: " + getStringForArgs(args));
             System.err.println(result);
           }
         });
@@ -159,9 +157,7 @@ public class JDBCDriverComparisonTest {
 
           if (result.hasDifferences()) {
             System.err.println("Differences found in ResultSet results for method: " + methodName);
-            System.err.println(
-                "Args: "
-                    + Arrays.stream(args).map(Object::toString).collect(Collectors.joining(", ")));
+            System.err.println("Args: " + getStringForArgs(args));
             System.err.println(result);
           }
         });
@@ -186,9 +182,7 @@ public class JDBCDriverComparisonTest {
           if (result.hasDifferences()) {
             System.err.println(
                 "Differences found in ResultSetMetaData results for method: " + methodName);
-            System.err.println(
-                "Args: "
-                    + Arrays.stream(args).map(Object::toString).collect(Collectors.joining(", ")));
+            System.err.println("Args: " + getStringForArgs(args));
             System.err.println(result);
           }
         });
@@ -228,5 +222,11 @@ public class JDBCDriverComparisonTest {
       e.printStackTrace();
       return null;
     }
+  }
+
+  private static String getStringForArgs(Object[] args) {
+    return Arrays.stream(args)
+        .map(o -> o == null ? String.valueOf(o) : o.toString())
+        .collect(Collectors.joining(", "));
   }
 }
