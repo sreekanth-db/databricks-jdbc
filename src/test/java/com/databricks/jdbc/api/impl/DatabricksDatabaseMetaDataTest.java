@@ -1011,10 +1011,7 @@ public class DatabricksDatabaseMetaDataTest {
     List<Callable<Object>> tasks =
         Arrays.asList(
             () -> metaData.supportsTransactionIsolationLevel(0),
-            () -> metaData.getProcedureColumns(null, null, null, null),
-            () -> metaData.getIndexInfo(null, null, null, false, false),
             () -> metaData.supportsConvert(0, 0),
-            () -> metaData.getSuperTables(null, null, null),
             () -> metaData.getFunctionColumns(null, null, null, null),
             () -> metaData.getPseudoColumns(null, null, null, null),
             () -> metaData.isWrapperFor(DatabricksDatabaseMetaData.class),
@@ -1237,6 +1234,109 @@ public class DatabricksDatabaseMetaDataTest {
     assertFalse(resultSet.next());
   }
 
+  @ParameterizedTest
+  @MethodSource("provideGetProcedureColumnsParameters")
+  public void testGetProcedureColumns(
+      String catalog,
+      String schemaPattern,
+      String procedureNamePattern,
+      String columnName,
+      String testDesc)
+      throws SQLException {
+    ResultSet resultSet =
+        metaData.getProcedureColumns(catalog, schemaPattern, procedureNamePattern, columnName);
+    assertNotNull(resultSet);
+
+    assertEquals(20, resultSet.getMetaData().getColumnCount());
+    assertSame("PROCEDURE_CAT", resultSet.getMetaData().getColumnName(1));
+    assertSame("PROCEDURE_SCHEM", resultSet.getMetaData().getColumnName(2));
+    assertEquals("PROCEDURE_NAME", resultSet.getMetaData().getColumnName(3));
+    assertEquals("COLUMN_NAME", resultSet.getMetaData().getColumnName(4));
+    assertEquals("COLUMN_TYPE", resultSet.getMetaData().getColumnName(5));
+    assertEquals("DATA_TYPE", resultSet.getMetaData().getColumnName(6));
+    assertEquals("TYPE_NAME", resultSet.getMetaData().getColumnName(7));
+    assertEquals("PRECISION", resultSet.getMetaData().getColumnName(8));
+    assertEquals("LENGTH", resultSet.getMetaData().getColumnName(9));
+    assertEquals("SCALE", resultSet.getMetaData().getColumnName(10));
+    assertEquals("RADIX", resultSet.getMetaData().getColumnName(11));
+    assertEquals("NULLABLE", resultSet.getMetaData().getColumnName(12));
+    assertEquals("REMARKS", resultSet.getMetaData().getColumnName(13));
+
+    assertEquals(1, resultSet.getMetaData().isNullable(1));
+    assertEquals(1, resultSet.getMetaData().isNullable(2));
+    assertEquals(0, resultSet.getMetaData().isNullable(3));
+    assertEquals(0, resultSet.getMetaData().isNullable(4));
+    assertEquals(0, resultSet.getMetaData().isNullable(5));
+    assertEquals(0, resultSet.getMetaData().isNullable(6));
+    assertEquals(0, resultSet.getMetaData().isNullable(7));
+    assertEquals(1, resultSet.getMetaData().isNullable(8));
+    assertEquals(1, resultSet.getMetaData().isNullable(9));
+    assertEquals(1, resultSet.getMetaData().isNullable(10));
+    assertEquals(1, resultSet.getMetaData().isNullable(11));
+    assertEquals(0, resultSet.getMetaData().isNullable(12));
+    assertEquals(1, resultSet.getMetaData().isNullable(13));
+    assertEquals(1, resultSet.getMetaData().isNullable(14));
+    assertEquals(0, resultSet.getMetaData().isNullable(15));
+    assertEquals(1, resultSet.getMetaData().isNullable(16));
+    assertEquals(1, resultSet.getMetaData().isNullable(17));
+    assertEquals(0, resultSet.getMetaData().isNullable(18));
+    assertEquals(0, resultSet.getMetaData().isNullable(19));
+    assertEquals(0, resultSet.getMetaData().isNullable(20));
+
+    // Result set is empty
+    assertFalse(resultSet.next());
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideGetIndexInfoParameters")
+  public void testGetIndexInfo(
+      String catalog,
+      String schema,
+      String table,
+      boolean unique,
+      boolean approximate,
+      String testDesc)
+      throws SQLException {
+    ResultSet resultSet = metaData.getIndexInfo(catalog, schema, table, unique, approximate);
+    assertNotNull(resultSet);
+
+    assertEquals(13, resultSet.getMetaData().getColumnCount());
+    assertSame("TABLE_CAT", resultSet.getMetaData().getColumnName(1));
+    assertSame("TABLE_SCHEM", resultSet.getMetaData().getColumnName(2));
+    assertEquals("TABLE_NAME", resultSet.getMetaData().getColumnName(3));
+    assertEquals("NON_UNIQUE", resultSet.getMetaData().getColumnName(4));
+    assertEquals("INDEX_QUALIFIER", resultSet.getMetaData().getColumnName(5));
+    assertEquals("INDEX_NAME", resultSet.getMetaData().getColumnName(6));
+    assertEquals("TYPE", resultSet.getMetaData().getColumnName(7));
+    assertEquals("ORDINAL_POSITION", resultSet.getMetaData().getColumnName(8));
+    assertEquals("COLUMN_NAME", resultSet.getMetaData().getColumnName(9));
+    assertEquals("ASC_OR_DESC", resultSet.getMetaData().getColumnName(10));
+    assertEquals("CARDINALITY", resultSet.getMetaData().getColumnName(11));
+    assertEquals("PAGES", resultSet.getMetaData().getColumnName(12));
+    assertEquals("FILTER_CONDITION", resultSet.getMetaData().getColumnName(13));
+
+    // Result set is empty
+    assertFalse(resultSet.next());
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideCatalogSchemaTableParameters")
+  public void testGetSuperTables(
+      String catalog, String schemaPattern, String tableNamePattern, String testDesc)
+      throws SQLException {
+    ResultSet resultSet = metaData.getSuperTables(catalog, schemaPattern, tableNamePattern);
+    assertNotNull(resultSet);
+
+    assertEquals(4, resultSet.getMetaData().getColumnCount());
+    assertSame("TABLE_CAT", resultSet.getMetaData().getColumnName(1));
+    assertSame("TABLE_SCHEM", resultSet.getMetaData().getColumnName(2));
+    assertEquals("TABLE_NAME", resultSet.getMetaData().getColumnName(3));
+    assertEquals("SUPERTABLE_NAME", resultSet.getMetaData().getColumnName(4));
+
+    // Result set is empty
+    assertFalse(resultSet.next());
+  }
+
   private static Stream<Arguments> provideAttributeParameters() {
     return Stream.of(
         // Test case 1: All nulls (should return empty result set)
@@ -1326,5 +1426,65 @@ public class DatabricksDatabaseMetaDataTest {
 
         // Test case 5: All parameters specified
         Arguments.of("test_catalog", "test_schema", "test_table", "All parameters specified"));
+  }
+
+  private static Stream<Arguments> provideGetProcedureColumnsParameters() {
+    return Stream.of(
+        // Test case 1: All nulls (should return empty result set)
+        Arguments.of(null, null, null, null, "All parameters null"),
+
+        // Test case 2: Valid catalog, others null
+        Arguments.of("test_catalog", null, null, null, "Only catalog specified"),
+
+        // Test case 3: Valid schema pattern, others null
+        Arguments.of(null, "test_schema%", null, null, "Only schema pattern specified"),
+
+        // Test case 4: Valid procedure name pattern, others null
+        Arguments.of(null, null, "TEST_PROCEDURE%", null, "Only procedure name pattern specified"),
+
+        // Test case 5: Valid column name, others null
+        Arguments.of(null, null, null, "column_name", "Only column name specified"),
+
+        // Test case 6: All parameters specified with wildcards
+        Arguments.of(
+            "test_catalog",
+            "test_schema%",
+            "TEST_PROCEDURE%",
+            "column_name",
+            "All parameters specified with wildcards"),
+
+        // Test case 7: Exact match patterns
+        Arguments.of(
+            "test_catalog", "test_schema", "TEST_PROCEDURE", "column_name", "Exact match patterns"),
+
+        // Test case 8: Invalid patterns (should return empty result set)
+        Arguments.of(
+            "invalid_catalog",
+            "invalid_schema",
+            "INVALID_PROCEDURE",
+            "invalid_column",
+            "Invalid patterns"),
+
+        // Test case 9: Special characters in patterns
+        Arguments.of(null, "_test%", "%PROCEDURE_", "_column%", "Special characters in patterns"));
+  }
+
+  private static Stream<Arguments> provideGetIndexInfoParameters() {
+    return Stream.of(
+        // Test case 1: All nulls (should return empty result set)
+        Arguments.of(null, null, null, false, false, "All parameters null"),
+
+        // Test case 2: Valid catalog, others null
+        Arguments.of("test_catalog", null, null, false, false, "Only catalog specified"),
+
+        // Test case 3: Valid schema, others null
+        Arguments.of(null, "test_schema", null, false, false, "Only schema specified"),
+
+        // Test case 4: Valid table, others null
+        Arguments.of(null, null, "test_table", false, false, "Only table specified"),
+
+        // Test case 5: All parameters specified
+        Arguments.of(
+            "test_catalog", "test_schema", "test_table", false, true, "All parameters specified"));
   }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MetadataResultConstants {
+  public static String NULL_STRING = "NULL";
   public static final String[] DEFAULT_TABLE_TYPES = {"TABLE", "VIEW", "SYSTEM TABLE"};
   public static final ResultColumn CATALOG_COLUMN =
       new ResultColumn("TABLE_CAT", "catalogName", Types.VARCHAR);
@@ -144,6 +145,37 @@ public class MetadataResultConstants {
       new ResultColumn("SUPERTYPE_SCHEM", "supertypeSchem", Types.VARCHAR);
   private static final ResultColumn SUPERTYPE_NAME =
       new ResultColumn("SUPERTYPE_NAME", "supertypeName", Types.VARCHAR);
+  private static final ResultColumn PROCEDURE_CAT =
+      new ResultColumn("PROCEDURE_CAT", "procedureCat", Types.VARCHAR);
+  private static final ResultColumn PROCEDURE_SCHEM =
+      new ResultColumn("PROCEDURE_SCHEM", "procedureSchem", Types.VARCHAR);
+  private static final ResultColumn PROCEDURE_NAME =
+      new ResultColumn("PROCEDURE_NAME", "procedureName", Types.VARCHAR);
+  private static final ResultColumn COLUMN_TYPE =
+      new ResultColumn("COLUMN_TYPE", "columnType", Types.SMALLINT);
+  private static final ResultColumn LENGTH = new ResultColumn("LENGTH", "length", Types.INTEGER);
+  private static final ResultColumn SCALE = new ResultColumn("SCALE", "scale", Types.SMALLINT);
+  private static final ResultColumn RADIX = new ResultColumn("RADIX", "radix", Types.SMALLINT);
+  private static final ResultColumn NULLABLE_SHORT =
+      new ResultColumn("NULLABLE", "nullable", Types.SMALLINT);
+  private static final ResultColumn NON_UNIQUE =
+      new ResultColumn("NON_UNIQUE", "nonUnique", Types.BOOLEAN);
+  private static final ResultColumn INDEX_QUALIFIER =
+      new ResultColumn("INDEX_QUALIFIER", "indexQualifier", Types.VARCHAR);
+  private static final ResultColumn INDEX_NAME =
+      new ResultColumn("INDEX_NAME", "indexName", Types.VARCHAR);
+  private static final ResultColumn TYPE = new ResultColumn("TYPE", "type", Types.SMALLINT);
+  private static final ResultColumn ORDINAL_POSITION_SHORT =
+      new ResultColumn("ORDINAL_POSITION", "ordinalPosition", Types.SMALLINT);
+  private static final ResultColumn ASC_OR_DESC =
+      new ResultColumn("ASC_OR_DESC", "ascOrDesc", Types.VARCHAR);
+  private static final ResultColumn CARDINALITY =
+      new ResultColumn("CARDINALITY", "cardinality", Types.BIGINT);
+  private static final ResultColumn PAGES = new ResultColumn("PAGES", "pages", Types.BIGINT);
+  private static final ResultColumn FILTER_CONDITION =
+      new ResultColumn("FILTER_CONDITION", "filterCondition", Types.VARCHAR);
+  private static final ResultColumn SUPERTABLE_NAME =
+      new ResultColumn("SUPERTABLE_NAME", "supertableName", Types.VARCHAR);
 
   public static List<ResultColumn> FUNCTION_COLUMNS =
       List.of(
@@ -213,8 +245,6 @@ public class MetadataResultConstants {
       Arrays.asList(List.of("SYSTEM TABLE"), List.of("TABLE"), List.of("VIEW"));
 
   public static List<ResultColumn> TABLE_TYPE_COLUMNS = List.of(TABLE_TYPE_COLUMN);
-
-  public static String NULL_STRING = "NULL";
 
   public static final List<ResultColumn> NULL_COLUMN_COLUMNS =
       List.of(
@@ -336,6 +366,48 @@ public class MetadataResultConstants {
           SUPERTYPE_SCHEM,
           SUPERTYPE_NAME);
 
+  public static final List<ResultColumn> PROCEDURE_COLUMNS_COLUMNS =
+      List.of(
+          PROCEDURE_CAT,
+          PROCEDURE_SCHEM,
+          PROCEDURE_NAME,
+          COLUMN_NAME_COLUMN,
+          COLUMN_TYPE,
+          DATA_TYPE_COLUMN,
+          TYPE_NAME_COLUMN,
+          PRECISION_COLUMN,
+          LENGTH,
+          SCALE,
+          RADIX,
+          NULLABLE_SHORT,
+          REMARKS_COLUMN,
+          COLUMN_DEF_COLUMN,
+          SQL_DATA_TYPE_COLUMN,
+          SQL_DATETIME_SUB_COLUMN,
+          CHAR_OCTET_LENGTH_COLUMN,
+          ORDINAL_POSITION_COLUMN,
+          IS_NULLABLE_COLUMN,
+          SPECIFIC_NAME_COLUMN);
+
+  public static final List<ResultColumn> INDEX_INFO_COLUMNS =
+      List.of(
+          CATALOG_COLUMN,
+          SCHEMA_COLUMN,
+          TABLE_NAME_COLUMN,
+          NON_UNIQUE,
+          INDEX_QUALIFIER,
+          INDEX_NAME,
+          TYPE,
+          ORDINAL_POSITION_SHORT,
+          COLUMN_NAME_COLUMN,
+          ASC_OR_DESC,
+          CARDINALITY,
+          PAGES,
+          FILTER_CONDITION);
+
+  public static final List<ResultColumn> SUPER_TABLES_COLUMNS =
+      List.of(CATALOG_COLUMN, SCHEMA_COLUMN, TABLE_NAME_COLUMN, SUPERTABLE_NAME);
+
   public static final Map<CommandName, List<ResultColumn>> NON_NULLABLE_COLUMNS_MAP =
       new HashMap<>() {
         {
@@ -402,6 +474,24 @@ public class MetadataResultConstants {
               CommandName.GET_VERSION_COLUMNS,
               List.of(SCOPE, COL_NAME_COLUMN, DATA_TYPE_COLUMN, TYPE_NAME_COLUMN, PSEUDO_COLUMN));
           put(CommandName.GET_SUPER_TYPES, List.of(TYPE_NAME_COLUMN, SUPERTYPE_NAME));
+          put(
+              CommandName.GET_PROCEDURES_COLUMNS,
+              List.of(
+                  PROCEDURE_NAME,
+                  COLUMN_NAME_COLUMN,
+                  COLUMN_TYPE,
+                  DATA_TYPE_COLUMN,
+                  TYPE_NAME_COLUMN,
+                  NULLABLE_SHORT,
+                  SQL_DATA_TYPE_COLUMN,
+                  ORDINAL_POSITION_COLUMN,
+                  IS_NULLABLE_COLUMN,
+                  SPECIFIC_NAME_COLUMN));
+          put(
+              CommandName.GET_INDEX_INFO,
+              List.of(
+                  TABLE_NAME_COLUMN, NON_UNIQUE, TYPE, ORDINAL_POSITION_SHORT, CARDINALITY, PAGES));
+          put(CommandName.GET_SUPER_TABLES, List.of(TABLE_NAME_COLUMN, SUPERTABLE_NAME));
         }
       };
 }
