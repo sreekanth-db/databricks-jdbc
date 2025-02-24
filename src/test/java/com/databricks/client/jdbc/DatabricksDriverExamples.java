@@ -93,6 +93,7 @@ public class DatabricksDriverExamples {
     for (int i = 1; i <= columnsNumber; i++) {
       System.out.print(rsmd.getColumnDisplaySize(i) + "\t\t\t");
     }
+
     System.out.println();
 
     // Print row data
