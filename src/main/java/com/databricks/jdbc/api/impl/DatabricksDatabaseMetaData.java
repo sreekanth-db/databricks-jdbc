@@ -1087,8 +1087,13 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
         String.format(
             "public ResultSet getImportedKeys(String catalog = {%s}, String schema = {%s}, String table = {%s})",
             catalog, schema, table));
-    // TODO (PECO-1696): Implement getImportedKeys
-    return new EmptyResultSet();
+    throwExceptionIfConnectionIsClosed();
+
+    return MetadataResultSetBuilder.getResultSetWithGivenRowsAndColumns(
+        MetadataResultConstants.IMPORTED_KEYS_COLUMNS,
+        new ArrayList<>(),
+        METADATA_STATEMENT_ID,
+        CommandName.GET_IMPORTED_KEYS);
   }
 
   @Override
@@ -1098,8 +1103,13 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
         String.format(
             "public ResultSet getExportedKeys(String catalog = {%s}, String schema = {%s}, String table = {%s})",
             catalog, schema, table));
-    // TODO (PECO-1696): Implement getExportedKeys
-    return new EmptyResultSet();
+    throwExceptionIfConnectionIsClosed();
+
+    return MetadataResultSetBuilder.getResultSetWithGivenRowsAndColumns(
+        MetadataResultConstants.EXPORTED_KEYS_COLUMNS,
+        new ArrayList<>(),
+        METADATA_STATEMENT_ID,
+        CommandName.GET_EXPORTED_KEYS);
   }
 
   @Override
@@ -1473,19 +1483,30 @@ public class DatabricksDatabaseMetaData implements DatabaseMetaData {
         String.format(
             "public ResultSet getFunctionColumns(String catalog = {%s}, String schemaPattern = {%s}, String functionNamePattern = {%s}, String columnNamePattern = {%s})",
             catalog, schemaPattern, functionNamePattern, columnNamePattern));
-    throw new UnsupportedOperationException(
-        "Not implemented in DatabricksDatabaseMetaData - getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern)");
+    throwExceptionIfConnectionIsClosed();
+
+    return MetadataResultSetBuilder.getResultSetWithGivenRowsAndColumns(
+        FUNCTION_COLUMNS_COLUMNS,
+        new ArrayList<>(),
+        METADATA_STATEMENT_ID,
+        CommandName.GET_FUNCTION_COLUMNS);
   }
 
   @Override
   public ResultSet getPseudoColumns(
-      String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) {
+      String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
+      throws SQLException {
     LOGGER.debug(
         String.format(
             "public ResultSet getPseudoColumns(String catalog = {%s}, String schemaPattern = {%s}, String tableNamePattern = {%s}, String columnNamePattern = {%s})",
             catalog, schemaPattern, tableNamePattern, columnNamePattern));
-    throw new UnsupportedOperationException(
-        "Not implemented in DatabricksDatabaseMetaData - getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)");
+    throwExceptionIfConnectionIsClosed();
+
+    return MetadataResultSetBuilder.getResultSetWithGivenRowsAndColumns(
+        PSEUDO_COLUMNS_COLUMNS,
+        new ArrayList<>(),
+        METADATA_STATEMENT_ID,
+        CommandName.GET_PSEUDO_COLUMNS);
   }
 
   @Override

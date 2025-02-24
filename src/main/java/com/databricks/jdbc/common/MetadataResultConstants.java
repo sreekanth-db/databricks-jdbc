@@ -176,6 +176,8 @@ public class MetadataResultConstants {
       new ResultColumn("FILTER_CONDITION", "filterCondition", Types.VARCHAR);
   private static final ResultColumn SUPERTABLE_NAME =
       new ResultColumn("SUPERTABLE_NAME", "supertableName", Types.VARCHAR);
+  private static final ResultColumn COLUMN_USAGE =
+      new ResultColumn("COLUMN_USAGE", "columnUsage", Types.VARCHAR);
 
   public static List<ResultColumn> FUNCTION_COLUMNS =
       List.of(
@@ -271,7 +273,8 @@ public class MetadataResultConstants {
           IS_NULLABLE_COLUMN,
           SCOPE_CATALOG_COLUMN,
           SCOPE_SCHEMA_COLUMN,
-          SCOPE_TABLE_COLUMN);
+          SCOPE_TABLE_COLUMN,
+          COLUMN_USAGE);
 
   public static final List<ResultColumn> ATTRIBUTES_COLUMNS =
       List.of(
@@ -408,6 +411,75 @@ public class MetadataResultConstants {
   public static final List<ResultColumn> SUPER_TABLES_COLUMNS =
       List.of(CATALOG_COLUMN, SCHEMA_COLUMN, TABLE_NAME_COLUMN, SUPERTABLE_NAME);
 
+  public static final List<ResultColumn> FUNCTION_COLUMNS_COLUMNS =
+      List.of(
+          FUNCTION_CATALOG_COLUMN,
+          FUNCTION_SCHEMA_COLUMN,
+          FUNCTION_NAME_COLUMN,
+          COLUMN_NAME_COLUMN,
+          COLUMN_TYPE,
+          DATA_TYPE_COLUMN,
+          TYPE_NAME_COLUMN,
+          PRECISION_COLUMN,
+          LENGTH,
+          SCALE,
+          RADIX,
+          NULLABLE_SHORT,
+          REMARKS_COLUMN,
+          CHAR_OCTET_LENGTH_COLUMN,
+          ORDINAL_POSITION_COLUMN,
+          IS_NULLABLE_COLUMN,
+          SPECIFIC_NAME_COLUMN);
+
+  public static final List<ResultColumn> PSEUDO_COLUMNS_COLUMNS =
+      List.of(
+          CATALOG_COLUMN,
+          SCHEMA_COLUMN,
+          TABLE_NAME_COLUMN,
+          COLUMN_NAME_COLUMN,
+          DATA_TYPE_COLUMN,
+          COLUMN_SIZE_COLUMN,
+          DECIMAL_DIGITS_COLUMN,
+          NUM_PREC_RADIX_COLUMN,
+          COLUMN_USAGE,
+          REMARKS_COLUMN,
+          CHAR_OCTET_LENGTH_COLUMN,
+          IS_NULLABLE_COLUMN);
+
+  public static final List<ResultColumn> IMPORTED_KEYS_COLUMNS =
+      List.of(
+          PKTABLE_CAT,
+          PKTABLE_SCHEM,
+          PKTABLE_NAME,
+          PKCOLUMN_NAME,
+          FKTABLE_CAT,
+          FKTABLE_SCHEM,
+          FKTABLE_NAME,
+          FKCOLUMN_NAME,
+          KEY_SEQUENCE_COLUMN,
+          UPDATE_RULE,
+          DELETE_RULE,
+          FK_NAME,
+          PK_NAME,
+          DEFERRABILITY);
+
+  public static final List<ResultColumn> EXPORTED_KEYS_COLUMNS =
+      List.of(
+          PKTABLE_CAT,
+          PKTABLE_SCHEM,
+          PKTABLE_NAME,
+          PKCOLUMN_NAME,
+          FKTABLE_CAT,
+          FKTABLE_SCHEM,
+          FKTABLE_NAME,
+          FKCOLUMN_NAME,
+          KEY_SEQUENCE_COLUMN,
+          UPDATE_RULE,
+          DELETE_RULE,
+          FK_NAME,
+          PK_NAME,
+          DEFERRABILITY);
+
   public static final Map<CommandName, List<ResultColumn>> NON_NULLABLE_COLUMNS_MAP =
       new HashMap<>() {
         {
@@ -492,6 +564,44 @@ public class MetadataResultConstants {
               List.of(
                   TABLE_NAME_COLUMN, NON_UNIQUE, TYPE, ORDINAL_POSITION_SHORT, CARDINALITY, PAGES));
           put(CommandName.GET_SUPER_TABLES, List.of(TABLE_NAME_COLUMN, SUPERTABLE_NAME));
+          put(
+              CommandName.GET_FUNCTION_COLUMNS,
+              List.of(
+                  FUNCTION_NAME_COLUMN,
+                  COLUMN_NAME_COLUMN,
+                  COLUMN_TYPE,
+                  DATA_TYPE_COLUMN,
+                  TYPE_NAME_COLUMN,
+                  NULLABLE_SHORT,
+                  ORDINAL_POSITION_COLUMN,
+                  IS_NULLABLE_COLUMN,
+                  SPECIFIC_NAME_COLUMN));
+          put(
+              CommandName.GET_PSEUDO_COLUMNS,
+              List.of(
+                  TABLE_NAME_COLUMN,
+                  COLUMN_NAME_COLUMN,
+                  DATA_TYPE_COLUMN,
+                  COLUMN_USAGE,
+                  IS_NULLABLE_COLUMN));
+          put(
+              CommandName.GET_IMPORTED_KEYS,
+              List.of(
+                  PKTABLE_NAME,
+                  PKCOLUMN_NAME,
+                  FKTABLE_NAME,
+                  FKCOLUMN_NAME,
+                  KEY_SEQUENCE_COLUMN,
+                  DEFERRABILITY));
+          put(
+              CommandName.GET_EXPORTED_KEYS,
+              List.of(
+                  PKTABLE_NAME,
+                  PKCOLUMN_NAME,
+                  FKTABLE_NAME,
+                  FKCOLUMN_NAME,
+                  KEY_SEQUENCE_COLUMN,
+                  DEFERRABILITY));
         }
       };
 }
