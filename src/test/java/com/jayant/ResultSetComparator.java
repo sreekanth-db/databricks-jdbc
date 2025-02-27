@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ResultSetComparator {
@@ -28,7 +29,7 @@ public class ResultSetComparator {
       result.dataDifferences = compareData(rs1, rs2);
     } else if (!(result1 instanceof ResultSet) && !(result2 instanceof ResultSet)) {
       // Both are not of type ResultSet
-      if (result1 == null || !result1.equals(result2)) {
+      if (result1 == null || !resultIsSame(result1, result2)) {
         if (result1 instanceof Throwable && result2 instanceof Throwable) {
           // When both are exceptions, first must be a super of the second
           // This is ok as new driver is throwing a subclass exception of the existing driver's
@@ -47,6 +48,21 @@ public class ResultSetComparator {
     }
 
     return result;
+  }
+
+  private static boolean resultIsSame(Object result1, Object result2) {
+    if (result1.equals(result2)) {
+      return true;
+    }
+    if (result1.getClass().isArray() && result2.getClass().isArray()) {
+      if (result1 instanceof byte[]) {
+        return Arrays.equals((byte[]) result1, (byte[]) result2);
+      }
+      if (result1 instanceof Object[]) {
+        return Arrays.equals((Object[]) result1, (Object[]) result2);
+      }
+    }
+    return false;
   }
 
   private static List<String> compareMetadata(ResultSetMetaData md1, ResultSetMetaData md2)
