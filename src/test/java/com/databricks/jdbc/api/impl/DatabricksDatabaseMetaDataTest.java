@@ -12,7 +12,6 @@ import com.databricks.jdbc.common.DatabricksJdbcConstants;
 import com.databricks.jdbc.dbclient.IDatabricksMetadataClient;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import java.sql.*;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -1008,10 +1007,7 @@ public class DatabricksDatabaseMetaDataTest {
 
   @Test
   public void testUnsupportedOperations() {
-    List<Callable<Object>> tasks =
-        Arrays.asList(
-            () -> metaData.supportsTransactionIsolationLevel(0),
-            () -> metaData.supportsConvert(0, 0));
+    List<Callable<Object>> tasks = List.of(() -> metaData.supportsConvert(0, 0));
 
     for (Callable<Object> task : tasks) {
       try {
@@ -1507,6 +1503,15 @@ public class DatabricksDatabaseMetaDataTest {
 
     // Result set is empty
     assertFalse(resultSet.next());
+  }
+
+  @Test
+  public void testSupportsTransactionIsolationLevel() throws SQLException {
+    assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_NONE));
+    assertTrue(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_UNCOMMITTED));
+    assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_COMMITTED));
+    assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ));
+    assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_SERIALIZABLE));
   }
 
   @Test
