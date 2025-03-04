@@ -17,6 +17,7 @@ import com.databricks.jdbc.common.Nullable;
 import com.databricks.jdbc.common.StatementType;
 import com.databricks.jdbc.common.util.WarningUtil;
 import com.databricks.jdbc.dbclient.impl.common.StatementId;
+import com.databricks.jdbc.exception.DatabricksParsingException;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import com.databricks.jdbc.exception.DatabricksSQLFeatureNotSupportedException;
 import com.databricks.jdbc.exception.DatabricksValidationException;
@@ -475,17 +476,36 @@ public class DatabricksResultSet implements IDatabricksResultSet, IDatabricksRes
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     String columnTypeName = resultSetMetaData.getColumnTypeName(columnIndex);
     // separate handling for complex data types
-    if (columnTypeName.equals(ARRAY)
-        || columnTypeName.equals(MAP)
-        || columnTypeName.equals(STRUCT)) {
-      return handleComplexDataTypes(obj, columnIndex);
+    if (columnTypeName.startsWith(ARRAY)
+        || columnTypeName.startsWith(MAP)
+        || columnTypeName.startsWith(STRUCT)) {
+      return handleComplexDataTypes(obj, columnTypeName);
     }
     return ConverterHelper.convertSqlTypeToJavaType(columnType, obj);
   }
 
-  private Object handleComplexDataTypes(Object obj, int columnIndex) {
+  private Object handleComplexDataTypes(Object obj, String columnName)
+      throws DatabricksParsingException {
     if (complexDatatypeSupport) return obj;
+    if (resultSetType == ResultSetType.SEA_INLINE) {
+      return handleComplexDataTypesForSEAInline(obj, columnName);
+    }
     return obj.toString();
+  }
+
+  private Object handleComplexDataTypesForSEAInline(Object obj, String columnName)
+      throws DatabricksParsingException {
+    ComplexDataTypeParser parser = new ComplexDataTypeParser();
+    if (columnName.startsWith(ARRAY)) {
+      return parser.parseJsonStringToDbArray(obj.toString(), columnName).toString();
+    } else if (columnName.startsWith(MAP)) {
+      return parser.parseJsonStringToDbMap(obj.toString(), columnName).toString();
+    } else if (columnName.startsWith(STRUCT)) {
+      return parser.parseJsonStringToDbStruct(obj.toString(), columnName).toString();
+    }
+    throw new DatabricksParsingException(
+        "Unexpected metadata format. Type is not a COMPLEX: " + columnName,
+        DatabricksDriverErrorCode.JSON_PARSING_ERROR);
   }
 
   @Override
