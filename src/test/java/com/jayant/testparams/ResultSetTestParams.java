@@ -73,7 +73,7 @@ public class ResultSetTestParams implements TestParams {
     The test table was created using the following command:
 
     CREATE TABLE test_result_set_types (
-      id INT PRIMARY KEY,
+      id INT,
       varchar_column STRING,
       boolean_column BOOLEAN,
       integer_column INT,
@@ -90,7 +90,9 @@ public class ResultSetTestParams implements TestParams {
       array_column ARRAY<STRING>,
       map_column MAP<STRING, STRING>,
       struct_column STRUCT<name: STRING, age: INT>,
-      variant_column VARIANT
+      variant_column VARIANT,
+      PRIMARY KEY (id, varchar_column)
+    );
 
       it contains the following row from id 1 to 10
 

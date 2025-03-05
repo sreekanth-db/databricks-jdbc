@@ -28,7 +28,7 @@ public class JDBCDriverComparisonTest {
   private static final String OLD_DRIVER_JDBC_URL =
       "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/7e635336d748166a;UID=token;";
   private static final String OSS_DRIVER_JDBC_URL =
-      "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/7e635336d748166a";
+      "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/7e635336d748166a;usethriftclient=1;";
   private static Connection oldDriverConnection;
   private static Connection ossDriverConnection;
   private static Path tempDir;

@@ -59,7 +59,7 @@ public class DatabaseMetaDataTestParams implements TestParams {
     putInMapForKey(
         functionToArgsMap,
         Map.entry("getPrimaryKeys", 3),
-        new String[] {"main", "tpcds_sf100_delta", "catalog_sales"});
+        new String[] {"main", "oss_jdbc_tests", "test_result_set_types"});
     putInMapForKey(
         functionToArgsMap,
         Map.entry("getImportedKeys", 3),
