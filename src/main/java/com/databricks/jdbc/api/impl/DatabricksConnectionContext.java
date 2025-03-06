@@ -636,7 +636,9 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public String getOAuthDiscoveryURL() {
-    return getParameter(DatabricksJdbcUrlParams.DISCOVERY_URL);
+    return getParameter(
+        DatabricksJdbcUrlParams.OIDC_DISCOVERY_ENDPOINT,
+        getParameter(DatabricksJdbcUrlParams.DISCOVERY_URL));
   }
 
   @Override
