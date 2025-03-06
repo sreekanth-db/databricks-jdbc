@@ -42,7 +42,7 @@ public class JDBCDriverComparisonTest {
     tempDir = Files.createTempDirectory("jdbc-drivers");
 
     // Extract and load drivers
-    URL oldDriverJarUrl = extractJarToTemp("databricks-jdbc-2.6.38.jar", tempDir);
+    URL oldDriverJarUrl = extractJarToTemp("databricks-jdbc-2.7.1.jar", tempDir);
 
     if (oldDriverJarUrl == null) {
       throw new RuntimeException("Unable to find JDBC driver JARs in the classpath");
