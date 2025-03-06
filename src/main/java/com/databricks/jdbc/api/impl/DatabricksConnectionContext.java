@@ -622,7 +622,9 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
 
   @Override
   public String getAuthEndpoint() {
-    return getParameter(DatabricksJdbcUrlParams.AUTH_ENDPOINT);
+    return getParameter(
+        DatabricksJdbcUrlParams.OAUTH_ENDPOINT,
+        getParameter(DatabricksJdbcUrlParams.AUTH_ENDPOINT));
   }
 
   @Override
