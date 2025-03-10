@@ -14,7 +14,6 @@ public class DatabaseMetaDataTestParams implements TestParams {
   @Override
   public Map<Map.Entry<String, Integer>, Set<Object[]>> getFunctionToArgsMap() {
     Map<Map.Entry<String, Integer>, Set<Object[]>> functionToArgsMap = new HashMap<>();
-
     putInMapForKey(
         functionToArgsMap,
         Map.entry("getTables", 4),
@@ -121,20 +120,6 @@ public class DatabaseMetaDataTestParams implements TestParams {
       putInMapForKey(functionToArgsMap, Map.entry("deletesAreDetected", 1), new Integer[] {type});
       putInMapForKey(functionToArgsMap, Map.entry("insertsAreDetected", 1), new Integer[] {type});
     }
-
-    // TODO: Need to implement the below function, commenting all permutations to avoid polluting
-    // the comparator result
-
-    //    for (Integer type : getAllSqlTypes()) {
-    //      for (Integer type2 : getAllSqlTypes()) {
-    //        putInMapForKey(
-    //            functionToArgsMap, Map.entry("supportsConvert", 2), new Integer[] {type, type2});
-    //        putInMapForKey(
-    //            functionToArgsMap, Map.entry("supportsConvert", 2), new Integer[] {type2, type});
-    //      }
-    //    }
-
-    putInMapForKey(functionToArgsMap, Map.entry("supportsConvert", 2), new Integer[] {7, 70});
     for (Integer i : getAllTransactionIsolationLevels()) {
       putInMapForKey(
           functionToArgsMap, Map.entry("supportsTransactionIsolationLevel", 1), new Integer[] {i});
@@ -149,7 +134,22 @@ public class DatabaseMetaDataTestParams implements TestParams {
       putInMapForKey(
           functionToArgsMap, Map.entry("supportsResultSetHoldability", 1), new Integer[] {i});
     }
-
+    for (Integer fromType : getAllSqlTypes()) {
+      for (Integer toType : getAllSqlTypes()) {
+        if (fromType == Types.ROWID || toType == Types.ROWID) {
+          continue; // ROWID is not supported by Databricks server
+        }
+        if (fromType == Types.ARRAY || fromType == Types.STRUCT || fromType == Types.OTHER) {
+          continue; // Complex types not supported by legacy driver
+        }
+        if (fromType == Types.BOOLEAN && toType == Types.BOOLEAN) {
+          // This is a bug in the legacy driver
+          continue;
+        }
+        putInMapForKey(
+            functionToArgsMap, Map.entry("supportsConvert", 2), new Integer[] {fromType, toType});
+      }
+    }
     return functionToArgsMap;
   }
 
