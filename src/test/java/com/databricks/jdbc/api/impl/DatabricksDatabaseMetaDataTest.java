@@ -12,9 +12,7 @@ import com.databricks.jdbc.common.DatabricksJdbcConstants;
 import com.databricks.jdbc.dbclient.IDatabricksMetadataClient;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import java.sql.*;
-import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -937,6 +935,7 @@ public class DatabricksDatabaseMetaDataTest {
   public void testSupportsConvert() throws SQLException {
     boolean result = metaData.supportsConvert();
     assertTrue(result);
+    assertTrue(metaData.supportsConvert(Types.INTEGER, Types.INTEGER));
   }
 
   @Test
@@ -1009,22 +1008,6 @@ public class DatabricksDatabaseMetaDataTest {
   public void testGetSearchStringEscape() throws SQLException {
     String result = metaData.getSearchStringEscape();
     assertEquals(DatabricksJdbcConstants.BACKWARD_SLASH, result);
-  }
-
-  @Test
-  public void testUnsupportedOperations() {
-    List<Callable<Object>> tasks = List.of(() -> metaData.supportsConvert(0, 0));
-
-    for (Callable<Object> task : tasks) {
-      try {
-        task.call();
-        fail("Expected UnsupportedOperationException for " + task);
-      } catch (UnsupportedOperationException e) {
-        // This is expected
-      } catch (Exception e) {
-        fail("Unexpected exception type thrown: " + e);
-      }
-    }
   }
 
   @ParameterizedTest
