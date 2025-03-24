@@ -27,12 +27,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class JDBCDriverComparisonTest {
   private static final String OLD_DRIVER_JDBC_URL =
       //
-      // "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/7e635336d748166a;UID=token;";
-      "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/58aa1b363649e722;UID=token;";
+      "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/7e635336d748166a;UID=token;";
+      // "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/58aa1b363649e722;UID=token;";
   private static final String OSS_DRIVER_JDBC_URL =
       //
-      // "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/7e635336d748166a;usethriftclient=1;enablearrow=0;";
-      "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/58aa1b363649e722;UID=token;";
+      "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/7e635336d748166a;UID=token;";
+      // "jdbc:databricks://e2-dogfood.staging.cloud.databricks.com:443/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/58aa1b363649e722;UID=token;";
   private static Connection oldDriverConnection;
   private static Connection ossDriverConnection;
   private static Path tempDir;
@@ -71,7 +71,7 @@ public class JDBCDriverComparisonTest {
     reporter = new TestReporter(Path.of("jdbc-comparison-report.txt"));
 
     String queryResultSetTypesTable =
-        "select * from main.oss_jdbc_tests.test_result_set_types limit 100";
+        "select * from main.tpch_sf100_delta.customer limit 100";
     oldDriverResultSet =
         oldDriverConnection.createStatement().executeQuery(queryResultSetTypesTable);
     oldDriverResultSet.next();
