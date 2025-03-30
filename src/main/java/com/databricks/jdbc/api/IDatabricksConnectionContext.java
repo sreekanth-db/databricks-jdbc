@@ -234,5 +234,11 @@ public interface IDatabricksConnectionContext {
   /** Returns the size for HTTP connection pool */
   int getHttpConnectionPoolSize();
 
+  /** Returns the list of HTTP codes to retry for UC Volume Ingestion */
+  List<Integer> getUCIngestionRetriableHttpCodes();
+
+  /** Returns retry timeout in seconds for UC Volume Ingestion */
+  int getUCIngestionRetryTimeoutSeconds();
+
   String getAzureWorkspaceResourceId();
 }
