@@ -241,4 +241,7 @@ public interface IDatabricksConnectionContext {
   int getUCIngestionRetryTimeoutSeconds();
 
   String getAzureWorkspaceResourceId();
+
+  /** Returns maximum number of rows that a query returns at a time. */
+  int getRowsFetchedPerBlock();
 }

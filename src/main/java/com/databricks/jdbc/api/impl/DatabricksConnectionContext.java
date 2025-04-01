@@ -1,6 +1,7 @@
 package com.databricks.jdbc.api.impl;
 
 import static com.databricks.jdbc.common.DatabricksJdbcConstants.*;
+import static com.databricks.jdbc.common.EnvironmentVariables.DEFAULT_ROW_LIMIT_PER_BLOCK;
 import static com.databricks.jdbc.common.util.UserAgentManager.USER_AGENT_SEA_CLIENT;
 import static com.databricks.jdbc.common.util.UserAgentManager.USER_AGENT_THRIFT_CLIENT;
 
@@ -758,6 +759,17 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public String getAzureWorkspaceResourceId() {
     return getParameter(DatabricksJdbcUrlParams.AZURE_WORKSPACE_RESOURCE_ID);
+  }
+
+  @Override
+  public int getRowsFetchedPerBlock() {
+    int maxRows = DEFAULT_ROW_LIMIT_PER_BLOCK;
+    try {
+      maxRows = Integer.parseInt(getParameter(DatabricksJdbcUrlParams.ROWS_FETCHED_PER_BLOCK));
+    } catch (NumberFormatException e) {
+      LOGGER.warn("Invalid value for RowsFetchedPerBlock, using default value");
+    }
+    return maxRows;
   }
 
   private static boolean nullOrEmptyString(String s) {
