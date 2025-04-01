@@ -11,6 +11,7 @@ import com.databricks.jdbc.common.StatementType;
 import com.databricks.jdbc.common.util.DriverUtil;
 import com.databricks.jdbc.dbclient.impl.common.ClientConfigurator;
 import com.databricks.jdbc.dbclient.impl.common.StatementId;
+import com.databricks.jdbc.dbclient.impl.common.TimeoutHandler;
 import com.databricks.jdbc.dbclient.impl.http.DatabricksHttpClientFactory;
 import com.databricks.jdbc.exception.DatabricksHttpException;
 import com.databricks.jdbc.exception.DatabricksParsingException;
@@ -47,10 +48,10 @@ final class DatabricksThriftAccessor {
       TExecuteStatementResp._Fields.OPERATION_HANDLE.getThriftFieldId();
   private static final short statusFieldId =
       TExecuteStatementResp._Fields.STATUS.getThriftFieldId();
-  private static final int POLLING_INTERVAL_SECONDS = 1;
   private final ThreadLocal<TCLIService.Client> thriftClient;
   private final DatabricksConfig databricksConfig;
   private final boolean enableDirectResults;
+  private final int asyncPollIntervalMillis;
   private final int maxRowsPerBlock;
 
   DatabricksThriftAccessor(IDatabricksConnectionContext connectionContext)
@@ -58,6 +59,7 @@ final class DatabricksThriftAccessor {
     this.enableDirectResults = connectionContext.getDirectResultMode();
     this.databricksConfig = new ClientConfigurator(connectionContext).getDatabricksConfig();
     String endPointUrl = connectionContext.getEndpointURL();
+    this.asyncPollIntervalMillis = connectionContext.getAsyncExecPollInterval();
     this.maxRowsPerBlock = connectionContext.getRowsFetchedPerBlock();
 
     if (!DriverUtil.isRunningAgainstFake()) {
@@ -79,17 +81,7 @@ final class DatabricksThriftAccessor {
     this.databricksConfig = null;
     this.thriftClient = ThreadLocal.withInitial(() -> client);
     this.enableDirectResults = connectionContext.getDirectResultMode();
-    this.maxRowsPerBlock = connectionContext.getRowsFetchedPerBlock();
-  }
-
-  @VisibleForTesting
-  DatabricksThriftAccessor(
-      TCLIService.Client client,
-      IDatabricksConnectionContext connectionContext,
-      DatabricksConfig databricksConfig) {
-    this.databricksConfig = databricksConfig;
-    this.thriftClient = ThreadLocal.withInitial(() -> client);
-    this.enableDirectResults = connectionContext.getDirectResultMode();
+    this.asyncPollIntervalMillis = connectionContext.getAsyncExecPollInterval();
     this.maxRowsPerBlock = connectionContext.getRowsFetchedPerBlock();
   }
 
@@ -217,6 +209,8 @@ final class DatabricksThriftAccessor {
 
     TExecuteStatementResp response;
     TFetchResultsResp resultSet;
+    int timeoutInSeconds =
+        (parentStatement == null) ? 0 : parentStatement.getStatement().getQueryTimeout();
 
     try {
       response = getThriftClient().ExecuteStatement(request);
@@ -235,17 +229,23 @@ final class DatabricksThriftAccessor {
         checkOperationStatusForErrors(statusResp);
       }
 
+      // Create a timeout handler for this operation
+      TimeoutHandler timeoutHandler = getTimeoutHandler(response, timeoutInSeconds);
+
       // Polling until query operation state is finished
       TGetOperationStatusReq statusReq =
           new TGetOperationStatusReq()
               .setOperationHandle(response.getOperationHandle())
               .setGetProgressUpdate(false);
       while (shouldContinuePolling(statusResp)) {
+        // Check for timeout before continuing
+        timeoutHandler.checkTimeout();
+
         // Polling for operation status
         statusResp = getThriftClient().GetOperationStatus(statusReq);
         checkOperationStatusForErrors(statusResp);
         try {
-          TimeUnit.SECONDS.sleep(POLLING_INTERVAL_SECONDS);
+          TimeUnit.MILLISECONDS.sleep(asyncPollIntervalMillis);
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt(); // Restore interrupt flag
           cancelOperation(
@@ -615,5 +615,21 @@ final class DatabricksThriftAccessor {
 
   private boolean isPendingOperationState(TOperationState state) {
     return state == TOperationState.RUNNING_STATE || state == TOperationState.PENDING_STATE;
+  }
+
+  private TimeoutHandler getTimeoutHandler(TExecuteStatementResp response, int timeoutInSeconds) {
+    final TOperationHandle operationHandle = response.getOperationHandle();
+
+    return new TimeoutHandler(
+        timeoutInSeconds,
+        "Thrift Operation Handle: " + operationHandle.toString(),
+        () -> {
+          try {
+            LOGGER.debug("Canceling operation due to timeout: {}", operationHandle);
+            cancelOperation(new TCancelOperationReq().setOperationHandle(operationHandle));
+          } catch (Exception e) {
+            LOGGER.warn("Failed to cancel operation on timeout: {}", e.getMessage());
+          }
+        });
   }
 }
