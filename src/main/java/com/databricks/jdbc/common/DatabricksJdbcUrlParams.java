@@ -100,9 +100,13 @@ public enum DatabricksJdbcUrlParams {
       "RowsFetchedPerBlock",
       "The maximum number of rows that a query returns at a time.",
       "2000000"), // works only for inline results.
-  AZURE_TENANT_ID("AzureTenantId", "Azure tenant ID"),
   AZURE_WORKSPACE_RESOURCE_ID(
-      "azure_workspace_resource_id", "Resource ID of Azure Databricks workspace");
+      "azure_workspace_resource_id", "Resource ID of Azure Databricks workspace"),
+  AZURE_TENANT_ID("AzureTenantId", "Azure tenant ID"),
+  DEFAULT_STRING_COLUMN_LENGTH(
+      "DefaultStringColumnLength",
+      "Maximum number of characters that can be contained in STRING columns",
+      "255");
 
   private final String paramName;
   private final String defaultValue;

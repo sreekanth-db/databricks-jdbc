@@ -120,6 +120,20 @@ public class DatabricksDriverExamples {
     System.out.println("Total rows: " + rows);
   }
 
+  /** Demonstrates usage of DefaultStringColumnLength parameter */
+  @Test
+  void exampleDefaultStringColumnLength() throws Exception {
+    DriverManager.registerDriver(new Driver());
+    String jdbcUrl = JDBC_URL_WAREHOUSE + "EnableTelemetry=1" + ";DefaultStringColumnLength=3";
+    Connection con = DriverManager.getConnection(jdbcUrl, "token", DATABRICKS_TOKEN);
+    System.out.println("Connection established......");
+    Statement stmt = con.createStatement();
+    ResultSet rs = stmt.executeQuery("select 'string' as col");
+    printResultSet(rs);
+    stmt.close();
+    con.close();
+  }
+
   /*
    * Demonstrates use of url param RowsFetchedPerBlock. The maximum number of rows that a query returns at a time.
    * Works only with thrift inline mode
