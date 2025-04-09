@@ -43,6 +43,7 @@ public class ClientConfigurator {
     this.connectionContext = connectionContext;
     this.databricksConfig = new DatabricksConfig();
     CommonsHttpClient.Builder httpClientBuilder = new CommonsHttpClient.Builder();
+    httpClientBuilder.withTimeoutSeconds(connectionContext.getSocketTimeout());
     setupProxyConfig(httpClientBuilder);
     setupConnectionManager(httpClientBuilder);
     this.databricksConfig.setHttpClient(httpClientBuilder.build());
