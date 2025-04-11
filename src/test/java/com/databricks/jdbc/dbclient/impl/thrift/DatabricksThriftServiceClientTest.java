@@ -3,11 +3,13 @@ package com.databricks.jdbc.dbclient.impl.thrift;
 import static com.databricks.jdbc.TestConstants.*;
 import static com.databricks.jdbc.common.DatabricksJdbcConstants.CATALOG;
 import static com.databricks.jdbc.common.DatabricksJdbcConstants.SCHEMA;
+import static com.databricks.jdbc.common.EnvironmentVariables.JDBC_THRIFT_VERSION;
 import static com.databricks.jdbc.common.MetadataResultConstants.*;
 import static com.databricks.jdbc.common.util.DatabricksThriftUtil.getNamespace;
 import static com.databricks.jdbc.dbclient.impl.common.CommandConstants.GET_TABLE_TYPE_STATEMENT_ID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -25,9 +27,14 @@ import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.service.sql.StatementState;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Stream;
 import org.apache.thrift.protocol.TProtocol;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -71,6 +78,56 @@ public class DatabricksThriftServiceClientTest {
   }
 
   @Test
+  void testCreateSessionHandlesProtocolVersion() throws DatabricksSQLException {
+    DatabricksThriftServiceClient client =
+        new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
+
+    TOpenSessionReq openSessionReq =
+        new TOpenSessionReq()
+            .setInitialNamespace(getNamespace(CATALOG, SCHEMA))
+            .setConfiguration(EMPTY_MAP)
+            .setCanUseMultipleCatalogs(true)
+            .setClient_protocol_i64(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V9.getValue());
+
+    // Case 1: Server returns unsupported protocol version (too old)
+    TOpenSessionResp unsupportedVersionResp =
+        new TOpenSessionResp()
+            .setSessionHandle(SESSION_HANDLE)
+            .setServerProtocolVersion(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+            .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS));
+
+    when(thriftAccessor.getThriftResponse(openSessionReq)).thenReturn(unsupportedVersionResp);
+
+    // Verify that attempting to connect with an unsupported protocol throws the expected exception
+    DatabricksSQLException exception =
+        assertThrows(
+            DatabricksSQLException.class,
+            () -> client.createSession(CLUSTER_COMPUTE, CATALOG, SCHEMA, EMPTY_MAP));
+
+    assertEquals(
+        "Attempting to connect to a non Databricks compute using the Databricks driver.",
+        exception.getMessage());
+
+    // Case 2: Server returns supported protocol version
+    TOpenSessionResp supportedVersionResp =
+        new TOpenSessionResp()
+            .setSessionHandle(SESSION_HANDLE)
+            .setServerProtocolVersion(JDBC_THRIFT_VERSION)
+            .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS));
+
+    when(thriftAccessor.getThriftResponse(openSessionReq)).thenReturn(supportedVersionResp);
+
+    ImmutableSessionInfo sessionInfo =
+        client.createSession(CLUSTER_COMPUTE, CATALOG, SCHEMA, EMPTY_MAP);
+
+    verify(thriftAccessor).setServerProtocolVersion(JDBC_THRIFT_VERSION);
+
+    // Verify returned session info
+    assertEquals(SESSION_HANDLE, sessionInfo.sessionHandle());
+    assertEquals(CLUSTER_COMPUTE, sessionInfo.computeResource());
+  }
+
+  @Test
   void testCloseSession() throws DatabricksSQLException {
     DatabricksThriftServiceClient client =
         new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
@@ -79,6 +136,100 @@ public class DatabricksThriftServiceClientTest {
         new TCloseSessionResp().setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS));
     when(thriftAccessor.getThriftResponse(closeSessionReq)).thenReturn(closeSessionResp);
     assertDoesNotThrow(() -> client.deleteSession(SESSION_INFO));
+  }
+
+  private static Stream<Arguments> protocolVersionProvider() {
+    return Stream.of(
+        Arguments.of(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V1),
+        Arguments.of(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V2),
+        Arguments.of(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V3),
+        Arguments.of(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V4),
+        Arguments.of(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V5),
+        Arguments.of(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V6),
+        Arguments.of(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V7),
+        Arguments.of(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V8),
+        Arguments.of(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V9));
+  }
+
+  @ParameterizedTest
+  @MethodSource("protocolVersionProvider")
+  void testGetRequestWithDifferentProtocolVersions(TProtocolVersion protocolVersion)
+      throws SQLException {
+    when(connectionContext.shouldEnableArrow()).thenReturn(true);
+    DatabricksThriftServiceClient client =
+        new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
+    when(session.getSessionInfo()).thenReturn(SESSION_INFO);
+    when(parentStatement.getStatement()).thenReturn(statement);
+    when(parentStatement.getMaxRows()).thenReturn(10);
+    when(statement.getQueryTimeout()).thenReturn(10);
+    client.setServerProtocolVersion(protocolVersion);
+
+    // Execute the method that will internally call getRequest
+    try {
+      client.executeStatement(
+          TEST_STRING,
+          CLUSTER_COMPUTE,
+          Collections.emptyMap(),
+          StatementType.SQL,
+          session,
+          parentStatement);
+    } catch (Exception e) {
+      // expect this to throw since thriftAccessor is mocked
+      // only interested in capturing the request
+    }
+
+    // Capture the request
+    ArgumentCaptor<TExecuteStatementReq> requestCaptor =
+        ArgumentCaptor.forClass(TExecuteStatementReq.class);
+    verify(thriftAccessor)
+        .execute(requestCaptor.capture(), eq(parentStatement), eq(session), eq(StatementType.SQL));
+
+    // Get the captured request
+    TExecuteStatementReq request = requestCaptor.getValue();
+
+    // Common assertions for all protocol versions
+    assertNotNull(request);
+    assertEquals(TEST_STRING, request.getStatement());
+    assertEquals(10, request.getQueryTimeout());
+    assertEquals(SESSION_HANDLE, request.getSessionHandle());
+    assertTrue(request.isCanReadArrowResult());
+    assertEquals(10, request.getResultRowLimit());
+
+    // Protocol-specific assertions
+    boolean supportsParameterizedQueries =
+        protocolVersion.compareTo(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V8) >= 0;
+    boolean supportsCompressedArrowBatches =
+        protocolVersion.compareTo(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V6) >= 0;
+    boolean supportsCloudFetch =
+        protocolVersion.compareTo(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V3) >= 0;
+    boolean supportsAdvancedArrowTypes =
+        protocolVersion.compareTo(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V5) >= 0;
+
+    if (supportsParameterizedQueries) {
+      assertNotNull(request);
+    } else {
+      assertFalse(request.isSetParameters());
+    }
+
+    assertEquals(supportsCompressedArrowBatches, request.isCanDecompressLZ4Result());
+    assertEquals(supportsCloudFetch, request.isCanDownloadResult());
+
+    // Check advanced arrow types settings
+    TSparkArrowTypes arrowTypes = request.getUseArrowNativeTypes();
+    assertNotNull(arrowTypes);
+    assertTrue(arrowTypes.isTimestampAsArrow());
+
+    if (supportsAdvancedArrowTypes) {
+      assertTrue(arrowTypes.isComplexTypesAsArrow());
+      assertTrue(arrowTypes.isIntervalTypesAsArrow());
+      assertTrue(arrowTypes.isNullTypeAsArrow());
+      assertTrue(arrowTypes.isDecimalAsArrow());
+    } else {
+      assertFalse(arrowTypes.isComplexTypesAsArrow());
+      assertFalse(arrowTypes.isIntervalTypesAsArrow());
+      assertFalse(arrowTypes.isNullTypeAsArrow());
+      assertFalse(arrowTypes.isDecimalAsArrow());
+    }
   }
 
   @Test
@@ -176,17 +327,28 @@ public class DatabricksThriftServiceClientTest {
     DatabricksThriftServiceClient client =
         new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
     when(session.getSessionInfo()).thenReturn(SESSION_INFO);
-    TGetCatalogsReq request =
-        new TGetCatalogsReq().setSessionHandle(SESSION_HANDLE).setRunAsync(true);
+    client.setServerProtocolVersion(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V1);
+    TGetCatalogsReq request = new TGetCatalogsReq().setSessionHandle(SESSION_HANDLE);
     TFetchResultsResp response =
         new TFetchResultsResp()
             .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS))
             .setResults(resultData)
             .setResultSetMetadata(resultMetadataData);
+    when(thriftAccessor.getThriftResponse(request)).thenReturn(response);
+    client.listCatalogs(session);
+
+    ArgumentCaptor<TGetCatalogsReq> captor = ArgumentCaptor.forClass(TGetCatalogsReq.class);
+    verify(thriftAccessor).getThriftResponse(captor.capture());
+    TGetCatalogsReq capturedRequest = captor.getValue();
+    assertFalse(
+        capturedRequest.isSetRunAsync(),
+        "Expected runAsync to be unset for older protocol versions");
+
+    client.setServerProtocolVersion(JDBC_THRIFT_VERSION); // latest version
     TColumn tColumn = new TColumn();
     tColumn.setStringVal(new TStringColumn().setValues(Collections.singletonList(TEST_CATALOG)));
     when(resultData.getColumns()).thenReturn(Collections.singletonList(tColumn));
-    when(thriftAccessor.getThriftResponse(request)).thenReturn(response);
+    when(thriftAccessor.getThriftResponse(request.setRunAsync(true))).thenReturn(response);
     DatabricksResultSet resultSet = client.listCatalogs(session);
     assertEquals(resultSet.getStatementStatus().getState(), StatementState.SUCCEEDED);
   }
@@ -248,12 +410,14 @@ public class DatabricksThriftServiceClientTest {
     DatabricksThriftServiceClient client =
         new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
     when(session.getSessionInfo()).thenReturn(SESSION_INFO);
+
+    // Test with older protocol version
+    client.setServerProtocolVersion(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V1);
     TGetSchemasReq request =
         new TGetSchemasReq()
             .setSessionHandle(SESSION_HANDLE)
             .setCatalogName(TEST_CATALOG)
-            .setSchemaName(TEST_SCHEMA)
-            .setRunAsync(true);
+            .setSchemaName(TEST_SCHEMA);
     TFetchResultsResp response =
         new TFetchResultsResp()
             .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS))
@@ -261,6 +425,18 @@ public class DatabricksThriftServiceClientTest {
             .setResultSetMetadata(resultMetadataData);
     when(resultData.getColumns()).thenReturn(Collections.emptyList());
     when(thriftAccessor.getThriftResponse(request)).thenReturn(response);
+
+    client.listSchemas(session, TEST_CATALOG, TEST_SCHEMA);
+
+    ArgumentCaptor<TGetSchemasReq> captor = ArgumentCaptor.forClass(TGetSchemasReq.class);
+    verify(thriftAccessor).getThriftResponse(captor.capture());
+    assertFalse(
+        captor.getValue().isSetRunAsync(),
+        "Expected runAsync to be unset for older protocol versions");
+
+    client.setServerProtocolVersion(JDBC_THRIFT_VERSION);
+    when(thriftAccessor.getThriftResponse(request.setRunAsync(true))).thenReturn(response);
+
     DatabricksResultSet resultSet = client.listSchemas(session, TEST_CATALOG, TEST_SCHEMA);
     assertEquals(resultSet.getStatementStatus().getState(), StatementState.SUCCEEDED);
   }
@@ -271,14 +447,16 @@ public class DatabricksThriftServiceClientTest {
         new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
     when(session.getSessionInfo()).thenReturn(SESSION_INFO);
     String[] tableTypes = {"testTableType"};
+
+    // Test with older protocol version
+    client.setServerProtocolVersion(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V1);
     TGetTablesReq request =
         new TGetTablesReq()
             .setSessionHandle(SESSION_HANDLE)
             .setCatalogName(TEST_CATALOG)
             .setSchemaName(TEST_SCHEMA)
             .setTableName(TEST_TABLE)
-            .setTableTypes(Arrays.asList(tableTypes))
-            .setRunAsync(true);
+            .setTableTypes(Arrays.asList(tableTypes));
     TFetchResultsResp response =
         new TFetchResultsResp()
             .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS))
@@ -288,6 +466,19 @@ public class DatabricksThriftServiceClientTest {
     tColumn.setStringVal(new TStringColumn().setValues(Collections.singletonList("")));
     when(resultData.getColumns()).thenReturn(List.of(tColumn, tColumn, tColumn, tColumn));
     when(thriftAccessor.getThriftResponse(request)).thenReturn(response);
+
+    client.listTables(session, TEST_CATALOG, TEST_SCHEMA, TEST_TABLE, tableTypes);
+
+    ArgumentCaptor<TGetTablesReq> captor = ArgumentCaptor.forClass(TGetTablesReq.class);
+    verify(thriftAccessor).getThriftResponse(captor.capture());
+    TGetTablesReq capturedRequestOlderVersion = captor.getValue();
+    assertFalse(
+        capturedRequestOlderVersion.isSetRunAsync(),
+        "Expected runAsync to be unset for older protocol versions");
+
+    client.setServerProtocolVersion(JDBC_THRIFT_VERSION);
+    when(thriftAccessor.getThriftResponse(request.setRunAsync(true))).thenReturn(response);
+
     DatabricksResultSet resultSet =
         client.listTables(session, TEST_CATALOG, TEST_SCHEMA, TEST_TABLE, tableTypes);
     assertEquals(resultSet.getStatementStatus().getState(), StatementState.SUCCEEDED);
@@ -298,14 +489,16 @@ public class DatabricksThriftServiceClientTest {
     DatabricksThriftServiceClient client =
         new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
     when(session.getSessionInfo()).thenReturn(SESSION_INFO);
+
+    // Test with older protocol version
+    client.setServerProtocolVersion(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V1);
     TGetColumnsReq request =
         new TGetColumnsReq()
             .setSessionHandle(SESSION_HANDLE)
             .setCatalogName(TEST_CATALOG)
             .setSchemaName(TEST_SCHEMA)
             .setTableName(TEST_TABLE)
-            .setColumnName(TEST_STRING)
-            .setRunAsync(true);
+            .setColumnName(TEST_STRING);
     TFetchResultsResp response =
         new TFetchResultsResp()
             .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS))
@@ -313,9 +506,24 @@ public class DatabricksThriftServiceClientTest {
             .setResultSetMetadata(resultMetadataData);
     when(resultData.getColumns()).thenReturn(new ArrayList<>());
     when(thriftAccessor.getThriftResponse(request)).thenReturn(response);
+
+    client.listColumns(session, TEST_CATALOG, TEST_SCHEMA, TEST_TABLE, TEST_STRING);
+
+    ArgumentCaptor<TGetColumnsReq> captor = ArgumentCaptor.forClass(TGetColumnsReq.class);
+    verify(thriftAccessor).getThriftResponse(captor.capture());
+    TGetColumnsReq capturedRequestOlderVersion = captor.getValue();
+    assertFalse(
+        capturedRequestOlderVersion.isSetRunAsync(),
+        "Expected runAsync to be unset for older protocol versions");
+
+    client.setServerProtocolVersion(JDBC_THRIFT_VERSION);
+    when(thriftAccessor.getThriftResponse(request.setRunAsync(true))).thenReturn(response);
+
     DatabricksResultSet resultSet =
         client.listColumns(session, TEST_CATALOG, TEST_SCHEMA, TEST_TABLE, TEST_STRING);
     assertEquals(resultSet.getStatementStatus().getState(), StatementState.SUCCEEDED);
+
+    // Test metadata properties
     DatabricksResultSetMetaData metaData = (DatabricksResultSetMetaData) resultSet.getMetaData();
     assertEquals(metaData.getColumnCount(), COLUMN_COLUMNS.size());
     for (int i = 0; i < COLUMN_COLUMNS.size(); i++) {
@@ -336,13 +544,15 @@ public class DatabricksThriftServiceClientTest {
     DatabricksThriftServiceClient client =
         new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
     when(session.getSessionInfo()).thenReturn(SESSION_INFO);
+
+    // Test with older protocol version
+    client.setServerProtocolVersion(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V1);
     TGetFunctionsReq request =
         new TGetFunctionsReq()
             .setSessionHandle(SESSION_HANDLE)
             .setCatalogName(TEST_CATALOG)
             .setSchemaName(TEST_SCHEMA)
-            .setFunctionName(TEST_STRING)
-            .setRunAsync(true);
+            .setFunctionName(TEST_STRING);
     TFetchResultsResp response =
         new TFetchResultsResp()
             .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS))
@@ -350,6 +560,19 @@ public class DatabricksThriftServiceClientTest {
             .setResultSetMetadata(resultMetadataData);
     when(resultData.getColumns()).thenReturn(null);
     when(thriftAccessor.getThriftResponse(request)).thenReturn(response);
+
+    client.listFunctions(session, TEST_CATALOG, TEST_SCHEMA, TEST_STRING);
+
+    ArgumentCaptor<TGetFunctionsReq> captor = ArgumentCaptor.forClass(TGetFunctionsReq.class);
+    verify(thriftAccessor).getThriftResponse(captor.capture());
+    TGetFunctionsReq capturedRequestOlderVersion = captor.getValue();
+    assertFalse(
+        capturedRequestOlderVersion.isSetRunAsync(),
+        "Expected runAsync to be unset for older protocol versions");
+
+    client.setServerProtocolVersion(JDBC_THRIFT_VERSION);
+    when(thriftAccessor.getThriftResponse(request.setRunAsync(true))).thenReturn(response);
+
     DatabricksResultSet resultSet =
         client.listFunctions(session, TEST_CATALOG, TEST_SCHEMA, TEST_STRING);
     assertEquals(resultSet.getStatementStatus().getState(), StatementState.SUCCEEDED);
@@ -360,13 +583,15 @@ public class DatabricksThriftServiceClientTest {
     DatabricksThriftServiceClient client =
         new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
     when(session.getSessionInfo()).thenReturn(SESSION_INFO);
+
+    // Test with older protocol version
+    client.setServerProtocolVersion(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V1);
     TGetPrimaryKeysReq request =
         new TGetPrimaryKeysReq()
             .setSessionHandle(SESSION_HANDLE)
             .setCatalogName(TEST_CATALOG)
             .setSchemaName(TEST_SCHEMA)
-            .setTableName(TEST_TABLE)
-            .setRunAsync(true);
+            .setTableName(TEST_TABLE);
     TFetchResultsResp response =
         new TFetchResultsResp()
             .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS))
@@ -374,6 +599,19 @@ public class DatabricksThriftServiceClientTest {
             .setResultSetMetadata(resultMetadataData);
     when(resultData.getColumns()).thenReturn(null);
     when(thriftAccessor.getThriftResponse(request)).thenReturn(response);
+
+    client.listPrimaryKeys(session, TEST_CATALOG, TEST_SCHEMA, TEST_TABLE);
+
+    ArgumentCaptor<TGetPrimaryKeysReq> captor = ArgumentCaptor.forClass(TGetPrimaryKeysReq.class);
+    verify(thriftAccessor).getThriftResponse(captor.capture());
+    TGetPrimaryKeysReq capturedRequestOlderVersion = captor.getValue();
+    assertFalse(
+        capturedRequestOlderVersion.isSetRunAsync(),
+        "Expected runAsync to be unset for older protocol versions");
+
+    client.setServerProtocolVersion(JDBC_THRIFT_VERSION);
+    when(thriftAccessor.getThriftResponse(request.setRunAsync(true))).thenReturn(response);
+
     DatabricksResultSet resultSet =
         client.listPrimaryKeys(session, TEST_CATALOG, TEST_SCHEMA, TEST_TABLE);
     assertEquals(resultSet.getStatementStatus().getState(), StatementState.SUCCEEDED);
@@ -384,13 +622,15 @@ public class DatabricksThriftServiceClientTest {
     DatabricksThriftServiceClient client =
         new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
     when(session.getSessionInfo()).thenReturn(SESSION_INFO);
+
+    // Test with older protocol version
+    client.setServerProtocolVersion(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V1);
     TGetCrossReferenceReq request =
         new TGetCrossReferenceReq()
             .setSessionHandle(SESSION_HANDLE)
             .setForeignCatalogName(TEST_FOREIGN_CATALOG)
             .setForeignSchemaName(TEST_FOREIGN_SCHEMA)
-            .setForeignTableName(TEST_FOREIGN_TABLE)
-            .setRunAsync(true);
+            .setForeignTableName(TEST_FOREIGN_TABLE);
     TFetchResultsResp response =
         new TFetchResultsResp()
             .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS))
@@ -398,6 +638,20 @@ public class DatabricksThriftServiceClientTest {
             .setResultSetMetadata(resultMetadataData);
     when(resultData.getColumns()).thenReturn(null);
     when(thriftAccessor.getThriftResponse(request)).thenReturn(response);
+
+    client.listImportedKeys(session, TEST_FOREIGN_CATALOG, TEST_FOREIGN_SCHEMA, TEST_FOREIGN_TABLE);
+
+    ArgumentCaptor<TGetCrossReferenceReq> captor =
+        ArgumentCaptor.forClass(TGetCrossReferenceReq.class);
+    verify(thriftAccessor).getThriftResponse(captor.capture());
+    TGetCrossReferenceReq capturedRequestOlderVersion = captor.getValue();
+    assertFalse(
+        capturedRequestOlderVersion.isSetRunAsync(),
+        "Expected runAsync to be unset for older protocol versions");
+
+    client.setServerProtocolVersion(JDBC_THRIFT_VERSION);
+    when(thriftAccessor.getThriftResponse(request.setRunAsync(true))).thenReturn(response);
+
     DatabricksResultSet resultSet =
         client.listImportedKeys(
             session, TEST_FOREIGN_CATALOG, TEST_FOREIGN_SCHEMA, TEST_FOREIGN_TABLE);
@@ -409,13 +663,15 @@ public class DatabricksThriftServiceClientTest {
     DatabricksThriftServiceClient client =
         new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
     when(session.getSessionInfo()).thenReturn(SESSION_INFO);
+
+    // Test with older protocol version
+    client.setServerProtocolVersion(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V1);
     TGetCrossReferenceReq request =
         new TGetCrossReferenceReq()
             .setSessionHandle(SESSION_HANDLE)
             .setParentCatalogName(TEST_CATALOG)
             .setParentSchemaName(TEST_SCHEMA)
-            .setParentTableName(TEST_TABLE)
-            .setRunAsync(true);
+            .setParentTableName(TEST_TABLE);
     TFetchResultsResp response =
         new TFetchResultsResp()
             .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS))
@@ -423,6 +679,20 @@ public class DatabricksThriftServiceClientTest {
             .setResultSetMetadata(resultMetadataData);
     when(resultData.getColumns()).thenReturn(null);
     when(thriftAccessor.getThriftResponse(request)).thenReturn(response);
+
+    client.listExportedKeys(session, TEST_CATALOG, TEST_SCHEMA, TEST_TABLE);
+
+    ArgumentCaptor<TGetCrossReferenceReq> captor =
+        ArgumentCaptor.forClass(TGetCrossReferenceReq.class);
+    verify(thriftAccessor).getThriftResponse(captor.capture());
+    TGetCrossReferenceReq capturedRequestOlderVersion = captor.getValue();
+    assertFalse(
+        capturedRequestOlderVersion.isSetRunAsync(),
+        "Expected runAsync to be unset for older protocol versions");
+
+    client.setServerProtocolVersion(JDBC_THRIFT_VERSION);
+    when(thriftAccessor.getThriftResponse(request.setRunAsync(true))).thenReturn(response);
+
     DatabricksResultSet resultSet =
         client.listExportedKeys(session, TEST_CATALOG, TEST_SCHEMA, TEST_TABLE);
     assertEquals(resultSet.getStatementStatus().getState(), StatementState.SUCCEEDED);
@@ -433,6 +703,9 @@ public class DatabricksThriftServiceClientTest {
     DatabricksThriftServiceClient client =
         new DatabricksThriftServiceClient(thriftAccessor, connectionContext);
     when(session.getSessionInfo()).thenReturn(SESSION_INFO);
+
+    // Test with older protocol version
+    client.setServerProtocolVersion(TProtocolVersion.SPARK_CLI_SERVICE_PROTOCOL_V1);
     TGetCrossReferenceReq request =
         new TGetCrossReferenceReq()
             .setSessionHandle(SESSION_HANDLE)
@@ -441,8 +714,7 @@ public class DatabricksThriftServiceClientTest {
             .setParentTableName(TEST_TABLE)
             .setForeignCatalogName(TEST_FOREIGN_CATALOG)
             .setForeignSchemaName(TEST_FOREIGN_SCHEMA)
-            .setForeignTableName(TEST_FOREIGN_TABLE)
-            .setRunAsync(true);
+            .setForeignTableName(TEST_FOREIGN_TABLE);
     TFetchResultsResp response =
         new TFetchResultsResp()
             .setStatus(new TStatus().setStatusCode(TStatusCode.SUCCESS_STATUS))
@@ -450,6 +722,27 @@ public class DatabricksThriftServiceClientTest {
             .setResultSetMetadata(resultMetadataData);
     when(resultData.getColumns()).thenReturn(null);
     when(thriftAccessor.getThriftResponse(request)).thenReturn(response);
+
+    client.listCrossReferences(
+        session,
+        TEST_CATALOG,
+        TEST_SCHEMA,
+        TEST_TABLE,
+        TEST_FOREIGN_CATALOG,
+        TEST_FOREIGN_SCHEMA,
+        TEST_FOREIGN_TABLE);
+
+    ArgumentCaptor<TGetCrossReferenceReq> captor =
+        ArgumentCaptor.forClass(TGetCrossReferenceReq.class);
+    verify(thriftAccessor).getThriftResponse(captor.capture());
+    TGetCrossReferenceReq capturedRequestOlderVersion = captor.getValue();
+    assertFalse(
+        capturedRequestOlderVersion.isSetRunAsync(),
+        "Expected runAsync to be unset for older protocol versions");
+
+    client.setServerProtocolVersion(JDBC_THRIFT_VERSION);
+    when(thriftAccessor.getThriftResponse(request.setRunAsync(true))).thenReturn(response);
+
     DatabricksResultSet resultSet =
         client.listCrossReferences(
             session,
