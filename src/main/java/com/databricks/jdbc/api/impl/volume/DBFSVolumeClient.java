@@ -2,26 +2,31 @@ package com.databricks.jdbc.api.impl.volume;
 
 import static com.databricks.jdbc.api.impl.volume.DatabricksUCVolumeClient.getObjectFullPath;
 import static com.databricks.jdbc.common.DatabricksJdbcConstants.JSON_HTTP_HEADERS;
+import static com.databricks.jdbc.common.util.VolumeUtil.VolumeOperationType.constructListPath;
 import static com.databricks.jdbc.dbclient.impl.sqlexec.PathConstants.*;
 
-import com.databricks.jdbc.api.IDatabricksConnectionContext;
 import com.databricks.jdbc.api.IDatabricksVolumeClient;
 import com.databricks.jdbc.api.impl.VolumeOperationStatus;
+import com.databricks.jdbc.api.internal.IDatabricksConnectionContext;
+import com.databricks.jdbc.common.HttpClientType;
 import com.databricks.jdbc.common.util.DatabricksThreadContextHolder;
 import com.databricks.jdbc.common.util.StringUtil;
 import com.databricks.jdbc.common.util.VolumeUtil;
+import com.databricks.jdbc.common.util.WildcardUtil;
 import com.databricks.jdbc.dbclient.IDatabricksHttpClient;
 import com.databricks.jdbc.dbclient.impl.common.ClientConfigurator;
 import com.databricks.jdbc.dbclient.impl.http.DatabricksHttpClientFactory;
 import com.databricks.jdbc.exception.DatabricksSQLException;
-import com.databricks.jdbc.exception.DatabricksSQLFeatureNotImplementedException;
 import com.databricks.jdbc.exception.DatabricksVolumeOperationException;
 import com.databricks.jdbc.log.JdbcLogger;
 import com.databricks.jdbc.log.JdbcLoggerFactory;
 import com.databricks.jdbc.model.client.filesystem.*;
 import com.databricks.jdbc.model.telemetry.enums.DatabricksDriverErrorCode;
 import com.databricks.sdk.WorkspaceClient;
+import com.databricks.sdk.core.ApiClient;
 import com.databricks.sdk.core.DatabricksException;
+import com.databricks.sdk.core.error.platform.NotFound;
+import com.databricks.sdk.core.http.Request;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.Closeable;
 import java.io.IOException;
@@ -41,12 +46,14 @@ public class DBFSVolumeClient implements IDatabricksVolumeClient, Closeable {
   private VolumeInputStream volumeInputStream = null;
   private long volumeStreamContentLength = -1L;
   final WorkspaceClient workspaceClient;
+  final ApiClient apiClient;
   private final String allowedVolumeIngestionPaths;
 
   @VisibleForTesting
   public DBFSVolumeClient(WorkspaceClient workspaceClient) {
     this.connectionContext = null;
     this.workspaceClient = workspaceClient;
+    this.apiClient = workspaceClient.apiClient();
     this.databricksHttpClient = null;
     this.allowedVolumeIngestionPaths = "";
   }
@@ -54,8 +61,10 @@ public class DBFSVolumeClient implements IDatabricksVolumeClient, Closeable {
   public DBFSVolumeClient(IDatabricksConnectionContext connectionContext) {
     this.connectionContext = connectionContext;
     this.workspaceClient = getWorkspaceClientFromConnectionContext(connectionContext);
+    this.apiClient = workspaceClient.apiClient();
     this.databricksHttpClient =
-        DatabricksHttpClientFactory.getInstance().getClient(connectionContext);
+        DatabricksHttpClientFactory.getInstance()
+            .getClient(connectionContext, HttpClientType.VOLUME);
     this.allowedVolumeIngestionPaths = connectionContext.getVolumeOperationAllowedPaths();
   }
 
@@ -63,30 +72,100 @@ public class DBFSVolumeClient implements IDatabricksVolumeClient, Closeable {
   @Override
   public boolean prefixExists(
       String catalog, String schema, String volume, String prefix, boolean caseSensitive)
-      throws DatabricksSQLFeatureNotImplementedException {
-    String errorMessage = "prefixExists function is unsupported in DBFSVolumeClient";
-    LOGGER.error(errorMessage);
-    throw new DatabricksSQLFeatureNotImplementedException(errorMessage);
+      throws SQLException {
+    LOGGER.debug(
+        String.format(
+            "Entering prefixExists method with parameters: catalog = {%s}, schema = {%s}, volume = {%s}, prefix = {%s}, caseSensitive = {%s}",
+            catalog, schema, volume, prefix, caseSensitive));
+    if (WildcardUtil.isNullOrEmpty(prefix)) {
+      return false;
+    }
+    try {
+      List<String> objects = listObjects(catalog, schema, volume, prefix, caseSensitive);
+      return !objects.isEmpty();
+    } catch (Exception e) {
+      LOGGER.error(
+          String.format(
+              "Error checking prefix existence: catalog = {%s}, schema = {%s}, volume = {%s}, prefix = {%s}, caseSensitive = {%s}",
+              catalog, schema, volume, prefix, caseSensitive),
+          e);
+      throw new DatabricksVolumeOperationException(
+          "Error checking prefix existence: " + e.getMessage(),
+          e,
+          DatabricksDriverErrorCode.VOLUME_OPERATION_INVALID_STATE);
+    }
   }
 
   /** {@inheritDoc} */
   @Override
   public boolean objectExists(
       String catalog, String schema, String volume, String objectPath, boolean caseSensitive)
-      throws DatabricksSQLException {
-    String errorMessage = "objectExists function is unsupported in DBFSVolumeClient";
-    LOGGER.error(errorMessage);
-    throw new DatabricksSQLFeatureNotImplementedException(errorMessage);
+      throws SQLException {
+    LOGGER.debug(
+        String.format(
+            "Entering objectExists method with parameters: catalog = {%s}, schema = {%s}, volume = {%s}, objectPath = {%s}, caseSensitive = {%s}",
+            catalog, schema, volume, objectPath, caseSensitive));
+    if (WildcardUtil.isNullOrEmpty(objectPath)) {
+      return false;
+    }
+    try {
+      String baseName = StringUtil.getBaseNameFromPath(objectPath);
+      ListResponse listResponse =
+          getListResponse(constructListPath(catalog, schema, volume, objectPath));
+      if (listResponse != null && listResponse.getFiles() != null) {
+        for (FileInfo file : listResponse.getFiles()) {
+          String fileName = StringUtil.getBaseNameFromPath(file.getPath());
+          if (caseSensitive ? fileName.equals(baseName) : fileName.equalsIgnoreCase(baseName)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch (Exception e) {
+      LOGGER.error(
+          String.format(
+              "Error checking object existence: catalog = {%s}, schema = {%s}, volume = {%s}, objectPath = {%s}, caseSensitive = {%s}",
+              catalog, schema, volume, objectPath, caseSensitive),
+          e);
+      throw new DatabricksVolumeOperationException(
+          "Error checking object existence: " + e.getMessage(),
+          e,
+          DatabricksDriverErrorCode.VOLUME_OPERATION_INVALID_STATE);
+    }
   }
 
   /** {@inheritDoc} */
   @Override
   public boolean volumeExists(
-      String catalog, String schema, String volumeName, boolean caseSensitive)
-      throws DatabricksSQLException {
-    String errorMessage = "volumeExists function is unsupported in DBFSVolumeClient";
-    LOGGER.error(errorMessage);
-    throw new DatabricksSQLFeatureNotImplementedException(errorMessage);
+      String catalog, String schema, String volumeName, boolean caseSensitive) throws SQLException {
+    LOGGER.debug(
+        String.format(
+            "Entering volumeExists method with parameters: catalog = {%s}, schema = {%s}, volumeName = {%s}, caseSensitive = {%s}",
+            catalog, schema, volumeName, caseSensitive));
+    if (WildcardUtil.isNullOrEmpty(volumeName)) {
+      return false;
+    }
+    try {
+      String volumePath = StringUtil.getVolumePath(catalog, schema, volumeName);
+      // If getListResponse does not throw, then the volume exists (even if it’s empty).
+      getListResponse(volumePath);
+      return true;
+    } catch (DatabricksVolumeOperationException e) {
+      // If the exception indicates an invalid path (i.e. missing volume name),
+      // then the volume does not exist. Otherwise, rethrow with proper error details.
+      if (e.getCause() instanceof NotFound) {
+        return false;
+      }
+      LOGGER.error(
+          String.format(
+              "Error checking volume existence: catalog = {%s}, schema = {%s}, volumeName = {%s}, caseSensitive = {%s}",
+              catalog, schema, volumeName, caseSensitive),
+          e);
+      throw new DatabricksVolumeOperationException(
+          "Error checking volume existence: " + e.getMessage(),
+          e,
+          DatabricksDriverErrorCode.VOLUME_OPERATION_INVALID_STATE);
+    }
   }
 
   /** {@inheritDoc} */
@@ -99,15 +178,8 @@ public class DBFSVolumeClient implements IDatabricksVolumeClient, Closeable {
             "Entering listObjects method with parameters: catalog={%s}, schema={%s}, volume={%s}, prefix={%s}, caseSensitive={%s}",
             catalog, schema, volume, prefix, caseSensitive));
 
-    String folder = StringUtil.getFolderNameFromPath(prefix);
     String basename = StringUtil.getBaseNameFromPath(prefix);
-
-    String listPath =
-        (folder.isEmpty())
-            ? StringUtil.getVolumePath(catalog, schema, volume)
-            : StringUtil.getVolumePath(catalog, schema, volume + "/" + folder);
-
-    ListResponse listResponse = getListResponse(listPath);
+    ListResponse listResponse = getListResponse(constructListPath(catalog, schema, volume, prefix));
 
     return listResponse.getFiles().stream()
         .map(FileInfo::getPath)
@@ -336,10 +408,10 @@ public class DBFSVolumeClient implements IDatabricksVolumeClient, Closeable {
 
     CreateUploadUrlRequest request = new CreateUploadUrlRequest(objectPath);
     try {
-      return workspaceClient
-          .apiClient()
-          .POST(CREATE_UPLOAD_URL_PATH, request, CreateUploadUrlResponse.class, JSON_HTTP_HEADERS);
-    } catch (DatabricksException e) {
+      Request req = new Request(Request.POST, CREATE_UPLOAD_URL_PATH, apiClient.serialize(request));
+      req.withHeaders(JSON_HTTP_HEADERS);
+      return apiClient.execute(req, CreateUploadUrlResponse.class);
+    } catch (IOException | DatabricksException e) {
       String errorMessage =
           String.format("Failed to get create upload url response - {%s}", e.getMessage());
       LOGGER.error(e, errorMessage);
@@ -359,14 +431,11 @@ public class DBFSVolumeClient implements IDatabricksVolumeClient, Closeable {
     CreateDownloadUrlRequest request = new CreateDownloadUrlRequest(objectPath);
 
     try {
-      return workspaceClient
-          .apiClient()
-          .POST(
-              CREATE_DOWNLOAD_URL_PATH,
-              request,
-              CreateDownloadUrlResponse.class,
-              JSON_HTTP_HEADERS);
-    } catch (DatabricksException e) {
+      Request req =
+          new Request(Request.POST, CREATE_DOWNLOAD_URL_PATH, apiClient.serialize(request));
+      req.withHeaders(JSON_HTTP_HEADERS);
+      return apiClient.execute(req, CreateDownloadUrlResponse.class);
+    } catch (IOException | DatabricksException e) {
       String errorMessage =
           String.format("Failed to get create download url response - {%s}", e.getMessage());
       LOGGER.error(e, errorMessage);
@@ -385,10 +454,10 @@ public class DBFSVolumeClient implements IDatabricksVolumeClient, Closeable {
     CreateDeleteUrlRequest request = new CreateDeleteUrlRequest(objectPath);
 
     try {
-      return workspaceClient
-          .apiClient()
-          .POST(CREATE_DELETE_URL_PATH, request, CreateDeleteUrlResponse.class, JSON_HTTP_HEADERS);
-    } catch (DatabricksException e) {
+      Request req = new Request(Request.POST, CREATE_DELETE_URL_PATH, apiClient.serialize(request));
+      req.withHeaders(JSON_HTTP_HEADERS);
+      return apiClient.execute(req, CreateDeleteUrlResponse.class);
+    } catch (IOException | DatabricksException e) {
       String errorMessage =
           String.format("Failed to get create delete url response - {%s}", e.getMessage());
       LOGGER.error(e, errorMessage);
@@ -403,10 +472,11 @@ public class DBFSVolumeClient implements IDatabricksVolumeClient, Closeable {
         String.format("Entering getListResponse method with parameters : listPath={%s}", listPath));
     ListRequest request = new ListRequest(listPath);
     try {
-      return workspaceClient
-          .apiClient()
-          .GET(LIST_PATH, request, ListResponse.class, JSON_HTTP_HEADERS);
-    } catch (DatabricksException e) {
+      Request req = new Request(Request.GET, LIST_PATH);
+      req.withHeaders(JSON_HTTP_HEADERS);
+      ApiClient.setQuery(req, request);
+      return apiClient.execute(req, ListResponse.class);
+    } catch (IOException | DatabricksException e) {
       String errorMessage = String.format("Failed to get list response - {%s}", e.getMessage());
       LOGGER.error(e, errorMessage);
       throw new DatabricksVolumeOperationException(

@@ -8,7 +8,7 @@ import static com.databricks.jdbc.common.DatabricksJdbcConstants.M2M_AUTH_TYPE;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.databricks.jdbc.TestConstants;
-import com.databricks.jdbc.api.IDatabricksConnectionContext;
+import com.databricks.jdbc.api.internal.IDatabricksConnectionContext;
 import com.databricks.jdbc.common.*;
 import com.databricks.jdbc.exception.DatabricksParsingException;
 import com.databricks.jdbc.exception.DatabricksSQLException;
@@ -155,6 +155,35 @@ class DatabricksConnectionContextTest {
   }
 
   @Test
+  public void testParseWithDefaultStringColumnLength() throws DatabricksSQLException {
+    // Test case 1: Valid DefaultStringColumnLength
+    String validJdbcUrl = TestConstants.VALID_URL_1;
+    Properties properties = new Properties();
+    properties.put("DefaultStringColumnLength", 500);
+    DatabricksConnectionContext connectionContext =
+        (DatabricksConnectionContext) DatabricksConnectionContext.parse(validJdbcUrl, properties);
+    assertEquals(500, connectionContext.getDefaultStringColumnLength());
+
+    // Test case 2: Out of bounds DefaultStringColumnLength
+    properties.put("DefaultStringColumnLength", 400000);
+    connectionContext =
+        (DatabricksConnectionContext) DatabricksConnectionContext.parse(validJdbcUrl, properties);
+    assertEquals(255, connectionContext.getDefaultStringColumnLength());
+
+    // Test case 3: Negative DefaultStringColumnLength
+    properties.put("DefaultStringColumnLength", -1);
+    connectionContext =
+        (DatabricksConnectionContext) DatabricksConnectionContext.parse(validJdbcUrl, properties);
+    assertEquals(255, connectionContext.getDefaultStringColumnLength());
+
+    // Test case 4: Invalid format DefaultStringColumnLength
+    properties.put("DefaultStringColumnLength", "invalid");
+    connectionContext =
+        (DatabricksConnectionContext) DatabricksConnectionContext.parse(validJdbcUrl, properties);
+    assertEquals(255, connectionContext.getDefaultStringColumnLength());
+  }
+
+  @Test
   public void testPortStringAndAuthEndpointsThroughConnectionParameters()
       throws DatabricksSQLException {
     DatabricksConnectionContext connectionContext =
@@ -274,6 +303,33 @@ class DatabricksConnectionContextTest {
   }
 
   @Test
+  public void testRowsFetchedPerBlock() throws DatabricksSQLException {
+    // Test with default value
+    DatabricksConnectionContext connectionContext =
+        (DatabricksConnectionContext)
+            DatabricksConnectionContext.parse(TestConstants.VALID_CLUSTER_URL, properties);
+    assertEquals(2000000, connectionContext.getRowsFetchedPerBlock());
+
+    // Test with custom value
+    Properties properties = new Properties();
+    properties.setProperty("password", "passwd");
+    properties.setProperty("RowsFetchedPerBlock", "500000");
+
+    connectionContext =
+        (DatabricksConnectionContext)
+            DatabricksConnectionContext.parse(TestConstants.VALID_CLUSTER_URL, properties);
+    assertEquals(500000, connectionContext.getRowsFetchedPerBlock());
+
+    // Test with invalid value (should fall back to default)
+    properties.setProperty("RowsFetchedPerBlock", "invalid");
+
+    connectionContext =
+        (DatabricksConnectionContext)
+            DatabricksConnectionContext.parse(TestConstants.VALID_CLUSTER_URL, properties);
+    assertEquals(2000000, connectionContext.getRowsFetchedPerBlock());
+  }
+
+  @Test
   public void testParsingOfUrlWithoutDefault() throws DatabricksSQLException {
     DatabricksConnectionContext connectionContext =
         (DatabricksConnectionContext)
@@ -321,19 +377,35 @@ class DatabricksConnectionContextTest {
   }
 
   @Test
+  public void testParsingOfCustomHeaders() throws DatabricksSQLException {
+    DatabricksConnectionContext connectionContext =
+        (DatabricksConnectionContext)
+            DatabricksConnectionContext.parse(
+                TestConstants.VALID_URL_WITH_CUSTOM_HEADERS, properties);
+    assertEquals("headerValue1", connectionContext.getCustomHeaders().get("HEADER_KEY_1"));
+    assertEquals("headerValue2", connectionContext.getCustomHeaders().get("headerKey2"));
+  }
+
+  @Test
   public void testGetVolumeOperationPathsFlag() throws Exception {
     IDatabricksConnectionContext connectionContext =
         DatabricksConnectionContext.parse(
             TestConstants.VALID_URL_WITH_VOLUME_ALLOWED_PATH, properties);
     assertEquals("/tmp2", connectionContext.getVolumeOperationAllowedPaths());
+    assertEquals(List.of(429, 503, 504), connectionContext.getUCIngestionRetriableHttpCodes());
+    assertEquals(600, connectionContext.getUCIngestionRetryTimeoutSeconds());
 
     connectionContext =
         DatabricksConnectionContext.parse(
             TestConstants.VALID_URL_WITH_STAGING_ALLOWED_PATH, properties);
     assertEquals("/tmp", connectionContext.getVolumeOperationAllowedPaths());
+    assertEquals(List.of(503, 504), connectionContext.getUCIngestionRetriableHttpCodes());
+    assertEquals(720, connectionContext.getUCIngestionRetryTimeoutSeconds());
 
     connectionContext = DatabricksConnectionContext.parse(TestConstants.VALID_URL_1, properties);
     assertEquals("", connectionContext.getVolumeOperationAllowedPaths());
+    assertEquals(List.of(408, 502, 503, 504), connectionContext.getUCIngestionRetriableHttpCodes());
+    assertEquals(900, connectionContext.getUCIngestionRetryTimeoutSeconds());
   }
 
   @Test
@@ -393,5 +465,47 @@ class DatabricksConnectionContextTest {
     assertEquals(getLogLevel(4), LogLevel.INFO);
     assertEquals(getLogLevel(5), LogLevel.DEBUG);
     assertEquals(getLogLevel(6), LogLevel.TRACE);
+  }
+
+  @Test
+  public void testGetOAuth2RedirectUrlPorts() throws DatabricksSQLException {
+    // Test default value
+    Properties props = new Properties();
+    DatabricksConnectionContext context =
+        (DatabricksConnectionContext)
+            DatabricksConnectionContext.parse(TestConstants.VALID_URL_1, props);
+    List<Integer> ports = context.getOAuth2RedirectUrlPorts();
+    assertEquals(1, ports.size());
+    assertEquals(8020, ports.get(0)); // Default value
+
+    // Test single port
+    props = new Properties();
+    props.setProperty("OAuth2RedirectUrlPort", "9090");
+    context =
+        (DatabricksConnectionContext)
+            DatabricksConnectionContext.parse(TestConstants.VALID_URL_1, props);
+    ports = context.getOAuth2RedirectUrlPorts();
+    assertEquals(1, ports.size());
+    assertEquals(9090, ports.get(0));
+
+    // Test multiple ports
+    props = new Properties();
+    props.setProperty("OAuth2RedirectUrlPort", "9090,9091,9092");
+    context =
+        (DatabricksConnectionContext)
+            DatabricksConnectionContext.parse(TestConstants.VALID_URL_1, props);
+    ports = context.getOAuth2RedirectUrlPorts();
+    assertEquals(3, ports.size());
+    assertEquals(9090, ports.get(0));
+    assertEquals(9091, ports.get(1));
+    assertEquals(9092, ports.get(2));
+
+    // Test invalid format
+    props = new Properties();
+    props.setProperty("OAuth2RedirectUrlPort", "invalid");
+    context =
+        (DatabricksConnectionContext)
+            DatabricksConnectionContext.parse(TestConstants.VALID_URL_1, props);
+    assertThrows(IllegalArgumentException.class, context::getOAuth2RedirectUrlPorts);
   }
 }

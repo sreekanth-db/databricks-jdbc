@@ -9,11 +9,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.databricks.jdbc.api.IDatabricksResultSet;
-import com.databricks.jdbc.api.IDatabricksSession;
 import com.databricks.jdbc.api.impl.volume.VolumeOperationResult;
 import com.databricks.jdbc.api.internal.IDatabricksResultSetInternal;
+import com.databricks.jdbc.api.internal.IDatabricksSession;
 import com.databricks.jdbc.api.internal.IDatabricksStatementInternal;
 import com.databricks.jdbc.common.StatementType;
+import com.databricks.jdbc.common.util.DatabricksThreadContextHolder;
 import com.databricks.jdbc.dbclient.impl.common.StatementId;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import com.databricks.jdbc.exception.DatabricksSQLFeatureNotSupportedException;
@@ -108,8 +109,10 @@ public class DatabricksResultSetTest {
   @Test
   void testThriftResultSet() throws SQLException {
     when(session.getConnectionContext()).thenReturn(databricksConnectionContext);
+    DatabricksThreadContextHolder.setConnectionContext(databricksConnectionContext);
     when(databricksConnectionContext.isComplexDatatypeSupportEnabled()).thenReturn(false);
     DatabricksResultSet resultSet = getThriftResultSetMetadata();
+    DatabricksThreadContextHolder.clearAllContext();
     assertFalse(resultSet.next());
   }
 
@@ -318,7 +321,7 @@ public class DatabricksResultSetTest {
     assertEquals(new BigDecimal("123.423123"), resultSet.getBigDecimal(2));
     // null object
     when(mockedExecutionResult.getObject(0)).thenReturn(null);
-    assertEquals(BigDecimal.ZERO, resultSet.getBigDecimal(1));
+    assertNull(resultSet.getBigDecimal(1));
     // Test with column label
     when(mockedExecutionResult.getObject(1)).thenReturn(new BigDecimal("123.423123"));
     when(mockedResultSetMetadata.getColumnNameIndex("columnLabel")).thenReturn(2);
@@ -994,6 +997,44 @@ public class DatabricksResultSetTest {
   }
 
   @Test
+  void testFindColumnSuccessful() throws SQLException {
+    // Setup
+    when(mockedResultSetMetadata.getColumnNameIndex("existingColumn")).thenReturn(3);
+    DatabricksResultSet resultSet = getResultSet(StatementState.SUCCEEDED, null);
+
+    // Verify that findColumn returns the correct index
+    assertEquals(3, resultSet.findColumn("existingColumn"));
+  }
+
+  @Test
+  void testFindColumnNotFound() throws SQLException {
+    // Setup
+    when(mockedResultSetMetadata.getColumnNameIndex("nonExistentColumn")).thenReturn(-1);
+    DatabricksResultSet resultSet = getResultSet(StatementState.SUCCEEDED, null);
+
+    // Verify that findColumn throws SQLException for non-existent column
+    SQLException exception =
+        assertThrows(DatabricksSQLException.class, () -> resultSet.findColumn("nonExistentColumn"));
+
+    // Verify the exception message
+    assertTrue(exception.getMessage().contains("Column not found"));
+  }
+
+  @Test
+  void testFindColumnClosedResultSet() throws SQLException {
+    // Setup
+    DatabricksResultSet resultSet = getResultSet(StatementState.SUCCEEDED, null);
+    resultSet.close();
+
+    // Verify that findColumn throws SQLException when result set is closed
+    SQLException exception =
+        assertThrows(DatabricksSQLException.class, () -> resultSet.findColumn("anyColumn"));
+
+    // Verify the exception message
+    assertTrue(exception.getMessage().contains("ResultSet is closed"));
+  }
+
+  @Test
   void testClose() throws SQLException {
     // Test null parent statement
     DatabricksResultSet resultSet = getResultSet(StatementState.SUCCEEDED, null);
@@ -1094,5 +1135,35 @@ public class DatabricksResultSetTest {
     DatabricksResultSet resultSet = getResultSet(StatementState.SUCCEEDED, null);
     resultSet.close();
     assertThrows(DatabricksSQLException.class, resultSet::getUpdateCount);
+  }
+
+  @Test
+  void testDefaultValuesForNullFields() throws SQLException {
+    DatabricksResultSet resultSet = getResultSet(StatementState.SUCCEEDED, null);
+    when(mockedExecutionResult.getObject(anyInt())).thenReturn(null);
+
+    // Object types should return null
+    assertNull(resultSet.getString(1));
+    assertNull(resultSet.getBigDecimal(1));
+    assertNull(resultSet.getDate(1));
+    assertNull(resultSet.getTime(1));
+    assertNull(resultSet.getTimestamp(1));
+    assertNull(resultSet.getBytes(1));
+    assertNull(resultSet.getAsciiStream(1));
+    assertNull(resultSet.getUnicodeStream(1));
+    assertNull(resultSet.getBinaryStream(1));
+
+    // Primitive types should return their default values
+    assertEquals(false, resultSet.getBoolean(1));
+    assertEquals((byte) 0, resultSet.getByte(1));
+    assertEquals((short) 0, resultSet.getShort(1));
+    assertEquals(0, resultSet.getInt(1));
+    assertEquals(0L, resultSet.getLong(1));
+    assertEquals(0.0f, resultSet.getFloat(1));
+    assertEquals(0.0d, resultSet.getDouble(1));
+
+    // Make sure wasNull returns true after getting a null value
+    resultSet.getString(1);
+    assertTrue(resultSet.wasNull());
   }
 }

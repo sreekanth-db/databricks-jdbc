@@ -7,10 +7,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
-import com.databricks.jdbc.api.IDatabricksConnectionContext;
-import com.databricks.jdbc.api.IDatabricksSession;
 import com.databricks.jdbc.api.impl.DatabricksConnectionContextFactory;
 import com.databricks.jdbc.api.impl.DatabricksSession;
+import com.databricks.jdbc.api.internal.IDatabricksConnectionContext;
+import com.databricks.jdbc.api.internal.IDatabricksSession;
 import com.databricks.jdbc.api.internal.IDatabricksStatementInternal;
 import com.databricks.jdbc.common.CompressionCodec;
 import com.databricks.jdbc.dbclient.IDatabricksHttpClient;
@@ -247,7 +247,7 @@ public class ArrowStreamResultTest {
     when(httpEntity.getContent()).thenAnswer(invocation -> new FileInputStream(arrowFile));
   }
 
-  private void setupResultChunkMocks() {
+  private void setupResultChunkMocks() throws DatabricksSQLException {
     for (int chunkIndex = 1; chunkIndex < numberOfChunks; chunkIndex++) {
       boolean isLastChunk = (chunkIndex == (numberOfChunks - 1));
       when(mockedSdkClient.getResultChunks(STATEMENT_ID, chunkIndex))

@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import com.databricks.jdbc.api.IDatabricksConnectionContext;
 import com.databricks.jdbc.api.impl.DatabricksConnectionContextFactory;
+import com.databricks.jdbc.api.internal.IDatabricksConnectionContext;
 import com.databricks.sdk.core.DatabricksConfig;
 import com.databricks.sdk.core.DatabricksException;
 import com.databricks.sdk.core.HeaderFactory;
@@ -21,7 +21,6 @@ import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.http.HttpHeaders;
-import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -100,12 +99,7 @@ public class OAuthRefreshCredentialsProviderTest {
     assertEquals("oauth-refresh", credentialsProvider.authType());
     // Reinitialize the OAUTH_RESPONSE InputStream for each test run
     String jsonResponse =
-        new JSONObject()
-            .put("access_token", "access-token")
-            .put("token_type", "token-type")
-            .put("expires_in", 360)
-            .put("refresh_token", "refresh-token")
-            .toString();
+        "{\"access_token\":\"access-token\",\"token_type\":\"token-type\",\"expires_in\":360,\"refresh_token\":\"refresh-token\"}";
 
     when(databricksConfig.getHttpClient()).thenReturn(httpClient);
     when(httpClient.execute(any())).thenReturn(new Response(jsonResponse, new URL(TEST_TOKEN_URL)));

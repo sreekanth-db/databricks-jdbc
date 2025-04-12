@@ -4,8 +4,8 @@ import static com.databricks.jdbc.common.DatabricksJdbcConstants.*;
 import static com.databricks.jdbc.integration.fakeservice.FakeServiceConfigLoader.*;
 import static com.databricks.jdbc.integration.fakeservice.FakeServiceExtension.TARGET_URI_PROP_SUFFIX;
 
-import com.databricks.jdbc.api.IDatabricksConnectionContext;
 import com.databricks.jdbc.api.impl.DatabricksConnectionContextFactory;
+import com.databricks.jdbc.api.internal.IDatabricksConnectionContext;
 import com.databricks.jdbc.common.DatabricksJdbcConstants.FakeServiceType;
 import com.databricks.jdbc.common.DatabricksJdbcUrlParams;
 import com.databricks.jdbc.common.util.DriverUtil;
@@ -171,6 +171,8 @@ public class IntegrationTestUtil {
     Properties connectionProperties = new Properties();
     connectionProperties.put(DatabricksJdbcUrlParams.USER.getParamName(), getDatabricksUser());
     connectionProperties.put(DatabricksJdbcUrlParams.PASSWORD.getParamName(), getDatabricksToken());
+    connectionProperties.put(
+        DatabricksJdbcUrlParams.ENABLE_SQL_EXEC_HYBRID_RESULTS.getParamName(), '0');
 
     if (DriverUtil.isRunningAgainstFake()) {
       connectionProperties.put(
@@ -202,6 +204,8 @@ public class IntegrationTestUtil {
       throws SQLException {
     connectionProperties.put(DatabricksJdbcUrlParams.USER.getParamName(), getDatabricksUser());
     connectionProperties.put(DatabricksJdbcUrlParams.PASSWORD.getParamName(), getDatabricksToken());
+    connectionProperties.put(
+        DatabricksJdbcUrlParams.ENABLE_SQL_EXEC_HYBRID_RESULTS.getParamName(), '0');
 
     if (DriverUtil.isRunningAgainstFake()) {
       connectionProperties.put(

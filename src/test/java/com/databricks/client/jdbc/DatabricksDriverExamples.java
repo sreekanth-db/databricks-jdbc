@@ -6,13 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.databricks.jdbc.api.IDatabricksConnection;
-import com.databricks.jdbc.api.IDatabricksConnectionContext;
 import com.databricks.jdbc.api.IDatabricksResultSet;
 import com.databricks.jdbc.api.IDatabricksStatement;
 import com.databricks.jdbc.api.impl.DatabricksConnectionContextFactory;
 import com.databricks.jdbc.api.impl.DatabricksResultSetMetaData;
 import com.databricks.jdbc.api.impl.arrow.ArrowResultChunk;
 import com.databricks.jdbc.api.impl.volume.DatabricksVolumeClientFactory;
+import com.databricks.jdbc.api.internal.IDatabricksConnectionContext;
 import com.databricks.jdbc.common.DatabricksJdbcConstants;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import com.databricks.sdk.service.sql.StatementState;
@@ -118,6 +118,55 @@ public class DatabricksDriverExamples {
       System.out.println();
     }
     System.out.println("Total rows: " + rows);
+  }
+
+  /** Demonstrates usage of DefaultStringColumnLength parameter */
+  @Test
+  void exampleDefaultStringColumnLength() throws Exception {
+    DriverManager.registerDriver(new Driver());
+    String jdbcUrl = JDBC_URL_WAREHOUSE + "EnableTelemetry=1" + ";DefaultStringColumnLength=3";
+    Connection con = DriverManager.getConnection(jdbcUrl, "token", DATABRICKS_TOKEN);
+    System.out.println("Connection established......");
+    Statement stmt = con.createStatement();
+    ResultSet rs = stmt.executeQuery("select 'string' as col");
+    printResultSet(rs);
+    stmt.close();
+    con.close();
+  }
+
+  /*
+   * Demonstrates use of url param RowsFetchedPerBlock. The maximum number of rows that a query returns at a time.
+   * Works only with thrift inline mode
+   */
+  @Test
+  void exampleRowsFetchedPerBlock() throws Exception {
+    // Register the Databricks JDBC driver
+    DriverManager.registerDriver(new Driver());
+    String jdbcUrl =
+        JDBC_URL_WAREHOUSE + "EnableTelemetry=1" + ";enableArrow=0" + ";RowsFetchedPerBlock=3";
+    Connection con = DriverManager.getConnection(jdbcUrl, "token", DATABRICKS_TOKEN);
+    Statement stmt = con.createStatement();
+    ResultSet rs = stmt.executeQuery("SELECT * FROM RANGE(12)"); // 4 FetchResults calls made
+    printResultSet(rs);
+    stmt.close();
+    rs.close();
+    con.close();
+  }
+
+  /** Demonstrates use statement.setMaxRows(). Limits the number of rows returned by a query. */
+  @Test
+  void exampleMaxRows() throws Exception {
+    // Register the Databricks JDBC driver
+    DriverManager.registerDriver(new Driver());
+    String jdbcUrl = JDBC_URL_WAREHOUSE + "EnableTelemetry=1" + "enableArrow=0";
+    Connection con = DriverManager.getConnection(jdbcUrl, "token", DATABRICKS_TOKEN);
+    Statement stmt = con.createStatement();
+    stmt.setMaxRows(5);
+    ResultSet rs = stmt.executeQuery("SELECT * FROM RANGE(10)");
+    printResultSet(rs); // 5 rows will be printed
+    stmt.close();
+    rs.close();
+    con.close();
   }
 
   /**
