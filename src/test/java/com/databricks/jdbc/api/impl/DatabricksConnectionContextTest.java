@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.databricks.jdbc.TestConstants;
 import com.databricks.jdbc.api.internal.IDatabricksConnectionContext;
 import com.databricks.jdbc.common.*;
+import com.databricks.jdbc.exception.DatabricksDriverException;
 import com.databricks.jdbc.exception.DatabricksParsingException;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import com.databricks.sdk.core.ProxyConfig;
@@ -242,11 +243,11 @@ class DatabricksConnectionContextTest {
     assertEquals(AuthMech.PAT, AuthMech.parseAuthMech("3"), "Parsing '3' should return PAT");
     assertEquals(AuthMech.OAUTH, AuthMech.parseAuthMech("11"), "Parsing '11' should return OAUTH");
     assertThrows(
-        UnsupportedOperationException.class,
+        DatabricksDriverException.class,
         () -> AuthMech.parseAuthMech("1"),
         "Parsing unsupported value should throw exception");
     assertThrows(
-        NumberFormatException.class,
+        DatabricksDriverException.class,
         () -> AuthMech.parseAuthMech("non-numeric"),
         "Parsing non-numeric value should throw NumberFormatException");
   }
