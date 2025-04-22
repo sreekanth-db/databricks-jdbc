@@ -8,10 +8,7 @@ import static com.databricks.jdbc.common.util.ValidationUtil.throwErrorIfNull;
 
 import com.databricks.jdbc.common.StatementType;
 import com.databricks.jdbc.common.util.DatabricksTypeUtil;
-import com.databricks.jdbc.exception.DatabricksSQLException;
-import com.databricks.jdbc.exception.DatabricksSQLFeatureNotImplementedException;
-import com.databricks.jdbc.exception.DatabricksSQLFeatureNotSupportedException;
-import com.databricks.jdbc.exception.DatabricksValidationException;
+import com.databricks.jdbc.exception.*;
 import com.databricks.jdbc.log.JdbcLogger;
 import com.databricks.jdbc.log.JdbcLoggerFactory;
 import com.databricks.jdbc.model.telemetry.enums.DatabricksDriverErrorCode;
@@ -63,20 +60,30 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
   }
 
   @Override
-  public int[] executeBatch() {
+  public int[] executeBatch() throws DatabricksBatchUpdateException {
     LOGGER.debug("public int executeBatch()");
     int[] updateCount = new int[databricksBatchParameterMetaData.size()];
 
-    for (int i = 0; i < databricksBatchParameterMetaData.size(); i++) {
+    for (int sqlQueryIndex = 0;
+        sqlQueryIndex < databricksBatchParameterMetaData.size();
+        sqlQueryIndex++) {
       DatabricksParameterMetaData databricksParameterMetaData =
-          databricksBatchParameterMetaData.get(i);
+          databricksBatchParameterMetaData.get(sqlQueryIndex);
       try {
         executeInternal(
             sql, databricksParameterMetaData.getParameterBindings(), StatementType.UPDATE, false);
-        updateCount[i] = (int) resultSet.getUpdateCount();
-      } catch (SQLException e) {
-        LOGGER.error(e, e.getMessage());
-        updateCount[i] = -1;
+        updateCount[sqlQueryIndex] = (int) resultSet.getUpdateCount();
+      } catch (Exception e) {
+        LOGGER.error(
+            "Error executing batch update for index {}: {}", sqlQueryIndex, e.getMessage(), e);
+        // Set the current failed statement's count
+        updateCount[sqlQueryIndex] = Statement.EXECUTE_FAILED;
+        // Set all remaining statements as failed
+        for (int i = sqlQueryIndex + 1; i < updateCount.length; i++) {
+          updateCount[i] = Statement.EXECUTE_FAILED;
+        }
+        throw new DatabricksBatchUpdateException(
+            e.getMessage(), DatabricksDriverErrorCode.BATCH_EXECUTE_EXCEPTION, updateCount);
       }
     }
     return updateCount;
