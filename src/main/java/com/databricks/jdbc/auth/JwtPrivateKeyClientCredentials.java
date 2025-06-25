@@ -236,7 +236,7 @@ public class JwtPrivateKeyClientCredentials extends RefreshableTokenSource {
 
   private PrivateKey getPrivateKey() {
     try (Reader reader = new FileReader(jwtKeyFile);
-         PEMParser pemParser = new PEMParser(reader)) {
+        PEMParser pemParser = new PEMParser(reader)) {
       Object object = pemParser.readObject();
       return convertPrivateKey(object);
     } catch (DatabricksSQLException | IOException e) {
@@ -266,8 +266,7 @@ public class JwtPrivateKeyClientCredentials extends RefreshableTokenSource {
           privateKeyInfo = (PrivateKeyInfo) pemObject;
         }
       }
-      JcaPEMKeyConverter keyConverter =
-          new JcaPEMKeyConverter().setProvider(bouncyCastleProvider);
+      JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter().setProvider(bouncyCastleProvider);
       return keyConverter.getPrivateKey(privateKeyInfo);
     } catch (OperatorCreationException | PKCSException | PEMException e) {
       String errorMessage = "Cannot decrypt private JWT key " + e.getMessage();
