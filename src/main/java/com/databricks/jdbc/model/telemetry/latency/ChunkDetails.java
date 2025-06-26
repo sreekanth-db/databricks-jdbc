@@ -17,7 +17,7 @@ public class ChunkDetails {
   @JsonProperty("total_chunks_iterated")
   private Integer totalChunksIterated;
 
-  //  @JsonProperty("sum_chunks_download_time_millis")
+  @JsonProperty("sum_chunks_download_time_millis")
   private Long sumChunksDownloadTimeMillis;
 
   public ChunkDetails setInitialChunkLatencyMillis(Long initialChunkLatencyMillis) {
