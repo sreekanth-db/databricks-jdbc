@@ -149,4 +149,69 @@ public class ConcurrentExecutionTests {
       }
     }
   }
+
+  @Test
+  void testConcurrentInsertAndCount() throws InterruptedException, SQLException {
+
+    String sharedTableName = "shared_insert_table";
+
+    try (Connection setupConn = getValidJDBCConnection()) {
+      setupDatabaseTable(setupConn, sharedTableName);
+    }
+
+    ExecutorService executorService = Executors.newFixedThreadPool(NUM_THREADS);
+    List<Future<Boolean>> futures = new ArrayList<>();
+
+    // Each thread inserts one row
+    for (int i = 0; i < NUM_THREADS; i++) {
+      final int threadId = i;
+      futures.add(
+          executorService.submit(
+              () -> {
+                try (Connection conn = getValidJDBCConnection()) {
+                  conn.createStatement()
+                      .executeUpdate(
+                          "INSERT INTO "
+                              + getFullyQualifiedTableName(sharedTableName)
+                              + " (id, col1, col2) VALUES ("
+                              + threadId
+                              + ", 'thread_"
+                              + threadId
+                              + "', 'data')");
+                  return true;
+                } catch (Exception e) {
+                  return false;
+                }
+              }));
+    }
+
+    executorService.shutdown();
+
+    // Verify all threads succeeded
+    boolean allSuccess = true;
+    for (Future<Boolean> future : futures) {
+      try {
+        if (!future.get()) allSuccess = false;
+      } catch (ExecutionException e) {
+        allSuccess = false;
+      }
+    }
+    assertTrue(allSuccess, "Not all threads completed successfully");
+
+    // Verify row count = NUM_THREADS
+    try (Connection verifyConn = getValidJDBCConnection()) {
+      ResultSet rs =
+          verifyConn
+              .createStatement()
+              .executeQuery("SELECT COUNT(*) FROM " + getFullyQualifiedTableName(sharedTableName));
+      rs.next();
+      int rowCount = rs.getInt(1);
+      assertEquals(NUM_THREADS, rowCount, "Row count should equal number of threads");
+    }
+
+    // Cleanup
+    try (Connection cleanupConn = getValidJDBCConnection()) {
+      deleteTable(cleanupConn, sharedTableName);
+    }
+  }
 }
