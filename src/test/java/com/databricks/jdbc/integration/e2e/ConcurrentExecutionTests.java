@@ -113,4 +113,40 @@ public class ConcurrentExecutionTests {
       deleteTable(connection, tableName);
     }
   }
+
+  @Test
+  void testConcurrentStatementExecution()
+      throws SQLException, ExecutionException, InterruptedException {
+
+    try (Connection connection = getValidJDBCConnection()) {
+      ExecutorService executor = Executors.newFixedThreadPool(10);
+      List<Future<Boolean>> futures = new ArrayList<>();
+
+      // Multiple threads creating and using statements on same connection
+      for (int i = 0; i < 20; i++) {
+        final int threadId = i;
+        futures.add(
+            executor.submit(
+                () -> {
+                  try {
+                    Statement stmt = connection.createStatement();
+                    ResultSet rs = stmt.executeQuery("SELECT " + threadId + " as thread_id");
+                    boolean hasResult = rs.next();
+                    int result = rs.getInt("thread_id");
+                    rs.close();
+                    stmt.close();
+                    return hasResult && result == threadId;
+                  } catch (SQLException e) {
+                    e.printStackTrace();
+                    return false;
+                  }
+                }));
+      }
+
+      // Verify all threads succeeded
+      for (Future<Boolean> future : futures) {
+        assertTrue(future.get(), "Statement execution failed");
+      }
+    }
+  }
 }
