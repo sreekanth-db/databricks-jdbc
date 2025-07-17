@@ -2,7 +2,7 @@ name: Concurrency Execution Tests
 
 on:
   push:
-    branches: [ main, check-enabling-concurrency-tests ]
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       branch:
