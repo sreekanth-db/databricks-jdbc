@@ -9,6 +9,8 @@ import static com.databricks.sdk.service.sql.ColumnInfoTypeName.STRING;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.databricks.jdbc.api.impl.*;
 import com.databricks.jdbc.api.internal.IDatabricksConnectionContext;
@@ -31,9 +33,25 @@ import com.databricks.sdk.core.ApiClient;
 import com.databricks.sdk.core.DatabricksError;
 import com.databricks.sdk.core.http.Request;
 import com.databricks.sdk.service.sql.*;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.Date;
+import javax.net.ssl.SSLHandshakeException;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -52,6 +70,8 @@ public class DatabricksSdkClientTest {
       "SELECT * FROM orders WHERE user_id = ? AND shard = ? AND region_code = ? AND namespace = ?";
   private static final String JDBC_URL =
       "jdbc:databricks://sample-host.18.azuredatabricks.net:4423/default;transportMode=http;ssl=1;AuthMech=3;httpPath=/sql/1.0/warehouses/99999999;";
+  private static final String DEFAULT_KEYSTORE_PASSWORD = "changeit";
+
   private static final Map<String, String> headers =
       new HashMap<>() {
         {
@@ -497,6 +517,78 @@ public class DatabricksSdkClientTest {
     assertNull(result.getValue());
   }
 
+  @Test
+  public void testCreateSessionWithSSLCertificatePathError() throws Exception {
+
+    File wrongTrustStore = createTrustStoreWithWrongCertificates();
+    SSLHandshakeException sslException =
+        new SSLHandshakeException(
+            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target");
+
+    DatabricksError sslError = mock(DatabricksError.class);
+    when(sslError.getMessage()).thenReturn(sslException.getMessage());
+    when(sslError.getCause()).thenReturn(sslException);
+
+    when(apiClient.execute(any(Request.class), eq(CreateSessionResponse.class)))
+        .thenThrow(sslError);
+
+    Properties props = new Properties();
+    props.setProperty("SSLTrustStore", wrongTrustStore.getAbsolutePath());
+    props.setProperty("SSLTrustStorePwd", DEFAULT_KEYSTORE_PASSWORD);
+    props.setProperty("SSLTrustStoreType", "JKS");
+
+    IDatabricksConnectionContext connectionContext =
+        DatabricksConnectionContext.parse(JDBC_URL, props);
+    DatabricksSdkClient databricksSdkClient =
+        new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient);
+
+    // Assert that createSession throws a DatabricksSQLException with actionable error message
+    DatabricksSQLException exception =
+        assertThrows(
+            DatabricksSQLException.class,
+            () -> databricksSdkClient.createSession(warehouse, null, null, null));
+
+    String errorMessage = exception.getMessage();
+
+    // Verify that we get the exact SSL error message
+    String expectedErrorMessage =
+        String.format(
+            "Unable to find certification path to requested target in truststore: %s\n\n"
+                + "SSL Error: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target\n\n"
+                + "Details: TLS handshake failure due to TLS Certificate of server being connected is not in the configured truststore.\n\n"
+                + "Next steps:\n"
+                + "- Make sure that the connection string has the appropriate Databricks workspace FQDN.\n\n"
+                + "- Verify the configured truststore path and make sure the required certificates are imported.\n"
+                + "  .   PEM certificate chain of the warehouse endpoint can be fetched using \"openssl s_client -connect <workspace>:443 -showcerts\"\n"
+                + "  .   Reference KB article with troubleshooting steps.\n",
+            wrongTrustStore.getAbsolutePath());
+    assertEquals(expectedErrorMessage, errorMessage);
+
+    // Clean up
+    wrongTrustStore.delete();
+  }
+
+  @Test
+  public void testCreateSessionWithNonSSLError() throws IOException, DatabricksSQLException {
+
+    DatabricksError nonSSLError = new DatabricksError("500", "Some other error", 500);
+    when(apiClient.execute(any(Request.class), eq(CreateSessionResponse.class)))
+        .thenThrow(nonSSLError);
+
+    IDatabricksConnectionContext connectionContext =
+        DatabricksConnectionContext.parse(JDBC_URL, new Properties());
+    DatabricksSdkClient databricksSdkClient =
+        new DatabricksSdkClient(connectionContext, statementExecutionService, apiClient);
+
+    DatabricksSQLException exception =
+        assertThrows(
+            DatabricksSQLException.class,
+            () -> databricksSdkClient.createSession(warehouse, null, null, null));
+
+    String errorMessage = exception.getMessage();
+    assertEquals("Error while establishing a connection in databricks", errorMessage);
+  }
+
   private static ImmutableSqlParameter getSqlParam(
       int parameterIndex, Object x, String databricksType) {
     return ImmutableSqlParameter.builder()
@@ -511,5 +603,57 @@ public class DatabricksSdkClientTest {
         .setOrdinal(ordinal)
         .setType(type)
         .setValue(value);
+  }
+
+  private File createTrustStoreWithWrongCertificates() throws Exception {
+    // Create a trust store with wrong certificates
+    File trustStore = File.createTempFile("wrong-trust", ".jks");
+    trustStore.deleteOnExit();
+
+    KeyStore ks = KeyStore.getInstance("JKS");
+    ks.load(null, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
+
+    // Generate a self-signed certificate that won't validate the server
+    KeyPair keyPair = generateKeyPair();
+    X509Certificate cert = generateBarebonesCertificate(keyPair, "Wrong CA");
+
+    // Add the wrong certificate to the trust store
+    ks.setCertificateEntry("wrong-ca", cert);
+
+    // Save the trust store
+    try (FileOutputStream fos = new FileOutputStream(trustStore)) {
+      ks.store(fos, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
+    }
+
+    return trustStore;
+  }
+
+  private KeyPair generateKeyPair() throws Exception {
+    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+    keyPairGenerator.initialize(2048);
+    return keyPairGenerator.generateKeyPair();
+  }
+
+  private X509Certificate generateBarebonesCertificate(KeyPair keyPair, String cn)
+      throws Exception {
+    BouncyCastleProvider provider = new BouncyCastleProvider();
+
+    // Certificate details
+    X500Name issuer = new X500Name("CN=" + cn);
+    BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
+    Date startDate = new Date();
+    Date endDate = new Date(startDate.getTime() + (365L * 24 * 60 * 60 * 1000)); // 1 year validity
+
+    // Build the certificate
+    JcaX509v3CertificateBuilder certBuilder =
+        new JcaX509v3CertificateBuilder(
+            issuer, serialNumber, startDate, endDate, issuer, keyPair.getPublic());
+
+    // Sign the certificate
+    ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").build(keyPair.getPrivate());
+    X509CertificateHolder certHolder = certBuilder.build(signer);
+
+    // Convert the certificate holder to X509Certificate using the provider
+    return new JcaX509CertificateConverter().setProvider(provider).getCertificate(certHolder);
   }
 }
