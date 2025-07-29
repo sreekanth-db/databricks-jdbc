@@ -18,6 +18,7 @@ import com.databricks.jdbc.common.IDatabricksComputeResource;
 import com.databricks.jdbc.common.StatementType;
 import com.databricks.jdbc.common.Warehouse;
 import com.databricks.jdbc.common.util.DatabricksTypeUtil;
+import com.databricks.jdbc.dbclient.impl.common.ConfiguratorUtilsTest;
 import com.databricks.jdbc.dbclient.impl.common.StatementId;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import com.databricks.jdbc.exception.DatabricksTemporaryRedirectException;
@@ -34,24 +35,10 @@ import com.databricks.sdk.core.DatabricksError;
 import com.databricks.sdk.core.http.Request;
 import com.databricks.sdk.service.sql.*;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.Date;
 import javax.net.ssl.SSLHandshakeException;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -520,7 +507,11 @@ public class DatabricksSdkClientTest {
   @Test
   public void testCreateSessionWithSSLCertificatePathError() throws Exception {
 
-    File wrongTrustStore = createTrustStoreWithWrongCertificates();
+    File wrongTrustStore = File.createTempFile("wrong-trust-store", ".jks");
+    wrongTrustStore.deleteOnExit();
+    ConfiguratorUtilsTest.createDummyStore(
+        wrongTrustStore.getAbsolutePath(), "JKS", DEFAULT_KEYSTORE_PASSWORD, "wrong-ca", false);
+
     SSLHandshakeException sslException =
         new SSLHandshakeException(
             "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target");
@@ -603,57 +594,5 @@ public class DatabricksSdkClientTest {
         .setOrdinal(ordinal)
         .setType(type)
         .setValue(value);
-  }
-
-  private File createTrustStoreWithWrongCertificates() throws Exception {
-    // Create a trust store with wrong certificates
-    File trustStore = File.createTempFile("wrong-trust", ".jks");
-    trustStore.deleteOnExit();
-
-    KeyStore ks = KeyStore.getInstance("JKS");
-    ks.load(null, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
-
-    // Generate a self-signed certificate that won't validate the server
-    KeyPair keyPair = generateKeyPair();
-    X509Certificate cert = generateBarebonesCertificate(keyPair, "Wrong CA");
-
-    // Add the wrong certificate to the trust store
-    ks.setCertificateEntry("wrong-ca", cert);
-
-    // Save the trust store
-    try (FileOutputStream fos = new FileOutputStream(trustStore)) {
-      ks.store(fos, DEFAULT_KEYSTORE_PASSWORD.toCharArray());
-    }
-
-    return trustStore;
-  }
-
-  private KeyPair generateKeyPair() throws Exception {
-    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-    keyPairGenerator.initialize(2048);
-    return keyPairGenerator.generateKeyPair();
-  }
-
-  private X509Certificate generateBarebonesCertificate(KeyPair keyPair, String cn)
-      throws Exception {
-    BouncyCastleProvider provider = new BouncyCastleProvider();
-
-    // Certificate details
-    X500Name issuer = new X500Name("CN=" + cn);
-    BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
-    Date startDate = new Date();
-    Date endDate = new Date(startDate.getTime() + (365L * 24 * 60 * 60 * 1000)); // 1 year validity
-
-    // Build the certificate
-    JcaX509v3CertificateBuilder certBuilder =
-        new JcaX509v3CertificateBuilder(
-            issuer, serialNumber, startDate, endDate, issuer, keyPair.getPublic());
-
-    // Sign the certificate
-    ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").build(keyPair.getPrivate());
-    X509CertificateHolder certHolder = certBuilder.build(signer);
-
-    // Convert the certificate holder to X509Certificate using the provider
-    return new JcaX509CertificateConverter().setProvider(provider).getCertificate(certHolder);
   }
 }
