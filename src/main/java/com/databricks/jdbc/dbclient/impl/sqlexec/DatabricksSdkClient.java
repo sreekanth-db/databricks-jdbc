@@ -42,6 +42,7 @@ import com.databricks.sdk.service.sql.*;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URL;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.*;
@@ -576,9 +577,20 @@ public class DatabricksSdkClient implements IDatabricksClient {
   /** Builds the SSL certificate path error message with actionable steps. */
   private String buildSSLCertificatePathErrorMessage(DatabricksError e) {
 
-    String truststorePath = "";
+    String customTruststorePathMessage = "";
     if (connectionContext != null && connectionContext.getSSLTrustStore() != null) {
-      truststorePath = " in truststore: " + connectionContext.getSSLTrustStore();
+      customTruststorePathMessage = " in truststore: " + connectionContext.getSSLTrustStore();
+    }
+
+    // Get the actual workspace hostname for the openssl command
+    // by removing protocol and port from host url
+    String workspaceHostname = "<workspace>";
+    try {
+      if (connectionContext != null && connectionContext.getHostUrl() != null) {
+        workspaceHostname = new URL(connectionContext.getHostUrl()).getHost();
+      }
+    } catch (Exception ex) {
+      LOGGER.debug("Could not retrieve workspace hostname for error message", ex);
     }
 
     return String.format(
@@ -588,8 +600,8 @@ public class DatabricksSdkClient implements IDatabricksClient {
             + "Next steps:\n"
             + "- Make sure that the connection string has the appropriate Databricks workspace FQDN.\n\n"
             + "- Verify the configured truststore path and make sure the required certificates are imported.\n"
-            + "  .   PEM certificate chain of the warehouse endpoint can be fetched using \"openssl s_client -connect <workspace>:443 -showcerts\"\n"
+            + "  .   PEM certificate chain of the warehouse endpoint can be fetched using \"openssl s_client -connect %s:443 -showcerts\"\n"
             + "  .   Reference KB article with troubleshooting steps.\n",
-        truststorePath, e.getMessage());
+        customTruststorePathMessage, e.getMessage(), workspaceHostname);
   }
 }

@@ -559,7 +559,7 @@ public class DatabricksSdkClientTest {
                 + "Next steps:\n"
                 + "- Make sure that the connection string has the appropriate Databricks workspace FQDN.\n\n"
                 + "- Verify the configured truststore path and make sure the required certificates are imported.\n"
-                + "  .   PEM certificate chain of the warehouse endpoint can be fetched using \"openssl s_client -connect <workspace>:443 -showcerts\"\n"
+                + "  .   PEM certificate chain of the warehouse endpoint can be fetched using \"openssl s_client -connect sample-host.18.azuredatabricks.net:443 -showcerts\"\n"
                 + "  .   Reference KB article with troubleshooting steps.\n",
             wrongTrustStore.getAbsolutePath());
     assertEquals(expectedErrorMessage, errorMessage);
