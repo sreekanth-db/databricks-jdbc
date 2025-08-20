@@ -472,4 +472,23 @@ public class DatabricksConnectionTest {
     assertThrows(
         DatabricksSQLFeatureNotSupportedException.class, () -> connection.setHoldability(3));
   }
+
+  @Test
+  public void testQueryTagsInSessionConfigs() throws SQLException {
+    // Test that QUERY_TAGS is properly handled as a session config
+    // Use existing JDBC_URL constant and append QUERY_TAGS
+    String queryTagsJdbcUrl = JDBC_URL + ";QUERY_TAGS=team:marketing,dashboard:abc123";
+
+    IDatabricksConnectionContext connectionContext =
+        DatabricksConnectionContext.parse(queryTagsJdbcUrl, new Properties());
+
+    // Verify that QUERY_TAGS is parsed from the URL and included in session configs
+    Map<String, String> sessionConfigs = connectionContext.getSessionConfigs();
+
+    // Debug: Print what's actually in the session configs
+    System.out.println("All session configs: " + sessionConfigs);
+
+    assertTrue(sessionConfigs.containsKey("query_tags"));
+    assertEquals("team:marketing,dashboard:abc123", sessionConfigs.get("query_tags"));
+  }
 }
