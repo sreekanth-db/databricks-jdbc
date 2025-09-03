@@ -5,6 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Collection;
 import java.util.Objects;
 
+/**
+ * Result schema POJO
+ *
+ * <p>TODO: Replace this class with the corresponding SDK implementation once it becomes available
+ */
 public class ResultSchema {
   @JsonProperty("column_count")
   private Long columnCount;

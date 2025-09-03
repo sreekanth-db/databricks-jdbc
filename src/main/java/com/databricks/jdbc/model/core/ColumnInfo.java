@@ -4,6 +4,11 @@ import com.databricks.sdk.support.ToStringer;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
+/**
+ * Column info POJO
+ *
+ * <p>TODO: Replace this class with the corresponding SDK implementation once it becomes available
+ */
 public class ColumnInfo {
   @JsonProperty("name")
   private String name;

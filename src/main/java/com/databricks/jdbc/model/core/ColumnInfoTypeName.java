@@ -1,5 +1,10 @@
 package com.databricks.jdbc.model.core;
 
+/**
+ * Column info type name POJO
+ *
+ * <p>TODO: Replace this class with the corresponding SDK implementation once it becomes available
+ */
 public enum ColumnInfoTypeName {
   ARRAY,
   BINARY,
