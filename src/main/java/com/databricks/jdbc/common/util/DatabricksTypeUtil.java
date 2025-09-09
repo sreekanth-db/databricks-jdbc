@@ -55,6 +55,8 @@ public class DatabricksTypeUtil {
   public static final String VARIANT = "VARIANT";
   public static final String CHAR = "CHAR";
   public static final String INTERVAL = "INTERVAL";
+  public static final String GEOMETRY = "GEOMETRY";
+  public static final String GEOGRAPHY = "GEOGRAPHY";
   private static final ArrayList<ColumnInfoTypeName> SIGNED_TYPES =
       new ArrayList<>(
           Arrays.asList(
@@ -146,6 +148,8 @@ public class DatabricksTypeUtil {
         return Types.STRUCT;
       case ARRAY:
         return Types.ARRAY;
+      case GEOMETRY:
+      case GEOGRAPHY:
       case USER_DEFINED_TYPE:
         return Types.OTHER;
       default:
@@ -189,6 +193,10 @@ public class DatabricksTypeUtil {
         return "java.sql.Struct";
       case ARRAY:
         return "java.sql.Array";
+      case GEOMETRY:
+        return "com.databricks.jdbc.api.impl.DatabricksGeometry";
+      case GEOGRAPHY:
+        return "com.databricks.jdbc.api.impl.DatabricksGeography";
       case NULL:
         return "null";
       case MAP:
@@ -251,6 +259,8 @@ public class DatabricksTypeUtil {
         return 4; // Length of `NULL`
       case ARRAY:
       case STRUCT:
+      case GEOMETRY:
+      case GEOGRAPHY:
       default:
         return 255;
     }

@@ -1,10 +1,6 @@
 package com.databricks.jdbc.api.impl.converters;
 
-import static com.databricks.jdbc.common.util.DatabricksTypeUtil.ARRAY;
-import static com.databricks.jdbc.common.util.DatabricksTypeUtil.MAP;
-import static com.databricks.jdbc.common.util.DatabricksTypeUtil.STRUCT;
-import static com.databricks.jdbc.common.util.DatabricksTypeUtil.TIMESTAMP;
-import static com.databricks.jdbc.common.util.DatabricksTypeUtil.VARIANT;
+import static com.databricks.jdbc.common.util.DatabricksTypeUtil.*;
 
 import com.databricks.jdbc.api.impl.*;
 import com.databricks.jdbc.exception.DatabricksParsingException;
@@ -25,6 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.arrow.vector.TimeStampMicroTZVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.util.Text;
@@ -86,6 +84,12 @@ public class ArrowToJavaObjectConverter {
       if (arrowMetadata.startsWith(TIMESTAMP)) { // for timestamp_ntz column
         requiredType = ColumnInfoTypeName.TIMESTAMP;
       }
+      if (arrowMetadata.startsWith(GEOMETRY)) {
+        requiredType = ColumnInfoTypeName.GEOMETRY;
+      }
+      if (arrowMetadata.startsWith(GEOGRAPHY)) {
+        requiredType = ColumnInfoTypeName.GEOGRAPHY;
+      }
     }
     if (object == null) {
       return null;
@@ -136,6 +140,9 @@ public class ArrowToJavaObjectConverter {
         }
         IntervalConverter ic = new IntervalConverter(arrowMetadata);
         return ic.toLiteral(object);
+      case GEOMETRY:
+      case GEOGRAPHY:
+        return convertToGeospatial(object, arrowMetadata, requiredType);
       case NULL:
         return null;
       default:
@@ -161,6 +168,26 @@ public class ArrowToJavaObjectConverter {
       throws DatabricksParsingException {
     ComplexDataTypeParser parser = new ComplexDataTypeParser();
     return parser.parseJsonStringToDbStruct(object.toString(), arrowMetadata);
+  }
+
+  private static AbstractDatabricksGeospatial convertToGeospatial(
+      Object object, String arrowMetadata, ColumnInfoTypeName type)
+      throws DatabricksValidationException {
+    String ewkt = convertToString(object);
+    // Extract SRID from arrow metadata (format: "GEOMETRY(srid)" or "GEOGRAPHY(srid)")
+    String typeName = type == ColumnInfoTypeName.GEOMETRY ? GEOMETRY : GEOGRAPHY;
+    int metadataSrid = extractSRIDFromMetadata(arrowMetadata, typeName);
+
+    // Parse EWKT to extract SRID from data if present
+    int dataSrid = WKTConverter.extractSRIDFromEWKT(ewkt);
+    String cleanWkt = WKTConverter.removeSRIDFromEWKT(ewkt);
+
+    // Use SRID from data if available, otherwise from metadata
+    int finalSrid = (dataSrid != 0) ? dataSrid : metadataSrid;
+
+    return type == ColumnInfoTypeName.GEOMETRY
+        ? new DatabricksGeometry(cleanWkt, finalSrid)
+        : new DatabricksGeography(cleanWkt, finalSrid);
   }
 
   private static Object convertToTimestamp(Object object, Optional<String> timeZoneOpt)
@@ -293,5 +320,33 @@ public class ArrowToJavaObjectConverter {
         String.format("Unsupported object type for number conversion: %s", object.getClass());
     LOGGER.error(errorMessage);
     throw new DatabricksValidationException(errorMessage);
+  }
+
+  /**
+   * Extracts SRID from Arrow metadata string.
+   *
+   * @param metadata Arrow metadata like "GEOMETRY(32633)" or "GEOGRAPHY(4326)"
+   * @param typePrefix The prefix to look for ("GEOMETRY" or "GEOGRAPHY")
+   * @return SRID value, or 0 if not found
+   */
+  private static int extractSRIDFromMetadata(String metadata, String typePrefix) {
+    if (metadata == null) {
+      return 0;
+    }
+
+    try {
+      // Look for pattern like "GEOMETRY(32633)" or "GEOGRAPHY(4326)"
+      String pattern = typePrefix + "\\((\\d+)\\)";
+      Pattern p = Pattern.compile(pattern);
+      Matcher m = p.matcher(metadata);
+
+      if (m.find()) {
+        return Integer.parseInt(m.group(1));
+      }
+    } catch (Exception e) {
+      LOGGER.debug("Failed to extract SRID from metadata: {}", metadata, e);
+    }
+
+    return 0;
   }
 }

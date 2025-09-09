@@ -1,0 +1,17 @@
+package com.databricks.jdbc.api.impl;
+
+import com.databricks.jdbc.exception.DatabricksValidationException;
+
+public class DatabricksGeography extends AbstractDatabricksGeospatial {
+
+  /**
+   * Constructs a DatabricksGeography with the specified WKT and SRID.
+   *
+   * @param wkt the Well-Known Text representation of the geography
+   * @param srid the Spatial Reference System Identifier
+   * @throws DatabricksValidationException if the WKT is invalid
+   */
+  public DatabricksGeography(String wkt, int srid) throws DatabricksValidationException {
+    super(wkt, srid);
+  }
+}
