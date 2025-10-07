@@ -505,6 +505,13 @@ public class DatabricksResultSet implements IDatabricksResultSet, IDatabricksRes
     if (isComplexType(columnTypeName)) {
       return handleComplexDataTypes(obj, columnTypeName);
     }
+    // VARIANT types should only accept String objects
+    if (VARIANT.equals(columnTypeName)) {
+      if (!(obj instanceof String)) {
+        throw new DatabricksValidationException(
+            "VARIANT type only supports String objects, got: " + obj.getClass().getSimpleName());
+      }
+    }
     // TODO: Add separate handling for INTERVAL JSON_ARRAY result format.
     return ConverterHelper.convertSqlTypeToJavaType(columnType, obj);
   }
