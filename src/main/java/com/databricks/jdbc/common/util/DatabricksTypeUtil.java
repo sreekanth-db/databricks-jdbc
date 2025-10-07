@@ -57,6 +57,10 @@ public class DatabricksTypeUtil {
   public static final String INTERVAL = "INTERVAL";
   public static final String GEOMETRY = "GEOMETRY";
   public static final String GEOGRAPHY = "GEOGRAPHY";
+  public static final String GEOMETRY_CLASS_NAME =
+      "com.databricks.jdbc.api.impl.DatabricksGeometry";
+  public static final String GEOGRAPHY_CLASS_NAME =
+      "com.databricks.jdbc.api.impl.DatabricksGeography";
   private static final ArrayList<ColumnInfoTypeName> SIGNED_TYPES =
       new ArrayList<>(
           Arrays.asList(
@@ -194,9 +198,9 @@ public class DatabricksTypeUtil {
       case ARRAY:
         return "java.sql.Array";
       case GEOMETRY:
-        return "com.databricks.jdbc.api.impl.DatabricksGeometry";
+        return GEOMETRY_CLASS_NAME;
       case GEOGRAPHY:
-        return "com.databricks.jdbc.api.impl.DatabricksGeography";
+        return GEOGRAPHY_CLASS_NAME;
       case NULL:
         return "null";
       case MAP:

@@ -540,16 +540,11 @@ public class ConverterHelper {
    */
   public static ObjectConverter getConverterForColumnType(
       int columnSqlType, String columnTypeName) {
-    // Check type name first for databricks-specific types
     if (columnTypeName != null) {
       if (columnTypeName.equals(GEOMETRY) || columnTypeName.equals(GEOGRAPHY)) {
         return new GeospatialConverter();
       }
-      // Future databricks-specific types can be added here
-      // which are not covered by standard SQL types
     }
-
-    // Fall back to SQL type-based selection for standard types
     return getConverterForSqlType(columnSqlType);
   }
 

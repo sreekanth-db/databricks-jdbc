@@ -3,8 +3,8 @@
 ## [Unreleased]
 
 ### Added
-- Enabled direct results by default in SEA mode to improve latency for short and small queries.
 - Added support for geospatial data types.
+
 ### Updated
 
 ### Fixed

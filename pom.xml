@@ -545,6 +545,10 @@
                   <shadedPattern>com.databricks.internal.json</shadedPattern>
                 </relocation>
                 <relocation>
+                  <pattern>org.locationtech.jts</pattern>
+                  <shadedPattern>com.databricks.internal.jts</shadedPattern>
+                </relocation>
+                <relocation>
                   <pattern>org.osgi</pattern>
                   <shadedPattern>com.databricks.internal.osgi</shadedPattern>
                 </relocation>

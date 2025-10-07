@@ -650,18 +650,18 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
         && arrowMetadata.get(i).equalsIgnoreCase(VARIANT);
   }
 
-  private boolean isGeometryColumn(List<String> arrowMetadata, int i) {
+  private boolean isGeometryColumn(List<String> arrowMetadata, int index) {
     return arrowMetadata != null
-        && arrowMetadata.size() > i
-        && arrowMetadata.get(i) != null
-        && arrowMetadata.get(i).contains(GEOMETRY);
+        && arrowMetadata.size() > index
+        && arrowMetadata.get(index) != null
+        && arrowMetadata.get(index).contains(GEOMETRY);
   }
 
-  private boolean isGeographyColumn(List<String> arrowMetadata, int i) {
+  private boolean isGeographyColumn(List<String> arrowMetadata, int index) {
     return arrowMetadata != null
-        && arrowMetadata.size() > i
-        && arrowMetadata.get(i) != null
-        && arrowMetadata.get(i).contains(GEOGRAPHY);
+        && arrowMetadata.size() > index
+        && arrowMetadata.get(index) != null
+        && arrowMetadata.get(index).contains(GEOGRAPHY);
   }
 
   private ImmutableDatabricksColumn.Builder getColumnBuilder() {
