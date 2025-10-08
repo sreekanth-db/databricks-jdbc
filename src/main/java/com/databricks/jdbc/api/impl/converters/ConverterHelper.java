@@ -17,6 +17,7 @@ public class ConverterHelper {
 
   private static final Map<Integer, ObjectConverter> CONVERTER_CACHE = new HashMap<>();
   private static final Map<Integer, List<Integer>> SUPPORTED_CONVERSIONS = new HashMap<>();
+  private static final GeospatialConverter GEOSPATIAL_CONVERTER = new GeospatialConverter();
 
   static {
     // Numeric Types
@@ -542,7 +543,7 @@ public class ConverterHelper {
       int columnSqlType, String columnTypeName) {
     if (columnTypeName != null) {
       if (columnTypeName.equals(GEOMETRY) || columnTypeName.equals(GEOGRAPHY)) {
-        return new GeospatialConverter();
+        return GEOSPATIAL_CONVERTER;
       }
     }
     return getConverterForSqlType(columnSqlType);

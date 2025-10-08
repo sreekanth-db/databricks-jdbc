@@ -30,6 +30,11 @@ import org.apache.arrow.vector.util.Text;
 public class ArrowToJavaObjectConverter {
   private static final JdbcLogger LOGGER =
       JdbcLoggerFactory.getLogger(ArrowToJavaObjectConverter.class);
+
+  // Pre-compiled patterns for SRID extraction from metadata
+  private static final Pattern GEOMETRY_SRID_PATTERN = Pattern.compile("GEOMETRY\\((\\d+)\\)");
+  private static final Pattern GEOGRAPHY_SRID_PATTERN = Pattern.compile("GEOGRAPHY\\((\\d+)\\)");
+
   private static final List<DateTimeFormatter> DATE_FORMATTERS =
       Arrays.asList(
           DateTimeFormatter.ofPattern("yyyy-MM-dd"),
@@ -174,16 +179,17 @@ public class ArrowToJavaObjectConverter {
       Object object, String arrowMetadata, ColumnInfoTypeName type)
       throws DatabricksValidationException {
     String ewkt = convertToString(object);
-    // Extract SRID from arrow metadata (format: "GEOMETRY(srid)" or "GEOGRAPHY(srid)")
-    String typeName = type == ColumnInfoTypeName.GEOMETRY ? GEOMETRY : GEOGRAPHY;
-    int metadataSrid = extractSRIDFromMetadata(arrowMetadata, typeName);
 
     // Parse EWKT to extract SRID from data if present
     int dataSrid = WKTConverter.extractSRIDFromEWKT(ewkt);
     String cleanWkt = WKTConverter.removeSRIDFromEWKT(ewkt);
 
-    // Use SRID from data if available, otherwise from metadata
-    int finalSrid = (dataSrid != 0) ? dataSrid : metadataSrid;
+    // Extract SRID from metadata if not present in data
+    int finalSrid = dataSrid;
+    if (dataSrid == 0) {
+      String typeName = type == ColumnInfoTypeName.GEOMETRY ? GEOMETRY : GEOGRAPHY;
+      finalSrid = extractSRIDFromMetadata(arrowMetadata, typeName);
+    }
 
     return type == ColumnInfoTypeName.GEOMETRY
         ? new DatabricksGeometry(cleanWkt, finalSrid)
@@ -336,9 +342,9 @@ public class ArrowToJavaObjectConverter {
 
     try {
       // Look for pattern like "GEOMETRY(32633)" or "GEOGRAPHY(4326)"
-      String pattern = typePrefix + "\\((\\d+)\\)";
-      Pattern p = Pattern.compile(pattern);
-      Matcher m = p.matcher(metadata);
+      Pattern pattern =
+          typePrefix.equals(GEOMETRY) ? GEOMETRY_SRID_PATTERN : GEOGRAPHY_SRID_PATTERN;
+      Matcher m = pattern.matcher(metadata);
 
       if (m.find()) {
         return Integer.parseInt(m.group(1));

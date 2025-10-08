@@ -205,12 +205,12 @@ public class DatabricksResultSetMetaData implements ResultSetMetaData {
                 .columnTypeText(VARIANT);
           } else if (isGeometryColumn(arrowMetadata, columnIndex)) {
             columnBuilder
-                .columnTypeClassName("com.databricks.jdbc.api.impl.DatabricksGeometry")
+                .columnTypeClassName(GEOMETRY_CLASS_NAME)
                 .columnType(Types.OTHER)
                 .columnTypeText(GEOMETRY);
           } else if (isGeographyColumn(arrowMetadata, columnIndex)) {
             columnBuilder
-                .columnTypeClassName("com.databricks.jdbc.api.impl.DatabricksGeography")
+                .columnTypeClassName(GEOGRAPHY_CLASS_NAME)
                 .columnType(Types.OTHER)
                 .columnTypeText(GEOGRAPHY);
           }
