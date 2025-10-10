@@ -21,11 +21,10 @@ public class WKTConverter {
 
   private static final JdbcLogger LOGGER = JdbcLoggerFactory.getLogger(WKTConverter.class);
 
-  // Thread-safe readers and writers from JTS
-  private static final WKTReader WKT_READER = new WKTReader();
-  private static final WKTWriter WKT_WRITER = new WKTWriter();
-  private static final WKBReader WKB_READER = new WKBReader();
-  private static final WKBWriter WKB_WRITER = new WKBWriter();
+  private static final ThreadLocal<WKTReader> WKT_READER = ThreadLocal.withInitial(WKTReader::new);
+  private static final ThreadLocal<WKTWriter> WKT_WRITER = ThreadLocal.withInitial(WKTWriter::new);
+  private static final ThreadLocal<WKBReader> WKB_READER = ThreadLocal.withInitial(WKBReader::new);
+  private static final ThreadLocal<WKBWriter> WKB_WRITER = ThreadLocal.withInitial(WKBWriter::new);
 
   /**
    * Converts WKT (Well-Known Text) to WKB (Well-Known Binary) format.
@@ -43,8 +42,8 @@ public class WKTConverter {
     }
 
     try {
-      Geometry geometry = WKT_READER.read(wkt);
-      return WKB_WRITER.write(geometry);
+      Geometry geometry = WKT_READER.get().read(wkt);
+      return WKB_WRITER.get().write(geometry);
     } catch (ParseException e) {
       String errorMessage = String.format("Invalid WKT format: %s", wkt);
       LOGGER.error(errorMessage, e);
@@ -68,8 +67,8 @@ public class WKTConverter {
     }
 
     try {
-      Geometry geometry = WKB_READER.read(wkb);
-      return WKT_WRITER.write(geometry);
+      Geometry geometry = WKB_READER.get().read(wkb);
+      return WKT_WRITER.get().write(geometry);
     } catch (Exception e) {
       String errorMessage = String.format("Invalid WKB format: %d bytes", wkb.length);
       LOGGER.error(errorMessage, e);

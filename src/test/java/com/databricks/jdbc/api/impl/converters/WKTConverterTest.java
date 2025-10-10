@@ -3,6 +3,13 @@ package com.databricks.jdbc.api.impl.converters;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.databricks.jdbc.exception.DatabricksValidationException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
 /** Test class for WKTConverter utility. */
@@ -115,5 +122,46 @@ public class WKTConverterTest {
     String ewkt = "SRID=4326;";
     String result = WKTConverter.removeSRIDFromEWKT(ewkt);
     assertEquals("", result);
+  }
+
+  @Test
+  public void testConcurrency() throws Exception {
+    int numThreads = 50;
+    ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+    CountDownLatch latch = new CountDownLatch(numThreads);
+    List<Future<?>> futures = new ArrayList<>();
+
+    for (int threadNum = 0; threadNum < numThreads; threadNum++) {
+      final int threadId = threadNum;
+      Future<?> future =
+          executor.submit(
+              () -> {
+                try {
+                  int x = threadId;
+                  int y = threadId * 2;
+                  String wkt = String.format("POINT (%d %d)", x, y);
+
+                  byte[] wkb = WKTConverter.toWKB(wkt);
+                  assertNotNull(wkb, "Thread " + threadId + ": WKB should not be null");
+
+                  String convertedWkt = WKTConverter.toWKT(wkb);
+                  assertEquals(wkt, convertedWkt, "Thread " + threadId + ": WKT mismatch");
+
+                } catch (Exception e) {
+                  fail("Thread " + threadId + " failed: " + e.getMessage());
+                } finally {
+                  latch.countDown();
+                }
+              });
+      futures.add(future);
+    }
+
+    assertTrue(latch.await(10, TimeUnit.SECONDS), "Not all threads completed in time");
+    executor.shutdown();
+
+    // Verify all threads completed successfully
+    for (Future<?> future : futures) {
+      future.get();
+    }
   }
 }
