@@ -10,6 +10,7 @@ import com.databricks.jdbc.log.JdbcLogger;
 import com.databricks.jdbc.log.JdbcLoggerFactory;
 import com.databricks.jdbc.model.core.ColumnInfo;
 import com.databricks.jdbc.model.core.ColumnInfoTypeName;
+import com.databricks.jdbc.model.telemetry.enums.DatabricksDriverErrorCode;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Date;
@@ -176,8 +177,7 @@ public class ArrowToJavaObjectConverter {
   }
 
   private static AbstractDatabricksGeospatial convertToGeospatial(
-      Object object, String arrowMetadata, ColumnInfoTypeName type)
-      throws DatabricksValidationException {
+      Object object, String arrowMetadata, ColumnInfoTypeName type) throws DatabricksSQLException {
     String ewkt = convertToString(object);
 
     // Parse EWKT to extract SRID from data if present
@@ -334,8 +334,10 @@ public class ArrowToJavaObjectConverter {
    * @param metadata Arrow metadata like "GEOMETRY(32633)" or "GEOGRAPHY(4326)"
    * @param typePrefix The prefix to look for ("GEOMETRY" or "GEOGRAPHY")
    * @return SRID value, or 0 if not found
+   * @throws DatabricksParsingException if metadata format is invalid
    */
-  private static int extractSRIDFromMetadata(String metadata, String typePrefix) {
+  private static int extractSRIDFromMetadata(String metadata, String typePrefix)
+      throws DatabricksParsingException {
     if (metadata == null) {
       return 0;
     }
@@ -350,7 +352,11 @@ public class ArrowToJavaObjectConverter {
         return Integer.parseInt(m.group(1));
       }
     } catch (Exception e) {
-      LOGGER.debug("Failed to extract SRID from metadata: {}", metadata, e);
+      String errorMessage =
+          String.format("Failed to parse SRID from %s metadata: %s", typePrefix, metadata);
+      LOGGER.error(errorMessage, e);
+      throw new DatabricksParsingException(
+          errorMessage, e, DatabricksDriverErrorCode.RESULT_SET_ERROR);
     }
 
     return 0;
