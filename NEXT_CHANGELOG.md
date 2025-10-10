@@ -5,6 +5,8 @@
 ### Added
 - Added support for geospatial data types.
 
+- Added `enableMultipleCatalogSupport` connection parameter to control catalog metadata behavior.
+
 ### Updated
 
 ### Fixed

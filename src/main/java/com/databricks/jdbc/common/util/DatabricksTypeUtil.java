@@ -61,6 +61,7 @@ public class DatabricksTypeUtil {
       "com.databricks.jdbc.api.impl.DatabricksGeometry";
   public static final String GEOGRAPHY_CLASS_NAME =
       "com.databricks.jdbc.api.impl.DatabricksGeography";
+  public static final String MEASURE = "measure";
   private static final ArrayList<ColumnInfoTypeName> SIGNED_TYPES =
       new ArrayList<>(
           Arrays.asList(
