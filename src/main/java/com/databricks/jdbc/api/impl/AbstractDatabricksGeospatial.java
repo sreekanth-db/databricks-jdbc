@@ -2,8 +2,6 @@ package com.databricks.jdbc.api.impl;
 
 import com.databricks.jdbc.api.impl.converters.WKTConverter;
 import com.databricks.jdbc.exception.DatabricksValidationException;
-import com.databricks.jdbc.log.JdbcLogger;
-import com.databricks.jdbc.log.JdbcLoggerFactory;
 import java.util.Objects;
 
 /**
@@ -12,10 +10,7 @@ import java.util.Objects;
  * <p>This class provides common functionality for both GEOMETRY and GEOGRAPHY types, including
  * storage of WKT (Well-Known Text) format data and access to both WKT and WKB representations.
  */
-public abstract class AbstractDatabricksGeospatial implements DatabricksGeospatial {
-
-  private static final JdbcLogger LOGGER =
-      JdbcLoggerFactory.getLogger(AbstractDatabricksGeospatial.class);
+public abstract class AbstractDatabricksGeospatial implements IDatabricksGeospatial {
 
   private final String wkt;
   private final int srid;

@@ -2,7 +2,7 @@ package com.databricks.jdbc.api.impl.converters;
 
 import com.databricks.jdbc.api.impl.DatabricksGeography;
 import com.databricks.jdbc.api.impl.DatabricksGeometry;
-import com.databricks.jdbc.api.impl.DatabricksGeospatial;
+import com.databricks.jdbc.api.impl.IDatabricksGeospatial;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import com.databricks.jdbc.log.JdbcLogger;
 import com.databricks.jdbc.log.JdbcLoggerFactory;
@@ -72,8 +72,8 @@ public class GeospatialConverter implements ObjectConverter {
 
   @Override
   public byte[] toByteArray(Object object) throws DatabricksSQLException {
-    if (object instanceof DatabricksGeospatial) {
-      return ((DatabricksGeospatial) object).getWkb();
+    if (object instanceof IDatabricksGeospatial) {
+      return ((IDatabricksGeospatial) object).getWkb();
     }
     throw new DatabricksSQLException(
         "Unsupported byte array conversion operation for geospatial types",

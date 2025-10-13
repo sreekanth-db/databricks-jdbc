@@ -12,7 +12,7 @@ import com.databricks.jdbc.exception.DatabricksValidationException;
  * <p>Following the established patterns of DatabricksStruct, DatabricksArray, and DatabricksMap,
  * this interface enables consistent handling of geospatial data across the JDBC driver.
  */
-public interface DatabricksGeospatial {
+public interface IDatabricksGeospatial {
 
   /**
    * Returns the Well-Known Binary (WKB) representation of the geospatial object.
