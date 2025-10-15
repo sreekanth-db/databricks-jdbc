@@ -2,6 +2,8 @@ package com.databricks.jdbc.api.impl;
 
 import com.databricks.jdbc.api.impl.converters.WKTConverter;
 import com.databricks.jdbc.exception.DatabricksValidationException;
+import com.databricks.jdbc.log.JdbcLogger;
+import com.databricks.jdbc.log.JdbcLoggerFactory;
 import java.util.Objects;
 
 /**
@@ -12,8 +14,11 @@ import java.util.Objects;
  */
 public abstract class AbstractDatabricksGeospatial implements IDatabricksGeospatial {
 
+  private static final JdbcLogger LOGGER =
+      JdbcLoggerFactory.getLogger(AbstractDatabricksGeospatial.class);
+
   private final String wkt;
-  private final int srid;
+  private final int srid; // Spatial Reference System Identifier
 
   /**
    * Constructs an AbstractDatabricksGeospatial with the specified WKT and SRID.
@@ -25,6 +30,7 @@ public abstract class AbstractDatabricksGeospatial implements IDatabricksGeospat
   protected AbstractDatabricksGeospatial(String wkt, int srid)
       throws DatabricksValidationException {
     if (wkt == null || wkt.trim().isEmpty()) {
+      LOGGER.error("WKT string cannot be null or empty");
       throw new DatabricksValidationException("WKT string cannot be null or empty");
     }
 
@@ -39,7 +45,7 @@ public abstract class AbstractDatabricksGeospatial implements IDatabricksGeospat
    * @throws DatabricksValidationException if WKT to WKB conversion fails
    */
   @Override
-  public byte[] getWkb() throws DatabricksValidationException {
+  public byte[] getWKB() throws DatabricksValidationException {
     return WKTConverter.toWKB(wkt);
   }
 
@@ -49,7 +55,7 @@ public abstract class AbstractDatabricksGeospatial implements IDatabricksGeospat
    * @return the SRID value
    */
   @Override
-  public int getSrid() {
+  public int getSRID() {
     return srid;
   }
 
@@ -59,7 +65,7 @@ public abstract class AbstractDatabricksGeospatial implements IDatabricksGeospat
    * @return the WKT string
    */
   @Override
-  public String getWkt() {
+  public String getWKT() {
     return wkt;
   }
 
@@ -101,4 +107,12 @@ public abstract class AbstractDatabricksGeospatial implements IDatabricksGeospat
   public int hashCode() {
     return Objects.hash(wkt, srid);
   }
+
+  /**
+   * Returns the data type of the geospatial object.
+   *
+   * @return the type as a string, either "GEOMETRY" or "GEOGRAPHY"
+   */
+  @Override
+  public abstract String getType();
 }

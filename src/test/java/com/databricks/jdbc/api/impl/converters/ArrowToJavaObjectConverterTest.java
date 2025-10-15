@@ -558,7 +558,7 @@ public class ArrowToJavaObjectConverterTest {
     assertInstanceOf(DatabricksGeometry.class, result);
     DatabricksGeometry geometry = (DatabricksGeometry) result;
     assertEquals("SRID=0;POINT(1 2)", geometry.toString());
-    assertEquals(0, geometry.getSrid()); // Default SRID
+    assertEquals(0, geometry.getSRID()); // Default SRID
 
     varCharVector.close();
   }
@@ -577,7 +577,7 @@ public class ArrowToJavaObjectConverterTest {
     assertInstanceOf(DatabricksGeography.class, result);
     DatabricksGeography geography = (DatabricksGeography) result;
     assertEquals("SRID=0;POINT(1 2)", geography.toString());
-    assertEquals(0, geography.getSrid()); // Default SRID
+    assertEquals(0, geography.getSRID()); // Default SRID
 
     varCharVector.close();
   }
@@ -596,7 +596,7 @@ public class ArrowToJavaObjectConverterTest {
     assertInstanceOf(DatabricksGeometry.class, result);
     DatabricksGeometry geometry = (DatabricksGeometry) result;
     assertEquals("SRID=4326;POINT(1 2)", geometry.toString());
-    assertEquals(4326, geometry.getSrid());
+    assertEquals(4326, geometry.getSRID());
 
     varCharVector.close();
   }
@@ -615,7 +615,7 @@ public class ArrowToJavaObjectConverterTest {
     assertInstanceOf(DatabricksGeography.class, result);
     DatabricksGeography geography = (DatabricksGeography) result;
     assertEquals("SRID=4326;POINT(1 2)", geography.toString());
-    assertEquals(4326, geography.getSrid());
+    assertEquals(4326, geography.getSRID());
 
     varCharVector.close();
   }

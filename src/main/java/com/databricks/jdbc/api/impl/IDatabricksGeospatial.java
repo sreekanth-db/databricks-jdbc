@@ -24,7 +24,7 @@ public interface IDatabricksGeospatial {
    * @return the WKB representation as a byte array
    * @throws DatabricksValidationException if WKT to WKB conversion fails
    */
-  byte[] getWkb() throws DatabricksValidationException;
+  byte[] getWKB() throws DatabricksValidationException;
 
   /**
    * Returns the Spatial Reference System Identifier (SRID) of the geospatial object.
@@ -39,7 +39,7 @@ public interface IDatabricksGeospatial {
    *
    * @return the SRID value
    */
-  int getSrid();
+  int getSRID();
 
   /**
    * Returns the Well-Known Text (WKT) representation of the geospatial object.
@@ -49,5 +49,12 @@ public interface IDatabricksGeospatial {
    *
    * @return the WKT string representation
    */
-  String getWkt();
+  String getWKT();
+
+  /**
+   * Returns the data type of the geospatial object.
+   *
+   * @return the type as a string, either "GEOMETRY" or "GEOGRAPHY"
+   */
+  String getType();
 }

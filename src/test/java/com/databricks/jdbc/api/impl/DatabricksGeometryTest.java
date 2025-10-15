@@ -16,23 +16,23 @@ public class DatabricksGeometryTest {
   public void testConstructor_WithValidPoint() throws DatabricksValidationException {
     DatabricksGeometry geometry = new DatabricksGeometry("POINT(1 2)", 0);
     assertNotNull(geometry);
-    assertEquals("POINT(1 2)", geometry.getWkt());
-    assertEquals(0, geometry.getSrid());
+    assertEquals("POINT(1 2)", geometry.getWKT());
+    assertEquals(0, geometry.getSRID());
   }
 
   @Test
   public void testConstructor_WithValidPointAndSRID() throws DatabricksValidationException {
     DatabricksGeometry geometry = new DatabricksGeometry("POINT(1 2)", 4326);
     assertNotNull(geometry);
-    assertEquals("POINT(1 2)", geometry.getWkt());
-    assertEquals(4326, geometry.getSrid());
+    assertEquals("POINT(1 2)", geometry.getWKT());
+    assertEquals(4326, geometry.getSRID());
   }
 
   @Test
   public void testConstructor_WithLineString() throws DatabricksValidationException {
     DatabricksGeometry geometry = new DatabricksGeometry("LINESTRING(0 0, 10 10, 20 20)", 0);
     assertNotNull(geometry);
-    assertTrue(geometry.getWkt().startsWith("LINESTRING"));
+    assertTrue(geometry.getWKT().startsWith("LINESTRING"));
   }
 
   @Test
@@ -40,7 +40,7 @@ public class DatabricksGeometryTest {
     DatabricksGeometry geometry =
         new DatabricksGeometry("POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))", 0);
     assertNotNull(geometry);
-    assertTrue(geometry.getWkt().startsWith("POLYGON"));
+    assertTrue(geometry.getWKT().startsWith("POLYGON"));
   }
 
   @Test
@@ -65,31 +65,31 @@ public class DatabricksGeometryTest {
   @Test
   public void testGetWkt() throws DatabricksValidationException {
     DatabricksGeometry geometry = new DatabricksGeometry("POINT(5 10)", 4326);
-    assertEquals("POINT(5 10)", geometry.getWkt());
+    assertEquals("POINT(5 10)", geometry.getWKT());
   }
 
   @Test
   public void testGetSrid_WithZero() throws DatabricksValidationException {
     DatabricksGeometry geometry = new DatabricksGeometry("POINT(1 2)", 0);
-    assertEquals(0, geometry.getSrid());
+    assertEquals(0, geometry.getSRID());
   }
 
   @Test
   public void testGetSrid_With4326() throws DatabricksValidationException {
     DatabricksGeometry geometry = new DatabricksGeometry("POINT(1 2)", 4326);
-    assertEquals(4326, geometry.getSrid());
+    assertEquals(4326, geometry.getSRID());
   }
 
   @Test
   public void testGetSrid_With3857() throws DatabricksValidationException {
     DatabricksGeometry geometry = new DatabricksGeometry("POINT(1 2)", 3857);
-    assertEquals(3857, geometry.getSrid());
+    assertEquals(3857, geometry.getSRID());
   }
 
   @Test
   public void testGetWkb_ReturnsValidBytes() throws DatabricksValidationException {
     DatabricksGeometry geometry = new DatabricksGeometry("POINT(1 2)", 4326);
-    byte[] wkb = geometry.getWkb();
+    byte[] wkb = geometry.getWKB();
     assertNotNull(wkb);
     assertTrue(wkb.length > 0);
   }

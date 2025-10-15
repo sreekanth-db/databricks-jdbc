@@ -16,16 +16,16 @@ public class DatabricksGeographyTest {
   public void testConstructor_WithValidPoint() throws DatabricksValidationException {
     DatabricksGeography geography = new DatabricksGeography("POINT(-122.4194 37.7749)", 0);
     assertNotNull(geography);
-    assertEquals("POINT(-122.4194 37.7749)", geography.getWkt());
-    assertEquals(0, geography.getSrid());
+    assertEquals("POINT(-122.4194 37.7749)", geography.getWKT());
+    assertEquals(0, geography.getSRID());
   }
 
   @Test
   public void testConstructor_WithValidPointAndSRID() throws DatabricksValidationException {
     DatabricksGeography geography = new DatabricksGeography("POINT(-122.4194 37.7749)", 4326);
     assertNotNull(geography);
-    assertEquals("POINT(-122.4194 37.7749)", geography.getWkt());
-    assertEquals(4326, geography.getSrid());
+    assertEquals("POINT(-122.4194 37.7749)", geography.getWKT());
+    assertEquals(4326, geography.getSRID());
   }
 
   @Test
@@ -33,7 +33,7 @@ public class DatabricksGeographyTest {
     DatabricksGeography geography =
         new DatabricksGeography("LINESTRING(-122.4 37.7, -122.5 37.8, -122.6 37.9)", 4326);
     assertNotNull(geography);
-    assertTrue(geography.getWkt().startsWith("LINESTRING"));
+    assertTrue(geography.getWKT().startsWith("LINESTRING"));
   }
 
   @Test
@@ -42,7 +42,7 @@ public class DatabricksGeographyTest {
         new DatabricksGeography(
             "POLYGON((-122.4 37.7, -122.5 37.7, -122.5 37.8, -122.4 37.8, -122.4 37.7))", 4326);
     assertNotNull(geography);
-    assertTrue(geography.getWkt().startsWith("POLYGON"));
+    assertTrue(geography.getWKT().startsWith("POLYGON"));
   }
 
   @Test
@@ -67,25 +67,25 @@ public class DatabricksGeographyTest {
   @Test
   public void testGetWkt() throws DatabricksValidationException {
     DatabricksGeography geography = new DatabricksGeography("POINT(-122.4194 37.7749)", 4326);
-    assertEquals("POINT(-122.4194 37.7749)", geography.getWkt());
+    assertEquals("POINT(-122.4194 37.7749)", geography.getWKT());
   }
 
   @Test
   public void testGetSrid_WithZero() throws DatabricksValidationException {
     DatabricksGeography geography = new DatabricksGeography("POINT(-122.4194 37.7749)", 0);
-    assertEquals(0, geography.getSrid());
+    assertEquals(0, geography.getSRID());
   }
 
   @Test
   public void testGetSrid_With3857() throws DatabricksValidationException {
     DatabricksGeography geography = new DatabricksGeography("POINT(-122.4194 37.7749)", 3857);
-    assertEquals(3857, geography.getSrid());
+    assertEquals(3857, geography.getSRID());
   }
 
   @Test
   public void testGetWkb_ReturnsValidBytes() throws DatabricksValidationException {
     DatabricksGeography geography = new DatabricksGeography("POINT(-122.4194 37.7749)", 4326);
-    byte[] wkb = geography.getWkb();
+    byte[] wkb = geography.getWKB();
     assertNotNull(wkb);
     assertTrue(wkb.length > 0);
   }

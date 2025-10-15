@@ -21,16 +21,16 @@ public class GeospatialConverterTest {
   public void testToDatabricksGeometry_WithValidWKT() throws DatabricksSQLException {
     DatabricksGeometry result = converter.toDatabricksGeometry("POINT(1 2)");
     assertNotNull(result);
-    assertEquals("POINT(1 2)", result.getWkt());
-    assertEquals(0, result.getSrid());
+    assertEquals("POINT(1 2)", result.getWKT());
+    assertEquals(0, result.getSRID());
   }
 
   @Test
   public void testToDatabricksGeometry_WithEWKT() throws DatabricksSQLException {
     DatabricksGeometry result = converter.toDatabricksGeometry("SRID=4326;POINT(1 2)");
     assertNotNull(result);
-    assertEquals("POINT(1 2)", result.getWkt());
-    assertEquals(4326, result.getSrid());
+    assertEquals("POINT(1 2)", result.getWKT());
+    assertEquals(4326, result.getSRID());
   }
 
   @Test
@@ -38,7 +38,7 @@ public class GeospatialConverterTest {
     Text textInput = new Text("POINT(1 2)");
     DatabricksGeometry result = converter.toDatabricksGeometry(textInput);
     assertNotNull(result);
-    assertEquals("POINT(1 2)", result.getWkt());
+    assertEquals("POINT(1 2)", result.getWKT());
   }
 
   @Test
@@ -62,8 +62,8 @@ public class GeospatialConverterTest {
   public void testToDatabricksGeography_WithValidWKT() throws DatabricksSQLException {
     DatabricksGeography result = converter.toDatabricksGeography("POINT(-122.4194 37.7749)");
     assertNotNull(result);
-    assertEquals("POINT(-122.4194 37.7749)", result.getWkt());
-    assertEquals(0, result.getSrid());
+    assertEquals("POINT(-122.4194 37.7749)", result.getWKT());
+    assertEquals(0, result.getSRID());
   }
 
   @Test
@@ -71,8 +71,8 @@ public class GeospatialConverterTest {
     DatabricksGeography result =
         converter.toDatabricksGeography("SRID=4326;POINT(-122.4194 37.7749)");
     assertNotNull(result);
-    assertEquals("POINT(-122.4194 37.7749)", result.getWkt());
-    assertEquals(4326, result.getSrid());
+    assertEquals("POINT(-122.4194 37.7749)", result.getWKT());
+    assertEquals(4326, result.getSRID());
   }
 
   @Test

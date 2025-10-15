@@ -73,7 +73,7 @@ public class GeospatialConverter implements ObjectConverter {
   @Override
   public byte[] toByteArray(Object object) throws DatabricksSQLException {
     if (object instanceof IDatabricksGeospatial) {
-      return ((IDatabricksGeospatial) object).getWkb();
+      return ((IDatabricksGeospatial) object).getWKB();
     }
     throw new DatabricksSQLException(
         "Unsupported byte array conversion operation for geospatial types",

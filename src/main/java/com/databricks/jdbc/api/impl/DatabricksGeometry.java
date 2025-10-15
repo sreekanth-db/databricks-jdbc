@@ -1,5 +1,7 @@
 package com.databricks.jdbc.api.impl;
 
+import static com.databricks.jdbc.common.util.DatabricksTypeUtil.GEOMETRY;
+
 import com.databricks.jdbc.exception.DatabricksValidationException;
 
 public class DatabricksGeometry extends AbstractDatabricksGeospatial {
@@ -13,5 +15,10 @@ public class DatabricksGeometry extends AbstractDatabricksGeospatial {
    */
   public DatabricksGeometry(String wkt, int srid) throws DatabricksValidationException {
     super(wkt, srid);
+  }
+
+  @Override
+  public String getType() {
+    return GEOMETRY;
   }
 }

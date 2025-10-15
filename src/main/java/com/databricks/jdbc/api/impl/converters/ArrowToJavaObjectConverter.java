@@ -339,6 +339,7 @@ public class ArrowToJavaObjectConverter {
   private static int extractSRIDFromMetadata(String metadata, String typePrefix)
       throws DatabricksParsingException {
     if (metadata == null) {
+      LOGGER.debug("Metadata is null, returning default SRID 0 for {}", typePrefix);
       return 0;
     }
 
@@ -359,6 +360,10 @@ public class ArrowToJavaObjectConverter {
           errorMessage, e, DatabricksDriverErrorCode.RESULT_SET_ERROR);
     }
 
+    LOGGER.debug(
+        "No SRID found in metadata for {}, returning default SRID 0. Metadata: {}",
+        typePrefix,
+        metadata);
     return 0;
   }
 }
