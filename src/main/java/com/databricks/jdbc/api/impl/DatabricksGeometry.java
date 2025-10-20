@@ -2,9 +2,10 @@ package com.databricks.jdbc.api.impl;
 
 import static com.databricks.jdbc.common.util.DatabricksTypeUtil.GEOMETRY;
 
+import com.databricks.jdbc.api.IGeometry;
 import com.databricks.jdbc.exception.DatabricksValidationException;
 
-public class DatabricksGeometry extends AbstractDatabricksGeospatial {
+public class DatabricksGeometry extends AbstractDatabricksGeospatial implements IGeometry {
 
   /**
    * Constructs a DatabricksGeometry with the specified WKT and SRID.

@@ -1,5 +1,8 @@
 package com.databricks.jdbc.api.impl.converters;
 
+import static com.databricks.jdbc.common.util.DatabricksTypeUtil.GEOGRAPHY;
+import static com.databricks.jdbc.common.util.DatabricksTypeUtil.GEOMETRY;
+
 import com.databricks.jdbc.api.impl.DatabricksGeography;
 import com.databricks.jdbc.api.impl.DatabricksGeometry;
 import com.databricks.jdbc.api.impl.IDatabricksGeospatial;
@@ -18,23 +21,7 @@ public class GeospatialConverter implements ObjectConverter {
     if (object instanceof DatabricksGeometry) {
       return (DatabricksGeometry) object;
     }
-
-    if (object instanceof String || object instanceof Text) {
-      String ewktString = object.toString();
-      try {
-        int srid = WKTConverter.extractSRIDFromEWKT(ewktString);
-        String cleanWKT = WKTConverter.removeSRIDFromEWKT(ewktString);
-        return new DatabricksGeometry(cleanWKT, srid);
-      } catch (Exception e) {
-        String errorMessage = String.format("Failed to convert EWKT to geometry: %s", ewktString);
-        LOGGER.warn(errorMessage, e);
-        throw new DatabricksSQLException(errorMessage, e, DatabricksDriverErrorCode.INVALID_STATE);
-      }
-    }
-
-    throw new DatabricksSQLException(
-        "Unsupported Geometry conversion from type: " + object.getClass(),
-        DatabricksDriverErrorCode.UNSUPPORTED_OPERATION);
+    return convertToGeospatial(object, GEOMETRY, DatabricksGeometry::new);
   }
 
   @Override
@@ -42,23 +29,35 @@ public class GeospatialConverter implements ObjectConverter {
     if (object instanceof DatabricksGeography) {
       return (DatabricksGeography) object;
     }
+    return convertToGeospatial(object, GEOGRAPHY, DatabricksGeography::new);
+  }
 
+  private <T extends IDatabricksGeospatial> T convertToGeospatial(
+      Object object, String typeName, GeospatialFactory<T> factory) throws DatabricksSQLException {
     if (object instanceof String || object instanceof Text) {
       String ewktString = object.toString();
       try {
         int srid = WKTConverter.extractSRIDFromEWKT(ewktString);
         String cleanWKT = WKTConverter.removeSRIDFromEWKT(ewktString);
-        return new DatabricksGeography(cleanWKT, srid);
+        return factory.create(cleanWKT, srid);
       } catch (Exception e) {
-        String errorMessage = String.format("Failed to convert EWKT to geography: %s", ewktString);
+        String errorMessage =
+            String.format("Failed to convert EWKT to %s: %s", typeName, ewktString);
         LOGGER.warn(errorMessage, e);
         throw new DatabricksSQLException(errorMessage, e, DatabricksDriverErrorCode.INVALID_STATE);
       }
     }
 
     throw new DatabricksSQLException(
-        "Unsupported Geography conversion from type: " + object.getClass(),
+        String.format(
+            "Unsupported %s conversion from type: %s",
+            typeName.substring(0, 1).toUpperCase() + typeName.substring(1), object.getClass()),
         DatabricksDriverErrorCode.UNSUPPORTED_OPERATION);
+  }
+
+  @FunctionalInterface
+  private interface GeospatialFactory<T extends IDatabricksGeospatial> {
+    T create(String wkt, int srid) throws Exception;
   }
 
   @Override

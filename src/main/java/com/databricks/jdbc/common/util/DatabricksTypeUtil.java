@@ -57,10 +57,8 @@ public class DatabricksTypeUtil {
   public static final String INTERVAL = "INTERVAL";
   public static final String GEOMETRY = "GEOMETRY";
   public static final String GEOGRAPHY = "GEOGRAPHY";
-  public static final String GEOMETRY_CLASS_NAME =
-      "com.databricks.jdbc.api.impl.DatabricksGeometry";
-  public static final String GEOGRAPHY_CLASS_NAME =
-      "com.databricks.jdbc.api.impl.DatabricksGeography";
+  public static final String GEOMETRY_CLASS_NAME = "com.databricks.jdbc.api.IGeometry";
+  public static final String GEOGRAPHY_CLASS_NAME = "com.databricks.jdbc.api.IGeography";
   public static final String MEASURE = "measure";
   private static final ArrayList<ColumnInfoTypeName> SIGNED_TYPES =
       new ArrayList<>(

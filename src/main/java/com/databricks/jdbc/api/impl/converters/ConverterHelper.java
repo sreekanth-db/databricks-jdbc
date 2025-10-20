@@ -526,6 +526,7 @@ public class ConverterHelper {
    * @param columnSqlType The SQL type of the column, as defined in java.sql.Types
    * @return An ObjectConverter suitable for the specified SQL type
    */
+  // TODO: replace all usages of this method with getConverterForColumnType
   public static ObjectConverter getConverterForSqlType(int columnSqlType) {
     return CONVERTER_CACHE.getOrDefault(columnSqlType, CONVERTER_CACHE.get(Types.VARCHAR));
   }
