@@ -125,6 +125,45 @@ public class WKTConverterTest {
   }
 
   @Test
+  public void testToWKB_InvalidWKTFormat_LogsError() {
+    String invalidWkt = "POINT(1 2 3 4 5)"; // Too many coordinates for a POINT
+
+    DatabricksValidationException exception =
+        assertThrows(DatabricksValidationException.class, () -> WKTConverter.toWKB(invalidWkt));
+
+    assertTrue(exception.getMessage().contains("Invalid WKT format"));
+  }
+
+  @Test
+  public void testToWKT_ValidWKB() throws DatabricksValidationException {
+    // First create valid WKB from WKT
+    byte[] wkb = WKTConverter.toWKB("POINT (1 2)");
+    String wkt = WKTConverter.toWKT(wkb);
+
+    assertEquals("POINT (1 2)", wkt);
+  }
+
+  @Test
+  public void testToWKT_NullWKB() {
+    assertThrows(DatabricksValidationException.class, () -> WKTConverter.toWKT(null));
+  }
+
+  @Test
+  public void testToWKT_EmptyWKB() {
+    assertThrows(DatabricksValidationException.class, () -> WKTConverter.toWKT(new byte[0]));
+  }
+
+  @Test
+  public void testToWKT_InvalidWKB_LogsError() {
+    byte[] invalidWkb = new byte[] {1, 2, 3, 4, 5}; // Random invalid bytes
+
+    DatabricksValidationException exception =
+        assertThrows(DatabricksValidationException.class, () -> WKTConverter.toWKT(invalidWkb));
+
+    assertTrue(exception.getMessage().contains("Invalid WKB format"));
+  }
+
+  @Test
   public void testConcurrency() throws Exception {
     int numThreads = 50;
     ExecutorService executor = Executors.newFixedThreadPool(numThreads);
