@@ -3,9 +3,9 @@ package com.databricks.jdbc.api.impl.converters;
 import static com.databricks.jdbc.common.util.DatabricksTypeUtil.GEOGRAPHY;
 import static com.databricks.jdbc.common.util.DatabricksTypeUtil.GEOMETRY;
 
+import com.databricks.jdbc.api.IDatabricksGeospatial;
 import com.databricks.jdbc.api.impl.DatabricksGeography;
 import com.databricks.jdbc.api.impl.DatabricksGeometry;
-import com.databricks.jdbc.api.impl.IDatabricksGeospatial;
 import com.databricks.jdbc.exception.DatabricksSQLException;
 import com.databricks.jdbc.log.JdbcLogger;
 import com.databricks.jdbc.log.JdbcLoggerFactory;

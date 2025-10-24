@@ -1,4 +1,4 @@
-package com.databricks.jdbc.api.impl;
+package com.databricks.jdbc.api;
 
 import com.databricks.jdbc.exception.DatabricksValidationException;
 

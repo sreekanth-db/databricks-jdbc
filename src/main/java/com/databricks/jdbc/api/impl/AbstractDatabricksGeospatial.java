@@ -1,5 +1,6 @@
 package com.databricks.jdbc.api.impl;
 
+import com.databricks.jdbc.api.IDatabricksGeospatial;
 import com.databricks.jdbc.api.impl.converters.WKTConverter;
 import com.databricks.jdbc.exception.DatabricksValidationException;
 import com.databricks.jdbc.log.JdbcLogger;
