@@ -11,6 +11,7 @@ import java.sql.*;
 import java.util.Properties;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -340,6 +341,13 @@ public class DataTypesIntegrationTests extends AbstractFakeServiceIntegrationTes
 
   @Test
   void testGeospatialTypes() throws SQLException {
+
+    // Skip for THRIFT_SERVER as the test environment version doesn't support geospatial types
+    // TODO: Update stubs and remove this skip once THRIFT_SERVER environment is upgraded to support
+    // geospatial types
+    Assumptions.assumeTrue(
+        isSqlExecSdkClient(), "Geospatial types are not supported on THRIFT_SERVER yet");
+
     String query =
         "SELECT * FROM (VALUES "
             + "(1, ST_GeomFromText('POINT (1 2)'), ST_GeogFromText('POINT (3 4)')), "
