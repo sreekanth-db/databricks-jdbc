@@ -32,7 +32,30 @@ public class TimeoutHandler {
       String operationDescription,
       Runnable onTimeoutAction,
       DatabricksDriverErrorCode internalErrorCode) {
-    this.startTimeMillis = System.currentTimeMillis();
+    this(
+        System.currentTimeMillis(),
+        timeoutSeconds,
+        operationDescription,
+        onTimeoutAction,
+        internalErrorCode);
+  }
+
+  /**
+   * Creates a new timeout handler with an explicit start time.
+   *
+   * @param startTimeMillis The start time in milliseconds (from System.currentTimeMillis())
+   * @param timeoutSeconds Timeout in seconds, 0 means no timeout
+   * @param operationDescription Description of the operation for logging
+   * @param onTimeoutAction Runnable to call when a timeout occurs
+   * @param internalErrorCode Internal driver error code to annotate timeout exceptions
+   */
+  public TimeoutHandler(
+      long startTimeMillis,
+      int timeoutSeconds,
+      String operationDescription,
+      Runnable onTimeoutAction,
+      DatabricksDriverErrorCode internalErrorCode) {
+    this.startTimeMillis = startTimeMillis;
     this.timeoutSeconds = timeoutSeconds;
     this.operationDescription = operationDescription;
     this.onTimeoutAction = onTimeoutAction;
@@ -89,6 +112,31 @@ public class TimeoutHandler {
       DatabricksDriverErrorCode internalErrorCode) {
 
     return new TimeoutHandler(
+        timeoutSeconds,
+        "Statement ID: " + statementId,
+        () -> {
+          try {
+            client.cancelStatement(statementId);
+          } catch (Exception e) {
+            LOGGER.warn("Cancel statement on timeout failed: " + e.getMessage());
+          }
+        },
+        internalErrorCode);
+  }
+
+  /**
+   * Factory method with an explicit start time, to account for time already spent before the
+   * handler is created (e.g., the initial execute HTTP call).
+   */
+  public static TimeoutHandler forStatement(
+      long startTimeMillis,
+      int timeoutSeconds,
+      StatementId statementId,
+      IDatabricksClient client,
+      DatabricksDriverErrorCode internalErrorCode) {
+
+    return new TimeoutHandler(
+        startTimeMillis,
         timeoutSeconds,
         "Statement ID: " + statementId,
         () -> {

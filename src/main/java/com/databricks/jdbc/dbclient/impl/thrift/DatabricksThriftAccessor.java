@@ -197,6 +197,8 @@ final class DatabricksThriftAccessor {
       StatementType statementType)
       throws SQLException {
 
+    long executeStartTime = System.currentTimeMillis();
+
     try {
       // Set direct result configuration
       if (enableDirectResults) {
@@ -232,7 +234,8 @@ final class DatabricksThriftAccessor {
 
       TGetOperationStatusResp statusResp =
           pollTillOperationFinished(
-              response, parentStatement, session, statementId, sessionDebugInfo);
+              response, parentStatement, session, statementId, sessionDebugInfo, executeStartTime);
+
       if (hasResultDataInDirectResults(response)) {
         // The first response has result data
         // There is no polling in this case as status was already finished
@@ -279,7 +282,8 @@ final class DatabricksThriftAccessor {
       IDatabricksStatementInternal parentStatement,
       IDatabricksSession session,
       StatementId statementId,
-      String sessionDebugInfo)
+      String sessionDebugInfo,
+      long executeStartTimeMillis)
       throws SQLException, TException {
     int timeoutInSeconds =
         (parentStatement == null) ? 0 : parentStatement.getStatement().getQueryTimeout();
@@ -297,7 +301,10 @@ final class DatabricksThriftAccessor {
 
     TimeoutHandler timeoutHandler =
         getTimeoutHandler(
-            response, timeoutInSeconds, DatabricksDriverErrorCode.STATEMENT_EXECUTION_TIMEOUT);
+            response,
+            timeoutInSeconds,
+            DatabricksDriverErrorCode.STATEMENT_EXECUTION_TIMEOUT,
+            executeStartTimeMillis);
 
     // Polling until query operation state is finished
     long pollingStartTime = System.nanoTime();
@@ -819,10 +826,12 @@ final class DatabricksThriftAccessor {
   private TimeoutHandler getTimeoutHandler(
       TExecuteStatementResp response,
       int timeoutInSeconds,
-      DatabricksDriverErrorCode internalErrorCode) {
+      DatabricksDriverErrorCode internalErrorCode,
+      long startTimeMillis) {
     final TOperationHandle operationHandle = response.getOperationHandle();
 
     return new TimeoutHandler(
+        startTimeMillis,
         timeoutInSeconds,
         "Thrift Operation Handle: " + operationHandle.toString(),
         () -> {

@@ -237,9 +237,10 @@ public class DatabricksSdkClient implements IDatabricksClient {
     int timeoutInSeconds =
         parentStatement != null ? parentStatement.getStatement().getQueryTimeout() : 0;
 
-    // Create timeout handler
+    // Create timeout handler with start time from before the execute statement call
     TimeoutHandler timeoutHandler =
         TimeoutHandler.forStatement(
+            executionStartTime,
             timeoutInSeconds,
             typedStatementId,
             this,

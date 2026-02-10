@@ -195,4 +195,55 @@ class TimeoutHandlerTest {
     // Verify DatabricksTimeoutException is still thrown
     assertTrue(exception.getMessage().contains("timed-out after 5 seconds"));
   }
+
+  @Test
+  void testConstructorWithExplicitStartTime() {
+    // Create handler with startTimeMillis set to 3 seconds in the past
+    long pastStartTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(3);
+    TimeoutHandler handler =
+        new TimeoutHandler(
+            pastStartTime,
+            2,
+            "Test operation",
+            mockTimeoutAction,
+            DatabricksDriverErrorCode.STATEMENT_EXECUTION_TIMEOUT);
+
+    // This should immediately throw a DatabricksTimeoutException since 3s > 2s timeout
+    DatabricksTimeoutException exception =
+        assertThrows(DatabricksTimeoutException.class, handler::checkTimeout);
+
+    // Verify timeout action was called
+    verify(mockTimeoutAction, times(1)).run();
+
+    // Verify exception message
+    assertTrue(exception.getMessage().contains("timed-out after 2 seconds"));
+    assertTrue(exception.getMessage().contains("Test operation"));
+  }
+
+  @Test
+  void testForStatementFactoryWithExplicitStartTime() throws Exception {
+    when(mockStatementId.toString()).thenReturn("test-statement-id");
+
+    // Create handler with factory method using startTimeMillis set to 6 seconds in the past
+    long pastStartTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(6);
+    TimeoutHandler handler =
+        TimeoutHandler.forStatement(
+            pastStartTime,
+            5,
+            mockStatementId,
+            mockClient,
+            DatabricksDriverErrorCode.STATEMENT_EXECUTION_TIMEOUT);
+
+    // Verify handler was created with correct start time (no reflection needed)
+    // This should immediately throw since 6s > 5s timeout
+    DatabricksTimeoutException exception =
+        assertThrows(DatabricksTimeoutException.class, handler::checkTimeout);
+
+    // Verify client.cancelStatement was called
+    verify(mockClient, times(1)).cancelStatement(mockStatementId);
+
+    // Verify exception message
+    assertTrue(exception.getMessage().contains("timed-out after 5 seconds"));
+    assertTrue(exception.getMessage().contains("test-statement-id"));
+  }
 }
