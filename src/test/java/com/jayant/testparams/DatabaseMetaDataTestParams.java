@@ -95,6 +95,87 @@ public class DatabaseMetaDataTestParams implements TestParams {
         Map.entry("getAttributes", 4),
         new String[] {"main", "tpcds_sf100_delta", "%", "%"});
 
+    // Cross-catalog tests: null catalog (match all catalogs)
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getTables", 4),
+        new String[] {null, "tpcds_sf100_delta", "%", null});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getTablePrivileges", 3),
+        new String[] {null, "tpcds_sf100_delta", "%"});
+    putInMapForKey(functionToArgsMap, Map.entry("getSchemas", 2), new String[] {null, "tpcds_%"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getColumns", 4),
+        new String[] {null, "tpcds_sf100_delta", "catalog_sales", "%"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getPseudoColumns", 4),
+        new String[] {null, "tpcds_sf100_delta", "catalog_sales", "%"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getColumnPrivileges", 4),
+        new String[] {null, "tpcds_sf100_delta", "catalog_sales", "%"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getVersionColumns", 3),
+        new String[] {null, "tpcds_sf100_delta", "catalog_sales"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getFunctions", 3),
+        new String[] {null, "tpcds_sf100_delta", "aggregate"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getFunctionColumns", 4),
+        new String[] {null, "tpcds_sf100_delta", "aggregate", "%"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getProcedures", 3),
+        new String[] {null, "tpcds_sf100_delta", "%"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getProcedureColumns", 4),
+        new String[] {null, "tpcds_sf100_delta", "%", "%"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getPrimaryKeys", 3),
+        new String[] {null, "oss_jdbc_tests", "test_result_set_types"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getImportedKeys", 3),
+        new String[] {null, "tpcds_sf100_delta", "catalog_sales"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getExportedKeys", 3),
+        new String[] {null, "tpcds_sf100_delta", "catalog_sales"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getCrossReference", 6),
+        new String[] {
+          null, "tpcds_sf100_delta", "catalog_sales", null, "tpcds_sf100_delta", "catalog_sales"
+        });
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getIndexInfo", 5),
+        new Object[] {null, "tpcds_sf100_delta", "catalog_sales", true, false});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getUDTs", 4),
+        new String[] {null, "tpcds_sf100_delta", "%", null});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getSuperTypes", 3),
+        new String[] {null, "tpcds_sf100_delta", "%"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getSuperTables", 3),
+        new String[] {null, "tpcds_sf100_delta", "catalog_sales"});
+    putInMapForKey(
+        functionToArgsMap,
+        Map.entry("getAttributes", 4),
+        new String[] {null, "tpcds_sf100_delta", "%", "%"});
+
     // Methods for ResultSet concurrency and visibility
     for (Integer type : getResultSetTypes()) {
       putInMapForKey(
@@ -129,6 +210,11 @@ public class DatabaseMetaDataTestParams implements TestParams {
           functionToArgsMap,
           Map.entry("getBestRowIdentifier", 5),
           new Object[] {"main", "tpcds_sf100_delta", "catalog_sales", i, true});
+      // Cross-catalog: null catalog
+      putInMapForKey(
+          functionToArgsMap,
+          Map.entry("getBestRowIdentifier", 5),
+          new Object[] {null, "tpcds_sf100_delta", "catalog_sales", i, true});
     }
     for (Integer i : getResultSetHoldability()) {
       putInMapForKey(

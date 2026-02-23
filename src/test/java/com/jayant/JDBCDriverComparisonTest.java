@@ -174,7 +174,7 @@ public class JDBCDriverComparisonTest {
     return combined.stream();
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(autoCloseArguments = false)
   @MethodSource("provideSQLQueries")
   @DisplayName("Compare SQL Query Results")
   void compareSQLQueryResults(
@@ -197,7 +197,7 @@ public class JDBCDriverComparisonTest {
         });
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(autoCloseArguments = false)
   @MethodSource("provideMetadataMethods")
   @DisplayName("Compare Metadata API Results")
   void compareMetadataResults(
@@ -227,7 +227,7 @@ public class JDBCDriverComparisonTest {
         });
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(autoCloseArguments = false)
   @MethodSource("provideResultSetMethods")
   @DisplayName("Compare ResultSet API Results")
   void compareResultSetResults(
@@ -254,7 +254,7 @@ public class JDBCDriverComparisonTest {
         });
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(autoCloseArguments = false)
   @MethodSource("provideResultSetMetaDataMethods")
   @DisplayName("Compare ResultSetMetaData API Results")
   void compareResultSetMetaDataResults(
@@ -283,7 +283,7 @@ public class JDBCDriverComparisonTest {
         });
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(autoCloseArguments = false)
   @MethodSource("provideConnectionMethods")
   @DisplayName("Compare Connection API Results")
   void compareConnectionResults(

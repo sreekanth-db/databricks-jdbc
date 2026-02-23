@@ -22,11 +22,15 @@ public class ResultSetComparator {
     if (result1 instanceof ResultSet && result2 instanceof ResultSet) {
       ResultSet rs1 = (ResultSet) result1;
       ResultSet rs2 = (ResultSet) result2;
-      // Compare metadata
-      result.metadataDifferences = compareMetadata(rs1.getMetaData(), rs2.getMetaData());
+      try {
+        // Compare metadata
+        result.metadataDifferences = compareMetadata(rs1.getMetaData(), rs2.getMetaData());
 
-      // Compare data
-      result.dataDifferences = compareData(rs1, rs2);
+        // Compare data
+        result.dataDifferences = compareData(rs1, rs2);
+      } catch (SQLException e) {
+        result.dataDifferences.add("ResultSet iteration error: " + e.getMessage());
+      }
     } else if (!(result1 instanceof ResultSet) && !(result2 instanceof ResultSet)) {
       // Both are not of type ResultSet
       if (result1 == null || !resultIsSame(result1, result2)) {
