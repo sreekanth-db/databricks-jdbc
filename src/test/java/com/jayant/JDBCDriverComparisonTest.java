@@ -6,6 +6,7 @@ import com.jayant.testparams.ConnectionTestParams;
 import com.jayant.testparams.DatabaseMetaDataTestParams;
 import com.jayant.testparams.ResultSetMetaDataTestParams;
 import com.jayant.testparams.ResultSetTestParams;
+import com.jayant.testparams.StatementTestParams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -42,6 +43,12 @@ public class JDBCDriverComparisonTest {
   // ResultSets for Thrift vs SEA comparison
   private static ResultSet ossThriftResultSet;
   private static ResultSet ossSeaResultSet2;
+  // Statements for Old vs SEA comparison
+  private static Statement oldDriverStatement;
+  private static Statement ossSeaStatement1;
+  // Statements for Thrift vs SEA comparison
+  private static Statement ossThriftStatement;
+  private static Statement ossSeaStatement2;
 
   @BeforeAll
   static void setup() throws Exception {
@@ -89,6 +96,12 @@ public class JDBCDriverComparisonTest {
     ossThriftResultSet =
         ossThriftConnection.createStatement().executeQuery(queryResultSetTypesTable);
     ossSeaResultSet2 = ossSeaConnection.createStatement().executeQuery(queryResultSetTypesTable);
+
+    // Create separate Statements for each comparison pair
+    oldDriverStatement = oldDriverConnection.createStatement();
+    ossSeaStatement1 = ossSeaConnection.createStatement();
+    ossThriftStatement = ossThriftConnection.createStatement();
+    ossSeaStatement2 = ossSeaConnection.createStatement();
   }
 
   @AfterAll
@@ -166,6 +179,37 @@ public class JDBCDriverComparisonTest {
         newArgs[0] = pair[0]; // comparison name
         newArgs[1] = pair[1]; // resultSet 1
         newArgs[2] = pair[2]; // resultSet 2
+        System.arraycopy(originalArgs, 0, newArgs, 3, originalArgs.length);
+        combined.add(Arguments.of(newArgs));
+      }
+    }
+
+    return combined.stream();
+  }
+
+  /**
+   * Helper method for tests that need Statements. Prepends Statement pair info (name, stmt1, stmt2)
+   * to original arguments.
+   */
+  private static Stream<Arguments> withStatementPairs(Stream<Arguments> baseProvider) {
+    List<Arguments> base = baseProvider.collect(Collectors.toList());
+    List<Arguments> combined = new ArrayList<>();
+
+    // Define Statement pairs - each with separate instances to avoid reuse
+    Object[][] statementPairs = {
+      {"Old(2.7.6) vs OSS-SEA", oldDriverStatement, ossSeaStatement1},
+      {"OSS-Thrift vs OSS-SEA", ossThriftStatement, ossSeaStatement2}
+    };
+
+    // Combine each pair with each base argument
+    for (Object[] pair : statementPairs) {
+      for (Arguments arg : base) {
+        Object[] originalArgs = arg.get();
+        // Create new array: [name, stmt1, stmt2, ...originalArgs]
+        Object[] newArgs = new Object[3 + originalArgs.length];
+        newArgs[0] = pair[0]; // comparison name
+        newArgs[1] = pair[1]; // statement 1
+        newArgs[2] = pair[2]; // statement 2
         System.arraycopy(originalArgs, 0, newArgs, 3, originalArgs.length);
         combined.add(Arguments.of(newArgs));
       }
@@ -310,6 +354,33 @@ public class JDBCDriverComparisonTest {
         });
   }
 
+  @ParameterizedTest(autoCloseArguments = false)
+  @MethodSource("provideStatementMethods")
+  @DisplayName("Compare Statement API Results")
+  void compareStatementResults(
+      String comparisonName, Statement stmt1, Statement stmt2, String methodName, Object[] args) {
+    assertDoesNotThrow(
+        () -> {
+          Object result1 = ReflectionUtils.executeMethod(stmt1, methodName, args);
+          Object result2 = ReflectionUtils.executeMethod(stmt2, methodName, args);
+
+          ComparisonResult result =
+              ResultSetComparator.compare(
+                  "Statement [" + comparisonName + "]", methodName, args, result1, result2);
+          reporter.addResult(result);
+
+          if (result.hasDifferences()) {
+            System.err.println(
+                "["
+                    + comparisonName
+                    + "] Differences found in Statement results for method: "
+                    + methodName);
+            System.err.println("Args: " + getStringForArgs(args));
+            System.err.println(result);
+          }
+        });
+  }
+
   private static Stream<Arguments> provideSQLQueries() {
     Stream<Arguments> base =
         Stream.of(
@@ -341,6 +412,12 @@ public class JDBCDriverComparisonTest {
     ConnectionTestParams params = new ConnectionTestParams();
     Stream<Arguments> base = ReflectionUtils.provideMethodsForClass(Connection.class, params);
     return withConnectionPairs(base);
+  }
+
+  private static Stream<Arguments> provideStatementMethods() {
+    StatementTestParams params = new StatementTestParams();
+    Stream<Arguments> base = ReflectionUtils.provideMethodsForClass(Statement.class, params);
+    return withStatementPairs(base);
   }
 
   private static URL extractJarToTemp(String jarName, Path tempDir) {
