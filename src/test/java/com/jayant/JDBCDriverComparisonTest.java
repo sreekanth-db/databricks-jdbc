@@ -29,11 +29,11 @@ public class JDBCDriverComparisonTest {
       System.getProperty("COMPARATOR_MODE", "thrift-vs-sea");
 
   private static final String OLD_DRIVER_JDBC_URL =
-      "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/e3c43f3911e50d7c;UID=token;";
+      "jdbc:databricks://adb-6436897454825492.12.azuredatabricks.net:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/2f03dd43e35e2aa0;UID=token;";
   private static final String OSS_DRIVER_JDBC_URL =
-      "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/e3c43f3911e50d7c";
+      "jdbc:databricks://adb-6436897454825492.12.azuredatabricks.net:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/2f03dd43e35e2aa0";
   private static final String OSS_SEA_DRIVER_JDBC_URL =
-      "jdbc:databricks://benchmarking-prod-aws-us-west-2.cloud.databricks.com:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/e3c43f3911e50d7c;useThriftClient=0";
+      "jdbc:databricks://adb-6436897454825492.12.azuredatabricks.net:443/default;ssl=1;authMech=3;httpPath=/sql/1.0/warehouses/2f03dd43e35e2aa0;useThriftClient=0";
   private static Connection oldDriverConnection;
   private static Connection ossThriftConnection;
   private static Connection ossSeaConnection;
@@ -79,7 +79,7 @@ public class JDBCDriverComparisonTest {
 
     reporter = new TestReporter(Path.of("jdbc-comparison-report.txt"));
 
-    String queryResultSetTypesTable = "select * from main.tpch_sf100_delta.customer limit 100";
+    String queryResultSetTypesTable = "select * from samples.tpch.customer limit 100";
     // Create separate ResultSets for each comparison pair to avoid reuse issues
     if (COMPARATOR_MODE.equals("simba-vs-sea") || COMPARATOR_MODE.equals("all")) {
       oldDriverResultSet =
@@ -213,6 +213,10 @@ public class JDBCDriverComparisonTest {
       String comparisonName, Connection conn1, Connection conn2, String methodName, Object[] args) {
     assertDoesNotThrow(
         () -> {
+          System.out.printf(
+              "[%s] [%s] Running: %s(%s)%n",
+              java.time.Instant.now(), comparisonName, methodName, getStringForArgs(args));
+
           DatabaseMetaData metadata1 = conn1.getMetaData();
           DatabaseMetaData metadata2 = conn2.getMetaData();
 
@@ -322,8 +326,7 @@ public class JDBCDriverComparisonTest {
   private static Stream<Arguments> provideSQLQueries() {
     Stream<Arguments> base =
         Stream.of(
-            Arguments.of(
-                "SELECT * FROM main.tpcds_sf100_delta.catalog_sales limit 5", "TPC-DS query"));
+            Arguments.of("SELECT * FROM samples.tpcds_sf1.catalog_sales limit 5", "TPC-DS query"));
     return withConnectionPairs(base);
   }
 
