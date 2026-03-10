@@ -373,7 +373,12 @@ public class JDBCDriverComparisonTest {
 
   private static String getStringForArgs(Object[] args) {
     return Arrays.stream(args)
-        .map(o -> o == null ? String.valueOf(o) : o.toString())
+        .map(
+            o -> {
+              if (o == null) return "null";
+              if (o instanceof Object[]) return Arrays.toString((Object[]) o);
+              return o.toString();
+            })
         .collect(Collectors.joining(", "));
   }
 }
