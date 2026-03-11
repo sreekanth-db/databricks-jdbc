@@ -3,6 +3,7 @@ package com.jayant;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class TestReporter {
 
   public void generateReport() throws IOException {
     try (FileWriter writer = new FileWriter(outputPath.toFile())) {
-      writer.write("Report generated at: " + java.time.Instant.now() + "\n");
+      writer.write("Report generated at: " + Instant.now() + "\n");
       for (String url : connectionUrls) {
         writer.write(url + "\n");
       }

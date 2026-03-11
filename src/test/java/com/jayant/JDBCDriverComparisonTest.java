@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.sql.*;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -77,7 +78,8 @@ public class JDBCDriverComparisonTest {
     // OSS driver with SEA
     ossSeaConnection = DriverManager.getConnection(OSS_SEA_DRIVER_JDBC_URL, "token", pwd);
 
-    reporter = new TestReporter(Path.of("jdbc-comparison-report.txt"));
+    String timestamp = Instant.now().toString().replaceAll("[:.]+", "-");
+    reporter = new TestReporter(Path.of("jdbc-comparison-report-" + timestamp + ".txt"));
     if (COMPARATOR_MODE.equals("simba-vs-sea") || COMPARATOR_MODE.equals("all")) {
       reporter.addConnectionUrl("Old Driver (2.7.6)", OLD_DRIVER_JDBC_URL);
     }

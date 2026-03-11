@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ComparisonResult {
   public List<String> metadataDifferences;
@@ -38,7 +39,7 @@ public class ComparisonResult {
                     if (o instanceof Object[]) return Arrays.toString((Object[]) o);
                     return o.toString();
                   })
-              .collect(java.util.stream.Collectors.joining(", ")));
+              .collect(Collectors.joining(", ")));
       sb.append("\n");
     }
     sb.append("============================\n\n");
