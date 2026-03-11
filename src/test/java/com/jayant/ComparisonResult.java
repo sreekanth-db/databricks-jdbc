@@ -1,6 +1,7 @@
 package com.jayant;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,9 +30,15 @@ public class ComparisonResult {
     sb.append("Query/Method: ").append(queryOrMethod).append("\n");
     if (methodArgs.length > 0) {
       sb.append("Method Arguments: ");
-      for (Object arg : methodArgs) {
-        sb.append(arg).append(" ");
-      }
+      sb.append(
+          Arrays.stream(methodArgs)
+              .map(
+                  o -> {
+                    if (o == null) return "null";
+                    if (o instanceof Object[]) return Arrays.toString((Object[]) o);
+                    return o.toString();
+                  })
+              .collect(java.util.stream.Collectors.joining(", ")));
       sb.append("\n");
     }
     sb.append("============================\n\n");

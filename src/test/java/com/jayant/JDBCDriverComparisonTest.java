@@ -78,6 +78,13 @@ public class JDBCDriverComparisonTest {
     ossSeaConnection = DriverManager.getConnection(OSS_SEA_DRIVER_JDBC_URL, "token", pwd);
 
     reporter = new TestReporter(Path.of("jdbc-comparison-report.txt"));
+    if (COMPARATOR_MODE.equals("simba-vs-sea") || COMPARATOR_MODE.equals("all")) {
+      reporter.addConnectionUrl("Old Driver (2.7.6)", OLD_DRIVER_JDBC_URL);
+    }
+    if (COMPARATOR_MODE.equals("thrift-vs-sea") || COMPARATOR_MODE.equals("all")) {
+      reporter.addConnectionUrl("OSS Thrift", OSS_DRIVER_JDBC_URL);
+    }
+    reporter.addConnectionUrl("OSS SEA", OSS_SEA_DRIVER_JDBC_URL);
 
     String queryResultSetTypesTable = "select * from samples.tpch.customer limit 100";
     // Create separate ResultSets for each comparison pair to avoid reuse issues
