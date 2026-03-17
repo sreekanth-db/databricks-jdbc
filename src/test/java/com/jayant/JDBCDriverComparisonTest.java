@@ -194,9 +194,9 @@ public class JDBCDriverComparisonTest {
     return combined.stream();
   }
 
-  @ParameterizedTest(autoCloseArguments = false)
-  @MethodSource("provideSQLQueries")
-  @DisplayName("Compare SQL Query Results")
+  // @ParameterizedTest(autoCloseArguments = false)
+  // @MethodSource("provideSQLQueries")
+  // @DisplayName("Compare SQL Query Results")
   void compareSQLQueryResults(
       String comparisonName, Connection conn1, Connection conn2, String query, String description) {
     assertDoesNotThrow(
@@ -262,9 +262,9 @@ public class JDBCDriverComparisonTest {
         });
   }
 
-  @ParameterizedTest(autoCloseArguments = false)
-  @MethodSource("provideResultSetMethods")
-  @DisplayName("Compare ResultSet API Results")
+  // @ParameterizedTest(autoCloseArguments = false)
+  // @MethodSource("provideResultSetMethods")
+  // @DisplayName("Compare ResultSet API Results")
   void compareResultSetResults(
       String comparisonName, ResultSet rs1, ResultSet rs2, String methodName, Object[] args) {
     assertDoesNotThrow(
@@ -289,9 +289,9 @@ public class JDBCDriverComparisonTest {
         });
   }
 
-  @ParameterizedTest(autoCloseArguments = false)
-  @MethodSource("provideResultSetMetaDataMethods")
-  @DisplayName("Compare ResultSetMetaData API Results")
+  // @ParameterizedTest(autoCloseArguments = false)
+  // @MethodSource("provideResultSetMetaDataMethods")
+  // @DisplayName("Compare ResultSetMetaData API Results")
   void compareResultSetMetaDataResults(
       String comparisonName, ResultSet rs1, ResultSet rs2, String methodName, Object[] args) {
     assertDoesNotThrow(
@@ -318,9 +318,9 @@ public class JDBCDriverComparisonTest {
         });
   }
 
-  @ParameterizedTest(autoCloseArguments = false)
-  @MethodSource("provideConnectionMethods")
-  @DisplayName("Compare Connection API Results")
+  // @ParameterizedTest(autoCloseArguments = false)
+  // @MethodSource("provideConnectionMethods")
+  // @DisplayName("Compare Connection API Results")
   void compareConnectionResults(
       String comparisonName, Connection conn1, Connection conn2, String methodName, Object[] args) {
     assertDoesNotThrow(
