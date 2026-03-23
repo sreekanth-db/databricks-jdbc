@@ -1,7 +1,7 @@
-package com.comparator.config;
+package com.databricks.jdbc.comparator.config;
 
-import com.comparator.suite.StatementSelectProvider;
-import com.comparator.suite.SuiteProvider;
+import com.databricks.jdbc.comparator.suite.StatementSelectProvider;
+import com.databricks.jdbc.comparator.suite.SuiteProvider;
 
 /**
  * Identifies a category of comparator tests. Each suite maps to a {@link SuiteProvider} that

@@ -1,4 +1,4 @@
-package com.comparator.suite;
+package com.databricks.jdbc.comparator.suite;
 
 import java.util.Objects;
 

@@ -1,12 +1,12 @@
-package com.comparator;
+package com.databricks.jdbc.comparator;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import com.comparator.config.ConnectionConfig;
-import com.comparator.config.ConnectionManager;
-import com.comparator.config.TestSuite;
-import com.comparator.suite.SuiteProvider;
-import com.comparator.suite.TestCase;
+import com.databricks.jdbc.comparator.config.ConnectionConfig;
+import com.databricks.jdbc.comparator.config.ConnectionManager;
+import com.databricks.jdbc.comparator.config.TestSuite;
+import com.databricks.jdbc.comparator.suite.SuiteProvider;
+import com.databricks.jdbc.comparator.suite.TestCase;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;

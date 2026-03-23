@@ -1,7 +1,7 @@
-package com.comparator.suite;
+package com.databricks.jdbc.comparator.suite;
 
-import com.comparator.ComparisonResult;
-import com.comparator.ResultSetComparator;
+import com.databricks.jdbc.comparator.ComparisonResult;
+import com.databricks.jdbc.comparator.ResultSetComparator;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;

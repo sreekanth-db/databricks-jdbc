@@ -1,4 +1,4 @@
-package com.comparator.config;
+package com.databricks.jdbc.comparator.config;
 
 import java.util.Arrays;
 import java.util.EnumSet;

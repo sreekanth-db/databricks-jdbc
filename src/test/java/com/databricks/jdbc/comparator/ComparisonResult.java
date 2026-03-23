@@ -1,4 +1,4 @@
-package com.comparator;
+package com.databricks.jdbc.comparator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
