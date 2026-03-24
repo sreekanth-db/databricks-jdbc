@@ -20,36 +20,24 @@ public class ComplexTypesProvider implements SuiteProvider {
 
   private static final String TABLE = "comparator_tests.oss_jdbc_tests.test_result_set_types";
 
+  // All complex columns: flat + nested 3x3 + variant
+  private static final String ALL_COMPLEX_COLS =
+      "array_column, map_column, struct_column, variant_column, "
+          + "array_of_arrays_column, array_of_maps_column, array_of_structs_column, "
+          + "map_of_arrays_column, map_of_maps_column, map_of_structs_column, "
+          + "struct_with_array_column, struct_with_map_column, struct_with_struct_column";
+
   @Override
   public List<TestCase> getTestCases() {
     return Arrays.asList(
         new TestCase(
-            "SELECT array_column, map_column, struct_column, variant_column "
-                + "FROM "
-                + TABLE
-                + " WHERE id <= 7 ORDER BY id",
-            "Flat complex types (ARRAY, MAP, STRUCT, VARIANT) — edge case rows"),
+            "SELECT " + ALL_COMPLEX_COLS + " FROM " + TABLE + " WHERE id <= 7 ORDER BY id",
+            "All complex types — inline (7 edge case rows)",
+            false),
         new TestCase(
-            "SELECT array_of_arrays_column, array_of_maps_column, array_of_structs_column, "
-                + "map_of_arrays_column, map_of_maps_column, map_of_structs_column, "
-                + "struct_with_array_column, struct_with_map_column, struct_with_struct_column "
-                + "FROM "
-                + TABLE
-                + " WHERE id <= 7 ORDER BY id",
-            "Nested complex types (3x3 matrix) — edge case rows"),
-        new TestCase(
-            "SELECT array_column, map_column, struct_column, variant_column, "
-                + "array_of_arrays_column, map_of_maps_column, struct_with_struct_column "
-                + "FROM "
-                + TABLE
-                + " WHERE id = 4",
-            "Complex types with all NULLs (row 4)"),
-        new TestCase(
-            "SELECT array_column, map_column, struct_column, variant_column "
-                + "FROM "
-                + TABLE
-                + " LIMIT 1000",
-            "Flat complex types — 1K rows (inline)"));
+            "SELECT " + ALL_COMPLEX_COLS + " FROM " + TABLE + " LIMIT 20000",
+            "All complex types — CloudFetch (20K rows)",
+            true));
   }
 
   @Override
