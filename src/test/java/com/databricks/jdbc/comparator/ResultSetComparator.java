@@ -346,6 +346,41 @@ public class ResultSetComparator {
   }
 
   // ---------------------------------------------------------------------------
+  // Shared row comparison helpers (used by both streaming and list-based paths)
+  // ---------------------------------------------------------------------------
+
+  /** Returns a formatted cell mismatch string, or null if values are equal. */
+  private static String cellMismatch(int rowNum, String columnName, Object value1, Object value2) {
+    if (objectsEqual(value1, value2)) return null;
+    String type1 = value1 != null ? value1.getClass().getSimpleName() : "null";
+    String type2 = value2 != null ? value2.getClass().getSimpleName() : "null";
+    return "Row "
+        + rowNum
+        + ", Column "
+        + columnName
+        + " mismatch: "
+        + value1
+        + " ("
+        + type1
+        + ") vs "
+        + value2
+        + " ("
+        + type2
+        + ")";
+  }
+
+  /** Formats an extra row entry from column names and values (0-based array). */
+  private static String formatExtraRow(int rowNum, ResultSetMetaData md, Object[] row)
+      throws SQLException {
+    StringBuilder rowData = new StringBuilder();
+    for (int i = 0; i < md.getColumnCount(); i++) {
+      if (i > 0) rowData.append(", ");
+      rowData.append(md.getColumnName(i + 1)).append(": ").append(row[i]);
+    }
+    return "Extra row " + rowNum + ": " + rowData;
+  }
+
+  // ---------------------------------------------------------------------------
   // List-based row comparison (used after drain+filter)
   // ---------------------------------------------------------------------------
 
@@ -360,41 +395,17 @@ public class ResultSetComparator {
       Object[] r1 = rows1.get(row);
       Object[] r2 = rows2.get(row);
       for (int i = 0; i < columnCount; i++) {
-        if (!objectsEqual(r1[i], r2[i])) {
-          String type1 = r1[i] != null ? r1[i].getClass().getSimpleName() : "null";
-          String type2 = r2[i] != null ? r2[i].getClass().getSimpleName() : "null";
-          differences.add(
-              "Row "
-                  + (row + 1)
-                  + ", Column "
-                  + md1.getColumnName(i + 1)
-                  + " mismatch: "
-                  + r1[i]
-                  + " ("
-                  + type1
-                  + ")"
-                  + " vs "
-                  + r2[i]
-                  + " ("
-                  + type2
-                  + ")");
-        }
+        String diff = cellMismatch(row + 1, md1.getColumnName(i + 1), r1[i], r2[i]);
+        if (diff != null) differences.add(diff);
       }
     }
 
     if (rows1.size() != rows2.size()) {
       List<Object[]> extra = rows1.size() > rows2.size() ? rows1 : rows2;
       String which = rows1.size() > rows2.size() ? "First" : "Second";
-      int startIdx = commonRows;
-      for (int row = startIdx; row < extra.size(); row++) {
-        StringBuilder rowData = new StringBuilder();
-        ResultSetMetaData md = rows1.size() > rows2.size() ? md1 : md2;
-        int cols = md.getColumnCount();
-        for (int i = 0; i < cols; i++) {
-          if (i > 0) rowData.append(", ");
-          rowData.append(md.getColumnName(i + 1)).append(": ").append(extra.get(row)[i]);
-        }
-        differences.add("Extra row " + (row + 1) + ": " + rowData);
+      ResultSetMetaData md = rows1.size() > rows2.size() ? md1 : md2;
+      for (int row = commonRows; row < extra.size(); row++) {
+        differences.add(formatExtraRow(row + 1, md, extra.get(row)));
       }
       differences.add(which + " ResultSet has " + (extra.size() - commonRows) + " extra rows");
     }
@@ -425,29 +436,9 @@ public class ResultSetComparator {
       }
       rowCount++;
       for (int i = 1; i <= columnCount; i++) {
-        Object value1 = rs1.getObject(i);
-        Object value2 = rs2.getObject(i);
-
-        if (!objectsEqual(value1, value2)) {
-          String type1 = value1 != null ? value1.getClass().getSimpleName() : "null";
-          String type2 = value2 != null ? value2.getClass().getSimpleName() : "null";
-
-          differences.add(
-              "Row "
-                  + rowCount
-                  + ", Column "
-                  + md1.getColumnName(i)
-                  + " mismatch: "
-                  + value1
-                  + " ("
-                  + type1
-                  + ")"
-                  + " vs "
-                  + value2
-                  + " ("
-                  + type2
-                  + ")");
-        }
+        String diff =
+            cellMismatch(rowCount, md1.getColumnName(i), rs1.getObject(i), rs2.getObject(i));
+        if (diff != null) differences.add(diff);
       }
     }
 
@@ -469,15 +460,13 @@ public class ResultSetComparator {
       ResultSet rs, ResultSetMetaData md, int startingRowCount, List<String> differences)
       throws SQLException {
     int extraRows = 0;
-    StringBuilder rowData = new StringBuilder();
     do {
       extraRows++;
-      rowData.setLength(0);
-      for (int i = 1; i <= md.getColumnCount(); i++) {
-        if (i > 1) rowData.append(", ");
-        rowData.append(md.getColumnName(i)).append(": ").append(rs.getObject(i));
+      Object[] row = new Object[md.getColumnCount()];
+      for (int i = 0; i < row.length; i++) {
+        row[i] = rs.getObject(i + 1);
       }
-      differences.add("Extra row " + (startingRowCount + extraRows) + ": " + rowData);
+      differences.add(formatExtraRow(startingRowCount + extraRows, md, row));
     } while (rs.next());
     return extraRows;
   }
