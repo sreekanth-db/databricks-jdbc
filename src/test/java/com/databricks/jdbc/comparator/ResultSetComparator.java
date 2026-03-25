@@ -284,6 +284,78 @@ public class ResultSetComparator {
     return extra.toString();
   }
 
+  /**
+   * Compares pre-buffered row lists with their metadata. Use this when rows need to be
+   * filtered/sorted before comparison.
+   */
+  public static ComparisonResult compareRows(
+      String queryType,
+      String queryOrMethod,
+      Object[] methodArgs,
+      ResultSetMetaData md1,
+      List<Object[]> rows1,
+      ResultSetMetaData md2,
+      List<Object[]> rows2)
+      throws SQLException {
+    ComparisonResult result = new ComparisonResult(queryType, queryOrMethod, methodArgs);
+    result.metadataDifferences = compareMetadata(md1, md2);
+    result.dataDifferences = compareRowData(rows1, rows2, md1, md2);
+    return result;
+  }
+
+  private static List<String> compareRowData(
+      List<Object[]> rows1, List<Object[]> rows2, ResultSetMetaData md1, ResultSetMetaData md2)
+      throws SQLException {
+    List<String> differences = new ArrayList<>();
+    int columnCount = Math.min(md1.getColumnCount(), md2.getColumnCount());
+    int commonRows = Math.min(rows1.size(), rows2.size());
+
+    for (int row = 0; row < commonRows; row++) {
+      Object[] r1 = rows1.get(row);
+      Object[] r2 = rows2.get(row);
+      for (int i = 0; i < columnCount; i++) {
+        if (!objectsEqual(r1[i], r2[i])) {
+          String type1 = r1[i] != null ? r1[i].getClass().getSimpleName() : "null";
+          String type2 = r2[i] != null ? r2[i].getClass().getSimpleName() : "null";
+          differences.add(
+              "Row "
+                  + (row + 1)
+                  + ", Column "
+                  + md1.getColumnName(i + 1)
+                  + " mismatch: "
+                  + r1[i]
+                  + " ("
+                  + type1
+                  + ")"
+                  + " vs "
+                  + r2[i]
+                  + " ("
+                  + type2
+                  + ")");
+        }
+      }
+    }
+
+    if (rows1.size() != rows2.size()) {
+      List<Object[]> extra = rows1.size() > rows2.size() ? rows1 : rows2;
+      String which = rows1.size() > rows2.size() ? "First" : "Second";
+      int startIdx = commonRows;
+      for (int row = startIdx; row < extra.size(); row++) {
+        StringBuilder rowData = new StringBuilder();
+        ResultSetMetaData md = rows1.size() > rows2.size() ? md1 : md2;
+        int cols = md.getColumnCount();
+        for (int i = 0; i < cols; i++) {
+          if (i > 0) rowData.append(", ");
+          rowData.append(md.getColumnName(i + 1)).append(": ").append(extra.get(row)[i]);
+        }
+        differences.add("Extra row " + (row + 1) + ": " + rowData);
+      }
+      differences.add(which + " ResultSet has " + (extra.size() - commonRows) + " extra rows");
+    }
+
+    return differences;
+  }
+
   private static List<String> compareData(ResultSet rs1, ResultSet rs2) throws SQLException {
     List<String> differences = new ArrayList<>();
     int rowCount = 0;
