@@ -7,11 +7,29 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class ResultSetComparator {
   public static ComparisonResult compare(
       String queryType, String queryOrMethod, Object[] methodArgs, Object result1, Object result2)
+      throws SQLException {
+    return compare(queryType, queryOrMethod, methodArgs, result1, result2, Collections.emptySet());
+  }
+
+  /**
+   * Compares two results with optional schema row filtering. When skipSchemas is non-empty and both
+   * results are ResultSets, rows matching TABLE_SCHEM values in skipSchemas are excluded before
+   * comparison.
+   */
+  public static ComparisonResult compare(
+      String queryType,
+      String queryOrMethod,
+      Object[] methodArgs,
+      Object result1,
+      Object result2,
+      Set<String> skipSchemas)
       throws SQLException {
     ComparisonResult result = new ComparisonResult(queryType, queryOrMethod, methodArgs);
     result.metadataDifferences = new ArrayList<>();
@@ -24,11 +42,22 @@ public class ResultSetComparator {
     if (result1 instanceof ResultSet && result2 instanceof ResultSet) {
       ResultSet rs1 = (ResultSet) result1;
       ResultSet rs2 = (ResultSet) result2;
-      // Compare metadata
-      result.metadataDifferences = compareMetadata(rs1.getMetaData(), rs2.getMetaData());
+      ResultSetMetaData md1 = rs1.getMetaData();
+      ResultSetMetaData md2 = rs2.getMetaData();
 
-      // Compare data
-      result.dataDifferences = compareData(rs1, rs2);
+      // Compare metadata (shared for both paths)
+      result.metadataDifferences = compareMetadata(md1, md2);
+
+      // Compare data — drain+filter path when skipSchemas is set, streaming otherwise
+      if (!skipSchemas.isEmpty()) {
+        List<Object[]> rows1 = drainResultSet(rs1, md1.getColumnCount());
+        List<Object[]> rows2 = drainResultSet(rs2, md2.getColumnCount());
+        filterBySchema(rows1, md1, skipSchemas);
+        filterBySchema(rows2, md2, skipSchemas);
+        result.dataDifferences = compareRowData(rows1, rows2, md1, md2);
+      } else {
+        result.dataDifferences = compareData(rs1, rs2);
+      }
     } else if (!(result1 instanceof ResultSet) && !(result2 instanceof ResultSet)) {
       // Both are not of type ResultSet
       if (result1 == null || !resultIsSame(result1, result2)) {
@@ -284,24 +313,41 @@ public class ResultSetComparator {
     return extra.toString();
   }
 
-  /**
-   * Compares pre-buffered row lists with their metadata. Use this when rows need to be
-   * filtered/sorted before comparison.
-   */
-  public static ComparisonResult compareRows(
-      String queryType,
-      String queryOrMethod,
-      Object[] methodArgs,
-      ResultSetMetaData md1,
-      List<Object[]> rows1,
-      ResultSetMetaData md2,
-      List<Object[]> rows2)
-      throws SQLException {
-    ComparisonResult result = new ComparisonResult(queryType, queryOrMethod, methodArgs);
-    result.metadataDifferences = compareMetadata(md1, md2);
-    result.dataDifferences = compareRowData(rows1, rows2, md1, md2);
-    return result;
+  // ---------------------------------------------------------------------------
+  // Drain + filter helpers (used when skipSchemas is non-empty)
+  // ---------------------------------------------------------------------------
+
+  private static List<Object[]> drainResultSet(ResultSet rs, int columnCount) throws SQLException {
+    List<Object[]> rows = new ArrayList<>();
+    while (rs.next()) {
+      Object[] row = new Object[columnCount];
+      for (int i = 0; i < columnCount; i++) {
+        row[i] = rs.getObject(i + 1);
+      }
+      rows.add(row);
+    }
+    return rows;
   }
+
+  private static void filterBySchema(
+      List<Object[]> rows, ResultSetMetaData md, Set<String> skipSchemas) throws SQLException {
+    int schemaCol = findColumnIndex(md, "TABLE_SCHEM");
+    if (schemaCol < 0) return;
+    rows.removeIf(row -> row[schemaCol] != null && skipSchemas.contains(row[schemaCol].toString()));
+  }
+
+  private static int findColumnIndex(ResultSetMetaData md, String columnName) throws SQLException {
+    for (int i = 1; i <= md.getColumnCount(); i++) {
+      if (columnName.equalsIgnoreCase(md.getColumnName(i))) {
+        return i - 1; // 0-based for array access
+      }
+    }
+    return -1;
+  }
+
+  // ---------------------------------------------------------------------------
+  // List-based row comparison (used after drain+filter)
+  // ---------------------------------------------------------------------------
 
   private static List<String> compareRowData(
       List<Object[]> rows1, List<Object[]> rows2, ResultSetMetaData md1, ResultSetMetaData md2)
@@ -355,6 +401,10 @@ public class ResultSetComparator {
 
     return differences;
   }
+
+  // ---------------------------------------------------------------------------
+  // Streaming row comparison (used when no filtering needed)
+  // ---------------------------------------------------------------------------
 
   private static List<String> compareData(ResultSet rs1, ResultSet rs2) throws SQLException {
     List<String> differences = new ArrayList<>();

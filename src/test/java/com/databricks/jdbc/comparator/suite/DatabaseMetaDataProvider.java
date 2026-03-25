@@ -5,8 +5,6 @@ import com.databricks.jdbc.comparator.ResultSetComparator;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,16 +73,8 @@ public class DatabaseMetaDataProvider implements SuiteProvider {
       Object result2 = ReflectionUtils.executeMethod(md2, methodName, args);
 
       try {
-        ComparisonResult sub;
-        if (!SKIP_SCHEMAS.isEmpty()
-            && result1 instanceof ResultSet
-            && result2 instanceof ResultSet) {
-          sub =
-              compareWithSchemaFilter(
-                  label, methodName, args, (ResultSet) result1, (ResultSet) result2);
-        } else {
-          sub = ResultSetComparator.compare(label, methodName, args, result1, result2);
-        }
+        ComparisonResult sub =
+            ResultSetComparator.compare(label, methodName, args, result1, result2, SKIP_SCHEMAS);
 
         // Prefix each diff with the args for traceability
         for (String diff : sub.metadataDifferences) {
@@ -104,53 +94,6 @@ public class DatabaseMetaDataProvider implements SuiteProvider {
     result.metadataDifferences = metadataDiffs;
     result.dataDifferences = dataDiffs;
     return result;
-  }
-
-  /**
-   * Drains both ResultSets into row lists, filters out rows matching SKIP_SCHEMAS, then compares.
-   */
-  private static ComparisonResult compareWithSchemaFilter(
-      String label, String methodName, Object[] args, ResultSet rs1, ResultSet rs2)
-      throws SQLException {
-    ResultSetMetaData rsMd1 = rs1.getMetaData();
-    ResultSetMetaData rsMd2 = rs2.getMetaData();
-
-    List<Object[]> rows1 = drainResultSet(rs1, rsMd1.getColumnCount());
-    List<Object[]> rows2 = drainResultSet(rs2, rsMd2.getColumnCount());
-
-    filterBySchema(rows1, rsMd1);
-    filterBySchema(rows2, rsMd2);
-
-    return ResultSetComparator.compareRows(label, methodName, args, rsMd1, rows1, rsMd2, rows2);
-  }
-
-  private static List<Object[]> drainResultSet(ResultSet rs, int columnCount) throws SQLException {
-    List<Object[]> rows = new ArrayList<>();
-    while (rs.next()) {
-      Object[] row = new Object[columnCount];
-      for (int i = 0; i < columnCount; i++) {
-        row[i] = rs.getObject(i + 1);
-      }
-      rows.add(row);
-    }
-    return rows;
-  }
-
-  private static void filterBySchema(List<Object[]> rows, ResultSetMetaData md)
-      throws SQLException {
-    int schemaCol = findColumnIndex(md, "TABLE_SCHEM");
-    if (schemaCol < 0) return;
-    rows.removeIf(
-        row -> row[schemaCol] != null && SKIP_SCHEMAS.contains(row[schemaCol].toString()));
-  }
-
-  private static int findColumnIndex(ResultSetMetaData md, String columnName) throws SQLException {
-    for (int i = 1; i <= md.getColumnCount(); i++) {
-      if (columnName.equalsIgnoreCase(md.getColumnName(i))) {
-        return i - 1; // 0-based for array access
-      }
-    }
-    return -1;
   }
 
   private static String formatArgs(Object[] args) {
