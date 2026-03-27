@@ -71,13 +71,14 @@ public enum ConnectionConfig {
       null,
       EnumSet.of(TestSuite.VOLUME_OPERATIONS)),
 
-// TODO: Uncomment when a pro warehouse ID is available
-// PRO_WAREHOUSE(
-//     "Pro warehouse",
-//     Map.of("EnableComplexDatatypeSupport", "1", "EnableGeoSpatialSupport", "1"),
-//     "/sql/1.0/warehouses/<pro-warehouse-id>",
-//     EnumSet.of(TestSuite.STATEMENT_SELECT, TestSuite.COMPLEX_TYPES, TestSuite.GEOSPATIAL)),
-;
+  PRO_WAREHOUSE(
+      "Pro warehouse",
+      Map.of("EnableComplexDatatypeSupport", "1", "EnableGeoSpatialSupport", "1"),
+      System.getProperty("PRO_WAREHOUSE_ID") != null
+          ? "/sql/1.0/warehouses/" + System.getProperty("PRO_WAREHOUSE_ID")
+          : null,
+      EnumSet.of(TestSuite.STATEMENT_SELECT, TestSuite.COMPLEX_TYPES, TestSuite.GEOSPATIAL)),
+  ;
 
   private static final String CONFIG_FILTER_PROPERTY = "CONNECTION_CONFIG";
 
@@ -123,6 +124,7 @@ public enum ConnectionConfig {
 
     return Arrays.stream(values())
         .filter(c -> allowed == null || allowed.contains(c.name()))
+        .filter(c -> c != PRO_WAREHOUSE || c.httpPathOverride != null)
         .collect(Collectors.toList());
   }
 
