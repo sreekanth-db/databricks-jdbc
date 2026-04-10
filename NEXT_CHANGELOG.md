@@ -8,6 +8,7 @@
 ### Updated
 
 ### Fixed
+- Fixed batch inserts failing with "Statement is closed" when using SEA client (`useThriftClient=0`) for multi-chunk batches or individual fallback execution. Each batch chunk now uses a fresh statement to avoid server-side statement lifecycle interference.
 - Fixed primitive types within complex types (ARRAY, MAP, STRUCT) not being correctly parsed when Arrow serialization uses alternate formats: TIMESTAMP/TIMESTAMP_NTZ as epoch microseconds or component arrays, and BINARY as base64-encoded strings.
 - Fixed `PARSE_SYNTAX_ERROR` for column names containing special characters (e.g., dots) when `EnableBatchedInserts` is enabled, by re-quoting column names with backticks in reconstructed multi-row INSERT statements.
 - Fixed Volume ingestion for SEA mode, which was broken due to statement being closed prematurely.

@@ -116,12 +116,7 @@ public class DatabricksPreparedStatement extends DatabricksStatement implements 
 
     // Delegate batch execution to the dedicated batch executor
     PreparedStatementBatchExecutor batchExecutor =
-        new PreparedStatementBatchExecutor(
-            sql,
-            connection,
-            interpolateParameters,
-            (sqlToExecute, params, statementType, closeStatement) ->
-                executeInternal(sqlToExecute, params, statementType, closeStatement));
+        new PreparedStatementBatchExecutor(sql, connection, interpolateParameters);
 
     long[] updateCounts = batchExecutor.executeBatch(databricksBatchParameterMetaData);
 

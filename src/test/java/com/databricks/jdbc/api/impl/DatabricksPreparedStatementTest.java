@@ -256,7 +256,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenReturn(resultSet);
     lenient()
@@ -315,7 +315,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenThrow(new SQLException());
 
@@ -353,7 +353,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenReturn(resultSet);
     lenient()
@@ -393,7 +393,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenThrow(new SQLException());
 
@@ -700,7 +700,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenReturn(resultSet);
     lenient()
@@ -767,7 +767,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenReturn(resultSet);
     lenient().when(resultSet.getUpdateCount()).thenReturn(1L); // Each execution affects 1 row
@@ -813,7 +813,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenReturn(resultSet);
     lenient()
@@ -970,7 +970,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenReturn(resultSet);
     lenient().when(resultSet.getUpdateCount()).thenReturn(200L);
@@ -1013,7 +1013,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenReturn(resultSet);
     lenient().when(resultSet.getUpdateCount()).thenReturn((long) rowCount);
@@ -1058,7 +1058,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenReturn(resultSet);
     lenient().when(resultSet.getUpdateCount()).thenReturn(50L);
@@ -1077,7 +1077,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any());
   }
 
@@ -1119,7 +1119,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenReturn(resultSet);
     lenient().when(resultSet.getUpdateCount()).thenReturn(64L);
@@ -1161,7 +1161,7 @@ public class DatabricksPreparedStatementTest {
             any(HashMap.class),
             eq(StatementType.UPDATE),
             any(IDatabricksSession.class),
-            eq(statement),
+            any(),
             any()))
         .thenReturn(resultSet);
     lenient().when(resultSet.getUpdateCount()).thenReturn(2L);

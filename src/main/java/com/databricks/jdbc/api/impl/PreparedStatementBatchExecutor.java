@@ -22,27 +22,35 @@ class PreparedStatementBatchExecutor {
   private final String sql;
   private final DatabricksConnection connection;
   private final boolean interpolateParameters;
-  private final StatementExecutor statementExecutor;
-
-  @FunctionalInterface
-  interface StatementExecutor {
-    DatabricksResultSet execute(
-        String sql,
-        Map<Integer, ImmutableSqlParameter> params,
-        StatementType statementType,
-        boolean closeStatement)
-        throws SQLException;
-  }
 
   PreparedStatementBatchExecutor(
-      String sql,
-      DatabricksConnection connection,
-      boolean interpolateParameters,
-      StatementExecutor statementExecutor) {
+      String sql, DatabricksConnection connection, boolean interpolateParameters) {
     this.sql = sql;
     this.connection = connection;
     this.interpolateParameters = interpolateParameters;
-    this.statementExecutor = statementExecutor;
+  }
+
+  /**
+   * Executes a SQL statement using a fresh, short-lived statement and returns the update count.
+   * Each call creates a new DatabricksStatement so that server-side statement lifecycle (e.g., the
+   * SEA server returning CLOSED after DML) does not interfere with subsequent executions in the
+   * same batch. The update count is extracted before closing the statement since closing also
+   * closes the result set.
+   */
+  private long executeWithNewStatement(String sql, Map<Integer, ImmutableSqlParameter> params)
+      throws SQLException {
+    DatabricksStatement chunkStatement = new DatabricksStatement(connection);
+    try {
+      DatabricksResultSet resultSet =
+          chunkStatement.executeInternal(sql, params, StatementType.UPDATE, true);
+      return resultSet.getUpdateCount();
+    } finally {
+      try {
+        chunkStatement.close();
+      } catch (SQLException closeEx) {
+        LOGGER.debug("Error closing chunk statement: {}", closeEx.getMessage());
+      }
+    }
   }
 
   long[] executeBatch(List<DatabricksParameterMetaData> batchParameterMetaData)
@@ -145,7 +153,7 @@ class PreparedStatementBatchExecutor {
                 : multiRowSql;
         Map<Integer, ImmutableSqlParameter> paramsToSend =
             interpolateParameters ? new HashMap<>() : chunkParams;
-        statementExecutor.execute(sqlToExecute, paramsToSend, StatementType.UPDATE, false);
+        executeWithNewStatement(sqlToExecute, paramsToSend);
 
         // Set update counts for this chunk (each row typically affects 1 row)
         for (int i = startIndex; i < endIndex; i++) {
@@ -180,13 +188,8 @@ class PreparedStatementBatchExecutor {
       DatabricksParameterMetaData databricksParameterMetaData =
           batchParameterMetaData.get(sqlQueryIndex);
       try {
-        DatabricksResultSet resultSet =
-            statementExecutor.execute(
-                sql,
-                databricksParameterMetaData.getParameterBindings(),
-                StatementType.UPDATE,
-                false);
-        largeUpdateCount[sqlQueryIndex] = resultSet.getUpdateCount();
+        largeUpdateCount[sqlQueryIndex] =
+            executeWithNewStatement(sql, databricksParameterMetaData.getParameterBindings());
       } catch (Exception e) {
         LOGGER.error(
             "Error executing batch update for index {}: {}", sqlQueryIndex, e.getMessage(), e);
