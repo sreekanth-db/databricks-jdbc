@@ -1,0 +1,38 @@
+{
+  "id" : "4e85c8e2-3e72-4eb2-8704-834c877fa0d6",
+  "name" : "api_2.0_sql_statements",
+  "request" : {
+    "url" : "/api/2.0/sql/statements/",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalToJson" : "{\"statement\":\"INSERT INTO main.jdbc_test_schema.ps_batch_clear_table (id, col1, col2) VALUES (?, ?, ?)\",\"warehouse_id\":\"dd43ee29fedd958d\",\"session_id\":\"01f13709-6449-1515-8d5e-0960b9f7986f\",\"disposition\":\"EXTERNAL_LINKS\",\"format\":\"ARROW_STREAM\",\"on_wait_timeout\":\"CONTINUE\",\"parameters\":[{\"type\":\"INT\",\"value\":\"10\",\"ordinal\":1},{\"type\":\"STRING\",\"value\":\"fresh1\",\"ordinal\":2},{\"type\":\"STRING\",\"value\":\"fresh2\",\"ordinal\":3}],\"result_compression\":\"LZ4_FRAME\"}",
+      "ignoreArrayOrder" : true,
+      "ignoreExtraElements" : true
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"statement_id\":\"01f13709-75d7-15fc-8c91-d74aeae485ea\",\"status\":{\"state\":\"SUCCEEDED\"},\"manifest\":{\"format\":\"ARROW_STREAM\",\"schema\":{\"column_count\":2,\"columns\":[{\"name\":\"num_affected_rows\",\"type_text\":\"BIGINT\",\"type_name\":\"LONG\",\"position\":0},{\"name\":\"num_inserted_rows\",\"type_text\":\"BIGINT\",\"type_name\":\"LONG\",\"position\":1}]},\"total_chunk_count\":1,\"chunks\":[{\"chunk_index\":0,\"row_offset\":0,\"row_count\":1,\"byte_count\":382}],\"total_row_count\":1,\"total_byte_count\":382,\"truncated\":false,\"result_compression\":\"LZ4_FRAME\"},\"result\":{\"external_links\":[{\"chunk_index\":0,\"row_offset\":0,\"row_count\":1,\"byte_count\":382,\"external_link\":\"https://e2-dogfood-core.s3.us-west-2.amazonaws.com/oregon-staging/6051921418418893.jobs/sql/extended/results_2026-04-14T08%3A22%3A01Z_c1a81b3d-bc07-4a7c-b031-b76b0f76207f?[REDACTED]X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260413T072201Z&X-Amz-SignedHeaders=host&X-Amz-Expires=899&[REDACTED]X-Amz-Signature=0bbd53d242b8d57550bf3481e5977967d09b3fd66940f576f71097027513df86\",\"expiration\":\"2026-04-13T07:37:01.695Z\"}]}}",
+    "headers" : {
+      "x-request-id" : "42e27c2c-f44e-46b9-a8e9-51f3b89b9fbd",
+      "date" : "Mon, 13 Apr 2026 07:22:01 GMT",
+      "server" : "databricks",
+      "x-databricks-popp-response-code-details" : "via_upstream",
+      "x-databricks-shard-debug" : "oregon-staging",
+      "vary" : "Accept-Encoding",
+      "x-databricks-popp-fast-path-routing-reason" : "not_eligible",
+      "x-databricks-popp-shadow-routing-reason" : "spog-domain-checker-false",
+      "x-databricks-upstream-cluster" : "oregon-staging-h2",
+      "x-databricks-org-id" : "6051921418418893",
+      "strict-transport-security" : "max-age=31536000; includeSubDomains; preload",
+      "x-content-type-options" : "nosniff",
+      "x-databricks-popp-routing-reason" : "deployment-name",
+      "content-type" : "application/json",
+      "server-timing" : "request_id;dur=0;desc=\"42e27c2c-f44e-46b9-a8e9-51f3b89b9fbd\", client_protocol;dur=0;desc=\"HTTP/1.1\"",
+      "alt-svc" : "h3=\":443\"; ma=86400, h3-29=\":443\"; ma=86400",
+      "x-databricks-apiproxy-response-code-details" : "via_upstream"
+    }
+  },
+  "uuid" : "4e85c8e2-3e72-4eb2-8704-834c877fa0d6",
+  "insertionIndex" : 7
+}
