@@ -1,5 +1,5 @@
 {
-  "id" : "6fc133f3-ca30-4139-9ab4-3c60b88357fd",
+  "id" : "bc5f328d-e98c-440f-9989-e4c0e00e517d",
   "name" : "sql_protocolv1_o_6051921418418893_0819-204509-hill72",
   "request" : {
     "url" : "/sql/protocolv1/o/6051921418418893/0819-204509-hill72",
@@ -10,14 +10,14 @@
   },
   "response" : {
     "status" : 200,
-    "base64Body" : "gAEAAgAAAAtPcGVuU2Vzc2lvbgAAAAEMAAAMAAEIAAEAAAAAAAgAAgAApQkMAAMMAAELAAEAAAAQVPLIttI5S8eWRr/RY1j0BgsAAgAAABDSKhn7d5tLf5KUtYozfNIxBg0BAAAACA0BAAClCQANAAQLCwAAAAAMBQQLAAEAAAAFc3BhcmsLAAIAAAAHZGVmYXVsdAACBQUBAAA=",
+    "base64Body" : "gAEAAgAAAAtPcGVuU2Vzc2lvbgAAAAEMAAAMAAEIAAEAAAAAAAgAAgAApQkMAAMMAAELAAEAAAAQ21MItJYTSIau+0/Kcl54WQsAAgAAABB7UemsekdM5pD+Z96WrQdLBg0BAAAACA0BAAClCQANAAQLCwAAAAAMBQQLAAEAAAAFc3BhcmsLAAIAAAAHZGVmYXVsdAACBQUBAAA=",
     "headers" : {
-      "x-request-id" : "0b7ef845-8478-4209-8661-800e414e306e",
-      "date" : "Tue, 17 Feb 2026 15:13:38 GMT",
+      "x-request-id" : "b055bb3a-7278-43f0-90ec-ab2c5abf85c0",
+      "date" : "Mon, 13 Apr 2026 07:39:02 GMT",
       "server" : "databricks",
       "x-databricks-popp-response-code-details" : "via_upstream",
       "x-databricks-shard-debug" : "oregon-staging",
-      "x-databricks-popp-fast-path-routing-reason" : "not_possible_fast_path_token",
+      "x-databricks-popp-fast-path-routing-reason" : "not_eligible",
       "x-frame-options" : "SAMEORIGIN",
       "x-databricks-popp-shadow-routing-reason" : "spog-domain-checker-false",
       "x-databricks-upstream-cluster" : "oregon-staging-h2",
@@ -27,11 +27,13 @@
       "x-xss-protection" : "1; mode=block",
       "x-databricks-popp-routing-reason" : "deployment-name",
       "content-type" : "application/x-thrift",
-      "server-timing" : "request_id;dur=0;desc=\"0b7ef845-8478-4209-8661-800e414e306e\", client_protocol;dur=0;desc=\"HTTP/1.1\"",
-      "alt-svc" : "h3=\":5443\"; ma=86400, h3-29=\":5443\"; ma=86400",
+      "server-timing" : "request_id;dur=0;desc=\"b055bb3a-7278-43f0-90ec-ab2c5abf85c0\", client_protocol;dur=0;desc=\"HTTP/1.1\"",
+      "alt-svc" : "h3=\":443\"; ma=86400, h3-29=\":443\"; ma=86400",
       "x-databricks-apiproxy-response-code-details" : "via_upstream"
     }
   },
-  "uuid" : "6fc133f3-ca30-4139-9ab4-3c60b88357fd",
-  "insertionIndex" : 124
+  "uuid" : "bc5f328d-e98c-440f-9989-e4c0e00e517d",
+  "scenarioName" : "scenario-1-sql-protocolv1-o-6051921418418893-0819-204509-hill72",
+  "requiredScenarioState" : "scenario-1-sql-protocolv1-o-6051921418418893-0819-204509-hill72-2",
+  "insertionIndex" : 10
 }

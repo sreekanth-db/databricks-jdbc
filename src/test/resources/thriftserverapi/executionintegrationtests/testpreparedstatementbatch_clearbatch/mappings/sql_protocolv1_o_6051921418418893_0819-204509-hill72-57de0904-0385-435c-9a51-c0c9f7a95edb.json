@@ -1,0 +1,42 @@
+{
+  "id" : "57de0904-0385-435c-9a51-c0c9f7a95edb",
+  "name" : "sql_protocolv1_o_6051921418418893_0819-204509-hill72",
+  "request" : {
+    "url" : "/sql/protocolv1/o/6051921418418893/0819-204509-hill72",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "binaryEqualTo" : "gAEAAQAAAAtPcGVuU2Vzc2lvbgAAAAEMAAEIAAH////5DQAECwsAAAAACgUCAAAAAAAApQkMBQQLAAEAAAAFU1BBUksLAAIAAAAHZGVmYXVsdAACBQUBAAA="
+    } ]
+  },
+  "response" : {
+    "status" : 503,
+    "base64Body" : "gAEAAwAAABdTcWxQcm94eVNlcnZsZXRSZXNwb25zZQAAAAALAAEAAAChVEVNUE9SQVJJTFlfVU5BVkFJTEFCTEU6IENsdXN0ZXIgMDgxOS0yMDQ1MDktaGlsbDcyIGlzIHRlbXBvcmFyaWx5IHVuYXZhaWxhYmxlLiBUaGUgY3VycmVudCBjbHVzdGVyIHN0YXRlIGlzIFBlbmRpbmcuIFBsZWFzZSByZXRyeSB5b3VyIHJlcXVlc3QgYWZ0ZXIgMzAgc2Vjb25kcy4IAAIAAAAAAA==",
+    "headers" : {
+      "x-request-id" : "185543df-a9f0-4e75-9b19-a34a267262e3",
+      "date" : "Mon, 13 Apr 2026 07:38:31 GMT",
+      "server" : "databricks",
+      "x-databricks-popp-response-code-details" : "via_upstream",
+      "x-databricks-shard-debug" : "oregon-staging",
+      "x-databricks-popp-fast-path-routing-reason" : "not_eligible",
+      "x-frame-options" : "SAMEORIGIN",
+      "x-databricks-popp-shadow-routing-reason" : "spog-domain-checker-false",
+      "x-databricks-upstream-cluster" : "oregon-staging-h2",
+      "x-databricks-org-id" : "6051921418418893",
+      "retry-after" : "30",
+      "strict-transport-security" : "max-age=31536000; includeSubDomains; preload",
+      "x-content-type-options" : "nosniff",
+      "x-xss-protection" : "1; mode=block",
+      "x-databricks-popp-routing-reason" : "deployment-name",
+      "content-type" : "application/x-thrift",
+      "server-timing" : "request_id;dur=0;desc=\"185543df-a9f0-4e75-9b19-a34a267262e3\", client_protocol;dur=0;desc=\"HTTP/1.1\"",
+      "alt-svc" : "h3=\":443\"; ma=86400, h3-29=\":443\"; ma=86400",
+      "x-databricks-apiproxy-response-code-details" : "via_upstream",
+      "x-thriftserver-error-message" : "TEMPORARILY_UNAVAILABLE: Cluster 0819-204509-hill72 is temporarily unavailable. The current cluster state is Pending. Please retry your request after 30 seconds."
+    }
+  },
+  "uuid" : "57de0904-0385-435c-9a51-c0c9f7a95edb",
+  "scenarioName" : "scenario-1-sql-protocolv1-o-6051921418418893-0819-204509-hill72",
+  "requiredScenarioState" : "Started",
+  "newScenarioState" : "scenario-1-sql-protocolv1-o-6051921418418893-0819-204509-hill72-2",
+  "insertionIndex" : 11
+}
