@@ -307,7 +307,7 @@ public class DatabricksCallableStatementTest {
               any(HashMap.class),
               eq(StatementType.UPDATE),
               any(IDatabricksSession.class),
-              eq(stmt),
+              any(),
               any()))
           .thenReturn(resultSet);
 
