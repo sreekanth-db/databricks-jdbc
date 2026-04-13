@@ -336,4 +336,15 @@ class InsertStatementParserTest {
         "INSERT INTO catalog.schema.`my-table` (`id`, `name`, `value`) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?)";
     assertEquals(expected, multiRowSql);
   }
+
+  @Test
+  void testParseInsertWithEscapedBackticksInTableName() {
+    // Table names containing literal backticks use doubled backticks as escape: `my``table`
+    String sql = "INSERT INTO catalog.schema.`my``table` (id, name) VALUES (?, ?)";
+    InsertInfo info = InsertStatementParser.parseInsert(sql);
+
+    assertNotNull(info);
+    assertEquals("catalog.schema.`my``table`", info.getTableName());
+    assertEquals(Arrays.asList("id", "name"), info.getColumns());
+  }
 }
