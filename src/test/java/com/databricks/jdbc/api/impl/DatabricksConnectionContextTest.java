@@ -813,7 +813,7 @@ class DatabricksConnectionContextTest {
     DatabricksConnectionContext connectionContext =
         (DatabricksConnectionContext)
             DatabricksConnectionContext.parse(TestConstants.VALID_URL_1, properties);
-    assertTrue(connectionContext.isSqlExecDirectResultsEnabled());
+    assertTrue(connectionContext.getDirectResultMode());
 
     // Test when EnableSQLExecDirectResults=1
     String urlWithDirectResults =
@@ -822,7 +822,7 @@ class DatabricksConnectionContextTest {
     connectionContext =
         (DatabricksConnectionContext)
             DatabricksConnectionContext.parse(urlWithDirectResults, properties);
-    assertTrue(connectionContext.isSqlExecDirectResultsEnabled());
+    assertTrue(connectionContext.getDirectResultMode());
 
     // Test when EnableSQLExecDirectResults=0
     String urlWithoutDirectResults =
@@ -831,7 +831,7 @@ class DatabricksConnectionContextTest {
     connectionContext =
         (DatabricksConnectionContext)
             DatabricksConnectionContext.parse(urlWithoutDirectResults, properties);
-    assertFalse(connectionContext.isSqlExecDirectResultsEnabled());
+    assertFalse(connectionContext.getDirectResultMode());
   }
 
   @Test
