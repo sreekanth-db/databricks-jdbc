@@ -129,22 +129,25 @@ public class RemoteChunkProvider extends AbstractRemoteChunkProvider<ArrowResult
   /** {@inheritDoc} */
   @Override
   protected void doClose() {
-    LOGGER.info(
+    LOGGER.debug(
         "doClose() called — shutting down executor and releasing all {} chunks (thread: {})",
         chunkIndexToChunksMap.size(),
         Thread.currentThread().getName());
     isClosed = true;
-    chunkDownloaderExecutorService.shutdownNow();
-    // Wait for download threads to finish error handling before releasing chunks.
-    // After shutdownNow() interrupts threads, they exit their retry sleep and process
-    // the error path (catch → finally → setStatus) in milliseconds. 3 seconds is a
-    // conservative upper bound to avoid racing with that error handling path.
-    try {
-      if (!chunkDownloaderExecutorService.awaitTermination(3, TimeUnit.SECONDS)) {
-        LOGGER.warn("Download threads did not terminate within timeout");
+    if (chunkDownloaderExecutorService != null) {
+      chunkDownloaderExecutorService.shutdownNow();
+      // Wait for download threads to finish error handling before releasing chunks.
+      // After shutdownNow() interrupts threads, they exit their retry sleep and process
+      // the error path (catch → finally → setStatus) in milliseconds. 3 seconds is a
+      // conservative upper bound to avoid racing with that error handling path.
+      try {
+        if (!chunkDownloaderExecutorService.awaitTermination(3, TimeUnit.SECONDS)) {
+          LOGGER.warn("Download threads did not terminate within timeout");
+        }
+      } catch (InterruptedException e) {
+        LOGGER.error(e, "Interrupted while waiting for download threads to terminate");
+        Thread.currentThread().interrupt();
       }
-    } catch (InterruptedException e) {
-      LOGGER.error(e, "Interrupted while waiting for download threads to terminate");
     }
     chunkIndexToChunksMap.values().forEach(ArrowResultChunk::releaseChunk);
     DatabricksThreadContextHolder.clearStatementInfo();

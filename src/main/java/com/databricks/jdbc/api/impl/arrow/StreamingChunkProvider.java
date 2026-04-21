@@ -287,6 +287,7 @@ public class StreamingChunkProvider implements ChunkProvider {
         }
       } catch (InterruptedException e) {
         LOGGER.error(e, "Interrupted while waiting for download threads to terminate");
+        Thread.currentThread().interrupt();
       }
     }
 
