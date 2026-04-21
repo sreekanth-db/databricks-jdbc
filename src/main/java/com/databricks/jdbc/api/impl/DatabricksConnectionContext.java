@@ -478,6 +478,10 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
     if (!isCloudFetchEnabled()) {
       return DatabricksClientType.THRIFT;
     }
+    // TreatMetadataCatalogNameAsPattern is a Thrift-only metadata behavior
+    if (treatMetadataCatalogNameAsPattern()) {
+      return DatabricksClientType.THRIFT;
+    }
     // Check feature flag to determine if SEA client should be enabled
     if (DatabricksDriverFeatureFlagsContextFactory.getInstance(this)
         .isFeatureEnabled(SQL_EXEC_FLAG_NAME)) {

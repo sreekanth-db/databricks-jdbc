@@ -978,6 +978,25 @@ class DatabricksConnectionContextTest {
     assertEquals(DatabricksClientType.THRIFT, connectionContext.getClientType());
   }
 
+  @Test
+  public void testClientTypeWhenTreatMetadataCatalogNameAsPatternEnabled()
+      throws DatabricksSQLException {
+    String url =
+        "jdbc:databricks://sample-host.cloud.databricks.com:9999/default;AuthMech=3;"
+            + "httpPath=/sql/1.0/warehouses/9999999999999999;EnableArrow=1;"
+            + "EnableQueryResultDownload=1;TreatMetadataCatalogNameAsPattern=1";
+    DatabricksConnectionContext connectionContext =
+        (DatabricksConnectionContext) DatabricksConnectionContext.parse(url, properties);
+
+    // Even with SEA feature flag enabled, Thrift should win because
+    // TreatMetadataCatalogNameAsPattern is a Thrift-only metadata behavior.
+    Map<String, String> flags = new HashMap<>();
+    flags.put("databricks.partnerplatform.clientConfigsFeatureFlags.enableSqlExecForJdbc", "true");
+    DatabricksDriverFeatureFlagsContextFactory.setFeatureFlagsContext(connectionContext, flags);
+
+    assertEquals(DatabricksClientType.THRIFT, connectionContext.getClientType());
+  }
+
   // ===== setClientType Override Tests =====
 
   @Test
