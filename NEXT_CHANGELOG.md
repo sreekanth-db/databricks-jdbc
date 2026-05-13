@@ -13,6 +13,7 @@
 ### Added
 
 ### Updated
+- Enabled native geospatial type support (`GEOMETRY` and `GEOGRAPHY`) by default. `getObject()` now returns `IGeometry`/`IGeography` instances instead of EWKT strings. Set `EnableGeoSpatialSupport=0` to restore the previous behavior.
 - `EnableGeoSpatialSupport` no longer requires `EnableComplexDatatypeSupport=1`. Geospatial types (GEOMETRY, GEOGRAPHY) can now be enabled independently of complex type support (ARRAY, MAP, STRUCT).
 - Arrow schema deserialization failures (Thrift metadata path) now surface a dedicated driver error code `ARROW_SCHEMA_PARSING_ERROR` (vendor code `22000`) and a proper SQLSTATE `22000` (Data Exception) on the thrown `SQLException`, instead of the generic `RESULT_SET_ERROR` (1004) and the enum name as SQLSTATE. The exception message is unchanged.
 
