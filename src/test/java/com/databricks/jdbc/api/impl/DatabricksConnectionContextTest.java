@@ -88,6 +88,40 @@ class DatabricksConnectionContextTest {
   }
 
   @Test
+  public void testRedactConnectionURL_masksSecretsKeepsRest() {
+    String url =
+        "jdbc:databricks://host.databricks.com:443/default;transportMode=https;ssl=1;"
+            + "AuthMech=3;httpPath=/sql/1.0/warehouses/abc;UID=token;"
+            + "PWD=dapiSECRET;OAuth2Secret=clientSecretVal;Auth_AccessToken=tokenVal";
+
+    String redacted = DatabricksConnectionContext.redactConnectionURL(url);
+
+    // Secrets masked.
+    assertFalse(redacted.contains("dapiSECRET"));
+    assertFalse(redacted.contains("clientSecretVal"));
+    assertFalse(redacted.contains("tokenVal"));
+    assertTrue(redacted.contains("PWD=****"));
+    assertTrue(redacted.contains("OAuth2Secret=****"));
+    assertTrue(redacted.contains("Auth_AccessToken=****"));
+    // Non-secret params and host preserved.
+    assertTrue(redacted.contains("jdbc:databricks://host.databricks.com:443/default"));
+    assertTrue(redacted.contains("httpPath=/sql/1.0/warehouses/abc"));
+    assertTrue(redacted.contains("UID=token"));
+  }
+
+  @Test
+  public void testRedactConnectionURL_caseInsensitiveKeyAndNullSafe() {
+    assertNull(DatabricksConnectionContext.redactConnectionURL(null));
+    // Key match is case-insensitive (driver lowercases param keys when parsing).
+    String redacted =
+        DatabricksConnectionContext.redactConnectionURL(
+            "jdbc:databricks://h:443/default;pwd=secret;ProxyPwd=proxySecret");
+    assertFalse(redacted.contains("secret"));
+    assertTrue(redacted.contains("pwd=****"));
+    assertTrue(redacted.contains("ProxyPwd=****"));
+  }
+
+  @Test
   public void testParseValid() throws DatabricksSQLException {
     // test provided port
     DatabricksConnectionContext connectionContext =

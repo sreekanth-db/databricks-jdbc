@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -158,7 +159,7 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
       throws DatabricksSQLException {
     if (!ValidationUtil.isValidJdbcUrl(url)) {
       throw new DatabricksParsingException(
-          "Invalid url " + url, DatabricksDriverErrorCode.CONNECTION_ERROR);
+          "Invalid url " + redactConnectionURL(url), DatabricksDriverErrorCode.CONNECTION_ERROR);
     }
     Matcher urlMatcher = JDBC_URL_PATTERN.matcher(url);
     if (urlMatcher.find()) {
@@ -776,6 +777,47 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   @Override
   public String getConnectionURL() {
     return connectionURL;
+  }
+
+  // Connection-URL params whose values are secrets and must be masked before the URL is exposed
+  // (DatabaseMetaData.getURL(), exceptions, logs, telemetry).
+  private static final Set<String> SENSITIVE_URL_PARAMS =
+      Stream.of(
+              DatabricksJdbcUrlParams.PWD,
+              DatabricksJdbcUrlParams.PASSWORD,
+              DatabricksJdbcUrlParams.CLIENT_SECRET,
+              DatabricksJdbcUrlParams.AUTH_ACCESS_TOKEN,
+              DatabricksJdbcUrlParams.OAUTH_REFRESH_TOKEN,
+              DatabricksJdbcUrlParams.OAUTH_REFRESH_TOKEN_2,
+              DatabricksJdbcUrlParams.PROXY_PWD,
+              DatabricksJdbcUrlParams.CF_PROXY_PWD,
+              DatabricksJdbcUrlParams.SSL_KEY_STORE_PASSWORD,
+              DatabricksJdbcUrlParams.SSL_TRUST_STORE_PASSWORD,
+              DatabricksJdbcUrlParams.TOKEN_CACHE_PASS_PHRASE,
+              DatabricksJdbcUrlParams.JWT_PASS_PHRASE)
+          .map(p -> p.getParamName().toLowerCase())
+          .collect(Collectors.toSet());
+
+  /** Masks the values of secret-bearing parameters in a JDBC connection URL. */
+  public static String redactConnectionURL(String url) {
+    if (url == null) {
+      return null;
+    }
+    String[] parts = url.split(URL_DELIMITER);
+    StringBuilder sb = new StringBuilder(url.length());
+    for (int i = 0; i < parts.length; i++) {
+      if (i > 0) {
+        sb.append(URL_DELIMITER);
+      }
+      String part = parts[i];
+      int idx = part.indexOf(PAIR_DELIMITER);
+      if (idx > 0 && SENSITIVE_URL_PARAMS.contains(part.substring(0, idx).toLowerCase())) {
+        sb.append(part, 0, idx + 1).append(REDACTED_TOKEN);
+      } else {
+        sb.append(part);
+      }
+    }
+    return sb.toString();
   }
 
   @Override
