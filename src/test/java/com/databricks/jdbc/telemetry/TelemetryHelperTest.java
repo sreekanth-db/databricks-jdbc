@@ -248,6 +248,45 @@ public class TelemetryHelperTest {
   }
 
   @Test
+  void testExportTelemetryLogWithExplicitContext_UsesProvidedContext() {
+    IDatabricksConnectionContext explicitContext = mock(IDatabricksConnectionContext.class);
+    when(explicitContext.getTelemetryLogLevel()).thenReturn(TelemetryLogLevel.DEBUG);
+    when(explicitContext.getConnectionUuid()).thenReturn("explicit-uuid");
+    when(explicitContext.getClientType()).thenReturn(DatabricksClientType.SEA);
+
+    StatementTelemetryDetails details =
+        new StatementTelemetryDetails("stmt-explicit").setOperationLatencyMillis(10L);
+
+    ITelemetryClient clientMock = mock(ITelemetryClient.class);
+    TelemetryClientFactory factoryMock = mock(TelemetryClientFactory.class);
+
+    try (MockedStatic<TelemetryClientFactory> mocked =
+        Mockito.mockStatic(TelemetryClientFactory.class)) {
+      mocked.when(TelemetryClientFactory::getInstance).thenReturn(factoryMock);
+      when(factoryMock.getTelemetryClient(explicitContext)).thenReturn(clientMock);
+
+      TelemetryHelper.exportTelemetryLog(explicitContext, details, TelemetryLogLevel.ERROR);
+
+      // Verify the explicit context was used, NOT the ThreadLocal one
+      verify(factoryMock, times(1)).getTelemetryClient(explicitContext);
+      verify(factoryMock, never()).getTelemetryClient(connectionContext);
+      verify(clientMock, times(1)).exportEvent(any());
+    }
+  }
+
+  @Test
+  void testExportTelemetryLogWithExplicitContext_NullContextSkipsExport() {
+    StatementTelemetryDetails details =
+        new StatementTelemetryDetails("stmt-null-ctx").setOperationLatencyMillis(10L);
+
+    try (MockedStatic<TelemetryClientFactory> mocked =
+        Mockito.mockStatic(TelemetryClientFactory.class)) {
+      TelemetryHelper.exportTelemetryLog(null, details, TelemetryLogLevel.ERROR);
+      mocked.verify(TelemetryClientFactory::getInstance, never());
+    }
+  }
+
+  @Test
   void testExportTelemetryLog_EmitsWhenEventLevelLowerThanConfigured() {
     // Configured level: DEBUG (5); Event level: ERROR (2) -> should export
     when(connectionContext.getTelemetryLogLevel()).thenReturn(TelemetryLogLevel.DEBUG);

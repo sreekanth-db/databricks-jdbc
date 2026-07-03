@@ -78,6 +78,18 @@ public class TelemetryHelper {
   }
 
   public static void exportTelemetryLog(
+      IDatabricksConnectionContext connectionContext,
+      StatementTelemetryDetails telemetryDetails,
+      TelemetryLogLevel logLevel) {
+    exportTelemetryEvent(connectionContext, telemetryDetails, null, null, logLevel);
+  }
+
+  /**
+   * @deprecated Use {@link #exportTelemetryLog(IDatabricksConnectionContext,
+   *     StatementTelemetryDetails, TelemetryLogLevel)} instead to avoid stale ThreadLocal context.
+   */
+  @Deprecated
+  public static void exportTelemetryLog(
       StatementTelemetryDetails telemetryDetails, TelemetryLogLevel logLevel) {
     exportTelemetryEvent(
         DatabricksThreadContextHolder.getConnectionContext(),

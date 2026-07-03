@@ -8,6 +8,7 @@
 - Bumped the Databricks SDK for Java dependency from `0.106.0` to `0.118.0`.
 
 ### Fixed
+- Fixed telemetry misattribution when multiple connections (e.g. Thrift and SEA) are used on the same thread. Per-statement telemetry events could be tagged with another connection's context (e.g. transport mode); each connection's telemetry now uses its own context instead of a shared thread-local value.
 - Hardened the OAuth U2M token cache at rest (encryption key derivation and file permissions).
 - Fixed `DatabaseMetaData.getURL()` exposing credentials embedded in the connection URL; secret parameters are now masked (the URL is otherwise unchanged).
 - Fixed presigned URL credentials not being fully redacted in logs.
