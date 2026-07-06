@@ -84,7 +84,7 @@ public class TelemetryCollectorTest {
       mockedStatic.verify(
           () ->
               TelemetryHelper.exportTelemetryLog(
-                  any(IDatabricksConnectionContext.class),
+                  eq(mockContext),
                   any(StatementTelemetryDetails.class),
                   any(TelemetryLogLevel.class)));
     }
