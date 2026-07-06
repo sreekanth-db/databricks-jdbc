@@ -104,6 +104,9 @@ public class TelemetryHelper {
         new TelemetryEvent()
             .setDriverSystemConfiguration(DRIVER_SYSTEM_CONFIGURATION)
             .setDriverConnectionParameters(getDriverConnectionParameter(connectionContext))
+            // TODO(ES-1961329 follow-up): sessionId is still read from the shared thread-local and
+            // can be misattributed across connections on the same thread (unlike connectionContext,
+            // which is now passed explicitly). Thread sessionId through per-connection state too.
             .setSessionId(DatabricksThreadContextHolder.getSessionId())
             .setDriverErrorInfo(errorInfo) // This is only set for failure logs
             .setSqlStatementId(telemetryDetails.getStatementId())
