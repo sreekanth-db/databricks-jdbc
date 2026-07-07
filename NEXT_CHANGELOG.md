@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Added `UseBoundedSeaApi` connection property (default `0`/off). When enabled, the driver uses the bounded SEA API contract for CloudFetch: sends `row_offset` on GetResultData requests and uses `next_chunk_index` for chunk discovery instead of `total_chunk_count`. Requires server support.
 - OAuth M2M (client credentials) connections can now supply the client secret via the JDBC `password`/`PWD` property and the client id via the JDBC `user`/`UID` property, instead of embedding `OAuth2Secret`/`OAuth2ClientId` in the connection URL. This lets BI tools (e.g. DBeaver) mask the OAuth secret in their password field rather than exposing it in the clear-text JDBC URL. Explicit `OAuth2ClientId`/`OAuth2Secret` still take precedence when present, so existing URLs are unaffected.
 
 ### Updated
