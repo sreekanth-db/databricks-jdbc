@@ -444,12 +444,19 @@ public class DatabricksConnection implements IDatabricksConnection, IDatabricksC
       statement.close(false);
       statementSet.remove(statement);
     }
-    this.session.close();
-    TelemetryClientFactory.getInstance().closeTelemetryClient(connectionContext);
-    DatabricksClientConfiguratorManager.getInstance().removeInstance(connectionContext);
-    DatabricksDriverFeatureFlagsContextFactory.removeInstance(connectionContext);
-    DatabricksHttpClientFactory.getInstance().closeConnection(connectionContext);
-    DatabricksThreadContextHolder.clearAllContext();
+    // Always run driver-side cleanup regardless of whether session.close() succeeds.
+    // Without this guard, a failure in session.close() (e.g. expired token → 401 on
+    // deleteSession) would skip closeConnection(), permanently leaking the
+    // IdleConnectionEvictor thread and other resources (GitHub issue #1221).
+    try {
+      this.session.close();
+    } finally {
+      TelemetryClientFactory.getInstance().closeTelemetryClient(connectionContext);
+      DatabricksClientConfiguratorManager.getInstance().removeInstance(connectionContext);
+      DatabricksDriverFeatureFlagsContextFactory.removeInstance(connectionContext);
+      DatabricksHttpClientFactory.getInstance().closeConnection(connectionContext);
+      DatabricksThreadContextHolder.clearAllContext();
+    }
   }
 
   @Override
