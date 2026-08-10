@@ -2081,4 +2081,23 @@ class DatabricksConnectionContextTest {
     assertNull(ctx.getClientSecret());
     assertNull(ctx.getNullableClientId());
   }
+
+  @Test
+  public void testNativeBatchingDisabledByDefault() throws DatabricksSQLException {
+    IDatabricksConnectionContext context =
+        DatabricksConnectionContext.parse(TestConstants.VALID_URL_1, new Properties());
+
+    assertFalse(context.isNativeBatchingEnabled());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"0, false", "1, true", "true, false"})
+  public void testNativeBatchingConnectionProperty(String value, boolean expected)
+      throws DatabricksSQLException {
+    String url = TestConstants.VALID_URL_1 + ";EnableNativeBatching=" + value;
+
+    IDatabricksConnectionContext context = DatabricksConnectionContext.parse(url, new Properties());
+
+    assertEquals(expected, context.isNativeBatchingEnabled());
+  }
 }
