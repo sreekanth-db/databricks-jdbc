@@ -1482,6 +1482,11 @@ public class DatabricksConnectionContext implements IDatabricksConnectionContext
   }
 
   @Override
+  public boolean isNativeBatchingEnabled() {
+    return getParameter(DatabricksJdbcUrlParams.ENABLE_NATIVE_BATCHING).equals("1");
+  }
+
+  @Override
   public List<String> getNonRowcountQueryPrefixes() {
     String prefixesStr = getParameter(DatabricksJdbcUrlParams.NON_ROWCOUNT_QUERY_PREFIXES);
     return Arrays.stream(prefixesStr.split(","))
